@@ -147,7 +147,7 @@ dynamicPage(name: "pageTokens", title: "Security Tokens", uninstall: false){
             def msg = state.accessToken != null ? state.accessToken : "Could not create Access Token. OAuth may not be enabled. Go to the SmartApp IDE settings to enable OAuth."              	
     		log.trace "STappID = '${app.id}' , STtoken = '${state.accessToken}'"
     	section ("Reset Access Token / Application ID"){
-        	href "pageReset", title: "Reset Access Token and Application ID", description: none
+        	href "pageConfirmation", title: "Reset Access Token and Application ID", description: none
       	}
     }
 }    
