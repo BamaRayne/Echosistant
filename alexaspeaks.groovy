@@ -1,14 +1,15 @@
 /**
  *  Alexa Speaks - PreRelease Alpha Testing
  *
- *  10/25/2016  version 0.1.0		Alpha Testing of code complete.
+ *	10/25/2016	version 0.1.1		Bug Fix in the Token Renew process
+ *  	10/25/2016  	version 0.1.0		Alpha Testing of code complete.
  *	10/23/2016	version 0.0.2		Restrictions operational (modes/days/hours), Sonos operational.		
  *	10/23/2016	version 0.0.1i		Day restriction added, code clean up, UI changes
  *	10/20/2016	version 0.0.1h		Mode restriction working
- *  10/18/2016	version 0.0.1g		Access Token Reset fixed. Multiple UI Changes.  **VERIFY YOUR PROFILES AFTER UPDATE**
- *  10/17/2016	version 0.0.1f		bug fixes. Sonos, media player, speech synthesizer working.  **SONOS STILLS NEEDS TESTING**
- *	10/17/2016  version 0.0.1e 		bug fixes.
- *  10/15-2016	version 0.0.1d		Added custom "Pre-messages", UI changes
+ *  	10/18/2016	version 0.0.1g		Access Token Reset fixed. Multiple UI Changes.  **VERIFY YOUR PROFILES AFTER UPDATE**
+ *  	10/17/2016	version 0.0.1f		bug fixes. Sonos, media player, speech synthesizer working.  **SONOS STILLS NEEDS TESTING**
+ *	10/17/2016 	version 0.0.1e 		bug fixes.
+ *  	10/15-2016	version 0.0.1d		Added custom "Pre-messages", UI changes
  * 	10/14/2016 	version 0.0.1c		Added Sonos support and OAuth tokens to logs for copy and paste
  *	10/11/2016	version 0.0.1b		Fixed audio output for both media and synth
  *	10/10/2016 	Version 0.0.1a		Added media player support
@@ -58,14 +59,14 @@ preferences {
 def mainPage() {
     dynamicPage(name: "mainPage", title:"                      Alexa Speaks", install: true, uninstall: false) {
         section("") {
-			href "pageAudioDevices", title: "Media Devices", description: "Tap here to choose your playback devices", 
+	href "pageAudioDevices", title: "Media Devices", description: "Tap here to choose your playback devices", 
             	image: "https://s3.amazonaws.com/smartapp-icons/Convenience/Cat-Convenience.png"
-            href "pageConfiguration", title: "Configuration", description: "Tap here to configure installed application options (Pre-messages and restrictions)",
+     	href "pageConfiguration", title: "Configuration", description: "Tap here to configure installed application options (Pre-messages and restrictions)",
   			 	image: "https://s3.amazonaws.com/smartapp-icons/Convenience/Cat-Convenience.png"
-            href "pageAbout", title: "About ${textAppName()}", description: "Tap to get version, license information, Securty Tokens, and to remove the app",
+    	href "pageAbout", title: "About ${textAppName()}", description: "Tap to get version, license information, Securty Tokens, and to remove the app",
             	image: "https://s3.amazonaws.com/smartapp-icons/Convenience/Cat-Convenience.png"
             }
-                 section("                               Rename App"){
+            section("                               Rename App"){
         	label title:"              Rename App (Optional)", required:false, defaultValue: "Alexa Speaks"    		
         }
 	}
