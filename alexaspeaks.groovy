@@ -1,6 +1,7 @@
 /**
  *  Alexa Speaks - PreRelease Alpha Testing
  *
+ *	10/26/2016	version 0.1.2		Added Icons by @SBDOBRESCU.
  *	10/25/2016	version 0.1.1		Bug Fix in the Token Renew process
  *  	10/25/2016  	version 0.1.0		Alpha Testing of code complete.
  *	10/23/2016	version 0.0.2		Restrictions operational (modes/days/hours), Sonos operational.		
@@ -38,9 +39,9 @@ definition(
     author: "Jason Headley",
     description: "A free-form Speech-to-Text SmartApp using the Amazon Echo (Alexa) device.",
     category: "Convenience",
-    iconUrl: "https://s3.amazonaws.com/smartapp-icons/Convenience/Cat-Convenience.png",
-    iconX2Url: "https://s3.amazonaws.com/smartapp-icons/Convenience/Cat-Convenience@2x.png",
-    iconX3Url: "https://s3.amazonaws.com/smartapp-icons/Convenience/Cat-Convenience@2x.png")
+    iconUrl: "https://raw.githubusercontent.com/BamaRayne/alexaspeaks.src/master/app-AlexaSpeaks.png",
+    iconX2Url: "https://raw.githubusercontent.com/BamaRayne/alexaspeaks.src/master/app-AlexaSpeaks@2x.png",
+    iconX3Url: "https://raw.githubusercontent.com/BamaRayne/alexaspeaks.src/master/app-AlexaSpeaks@2x.png")
 preferences {
     page name:"mainPage"
     page name:"pageAudioDevices"
@@ -60,11 +61,11 @@ def mainPage() {
     dynamicPage(name: "mainPage", title:"                      Alexa Speaks", install: true, uninstall: false) {
         section("") {
 	href "pageAudioDevices", title: "Media Devices", description: "Tap here to choose your playback devices", 
-            	image: "https://s3.amazonaws.com/smartapp-icons/Convenience/Cat-Convenience.png"
+            	image: "https://raw.githubusercontent.com/BamaRayne/alexaspeaks.src/master/AlexaSpeaks_Media.png"
      	href "pageConfiguration", title: "Configuration", description: "Tap here to configure installed application options (Pre-messages and restrictions)",
-  			 	image: "https://s3.amazonaws.com/smartapp-icons/Convenience/Cat-Convenience.png"
+  			 	image: "https://raw.githubusercontent.com/BamaRayne/alexaspeaks.src/master/AlexaSpeaks_Config.png"
     	href "pageAbout", title: "About ${textAppName()}", description: "Tap to get version, license information, Securty Tokens, and to remove the app",
-            	image: "https://s3.amazonaws.com/smartapp-icons/Convenience/Cat-Convenience.png"
+            	image: "https://raw.githubusercontent.com/BamaRayne/alexaspeaks.src/master/AlexaSpeaks_About.png"
             }
             section("                               Rename App"){
         	label title:"              Rename App (Optional)", required:false, defaultValue: "Alexa Speaks"    		
