@@ -164,7 +164,8 @@ def pageSonos(){
 def pageAbout(){
 	dynamicPage(name: "pageAbout", uninstall: true) {
         section {
-        	paragraph "${textAppName()}\n${textVersion()}\n${using()}",image: "https://raw.githubusercontent.com/BamaRayne/alexaspeaks.src/master/app-Echosistant.png" 		//    if (!state.accessToken) OAuthToken()
+
+        	paragraph "${textAppName()}\n${textVersion()}\n${textCopyright()}",image: "https://raw.githubusercontent.com/BamaRayne/alexaspeaks.src/master/app-Echosistant.png"	//    if (!state.accessToken) OAuthToken()
             def msg = state.accessToken != null ? state.accessToken : "Could not create Access Token. OAuth may not be enabled. Go to the SmartApp IDE settings to enable OAuth."
             paragraph "Access token:\n${msg}\n\nApplication ID:\n${app.id}"
  		}
