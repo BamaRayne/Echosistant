@@ -41,9 +41,9 @@ definition(
     author: "Jason Headley",
     description: "A free-form Speech-to-Text/SMS SmartApp using the Amazon Echo (Alexa) device.",
     category: "Convenience",
-    iconUrl: "https://raw.githubusercontent.com/BamaRayne/alexaspeaks.src/master/app-AlexaSpeaks.png",
-    iconX2Url: "https://raw.githubusercontent.com/BamaRayne/alexaspeaks.src/master/app-AlexaSpeaks@2x.png",
-    iconX3Url: "https://raw.githubusercontent.com/BamaRayne/alexaspeaks.src/master/app-AlexaSpeaks@2x.png")
+    iconUrl: "https://raw.githubusercontent.com/BamaRayne/alexaspeaks.src/master/app-Echosistant.png",
+    iconX2Url: "https://raw.githubusercontent.com/BamaRayne/alexaspeaks.src/master/app-Echosistant@2x.png",
+    iconX3Url: "https://raw.githubusercontent.com/BamaRayne/alexaspeaks.src/master/app-Echosistant@2x.png")
 preferences {
     page name:"mainPage"
     page name:"pageConfiguration"
@@ -66,9 +66,9 @@ def mainPage() {
     dynamicPage(name: "mainPage", title:"                      ${textAppName()}", install: true, uninstall: false) {
         section("") {
  	href "pageConfiguration", title: "Configuration", description: "Tap here to configure installed application options (Pre-messages and restrictions)",
-  			 	image: "https://raw.githubusercontent.com/BamaRayne/alexaspeaks.src/master/AlexaSpeaks_Config.png"
+  			 	image: "https://raw.githubusercontent.com/BamaRayne/alexaspeaks.src/master/Echosistant_Config.png"
     href "pageAbout", title: "About ${textAppName()}", description: "Tap to get version, license information, Securty Tokens, and to remove the app",
-            	image: "https://raw.githubusercontent.com/BamaRayne/alexaspeaks.src/master/AlexaSpeaks_About.png"
+            	image: "https://raw.githubusercontent.com/BamaRayne/alexaspeaks.src/master/Echosistant_About.png"
             }
             section("                               Rename App"){
         	label title:"              Rename App (Optional)", required:false, defaultValue: "${textAppName()}"    		
@@ -79,11 +79,11 @@ def pageConfiguration(){
 	dynamicPage(name: "pageConfiguration", uninstall: false) {
     	section (""){ 
        	href "pageSpeech", title: "Speech Notifications", description: "Tap here configure Speech Notifications", 
-            	image: "https://raw.githubusercontent.com/BamaRayne/alexaspeaks.src/master/AlexaSpeaks_Text.png"
+            	image: "https://raw.githubusercontent.com/BamaRayne/alexaspeaks.src/master/Echosistant_Text.png"
  		href "pageTextMessage", title: "Text Notifications", description: "Tap here to configure Text Notifications", 
-            	image: "https://raw.githubusercontent.com/BamaRayne/alexaspeaks.src/master/AlexaSpeaks_Text.png"
+            	image: "https://raw.githubusercontent.com/BamaRayne/alexaspeaks.src/master/Echosistant_Text.png"
 		href "pageRestrictions", title: "Restrictions", description: "Tap here to configure Restrictions", 
-            	image: "https://raw.githubusercontent.com/BamaRayne/alexaspeaks.src/master/AlexaSpeaks_Text.png"
+            	image: "https://raw.githubusercontent.com/BamaRayne/alexaspeaks.src/master/Echosistant_Text.png"
 		}
     }
 }  
@@ -99,7 +99,7 @@ def pageSpeech(){
       	    } 
         section("Audio Playback Devices", hideWhenEmpty: true){
         	href "pageAudioDevices", title: "Choose Playback Devices", description: none
-            image: "https://raw.githubusercontent.com/BamaRayne/alexaspeaks.src/master/AlexaSpeaks_Media.png"
+            image: "https://raw.githubusercontent.com/BamaRayne/alexaspeaks.src/master/Echosistant_Media.png"
 		}
     }
 }
