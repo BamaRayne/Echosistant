@@ -1,5 +1,7 @@
 /**
  *  Echosistant - PreRelease Alpha Testing
+ *		
+ *		10/26/2016	version 0.1.2b		SMS added
  *		10/26/2016  version 0.1.2a      Name change
  *		10/26/2016	version 0.1.2		Added Icons by @SBDOBRESCU.
  *		10/25/2016	version 0.1.1		Bug Fix in the Token Renew process
@@ -18,7 +20,6 @@
  *
  /******************* ROADMAP ********************
   - External TTS
-  - Icons
  *
  *
  *  Copyright 2016 Jason Headley
@@ -34,7 +35,7 @@
  *
  */
 definition(
-    name: "Alexa Speaks",
+    name: "Echosistant",
     namespace: "bamarayne",
     author: "Jason Headley",
     description: "A free-form Speech-to-Text SmartApp using the Amazon Echo (Alexa) device.",
@@ -59,7 +60,7 @@ preferences {
 //************************************************************************************************************
 //Show main page
 def mainPage() {
-    dynamicPage(name: "mainPage", title:"                      Alexa Speaks", install: true, uninstall: false) {
+    dynamicPage(name: "mainPage", title:"                      ${textAppName()}", install: true, uninstall: false) {
         section("") {
 	href "pageAudioDevices", title: "Media Devices", description: "Tap here to choose your playback devices", 
             	image: "https://raw.githubusercontent.com/BamaRayne/alexaspeaks.src/master/AlexaSpeaks_Media.png"
@@ -397,7 +398,7 @@ private void sendtxt(message) {
 //************************************************************************************************************
 //Version/Copyright/Information/Help
 private def textAppName() {
-	def text = "Alexa Speaks"
+	def text = "Echosistant"
 }	
 private def textVersion() {
     def text = "Version 0.1.0 	(10/25/2016)"
