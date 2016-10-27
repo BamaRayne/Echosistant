@@ -1,7 +1,7 @@
 /**
  *  Echosistant - PreRelease Alpha Testing
  *		
- *		10/26/2016	version 0.1.2b		SMS added
+ *		10/26/2016	version 0.1.2b		Addition of SMS by @SBDOBRESCU.
  *		10/26/2016  version 0.1.2a      Name change
  *		10/26/2016	version 0.1.2		Added Icons by @SBDOBRESCU.
  *		10/25/2016	version 0.1.1		Bug Fix in the Token Renew process
@@ -20,6 +20,7 @@
  *
  /******************* ROADMAP ********************
   - External TTS
+  - Icons
  *
  *
  *  Copyright 2016 Jason Headley
@@ -38,68 +39,57 @@ definition(
     name: "Echosistant",
     namespace: "bamarayne",
     author: "Jason Headley",
-    description: "A free-form Speech-to-Text SmartApp using the Amazon Echo (Alexa) device.",
+    description: "A free-form Speech-to-Text/SMS SmartApp using the Amazon Echo (Alexa) device.",
     category: "Convenience",
     iconUrl: "https://raw.githubusercontent.com/BamaRayne/alexaspeaks.src/master/app-AlexaSpeaks.png",
     iconX2Url: "https://raw.githubusercontent.com/BamaRayne/alexaspeaks.src/master/app-AlexaSpeaks@2x.png",
     iconX3Url: "https://raw.githubusercontent.com/BamaRayne/alexaspeaks.src/master/app-AlexaSpeaks@2x.png")
 preferences {
-    page name: "mainPage"
-    page name: "pageAudioDevices"
-    page name: "pageSonos"
-    page name: "pageConfiguration"
-    page name: "pageTextMessage"
-    page name: "pageAlexa"
-    page name: "certainTime"
-    page name: "pageAbout"
-   	page name: "pageReset"
-   	page name: "pageConfirmation"
-    page name: "pageGlobalVariables"
-    page name: "pageTokens"
+    page name:"mainPage"
+    page name:"pageConfiguration"
+    	page name: "pageSpeech"
+        	page name: "pageAudioDevices"
+    		page name: "pageSonos"
+    	page name: "pageTextMessage"
+   		page name: "pageAlexa"
+    	page name: "certainTime"
+        page name: "pageRestrictions"
+    page name:"pageAbout"
+   		page name:"pageReset"
+   			page name:"pageConfirmation"
+    		page name:"pageTokens"
+        page name:"pageGlobalVariables"    	
 }
 //************************************************************************************************************
 //Show main page
 def mainPage() {
     dynamicPage(name: "mainPage", title:"                      ${textAppName()}", install: true, uninstall: false) {
         section("") {
-	href "pageAudioDevices", title: "Media Devices", description: "Tap here to choose your playback devices", 
-            	image: "https://raw.githubusercontent.com/BamaRayne/alexaspeaks.src/master/AlexaSpeaks_Media.png"
- 	href "pageTextMessage", title: "Text Notification", description: "Tap here to set up text notifications messages", 
-            	image: "https://raw.githubusercontent.com/BamaRayne/alexaspeaks.src/master/AlexaSpeaks_Text.png"
  	href "pageConfiguration", title: "Configuration", description: "Tap here to configure installed application options (Pre-messages and restrictions)",
   			 	image: "https://raw.githubusercontent.com/BamaRayne/alexaspeaks.src/master/AlexaSpeaks_Config.png"
     href "pageAbout", title: "About ${textAppName()}", description: "Tap to get version, license information, Securty Tokens, and to remove the app",
             	image: "https://raw.githubusercontent.com/BamaRayne/alexaspeaks.src/master/AlexaSpeaks_About.png"
             }
             section("                               Rename App"){
-        	label title:"              Rename App (Optional)", required:false, defaultValue: "Alexa Speaks"    		
+        	label title:"              Rename App (Optional)", required:false, defaultValue: "${textAppName()}"    		
         }
-	}
-}
-def pageAudioDevices(){
-    dynamicPage(name: "pageAudioDevices", title: "Media Devices", uninstall: false){
-     	section("Media Speakers (Sonos, wi-fi, music players...)", hideWhenEmpty: true){
-        	href "pageSonos", title: "Choose Media Speakers", description: none
-            }
-        section("Speech Synthesizer Devices (LanDroid, etc...)", hideWhenEmpty: true){
-        	input "synthDevice", "capability.speechSynthesis", title: "Choose Speaker(s)", multiple: true, required: false, submitOnChange: true
-        	if (synthDevice) input "synthVolume", "number", title: "Speaker Volume", description: "0-100%", required: false
-         }
-	}
-}
-def pageSonos(){
-    dynamicPage(name: "pageSonos", uninstall: false){
-    	section{ paragraph "Configure Media Speakers (Sonos Compatible)" }
-         section (" "){
-        	input "sonosDevice", "capability.musicPlayer", title: "On this Media Speaker", required: false, multiple: true, submitOnChange: true
-		    input "volume", "number", title: "Temporarily change volume", description: "0-100%", required: false
-            input "resumePlaying", "bool", title: "Resume currently playing music after notification", required: false, defaultValue: false
-		}  
 	}
 }
 def pageConfiguration(){
 	dynamicPage(name: "pageConfiguration", uninstall: false) {
     	section (""){ 
+       	href "pageSpeech", title: "Speech Notifications", description: "Tap here configure Speech Notifications", 
+            	image: "https://raw.githubusercontent.com/BamaRayne/alexaspeaks.src/master/AlexaSpeaks_Text.png"
+ 		href "pageTextMessage", title: "Text Notifications", description: "Tap here to configure Text Notifications", 
+            	image: "https://raw.githubusercontent.com/BamaRayne/alexaspeaks.src/master/AlexaSpeaks_Text.png"
+		href "pageRestrictions", title: "Restrictions", description: "Tap here to configure Restrictions", 
+            	image: "https://raw.githubusercontent.com/BamaRayne/alexaspeaks.src/master/AlexaSpeaks_Text.png"
+		}
+    }
+}  
+def pageSpeech(){
+    dynamicPage(name: "pageSpeech", title: "Configure Speech Notifications", uninstall: false){
+		section (""){ 
     	input "ShowPreMsg", "bool", title: "Enable TTS Pre-Message", default: false, submitOnChange: true
         	if (ShowPreMsg) input "PreMsg", "text", title: "Pre-Message Notification", required: true, defaultValue: "Attention.  Attention Please "
             }
@@ -107,20 +97,12 @@ def pageConfiguration(){
         input "feedBack", "bool", title: "Enable Custom Alexa Response", default: false, submitOnChange: true
         	if (feedBack) input "outputTxt", "text", title: "Alexa Response", defaultValue: "Message Sent", required: false
       	    } 
-	    section ("Mode Restrictions") {
-			input "modes", "mode", title: "Only when mode is", multiple: true, required: false, submitOnChange: true
-	        }        
-        section ("Days - Audio only on these days"){	
-            input "runDay", title: "Only on certain days of the week", multiple: true, required: false, submitOnChange: true,
-                "enum", options: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
-			}
-        section ("Time - Audio only during these times"){
-            href "certainTime", title: "Only during a certain time", description: timeLabel ?: "Tap to set", state: timeLabel ? "complete" : null
-        }   
-	}
-}   
-
-
+        section("Audio Playback Devices", hideWhenEmpty: true){
+        	href "pageAudioDevices", title: "Choose Playback Devices", description: none
+            image: "https://raw.githubusercontent.com/BamaRayne/alexaspeaks.src/master/AlexaSpeaks_Media.png"
+		}
+    }
+}
 def pageTextMessage(){
 	dynamicPage(name: "pageTextMessage", uninstall: false) {
     	section (""){ 
@@ -144,13 +126,48 @@ def pageTextMessage(){
         
         }  
   }
+def pageRestrictions(){
+    dynamicPage(name: "pageRestrictions", title: "Configure Restrictions", uninstall: false){
+     	section ("Mode Restrictions") {
+			input "modes", "mode", title: "Only when mode is", multiple: true, required: false, submitOnChange: true
+	        }        
+        section ("Days - Audio only on these days"){	
+            input "runDay", title: "Only on certain days of the week", multiple: true, required: false, submitOnChange: true,
+                "enum", options: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+			}
+        section ("Time - Audio only during these times"){
+            href "certainTime", title: "Only during a certain time", description: timeLabel ?: "Tap to set", state: timeLabel ? "complete" : null
+        }   
+	}
+}
+def pageAudioDevices(){
+    dynamicPage(name: "pageAudioDevices", title: "Media Devices", uninstall: false){
+     	section("Media Speakers (Sonos, wi-fi, music players...)", hideWhenEmpty: true){
+        	href "pageSonos", title: "Choose Media Speakers", description: none
+            }
+        section("Speech Synthesizer Devices (LanDroid, etc...)", hideWhenEmpty: true){
+        	input "synthDevice", "capability.speechSynthesis", title: "Choose Speech Synthesis Devices", multiple: true, required: false, submitOnChange: true
+        	if (synthDevice) input "synthVolume", "number", title: "Speaker Volume", description: "0-100%", required: false
+         }
+	}
+}
+def pageSonos(){
+    dynamicPage(name: "pageSonos", uninstall: false){
+    	section{ paragraph "Configure Media Speakers (Sonos Compatible" }
+         section (" "){
+        	input "sonosDevice", "capability.musicPlayer", title: "On this Media Speaker", required: false, multiple: true, submitOnChange: true
+		    input "volume", "number", title: "Temporarily change volume", description: "0-100%", required: false
+            input "resumePlaying", "bool", title: "Resume currently playing music after notification", required: false, defaultValue: false
+		}  
+	}
+}
 def pageAbout(){
 	dynamicPage(name: "pageAbout", uninstall: true) {
         section {
         	paragraph "${textAppName()}\n${textVersion()}\n${textCopyright()}",image: "https://s3.amazonaws.com/smartapp-icons/Convenience/Cat-Convenience.png" 		//    if (!state.accessToken) OAuthToken()
             def msg = state.accessToken != null ? state.accessToken : "Could not create Access Token. OAuth may not be enabled. Go to the SmartApp IDE settings to enable OAuth."
             paragraph "Access token:\n${msg}\n\nApplication ID:\n${app.id}"
- 			}
+ 		}
     	section ("Access Token / Application ID"){
         	href "pageTokens", title: "Show Access Token and Application ID.  Renew/Reset Token", description: none
       	}
@@ -281,13 +298,11 @@ def OAuthToken(){
 //************************************************************************************************************
 //*** TEXT TO SPEECH PROCESSING ***
 def processTts() {
-    	
         def tts = params.ttstext 
         def txt = params.ttstext
 		tts = PreMsg + tts
 if (!disableTts){
 	if (getDayOk()==true && getModeOk()==true && getTimeOk()==true) {
-
             if (synthDevice) synthDevice?.speak(tts)
         	if (mediaDevice) mediaDevice?.speak(tts)
     		
@@ -306,13 +321,11 @@ if (!disableTts){
     sendtxt(txt)
     return ["outputTxt":outputTxt]
 }
-
 else {
 	log.debug "sending sms ${txt}"
     sendtxt(txt)
 	}
 }   
-
 private def textHelp() {
 	def text =
 		"This smartapp allows you to speak freely to your Alexa device and have it repeated back on a remote playback device"h
@@ -370,7 +383,21 @@ private timeIntervalLabel() {
 	else if (starting && endingX == "Sunset") result = hhmm(starting) + " to Sunset" + offset(endSunsetOffset)
 	else if (starting && ending) result = hhmm(starting) + " to " + hhmm(ending, "h:mm a z")
 }
-
+private sendtxt(message) {
+    // Send text notifications
+    if (!tts) {
+        log.warn "No message to send, skipping notifications"
+        return
+    }
+    if (location.contactBookEnabled) {
+        log.debug "Sending message to $recipients"
+        sendNotificationToContacts(message, recipients)
+    } else {
+        log.debug "SMS: $sms, Push: $push"
+        sms ? sendText(sms, message) : ""
+        push ? sendPush(message) : sendNotificationEvent(message)
+    }
+}
 private void sendText(number, message) {
     if (sms) {
         def phones = sms.split("\\+")
@@ -379,7 +406,6 @@ private void sendText(number, message) {
         }
     }
 }
-
 private void sendtxt(message) {
     log.debug message
     if (location.contactBookEnabled) {
