@@ -383,21 +383,6 @@ private timeIntervalLabel() {
 	else if (starting && endingX == "Sunset") result = hhmm(starting) + " to Sunset" + offset(endSunsetOffset)
 	else if (starting && ending) result = hhmm(starting) + " to " + hhmm(ending, "h:mm a z")
 }
-private sendtxt(message) {
-    // Send text notifications
-    if (!tts) {
-        log.warn "No message to send, skipping notifications"
-        return
-    }
-    if (location.contactBookEnabled) {
-        log.debug "Sending message to $recipients"
-        sendNotificationToContacts(message, recipients)
-    } else {
-        log.debug "SMS: $sms, Push: $push"
-        sms ? sendText(sms, message) : ""
-        push ? sendPush(message) : sendNotificationEvent(message)
-    }
-}
 private void sendText(number, message) {
     if (sms) {
         def phones = sms.split("\\+")
