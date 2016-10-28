@@ -1,5 +1,5 @@
 /**
- *  Echosistant Profile - PreRelease Alpha Testing
+ *  Assistant Profile - PreRelease Alpha Testing
  *		
  *		10/26/2016	version 0.1.2b		Addition of SMS by @SBDOBRESCU.
  *		10/26/2016  version 0.1.2a      Name change
@@ -36,10 +36,10 @@
  *
  */
 definition(
-    name: "echosistantProfile",
+    name: "assistantProfile",
     namespace: "sb",
     author: "Jason Headley",
-    description: "Echosistant Profile DO NO intall this app directly.",
+    description: "assistant Profile DO NO intall this app directly.",
     category: "My apps",
     parent: "sb:Echosistant",    
     iconUrl: "https://raw.githubusercontent.com/BamaRayne/alexaspeaks.src/master/app-Echosistant.png",
@@ -69,7 +69,7 @@ def mainPage() {
         section("") {
  	href "pageConfiguration", title: "Configuration", description: "Tap here to configure installed application options (Pre-messages and restrictions)",
   			 	image: "https://raw.githubusercontent.com/BamaRayne/alexaspeaks.src/master/Echosistant_Config.png"
-    href "pageAbout", title: "About ${textApyepName()}", description: "Tap to get version, license information, Securty Tokens, and to remove the app",
+    href "pageAbout", title: "About ${textAppName()}", description: "Tap to get version, license information, Securty Tokens, and to remove the app",
             	image: "https://raw.githubusercontent.com/BamaRayne/alexaspeaks.src/master/Echosistant_About.png"
             }
             section("                               Rename App"){
@@ -420,7 +420,7 @@ private void sendtxt(message) {
 //************************************************************************************************************
 //Version/Copyright/Information/Help
 private def textAppName() {
-	def text = "Echosistant"
+	def text = "Assistant"
 }	
 private def textVersion() {
     def text = "Version 0.1.0 	(10/25/2016)"
