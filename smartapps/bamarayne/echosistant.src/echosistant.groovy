@@ -1,5 +1,5 @@
 /**
- *  Echosistant - PreRelease Alpha Testing
+ *  Echosistant - PreRelease Alpha Testing 
  *		
  *		10/26/2016	version 0.1.2b		Addition of SMS by @SBDOBRESCU.
  *		10/26/2016  version 0.1.2a      Name change
