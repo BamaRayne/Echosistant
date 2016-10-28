@@ -1,5 +1,5 @@
 /**
- *  Echosistant - Manager
+ *  Assistant - Manager
  *		
  		10/28/2016	Version 0.0.1		Initial File
  *
@@ -17,7 +17,7 @@
  */
 
 definition(
-    name		: "Echosistant",
+    name		: "Assistant",
     namespace	: "sb",
     author		: "Jason Headley",
     description	: "The parent app.",
@@ -58,7 +58,7 @@ def main(){
         ){	
              if (installed){
         		section(){
-        			app(name: "Profiles", appName: "echosistantProfile", namespace: "sb", description: "Create New Profile...", multiple: true)	
+        			app(name: "Profiles", appName: "assistantProfile", namespace: "sb", description: "Create New Profile...", multiple: true)	
                 }
              }	
      	}
