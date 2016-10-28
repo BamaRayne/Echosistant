@@ -1,0 +1,13 @@
+{
+  "intents": [
+    {
+"intent": "Repeat",
+"slots": [
+{
+"name": "ttstext",
+"type": "AMAZON.LITERAL"
+}
+]
+}
+    ]
+}  
