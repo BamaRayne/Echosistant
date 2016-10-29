@@ -35,7 +35,7 @@ def installed() {
 log.debug "Installed with settings: ${settings}"
 initialize()
 log.debug "there are ${childApps.size()} child smartapps"
-    childApps.each {child ->
+    childApps.each {child -> 
         log.debug "child app: ${child.label}"
 	}
 }    
