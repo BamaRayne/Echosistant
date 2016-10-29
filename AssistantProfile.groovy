@@ -41,7 +41,7 @@ definition(
     author: "Jason Headley",
     description: "assistant Profile DO NO intall this app directly.",
     category: "My apps",
-    parent: "sb:Echosistant",    
+    parent: "sb:Assistant",    
     iconUrl: "https://raw.githubusercontent.com/BamaRayne/alexaspeaks.src/master/app-Echosistant.png",
     iconX2Url: "https://raw.githubusercontent.com/BamaRayne/alexaspeaks.src/master/app-Echosistant@2x.png",
     iconX3Url: "https://raw.githubusercontent.com/BamaRayne/alexaspeaks.src/master/app-Echosistant@2x.png")
