@@ -26,9 +26,9 @@ definition(
     description: "Echosistant Profile DO NO intall this app directly.",
     category: "My apps",
     parent: "sb:Echosistant",    
-    iconUrl: "https://raw.githubusercontent.com/BamaRayne/alexaspeaks.src/master/app-Echosistant.png",
-    iconX2Url: "https://raw.githubusercontent.com/BamaRayne/alexaspeaks.src/master/app-Echosistant@2x.png",
-    iconX3Url: "https://raw.githubusercontent.com/BamaRayne/alexaspeaks.src/master/app-Echosistant@2x.png")
+    iconUrl: "https://github.com/BamaRayne/Echosistant/blob/master/smartapps/bamarayne/echosistant.src/app-Echosistant.png",
+    iconX2Url: "https://github.com/BamaRayne/Echosistant/blob/master/smartapps/bamarayne/echosistant.src/app-Echosistant@2x.png",
+    iconX3Url: "https://github.com/BamaRayne/Echosistant/blob/master/smartapps/bamarayne/echosistant.src/app-Echosistant@2x.png")
 
 preferences {
     page name:"mainPage"
@@ -47,7 +47,7 @@ def mainPage() {
     dynamicPage(name: "mainPage", title:"                      ${textAppName()}", install: true, uninstall: false) {
         section("") {
  	href "pageConfiguration", title: "Configuration", description:"Tap here to configure the child application options (Playback devices, Pre-messages, Texting, and restrictions)",
-  			 	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/smartapps/bamarayne/echosistant.src/Echosistant_Config.png"
+  			 	image: "https://github.com/BamaRayne/Echosistant/blob/master/smartapps/bamarayne/echosistant.src/Echosistant_Config.png"
             }
             section("                               Profile Name"){
         	label title: "", required:false, defaultValue: "${textAppName()}"    		
@@ -58,11 +58,11 @@ def pageConfiguration(){
 	dynamicPage(name: "pageConfiguration", uninstall: false) {
     	section (""){ 
         href "pageSpeech", title: "Speech Notifications", description: "Tap here configure Speech Notifications", 
-            	image: "https://raw.githubusercontent.com/BamaRayne/alexaspeaks.src/master/Echosistant_Text.png"
+            	image: "https://github.com/BamaRayne/Echosistant/blob/master/smartapps/bamarayne/echosistant.src/Echosistant_Text.png"
  		href "pageTextMessage", title: "Text Notifications", description: "Tap here to configure Text Notifications", 
-            	image: "https://raw.githubusercontent.com/BamaRayne/alexaspeaks.src/master/Echosistant_Text.png"
+            	image: "https://github.com/BamaRayne/Echosistant/blob/master/smartapps/bamarayne/echosistant.src/Echosistant_Text.png"
 		href "pageRestrictions", title: "Restrictions", description: "Tap here to configure Restrictions", 
-            	image: "https://raw.githubusercontent.com/BamaRayne/alexaspeaks.src/master/Echosistant_Text.png"
+            	image: "https://github.com/BamaRayne/Echosistant/blob/master/smartapps/bamarayne/echosistant.src/Echosistant_Text.png"
 		}
     }
 }  
@@ -78,7 +78,7 @@ def pageSpeech(){
       	    } 
         section("Audio Playback Devices", hideWhenEmpty: true){
         	href "pageAudioDevices", title: "Choose Playback Devices", description: none, 
-            image: "https://raw.githubusercontent.com/BamaRayne/echosistant.src/Echosistant_Media.png"
+            image: "https://github.com/BamaRayne/Echosistant/blob/master/smartapps/bamarayne/echosistant.src/Echosistant_Media.png"
 		}
     }
 }
