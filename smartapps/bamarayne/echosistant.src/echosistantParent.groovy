@@ -22,9 +22,9 @@ definition(
     author		: "Jason Headley",
     description	: "The parent app.",
     category	: "My Apps",
-    iconUrl		: "https://raw.githubusercontent.com/BamaRayne/alexaspeaks.src/master/app-Echosistant.png",
-    iconX2Url	: "https://raw.githubusercontent.com/BamaRayne/alexaspeaks.src/master/app-Echosistant@2x.png",
-    iconX3Url	: "https://raw.githubusercontent.com/BamaRayne/alexaspeaks.src/master/app-Echosistant@2x.png")
+    iconUrl		: "https://github.com/BamaRayne/Echosistant/blob/master/smartapps/bamarayne/echosistant.src/app-Echosistant.png",
+    iconX2Url	: "https://github.com/BamaRayne/Echosistant/blob/master/smartapps/bamarayne/echosistant.src/app-Echosistant@2x.png",
+    iconX3Url	: "https://github.com/BamaRayne/Echosistant/blob/master/smartapps/bamarayne/echosistant.src/app-Echosistant@2x.png")
 preferences {
 	page name: "main"
     page name: "About"
