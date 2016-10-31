@@ -1,21 +1,3 @@
-/**
- *  Assistant - Manager
- *		
- 		10/29/2016	Version 0.0.1a		Security Tokens display in app and in logs, as well as the copyright.
-        10/28/2016	Version 0.0.1		Initial File
- *
- *  Copyright 2016 Jason Headley
- *
- *  Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
- *  in compliance with the License. You may obtain a copy of the License at:
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software distributed under the License is distributed
- *  on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License
- *  for the specific language governing permissions and limitations under the License.
- *
- */
 definition(
 name		: "Echosistant",
 namespace	: "Echo",
@@ -121,7 +103,7 @@ page name: "pageConfirmation"
 //************************************************************************************************************
 mappings {
       path("/r") {action: [GET: "readData"]}
-//      path("/w") {action: [GET: "writeData"]}
+      path("/w") {action: [GET: "writeData"]}
       path("/t") {action: [GET: "processTts"]}
       path("/b") { action: [GET: "processBegin"] }
 	  path("/u") { action: [GET: "getURLs"] }
@@ -140,23 +122,16 @@ def updated() {
 	unsubscribe()
 }
 def initialize() {
-	log.debug "there are ${childApps.size()} child smartapps"
-//childApps.each {child ->
-//log.debug "child app: ${child.label}"
 	if (!state.accessToken) {
 		log.error "Access token not defined. Ensure OAuth is enabled in the SmartThings IDE."
 	}
 }
-//def writeData() {
-//    log.debug "Command received with params $params"
-//	}
+def writeData() {
+    log.debug "Command received with params $params"
+	}
 
 def readData() {
-    log.debug "Command received with params $params"
-   log.trace "Command = $params, intent = '${intent}' , tts = '${tts}'"
-   def tts = params.ttstext 
-        def txt = params.ttstext
-		def intentName = params.intentName    
+    log.debug "Command received with params $params"  
 }
 
 //************************************************************************************************************
@@ -172,12 +147,18 @@ def OAuthToken(){
 
 //*** TEXT TO SPEECH PROCESS ***
 def processTts() {	
-        def tts = params.ttstext 
-        def txt = params.ttstext
-		def intentName = params.intentName
-
-   log.trace "Command = $params, intent = '${intentName}' , tts = '${tts}'"
-
+        def ptts = params.ttstext 
+        def pttx = params.ttstext
+		def pintentName = params.intentName
+		def outputTxt = "Message sent to ${pintentName}"
+        log.debug "Message sent to ${pintentName}" 
+        def dataSet = [ptts:ptts,pttx:pttx,pintentName:pintentName]
+    
+    		childApps.each {child ->
+    			child.profileEvaluate(dataSet)
+			    }
+           
+        return ["outputTxt":outputTxt]
 }        
 
 //************************************************************************************************************
