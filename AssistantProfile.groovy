@@ -1,10 +1,26 @@
 /**
- *  Assistant Profile - PreRelease Alpha Testing
+ *  Echosistant Profile - PreRelease Alpha Testing
  *		
- *
- 		10/29/2016	Version 0.0.1		Initial File
+ *		10/26/2016	version 0.1.2b		Addition of SMS by @SBDOBRESCU.
+ *		10/26/2016  version 0.1.2a      Name change
+ *		10/26/2016	version 0.1.2		Added Icons by @SBDOBRESCU.
+ *		10/25/2016	version 0.1.1		Bug Fix in the Token Renew process
+ *  	10/25/2016  version 0.1.0		Alpha Testing of code complete.
+ *		10/23/2016	version 0.0.2		Restrictions operational (modes/days/hours), Sonos operational.		
+ *		10/23/2016	version 0.0.1i		Day restriction added, code clean up, UI changes
+ *		10/20/2016	version 0.0.1h		Mode restriction working
+ *  	10/18/2016	version 0.0.1g		Access Token Reset fixed. Multiple UI Changes.  **VERIFY YOUR PROFILES AFTER UPDATE**
+ *  	10/17/2016	version 0.0.1f		bug fixes. Sonos, media player, speech synthesizer working.  **SONOS STILLS NEEDS TESTING**
+ *		10/17/2016 	version 0.0.1e 		bug fixes.
+ *  	10/15-2016	version 0.0.1d		Added custom "Pre-messages", UI changes
+ * 		10/14/2016 	version 0.0.1c		Added Sonos support and OAuth tokens to logs for copy and paste
+ *		10/11/2016	version 0.0.1b		Fixed audio output for both media and synth
+ *		10/10/2016 	Version 0.0.1a		Added media player support
+ *		10/09/2016	Version 0.0.1		Initial File
  *
  /******************* ROADMAP ********************
+  - External TTS
+  - Icons
  *
  *
  *  Copyright 2016 Jason Headley
@@ -20,15 +36,15 @@
  *
  */
 definition(
-    name: "assistantProfile",
-    namespace: "sb",
-    author: "Jason Headley",
-    description: "assistant Profile DO NO intall this app directly.",
+    name: "echosistantProfile",
+    namespace: "Echo",
+    author: "JH",
+    description: "Echosistant Profile DO NO intall this app directly.",
     category: "My apps",
-    parent: "sb:Assistant",    
-    iconUrl: "https://raw.githubusercontent.com/BamaRayne/alexaspeaks.src/master/app-Echosistant.png",
-    iconX2Url: "https://raw.githubusercontent.com/BamaRayne/alexaspeaks.src/master/app-Echosistant@2x.png",
-    iconX3Url: "https://raw.githubusercontent.com/BamaRayne/alexaspeaks.src/master/app-Echosistant@2x.png")
+    parent: "Echo:Echosistant",    
+	iconUrl		: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/app-Echosistant.png",
+	iconX2Url	: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/app-Echosistant@2x.png",
+	iconX3Url	: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/app-Echosistant@2x.png")
 
 preferences {
     page name:"mainPage"
@@ -37,39 +53,49 @@ preferences {
         	page name: "pageAudioDevices"
     		page name: "pageSonos"
     	page name: "pageTextMessage"
-   		page name: "pageAlexa"
     	page name: "certainTime"
         page name: "pageRestrictions"
-    page name:"pageAbout"
-   		page name:"pageReset"
-   			page name:"pageConfirmation"
-    		page name:"pageTokens"
-        page name:"pageGlobalVariables"    	
+   	page name: "pageAbout"	
 }
 //************************************************************************************************************
 //Show main page
 def mainPage() {
-    dynamicPage(name: "mainPage", title:"                      ${textAppName()}", install: true, uninstall: false) {
-        section("") {
- 	href "pageConfiguration", title: "Configuration", description: "Tap here to configure installed application options (Pre-messages and restrictions)",
-  			 	image: "https://raw.githubusercontent.com/BamaRayne/alexaspeaks.src/master/Echosistant_Config.png"
-    href "pageAbout", title: "About ${textAppName()}", description: "Tap to get version, license information, Securty Tokens, and to remove the app",
-            	image: "https://raw.githubusercontent.com/BamaRayne/alexaspeaks.src/master/Echosistant_About.png"
-            }
-            section("                               Rename App"){
-        	label title:"              Rename App (Optional)", required:false, defaultValue: "${textAppName()}"    		
+    dynamicPage(name: "mainPage", title:"", install: true, uninstall: false) {
+    	section(""){
+        	label title:"Name Profile", required:true, defaultValue: "New Profile"    		
         }
+    	
+        section("") {
+			href "pageAudioDevices", title: "Media Devices", description: "Tap here to choose your playback devices", 
+            	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Media.png"
+ 			href "pageTextMessage", title: "Text Notification", description: "Tap here to set up text notifications messages", 
+            	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Text.png"
+ 			href "pageConfiguration", title: "Speech Notifications", description: "Tap here to set up tts message (Pre-messages and restrictions)",
+  			 	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Config.png"
+    		href "pageAbout", title: "About ${textAppName()}", description: "Tap to get details about Amazon Skill (invocation name), to remove the app and more...",
+            	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_About.png"
+        }
+	}
+}
+
+def pageAudioDevices(){
+    dynamicPage(name: "pageAudioDevices", title: "Media Devices", uninstall: false){
+     	section("Media Speakers (Sonos, wi-fi, music players...)", hideWhenEmpty: true){
+        	href "pageSonos", title: "Choose Media Speakers", description: none
+            }
+        section("Speech Synthesizer Devices (LanDroid, etc...)", hideWhenEmpty: true){
+        	input "synthDevice", "capability.speechSynthesis", title: "Choose Speech Synthesis Devices", multiple: true, required: false, submitOnChange: true
+        	if (synthDevice) input "synthVolume", "number", title: "Speaker Volume", description: "0-100%", required: false
+         }
 	}
 }
 def pageConfiguration(){
 	dynamicPage(name: "pageConfiguration", uninstall: false) {
     	section (""){ 
         href "pageSpeech", title: "Speech Notifications", description: "Tap here configure Speech Notifications", 
-            	image: "https://raw.githubusercontent.com/BamaRayne/alexaspeaks.src/master/Echosistant_Text.png"
- 		href "pageTextMessage", title: "Text Notifications", description: "Tap here to configure Text Notifications", 
-            	image: "https://raw.githubusercontent.com/BamaRayne/alexaspeaks.src/master/Echosistant_Text.png"
+            	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Media.png"
 		href "pageRestrictions", title: "Restrictions", description: "Tap here to configure Restrictions", 
-            	image: "https://raw.githubusercontent.com/BamaRayne/alexaspeaks.src/master/Echosistant_Text.png"
+            	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_About.png"
 		}
     }
 }  
@@ -85,7 +111,7 @@ def pageSpeech(){
       	    } 
         section("Audio Playback Devices", hideWhenEmpty: true){
         	href "pageAudioDevices", title: "Choose Playback Devices", description: none
-            image: "https://raw.githubusercontent.com/BamaRayne/alexaspeaks.src/master/Echosistant_Media.png"
+            image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Media.png"
 		}
     }
 }
@@ -126,17 +152,7 @@ def pageRestrictions(){
         }   
 	}
 }
-def pageAudioDevices(){
-    dynamicPage(name: "pageAudioDevices", title: "Media Devices", uninstall: false){
-     	section("Media Speakers (Sonos, wi-fi, music players...)", hideWhenEmpty: true){
-        	href "pageSonos", title: "Choose Media Speakers", description: none
-            }
-        section("Speech Synthesizer Devices (LanDroid, etc...)", hideWhenEmpty: true){
-        	input "synthDevice", "capability.speechSynthesis", title: "Choose Speech Synthesis Devices", multiple: true, required: false, submitOnChange: true
-        	if (synthDevice) input "synthVolume", "number", title: "Speaker Volume", description: "0-100%", required: false
-         }
-	}
-}
+
 def pageSonos(){
     dynamicPage(name: "pageSonos", uninstall: false){
     	section{ paragraph "Configure Media Speakers (Sonos Compatible" }
@@ -150,64 +166,23 @@ def pageSonos(){
 def pageAbout(){
 	dynamicPage(name: "pageAbout", uninstall: true) {
         section {
-
-        	paragraph "${textAppName()}\n${textVersion()}\n${textCopyright()}",image: "https://raw.githubusercontent.com/BamaRayne/alexaspeaks.src/master/app-Echosistant.png"	//    if (!state.accessToken) OAuthToken()
-            def msg = state.accessToken != null ? state.accessToken : "Could not create Access Token. OAuth may not be enabled. Go to the SmartApp IDE settings to enable OAuth."
-            paragraph "Access token:\n${msg}\n\nApplication ID:\n${app.id}"
+        	paragraph "${textAppName()}\n${textVersion()}",
+            image: "https://raw.githubusercontent.com/BamaRayne/alexaspeaks.src/master/app-Echosistant.png"
  		}
-    	section ("Access Token / Application ID"){
-        	href "pageTokens", title: "Show Access Token and Application ID.  Renew/Reset Token", description: none
-      	}
-        section ("Apache License"){
-        	input "ShowLicense", "bool", title: "Show License", default: false, submitOnChange: true
-            def msg = textLicense()
-            if (ShowLicense) paragraph "${msg}"
-     	}
-    	section("Instructions") { paragraph ("For detailed installation and how-to instruction, follow the link below") 
+    	section("Instructions") { 
+        	paragraph ("For detailed installation and how-to instruction, follow the link below") 
         }
+        section("Setup Data for Alexa Skills Kit"){
+        	paragraph "Add here code to insert in the Interaction Model "+
+            "Copy and paste the displayed content into your new Alexa Skills Kit."+
+            "Intent Schema Code:"+
+            "Sample Utterances Code"
+		}
         section("Tap below to remove the ${textAppName()} application"){}
 	}
 }
-def pageTokens(){
-dynamicPage(name: "pageTokens", title: "Security Tokens", uninstall: false){
-		section{
-        paragraph "The Access Token and App ID are now displayed in your Live Logging tab of the IDE website."
-        }
-        section("Setup Data for Developer Site"){
-        	paragraph "Tap below to Reset/Renew the Security Token.  You must log in to the IDE and open the Live Logs tab before tapping here. "+
-            "Copy and paste the displayed tokens into your Amazon Lambda Code."
-			if (!state.accessToken) OAuthToken()
-            if (!state.accessToken) paragraph "**You must enable OAuth via the IDE to setup this app**"
-			}
-            def msg = state.accessToken != null ? state.accessToken : "Could not create Access Token. OAuth may not be enabled. Go to the SmartApp IDE settings to enable OAuth."              	
-    		log.trace "STappID = '${app.id}' , STtoken = '${state.accessToken}'"
-    	section ("Reset Access Token / Application ID"){
-        	href "pageConfirmation", title: "Reset Access Token and Application ID", description: none
-      	}
-    }
-}    
-def pageReset(){
-	dynamicPage(name: "pageReset", title: "Access Token Reset", uninstall: false){
-        section{
-           	revokeAccessToken()
-            state.accessToken = null
-            OAuthToken()
-            def msg = state.accessToken != null ? "New access token:\n${state.accessToken}\n\nClick 'Done' above to return to the previous menu." : "Could not reset Access Token. OAuth may not be enabled. Go to the SmartApp IDE settings to enable OAuth."
-	    	paragraph "${msg}"
-      	}
-        section(" "){ href "mainPage", title: "Tap Here To Go Back To Main Menu", description: none }
-	}
-}
-def pageConfirmation(){
-	dynamicPage(name: "pageConfirmation", title: "Reset/Renew Access Token Confirmation", uninstall: false){
-        section {
-			href "pageReset", title: "Reset/Renew Access Token", description: "Tap here to confirm action - READ WARNING BELOW"
-			paragraph "PLEASE CONFIRM! By resetting the access token you will disable the ability to interface this SmartApp with your Amazon Echo. You will need to copy the new access token to your Amazon Lambda code to re-enable access." +
-                "Tap below to go back to the main menu with out resetting the token. You may also tap Done above."
-        }
-        section(" "){ href "mainPage", title: "Cancel And Go Back To Main Menu", description: none }
-	}
-}
+    
+    
 def certainTime() {
 	dynamicPage(name:"certainTime",title: "Only during a certain time", uninstall: false) {
 		section() {
@@ -228,31 +203,18 @@ def certainTime() {
 		}
 	}
 }
-//************************************************************************************************************
-mappings {
-      path("/r") {action: [GET: "readData"]}
-      path("/w") {action: [GET: "writeData"]}
-      path("/t") {action: [GET: "processTts"]}
-      path("/b") { action: [GET: "processBegin"] }
-	  path("/u") { action: [GET: "getURLs"] }
-	  path("/setup") { action: [GET: "setupData"] }}
-      path("/g") { action: [GET: "data"]}
-//************************************************************************************************************
+
 def installed() {
 log.debug "Installed with settings: ${settings}"
-//log.trace "STappID = '${app.id}' , STtoken = '${state.accessToken}'"
 initialize()
 }
 def updated() {
 log.debug "Updated with settings: ${settings}"
-log.trace "STappID = '${app.id}' , STtoken = '${state.accessToken}'"
 initialize()
 unsubscribe()
 }
 def initialize() {
-	if (!state.accessToken) {
-		log.error "Access token not defined. Ensure OAuth is enabled in the SmartThings IDE."
-	}
+
 }    
 def subscribeToEvents() {
 	if (runModes) {
@@ -267,23 +229,7 @@ def unsubscribeToEvents() {
     	unsubscribe(location, modeChangeHandler)
     }
 }    
-def writeData() {
-    log.debug "Command received with params $params"
-	}
-def readData() {
-    log.debug "Command received with params $params"
-}
-//Handlers
-//************************************************************************************************************
-def OAuthToken(){
-	try {
-		createAccessToken()
-		log.debug "Creating new Access Token"
-	} catch (e) {
-		log.error "Access Token not defined. OAuth may not be enabled. Go to the SmartApp IDE settings to enable OAuth."
-	}
-}
-//************************************************************************************************************
+
 //*** TEXT TO SPEECH PROCESSING ***
 def processTts() {
         def tts = params.ttstext 
@@ -402,25 +348,8 @@ private void sendtxt(message) {
 //************************************************************************************************************
 //Version/Copyright/Information/Help
 private def textAppName() {
-	def text = "Assistant"
+	def text = "This Profile"
 }	
 private def textVersion() {
     def text = "Version 0.1.0 	(10/25/2016)"
-}
-private def textCopyright() {
-    def text = "Copyright © 2016 Jason Headley"
-}
-private def textLicense() {
-	def text =
-		"Licensed under the Apache License, Version 2.0 (the 'License'); "+
-		"you may not use this file except in compliance with the License. "+
-		"You may obtain a copy of the License at"+
-		"\n\n"+
-		"    http://www.apache.org/licenses/LICENSE-2.0"+
-		"\n\n"+
-		"Unless required by applicable law or agreed to in writing, software "+
-		"distributed under the License is distributed on an 'AS IS' BASIS, "+
-		"WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. "+
-		"See the License for the specific language governing permissions and "+
-		"limitations under the License."
 }
