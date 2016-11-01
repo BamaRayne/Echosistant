@@ -37,7 +37,7 @@
         var ttsintentname = event.request.intent.slots.ttstext.name.value;
         var speechText;
         var outputTxt;
-            if (intentName == "Repeat") {
+            if (intentName) {
                 url += 't?ttstext=' + ttstext + '&intentName=' + intentName;
                 process = true;
             } 
@@ -69,19 +69,4 @@
                     shouldEndSession: true
                     };
                     context.succeed( { response: response } );
-                    } 
-                    function output( text, context ) {
-                    var response = {
-                    outputSpeech: {
-                    type: "PlainText",
-             text: text
-          },
-          card: {
-             type: "Simple",
-             title: "Alexa Speaks Smartapp",
-             content: text
-          },
-         shouldEndSession: true
-         };
-         context.succeed( { response: response } );
-        } 
+                    }
