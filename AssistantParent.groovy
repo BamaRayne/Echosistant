@@ -1,8 +1,32 @@
+/**
+ *  Echosistant - The Ultimate Voice Assistant. 
+
+	11/1/2016 - Initial Release
+
+ *
+ /******************* ROADMAP ********************
+  - External TTS
+  - Icons
+ *
+ *
+ *  Copyright 2016 Jason Headley
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+ *  in compliance with the License. You may obtain a copy of the License at:
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software distributed under the License is distributed
+ *  on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License
+ *  for the specific language governing permissions and limitations under the License.
+ *
+ */
+
 definition(
 name		: "Echosistant",
 namespace	: "Echo",
 author		: "JH",
-description	: "The Ultimate Voice Assistant.",
+description	: "The Ultimate Voice Assistant using Alexa Voice Services.",
 category	: "My Apps",
 iconUrl		: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/app-Echosistant.png",
 iconX2Url	: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/app-Echosistant@2x.png",
@@ -168,7 +192,7 @@ private def textAppName() {
 	def text = "Echosistant"
 }	
 private def textVersion() {
-	def text = "Version 1.0.0 (10/29/2016)"
+	def text = "Version 1.0.0 (11/01/2016)"
 }
 private def textCopyright() {
 	def text = "Copyright © 2016 Jason Headley"
@@ -190,5 +214,5 @@ private def textLicense() {
 
 private def textHelp() {
 	def text =
-		"This smartapp allows you to speak freely to your Alexa device and have it repeated back on a remote playback device"h
+		"This smartapp allows you to use an Alexa device to generate a voice or text message on on a different device"h
 }
