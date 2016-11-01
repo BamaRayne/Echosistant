@@ -26,7 +26,7 @@ definition(
 name		: "Echosistant",
 namespace	: "Echo",
 author		: "JH",
-description	: "The Ultimate Voice Assistant.",
+description	: "The ultimate short voice or text messaging assistant using an Alexa enabled device",
 category	: "My Apps",
 iconUrl		: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/app-Echosistant.png",
 iconX2Url	: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/app-Echosistant@2x.png",
@@ -40,7 +40,7 @@ preferences {
         section {        
           	app(name: "Profiles", appName: "echosistantProfile", namespace: "Echo", multiple: true, description: "                  Create New Profile..." )
 			}
-        section ("Tap below to remove the ${textAppName()} application"){}          	
+        //section ("Tap below to remove the ${textAppName()} application"){}          	
             }
 	}
 page name: "about"
