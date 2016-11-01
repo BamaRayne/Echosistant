@@ -1,3 +1,27 @@
+/**
+ *  Echosistant - The Ultimate Voice Assistant. 
+
+	11/1/2016 - Initial Release
+
+ *
+ /******************* ROADMAP ********************
+  - External TTS
+  - Icons
+ *
+ *
+ *  Copyright 2016 Jason Headley
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+ *  in compliance with the License. You may obtain a copy of the License at:
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software distributed under the License is distributed
+ *  on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License
+ *  for the specific language governing permissions and limitations under the License.
+ *
+ */
+
 definition(
 name		: "Echosistant",
 namespace	: "Echo",
@@ -175,6 +199,6 @@ private def textLicense() {
 }
 private def textHelp() {
 	def text =
-		"This smartapp allows you to speak freely to your Alexa device and have it repeated back on a remote playback device"
+		"This smartapp allows you to use an Alexa device to generate a voice or text message on on a different device"
         "See our Wikilinks page for user information!"
 }
