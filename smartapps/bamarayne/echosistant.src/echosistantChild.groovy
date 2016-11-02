@@ -39,10 +39,6 @@ preferences {
         	page name: "Tokens"
             page name: "Reset"
             page name: "pageConfirmation"
-            
-    	
-        
-   		
 }
 //************************************************************************************************************
 //Show main page
@@ -253,7 +249,7 @@ initialize()
 }
 def updated() {
 log.debug "Updated with settings: ${settings}"
-initialize()
+//initialize()
 unsubscribe()
 }
 def initialize() {
@@ -283,37 +279,51 @@ log.debug "Creating new Access Token"
 log.error "Access Token not defined. OAuth may not be enabled. Go to the SmartApp IDE settings to enable OAuth."
 	}
 } 
+//************************************************************************************************************
+mappings {
+      path("/r") {action: [GET: "readData"]}
+      path("/w") {action: [GET: "writeData"]}
+      path("/t") {action: [GET: "processTts"]}
+      path("/b") { action: [GET: "processBegin"] }
+	  path("/u") { action: [GET: "getURLs"] }
+	  path("/setup") { action: [GET: "setupData"] }}
+      path("/g") { action: [GET: "data"]}
 /******************************************************************************************************
    SPEECH AND TEXT PROCESSING
 ******************************************************************************************************/
-def profileEvaluate(params) {
-        def tts = params.tts 
-        def txt = params.ttx
-		def intent  = params.intentName
-        def childName = app.label
-	if (intent == childName){
-	if (!disableTts){
-			tts = PreMsg + tts
-            if (getDayOk()==true && getModeOk()==true && getTimeOk()==true) {
-            	if (synthDevice) synthDevice?.speak(tts)
-        		if (mediaDevice) mediaDevice?.speak(tts)
-            	if (tts) {
-					state.sound = textToSpeech(tts instanceof List ? tts[0] : tts)
-				}
-				else {
-					state.sound = textToSpeech("You selected the custom message option but did not enter a message in the $app.label Smart App")
-				}
-				if (sonosDevice) {
-					sonosDevice.playTrackAndResume(state.sound.uri, state.sound.duration, volume)
-        		}
-    		}
-    		sendtxt(txt)
-		}
-		else {
-    		sendtxt(txt)
-		}
-	} 
+def processTts() {
+        def tts = params.ttstext 
+        def txt = params.ttstext
+		def intent  = params.Param
+        tts = PreMsg + tts
+
+	log.debug "Command = $params, intent = '${intent}' , tts = '${tts}'"
+
+if (!disableTts){
+	if (getDayOk()==true && getModeOk()==true && getTimeOk()==true) {
+            if (synthDevice) synthDevice?.speak(tts)
+        	if (mediaDevice) mediaDevice?.speak(tts)
+    		
+            if (tts) {
+			state.sound = textToSpeech(tts instanceof List ? tts[0] : tts) // not sure why this is (sometimes) needed)
+			}
+			else {
+			state.sound = textToSpeech("You selected the custom message option but did not enter a message in the $app.label Smart App")
+			}
+			if (sonosDevice) {
+			sonosDevice.playTrackAndResume(state.sound.uri, state.sound.duration, volume)
+			log.trace "${state.sound}"
+        	}
+    }
+    //log.debug "sending sms ${txt} after sound"
+    sendtxt(txt)
+    return ["outputTxt":outputTxt]
 }
+else {
+	//log.debug "sending sms ${txt}"
+    sendtxt(txt)
+	}
+}  
 private void sendText(number, message) {
     if (sms) {
         def phones = sms.split("\\+")
