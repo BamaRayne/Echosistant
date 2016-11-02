@@ -1,10 +1,5 @@
 /**
- *  Echosistant Profile - PreRelease Alpha Testing
- *		
- *
- 		10/29/2016	Version 0.0.1		Initial File
- *
- /******************* ROADMAP ********************
+ *  Echosistant Profile 
  *
  *
  *  Copyright 2016 Jason Headley
@@ -21,69 +16,175 @@
  */
 definition(
     name: "echosistantProfile",
-    namespace: "sb",
-    author: "Jason Headley",
+    namespace: "Echo",
+    author: "JH",
     description: "Echosistant Profile DO NO intall this app directly.",
     category: "My apps",
-    parent: "sb:Echosistant",    
-    iconUrl: "https://github.com/BamaRayne/Echosistant/blob/master/smartapps/bamarayne/echosistant.src/app-Echosistant.png",
-    iconX2Url: "https://github.com/BamaRayne/Echosistant/blob/master/smartapps/bamarayne/echosistant.src/app-Echosistant@2x.png",
-    iconX3Url: "https://github.com/BamaRayne/Echosistant/blob/master/smartapps/bamarayne/echosistant.src/app-Echosistant@2x.png")
+    parent: "Echo:Echosistant",    
+	iconUrl		: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/app-Echosistant.png",
+	iconX2Url	: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/app-Echosistant@2x.png",
+	iconX3Url	: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/app-Echosistant@2x.png")
 
 preferences {
     page name:"mainPage"
-    page name:"pageConfiguration"
-    	page name: "pageSpeech"
-        	page name: "pageAudioDevices"
-    		page name: "pageSonos"
-    	page name: "pageTextMessage"
-   		page name: "pageAlexa"
-    	page name: "certainTime"
-        page name: "pageRestrictions"
+    	page name:"configuration"
+    		page name: "notifications"
+        		page name: "speech"
+    			page name: "textMessage"
+        		page name: "audioDevices"
+    				page name: "sonos"
+        	page name: "restrictions"
+    			page name: "certainTime"
+    	page name: "about"
+        	page name: "Tokens"
+            page name: "Reset"
+            page name: "pageConfirmation"
+            
+    	
+        
+   		
 }
 //************************************************************************************************************
 //Show main page
 def mainPage() {
-    dynamicPage(name: "mainPage", title:"                      ${textAppName()}", install: true, uninstall: false) {
+    dynamicPage(name: "mainPage", title:"                      ${textAppName()}", install: true, uninstall: true) {
         section("") {
- 	href "pageConfiguration", title: "Configuration", description:"Tap here to configure the child application options (Playback devices, Pre-messages, Texting, and restrictions)",
-  			 	image: "https://github.com/BamaRayne/Echosistant/blob/master/smartapps/bamarayne/echosistant.src/Echosistant_Config.png"
+ 	href "configuration", title: "Profile Configuration", description: "Tap here to configure installed application options (Pre-messages and restrictions)",
+  			 	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Config.png"
+    href "about", title: "About ${textAppName()}", description: "Tap to get version, license information, Securty Tokens, and to remove the app",
+            	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_About.png"
             }
-            section("                               Profile Name"){
-        	label title: "", required:false, defaultValue: "${textAppName()}"    		
+            section("                               Rename Profile"){
+        	label title:"              Rename Profile ", required:true, defaultValue: "${textAppName()}"    		
         }
 	}
 }
-def pageConfiguration(){
-	dynamicPage(name: "pageConfiguration", uninstall: false) {
-    	section (""){ 
-        href "pageSpeech", title: "Speech Notifications", description: "Tap here configure Speech Notifications", 
-            	image: "https://github.com/BamaRayne/Echosistant/blob/master/smartapps/bamarayne/echosistant.src/Echosistant_Text.png"
- 		href "pageTextMessage", title: "Text Notifications", description: "Tap here to configure Text Notifications", 
-            	image: "https://github.com/BamaRayne/Echosistant/blob/master/smartapps/bamarayne/echosistant.src/Echosistant_Text.png"
-		href "pageRestrictions", title: "Restrictions", description: "Tap here to configure Restrictions", 
-            	image: "https://github.com/BamaRayne/Echosistant/blob/master/smartapps/bamarayne/echosistant.src/Echosistant_Text.png"
+def configuration() {
+	dynamicPage(name: "configuration", uninstall: false) {
+    	section (""){
+        href "notifications", title: "Message Notifications", description: "Tap here configure Audio/Text Notifications", 
+            	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Media.png"
+        href "restrictions", title: "Profile Restrictions", description: "Tap here to configure this Profiles Restrictions", 
+            	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_About.png"
 		}
+	}
+}    
+page name: "about"
+	def about(){
+		dynamicPage(name: "about", uninstall: true) {
+           section ("Security Tokens - FOR CHILD APP ONLY"){
+            	paragraph ("Log into the IDE on your computer and navigate to the Live Logs tab. Leave that window open, come back here, and open this section")
+                input "ShowTokens", "bool", title: "Show Security Tokens", default: false, submitOnChange: true
+                if (ShowTokens) paragraph "The Security Tokens are now displayed in the Live Logs section of the IDE"
+            	def msg = state.accessToken != null ? state.accessToken : "Could not create Access Token. OAuth may not be enabled. "+
+				"Go to the SmartApp IDE settings to enable OAuth."	
+                if (ShowTokens) log.info "STappID = '${app.id}' , STtoken = '${state.accessToken}'"
+                if (ShowTokens) paragraph "Access token:\n${msg}\n\nApplication ID:\n${app.id}"
+			}
+			section ("Revoke/Renew Access Token & Application ID"){
+				href "Tokens", title: "Revoke/Reset Security Access Token", description: none
+			}
+			section ("Apache License"){
+				input "ShowLicense", "bool", title: "Show License", default: false, submitOnChange: true
+				def msg = textLicense()
+					if (ShowLicense) paragraph "${msg}"
+			}
+			section("SmartApp Instructions") { paragraph ("For detailed installation and how-to instruction, follow the link below") 
+			}
+			section("Tap below to remove the ${textAppName()} application.  This will remove this Profile only from the SmartThings mobile App."){}
+		}
+}      
+page name: "Tokens"
+	def Tokens(){
+		dynamicPage(name: "Tokens", title: "Security Tokens", uninstall: false){
+			section(""){
+				paragraph "Tap below to Reset/Renew the Security Token. You must log in to the IDE and open the Live Logs tab before tapping here. "+
+				"Copy and paste the displayed tokens into your Amazon Lambda Code."
+				if (!state.accessToken) {
+                	OAuthToken()
+					paragraph "You must enable OAuth via the IDE to setup this app"
+				}
+            }
+					def msg = state.accessToken != null ? state.accessToken : "Could not create Access Token. "+
+    				"OAuth may not be enabled. Go to the SmartApp IDE settings to enable OAuth." 
+					log.trace "STappID = '${app.id}' , STtoken = '${state.accessToken}'"
+			section ("Reset Access Token / Application ID"){
+				href "pageConfirmation", title: "Reset Access Token and Application ID", description: none
+		}
+	}
+} 
+page name: "pageConfirmation"
+	def pageConfirmation(){
+		dynamicPage(name: "pageConfirmation", title: "Reset/Renew Access Token Confirmation", uninstall: false){
+			section {
+				href "pageReset", title: "Reset/Renew Access Token", description: "Tap here to confirm action - READ WARNING BELOW"
+				paragraph "PLEASE CONFIRM! By resetting the access token you will disable the ability to interface this SmartApp with your Amazon Echo."+
+            	"You will need to copy the new access token to your Amazon Lambda code to re-enable access." +
+				"Tap below to go back to the main menu with out resetting the token. You may also tap Done above."
+			}
+			section(" "){
+        		href "mainPage", title: "Cancel And Go Back To Main Menu", description: none 
+       	}
+	}
+}
+page name: "pageReset"
+	def pageReset(){
+		dynamicPage(name: "pageReset", title: "Access Token Reset", uninstall: false){
+			section{
+				revokeAccessToken()
+				state.accessToken = null
+				OAuthToken()
+				def msg = state.accessToken != null ? "New access token:\n${state.accessToken}\n\n" : "Could not reset Access Token."+
+            	"OAuth may not be enabled. Go to the SmartApp IDE settings to enable OAuth."
+				paragraph "${msg}"
+                paragraph "The new access token and app ID are now displayed in the Live Logs tab of the IDE."
+                log.info "STappID = '${app.id}' , STtoken = '${state.accessToken}'"
+			}
+			section(" "){ 
+        		href "mainPage", title: "Tap Here To Go Back To Main Menu", description: none 
+        }
+	}
+} 
+def notifications() {
+	dynamicPage(name: "notifications", uninstall: false) {
+      	section (""){       
+    		href "speech", title: "Audio Notifications", description: "Tap here configure Audio/Text Notifications", 
+            	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Media.png"
+			href "textMessage", title: "Text Notification", description: "Tap here to set up text notifications messages", 
+            	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Text.png"
+			href "audioDevices", title: "Audio Playback Devices", description: "Tap here to choose your playback devices", 
+            	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Media.png"
+			}
+		}        
     }
-}  
-def pageSpeech(){
-    dynamicPage(name: "pageSpeech", title: "Speech Notifications", uninstall: false){
+def restrictions(){
+    dynamicPage(name: "restrictions", title: "Configure Restrictions", uninstall: false){
+     	section ("Mode Restrictions") {
+			input "modes", "mode", title: "Only when mode is", multiple: true, required: false, submitOnChange: true
+	        }        
+        section ("Days - Audio only on these days"){	
+            input "runDay", title: "Only on certain days of the week", multiple: true, required: false, submitOnChange: true,
+                "enum", options: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+			}
+        section ("Time - Audio only during these times"){
+            href "certainTime", title: "Only during a certain time", description: timeLabel ?: "Tap to set", state: timeLabel ? "complete" : null
+        }   
+	}
+}	
+def speech(){
+    dynamicPage(name: "speech", title: "Configure Speech Notifications", uninstall: false){
 		section (""){ 
-    	input "ShowPreMsg", "bool", title: "Configure TTS Pre-Message", default: false, submitOnChange: true
+    	input "ShowPreMsg", "bool", title: "Enable TTS Pre-Message", default: false, submitOnChange: true
         	if (ShowPreMsg) input "PreMsg", "text", title: "Pre-Message Notification", required: true, defaultValue: "Attention.  Attention Please "
             }
         section ( "" ){
-        input "feedBack", "bool", title: "Configure Alexa Response", default: false, submitOnChange: true
+        input "feedBack", "bool", title: "Enable Custom Alexa Response", default: false, submitOnChange: true
         	if (feedBack) input "outputTxt", "text", title: "Alexa Response", defaultValue: "Message Sent", required: false
       	    } 
-        section("Audio Playback Devices", hideWhenEmpty: true){
-        	href "pageAudioDevices", title: "Choose Playback Devices", description: none, 
-            image: "https://github.com/BamaRayne/Echosistant/blob/master/smartapps/bamarayne/echosistant.src/Echosistant_Media.png"
-		}
     }
 }
-def pageTextMessage(){
-	dynamicPage(name: "pageTextMessage", uninstall: false) {
+def textMessage(){
+	dynamicPage(name: "textMessage", uninstall: false) {
     	section (""){ 
     	input "sendContactText", "bool", title: "Enable Text Notifications to Contact Book (if available)", required: true, submitOnChange: true
         	if (sendContactText) input "recipients", "contact", title: "Send text notifications to (optional)", multiple: true, required: false
@@ -98,31 +199,17 @@ def pageTextMessage(){
 			}
 		 section ( "" ){            
           if (sendContactText || sendText) {         
-			paragraph "By default Echosistant will deliver both voice and text messages to selected devices and contacts(s). Enable text ONLY by using the toggle below."
-    		input "disableTts", "bool", title: "Disable spoken notification (only send text message to selected contact(s)", defaultValue: false, required: true, submitOnChange: false  
+			paragraph "By default Echosistant will deliver both voice and text messages to selected devices and contacts(s). Enable text ONLY using toggle below"
+    		input "disableTts", "bool", title: "Disable spoken notification (only send text message to selected contact(s)", required: true, submitOnChange: true  
             	}            
 			}
         
         }  
   }
-def pageRestrictions(){
-    dynamicPage(name: "pageRestrictions", title: "Configure Restrictions", uninstall: false){
-     	section ("Mode Restrictions") {
-			input "modes", "mode", title: "Only when mode is", multiple: true, required: false, submitOnChange: true
-	        }        
-        section ("Days - Audio only on these days"){	
-            input "runDay", title: "Only on certain days of the week", multiple: true, required: false, submitOnChange: true,
-                "enum", options: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
-			}
-        section ("Time - Audio only during these times"){
-            href "certainTime", title: "Only during a certain time", description: timeLabel ?: "Tap to set", state: timeLabel ? "complete" : null
-        }   
-	}
-}
-def pageAudioDevices(){
-    dynamicPage(name: "pageAudioDevices", title: "Media Devices", uninstall: false){
+def audioDevices(){
+    dynamicPage(name: "audioDevices", title: "Media Devices", uninstall: false){
      	section("Media Speakers (Sonos, wi-fi, music players...)", hideWhenEmpty: true){
-        	href "pageSonos", title: "Choose Media Speakers", description: none
+        	href "sonos", title: "Choose Media Speakers", description: none
             }
         section("Speech Synthesizer Devices (LanDroid, etc...)", hideWhenEmpty: true){
         	input "synthDevice", "capability.speechSynthesis", title: "Choose Speech Synthesis Devices", multiple: true, required: false, submitOnChange: true
@@ -130,8 +217,8 @@ def pageAudioDevices(){
          }
 	}
 }
-def pageSonos(){
-    dynamicPage(name: "pageSonos", uninstall: false){
+def sonos(){
+    dynamicPage(name: "sonos", uninstall: false){
     	section{ paragraph "Configure Media Speakers (Sonos Compatible" }
          section (" "){
         	input "sonosDevice", "capability.musicPlayer", title: "On this Media Speaker", required: false, multiple: true, submitOnChange: true
@@ -160,31 +247,17 @@ def certainTime() {
 		}
 	}
 }
-//************************************************************************************************************
-mappings {
-      path("/r") {action: [GET: "readData"]}
-      path("/w") {action: [GET: "writeData"]}
-      path("/t") {action: [GET: "processTts"]}
-      path("/b") { action: [GET: "processBegin"] }
-	  path("/u") { action: [GET: "getURLs"] }
-	  path("/setup") { action: [GET: "setupData"] }}
-      path("/g") { action: [GET: "data"]}
-//************************************************************************************************************
 def installed() {
 log.debug "Installed with settings: ${settings}"
-//log.trace "STappID = '${app.id}' , STtoken = '${state.accessToken}'"
 initialize()
 }
 def updated() {
 log.debug "Updated with settings: ${settings}"
-log.trace "STappID = '${app.id}' , STtoken = '${state.accessToken}'"
 initialize()
 unsubscribe()
 }
 def initialize() {
-	if (!state.accessToken) {
-		log.error "Access token not defined. Ensure OAuth is enabled in the SmartThings IDE."
-	}
+	profileEvaluate(parent.processTts())
 }    
 def subscribeToEvents() {
 	if (runModes) {
@@ -198,62 +271,75 @@ def unsubscribeToEvents() {
 	if (triggerModes) {
     	unsubscribe(location, modeChangeHandler)
     }
-}    
-def writeData() {
-    log.debug "Command received with params $params"
-	}
-def readData() {
-    log.debug "Command received with params $params"
-}
-//Handlers
-//************************************************************************************************************
+} 
+/*************************************************************************************************************
+CREATE INITIAL TOKEN
+*************************************************************************************************************/
 def OAuthToken(){
-	try {
-		createAccessToken()
-		log.debug "Creating new Access Token"
-	} catch (e) {
-		log.error "Access Token not defined. OAuth may not be enabled. Go to the SmartApp IDE settings to enable OAuth."
+try {
+createAccessToken()
+log.debug "Creating new Access Token"
+} catch (e) {
+log.error "Access Token not defined. OAuth may not be enabled. Go to the SmartApp IDE settings to enable OAuth."
 	}
+} 
+/******************************************************************************************************
+   SPEECH AND TEXT PROCESSING
+******************************************************************************************************/
+def profileEvaluate(params) {
+        def tts = params.tts 
+        def txt = params.ttx
+		def intent  = params.intentName
+        def childName = app.label
+	if (intent == childName){
+	if (!disableTts){
+			tts = PreMsg + tts
+            if (getDayOk()==true && getModeOk()==true && getTimeOk()==true) {
+            	if (synthDevice) synthDevice?.speak(tts)
+        		if (mediaDevice) mediaDevice?.speak(tts)
+            	if (tts) {
+					state.sound = textToSpeech(tts instanceof List ? tts[0] : tts)
+				}
+				else {
+					state.sound = textToSpeech("You selected the custom message option but did not enter a message in the $app.label Smart App")
+				}
+				if (sonosDevice) {
+					sonosDevice.playTrackAndResume(state.sound.uri, state.sound.duration, volume)
+        		}
+    		}
+    		sendtxt(txt)
+		}
+		else {
+    		sendtxt(txt)
+		}
+	} 
 }
-//************************************************************************************************************
-//*** TEXT TO SPEECH PROCESSING ***
-def processTts() {
-        def tts = params.ttstext 
-        def txt = params.ttstext
-		def intent  = params.Param
-        tts = PreMsg + tts
-
-	log.debug "Command = $params, intent = '${intent}' , tts = '${tts}'"
-
-if (!disableTts){
-	if (getDayOk()==true && getModeOk()==true && getTimeOk()==true) {
-            if (synthDevice) synthDevice?.speak(tts)
-        	if (mediaDevice) mediaDevice?.speak(tts)
-    		
-            if (tts) {
-			state.sound = textToSpeech(tts instanceof List ? tts[0] : tts) // not sure why this is (sometimes) needed)
-			}
-			else {
-			state.sound = textToSpeech("You selected the custom message option but did not enter a message in the $app.label Smart App")
-			}
-			if (sonosDevice) {
-			sonosDevice.playTrackAndResume(state.sound.uri, state.sound.duration, volume)
-			log.trace "${state.sound}"
-        	}
+private void sendText(number, message) {
+    if (sms) {
+        def phones = sms.split("\\+")
+        for (phone in phones) {
+            sendSms(phone, message)
+        }
     }
-    //log.debug "sending sms ${txt} after sound"
-    sendtxt(txt)
-    return ["outputTxt":outputTxt]
 }
-else {
-	//log.debug "sending sms ${txt}"
-    sendtxt(txt)
-	}
-}   
-private def textHelp() {
-	def text =
-		"This smartapp allows you to speak freely to your Alexa device and have it repeated back on a remote playback device"h
-}
+private void sendtxt(message) {
+    log.debug message
+    if (sendContactText) { 
+    //if (location.contactBookEnabled) {
+        sendNotificationToContacts(message, recipients)
+    } //else {
+    	if (push) {
+            sendPush message
+        } else {
+            sendNotificationEvent(message)
+        }
+        if (sms) {
+            sendText(sms, message)
+        }
+    }
+/***********************************************************************************************************************
+    RESTRICTIONS HANDLER
+***********************************************************************************************************************/
 private getModeOk() {
     def result = !modes || modes?.contains(location.mode)
 	result
@@ -307,52 +393,30 @@ private timeIntervalLabel() {
 	else if (starting && endingX == "Sunset") result = hhmm(starting) + " to Sunset" + offset(endSunsetOffset)
 	else if (starting && ending) result = hhmm(starting) + " to " + hhmm(ending, "h:mm a z")
 }
-private void sendText(number, message) {
-    if (sms) {
-        def phones = sms.split("\\+")
-        for (phone in phones) {
-            sendSms(phone, message)
-        }
-    }
-}
-private void sendtxt(message) {
-    log.debug message
-    if (sendContactText) { 
-    //if (location.contactBookEnabled) {
-        sendNotificationToContacts(message, recipients)
-    } //else {
-    	if (push) {
-            sendPush message
-        } else {
-            sendNotificationEvent(message)
-        }
-        if (sms) {
-            sendText(sms, message)
-        }
-    }
-//}
-//************************************************************************************************************
-//Version/Copyright/Information/Help
+/************************************************************************************************************
+  Version/Copyright/Information/Help
+*************************************************************************************************************/
 private def textAppName() {
-	def text = "Echosistant"
+	def text = "This Profile"
 }	
 private def textVersion() {
-    def text = "Version 1.0.0 	(10/29/2016)"
+    def text = "Version 0.1.0 	(10/25/2016)"
 }
-private def textCopyright() {
-    def text = "Copyright © 2016 Jason Headley"
+private def textHelp() {
+	def text =
+		"This smartapp allows you to speak freely to your Alexa device and have it repeated back on a remote playback device"h
 }
 private def textLicense() {
 	def text =
-		"Licensed under the Apache License, Version 2.0 (the 'License'); "+
-		"you may not use this file except in compliance with the License. "+
-		"You may obtain a copy of the License at"+
-		"\n\n"+
-		"    http://www.apache.org/licenses/LICENSE-2.0"+
-		"\n\n"+
-		"Unless required by applicable law or agreed to in writing, software "+
-		"distributed under the License is distributed on an 'AS IS' BASIS, "+
-		"WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. "+
-		"See the License for the specific language governing permissions and "+
-		"limitations under the License."
+	"Licensed under the Apache License, Version 2.0 (the 'License'); "+
+	"you may not use this file except in compliance with the License. "+
+	"You may obtain a copy of the License at"+
+	"\n\n"+
+	" http://www.apache.org/licenses/LICENSE-2.0"+
+	"\n\n"+
+	"Unless required by applicable law or agreed to in writing, software "+
+	"distributed under the License is distributed on an 'AS IS' BASIS, "+
+	"WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. "+
+	"See the License for the specific language governing permissions and "+
+	"limitations under the License."
 }
