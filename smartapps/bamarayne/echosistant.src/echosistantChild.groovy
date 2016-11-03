@@ -2,7 +2,7 @@
  *  Echosistant Profile 
  
  		11/03/2016		UI changes
- 		11/01/2016		Initial Release
+ 		11/01/2016		Initial Release - old
 
  *  Copyright 2016 Jason Headley
  *
