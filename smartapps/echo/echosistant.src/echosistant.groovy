@@ -1,7 +1,7 @@
 /**
  * Echosistant - The Ultimate Voice and Text Messaging Assistant Using Your Alexa Enable Device.
  *		
- *      11/03/2016      Most current version
+ *      
  *		11/01/2016		Initial Release
  *
  *  Copyright 2016 Jason Headley
