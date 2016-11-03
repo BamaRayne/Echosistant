@@ -1,7 +1,7 @@
 /**
  *  Echosistant Profile 
  *
- *      11/03/2016      Most current version
+ *      
  *
  *  Copyright 2016 Jason Headley
  *
