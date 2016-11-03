@@ -58,13 +58,13 @@ def configuration() {
 	dynamicPage(name: "configuration", uninstall: false) {
     	section (""){
     		href "speech", title: "Audio Pre-message and Alexa Response", description: "Tap here to configure", 
-            	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Media.png"
+            	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_msg.png"
 			href "textMessage", title: "Text Messages", description: "Tap here to set up text messages", 
             	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Text.png"
 			href "audioDevices", title: "Audio Playback Devices", description: "Tap here to choose your playback devices", 
             	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Media.png"
 			href "restrictions", title: "Profile Restrictions", description: "Tap here to configure this Profiles Restrictions", 
-            	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_About.png"
+            	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Rest.png"
  		}
 	}
 }    
