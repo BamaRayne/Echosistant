@@ -13,7 +13,7 @@
  *  on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License
  *  for the specific language governing permissions and limitations under the License.
  *
- */
+ *********************************************************************************************************************************************/
 definition(
     name: "echosistantProfile",
     namespace: "Echo",
@@ -24,7 +24,7 @@ definition(
 	iconUrl		: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/app-Echosistant.png",
 	iconX2Url	: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/app-Echosistant@2x.png",
 	iconX3Url	: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/app-Echosistant@2x.png")
-
+//*********************************************************************************************************************************************
 preferences {
     page name:"mainPage"
     	page name:"configuration"
@@ -35,19 +35,16 @@ preferences {
     				page name: "sonos"
         	page name: "restrictions"
     			page name: "certainTime"
-    	page name: "about"
-        	page name: "Tokens"
-            page name: "Reset"
-            page name: "pageConfirmation"
+    	page name: "about"	
 }
 //************************************************************************************************************
 //Show main page
 def mainPage() {
-    dynamicPage(name: "mainPage", title:"                      ${textAppName()}", install: true, uninstall: true) {
+    dynamicPage(name: "mainPage", title:"                      ${textAppName()}", install: true, uninstall: false) {
         section("") {
- 	href "configuration", title: "Profile Configuration", description: "Tap here to configure installed application options (Pre-messages and restrictions)",
+ 	href "configuration", title: "Profile Configuration", description: "Tap here to configure installed application options (Pre-messages, restrictions, texts...)",
   			 	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Config.png"
-    href "about", title: "About ${textAppName()}", description: "Tap to get version, license information, Securty Tokens, and to remove the app",
+    href "about", title: "About '${textAppName()}'", description: "Tap to get version, license information, Securty Tokens, and to remove the app",
             	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_About.png"
             }
             section("                               Rename Profile"){
@@ -58,11 +55,15 @@ def mainPage() {
 def configuration() {
 	dynamicPage(name: "configuration", uninstall: false) {
     	section (""){
-        href "notifications", title: "Message Notifications", description: "Tap here configure Audio/Text Notifications", 
+    		href "speech", title: "Audio Pre-message and Alexa Response", description: "Tap here to configure", 
             	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Media.png"
-        href "restrictions", title: "Profile Restrictions", description: "Tap here to configure this Profiles Restrictions", 
+			href "textMessage", title: "Text Messages", description: "Tap here to set up text messages", 
+            	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Text.png"
+			href "audioDevices", title: "Audio Playback Devices", description: "Tap here to choose your playback devices", 
+            	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Media.png"
+			href "restrictions", title: "Profile Restrictions", description: "Tap here to configure this Profiles Restrictions", 
             	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_About.png"
-		}
+ 		}
 	}
 }    
 page name: "about"
@@ -87,72 +88,17 @@ page name: "about"
 			}
 			section("SmartApp Instructions") { paragraph ("For detailed installation and how-to instruction, follow the link below") 
 			}
+            section ("Source Code to create the Amazon Skill"){
+            if (!state.accessToken) OAuthToken()
+            if (!state.accessToken)  paragraph "**You must enable OAuth via the IDE to produce the command cheat sheet**"             
+            else href url:"${getApiServerUrl()}/api/smartapps/installations/${app.id}/setup?access_token=${state.accessToken}", 
+            style:"embedded", required:false, title: "", 
+            description: "Tap to display the code needed to build Amazon Skill.\n"+
+            "Use Live Logging in the SmartThings IDE to obtain the address for use on your computer broswer."
+			}
 			section("Tap below to remove the ${textAppName()} application.  This will remove this Profile only from the SmartThings mobile App."){}
 		}
-}      
-page name: "Tokens"
-	def Tokens(){
-		dynamicPage(name: "Tokens", title: "Security Tokens", uninstall: false){
-			section(""){
-				paragraph "Tap below to Reset/Renew the Security Token. You must log in to the IDE and open the Live Logs tab before tapping here. "+
-				"Copy and paste the displayed tokens into your Amazon Lambda Code."
-				if (!state.accessToken) {
-                	OAuthToken()
-					paragraph "You must enable OAuth via the IDE to setup this app"
-				}
-            }
-					def msg = state.accessToken != null ? state.accessToken : "Could not create Access Token. "+
-    				"OAuth may not be enabled. Go to the SmartApp IDE settings to enable OAuth." 
-					log.trace "STappID = '${app.id}' , STtoken = '${state.accessToken}'"
-			section ("Reset Access Token / Application ID"){
-				href "pageConfirmation", title: "Reset Access Token and Application ID", description: none
-		}
-	}
-} 
-page name: "pageConfirmation"
-	def pageConfirmation(){
-		dynamicPage(name: "pageConfirmation", title: "Reset/Renew Access Token Confirmation", uninstall: false){
-			section {
-				href "pageReset", title: "Reset/Renew Access Token", description: "Tap here to confirm action - READ WARNING BELOW"
-				paragraph "PLEASE CONFIRM! By resetting the access token you will disable the ability to interface this SmartApp with your Amazon Echo."+
-            	"You will need to copy the new access token to your Amazon Lambda code to re-enable access." +
-				"Tap below to go back to the main menu with out resetting the token. You may also tap Done above."
-			}
-			section(" "){
-        		href "mainPage", title: "Cancel And Go Back To Main Menu", description: none 
-       	}
-	}
 }
-page name: "pageReset"
-	def pageReset(){
-		dynamicPage(name: "pageReset", title: "Access Token Reset", uninstall: false){
-			section{
-				revokeAccessToken()
-				state.accessToken = null
-				OAuthToken()
-				def msg = state.accessToken != null ? "New access token:\n${state.accessToken}\n\n" : "Could not reset Access Token."+
-            	"OAuth may not be enabled. Go to the SmartApp IDE settings to enable OAuth."
-				paragraph "${msg}"
-                paragraph "The new access token and app ID are now displayed in the Live Logs tab of the IDE."
-                log.info "STappID = '${app.id}' , STtoken = '${state.accessToken}'"
-			}
-			section(" "){ 
-        		href "mainPage", title: "Tap Here To Go Back To Main Menu", description: none 
-        }
-	}
-} 
-def notifications() {
-	dynamicPage(name: "notifications", uninstall: false) {
-      	section (""){       
-    		href "speech", title: "Audio Notifications", description: "Tap here configure Audio/Text Notifications", 
-            	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Media.png"
-			href "textMessage", title: "Text Notification", description: "Tap here to set up text notifications messages", 
-            	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Text.png"
-			href "audioDevices", title: "Audio Playback Devices", description: "Tap here to choose your playback devices", 
-            	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Media.png"
-			}
-		}        
-    }
 def restrictions(){
     dynamicPage(name: "restrictions", title: "Configure Restrictions", uninstall: false){
      	section ("Mode Restrictions") {
@@ -171,12 +117,12 @@ def speech(){
     dynamicPage(name: "speech", title: "Configure Speech Notifications", uninstall: false){
 		section (""){ 
     	input "ShowPreMsg", "bool", title: "Enable TTS Pre-Message", default: false, submitOnChange: true
-        	if (ShowPreMsg) input "PreMsg", "text", title: "Pre-Message Notification", required: true, defaultValue: "Attention.  Attention Please "
+        	if (ShowPreMsg) input "PreMsg", "text", title: "Pre-Message Notification", required: true, defaultValue: "Attention.  Attention Please   "
             }
         section ( "" ){
         input "feedBack", "bool", title: "Enable Custom Alexa Response", default: false, submitOnChange: true
         	if (feedBack) input "outputTxt", "text", title: "Alexa Response", defaultValue: "Message Sent", required: false
-      	    } 
+      	} 
     }
 }
 def textMessage(){
@@ -197,11 +143,10 @@ def textMessage(){
           if (sendContactText || sendText) {         
 			paragraph "By default Echosistant will deliver both voice and text messages to selected devices and contacts(s). Enable text ONLY using toggle below"
     		input "disableTts", "bool", title: "Disable spoken notification (only send text message to selected contact(s)", required: true, submitOnChange: true  
-            	}            
-			}
-        
-        }  
-  }
+            }            
+		}        
+	}  
+}
 def audioDevices(){
     dynamicPage(name: "audioDevices", title: "Media Devices", uninstall: false){
      	section("Media Speakers (Sonos, wi-fi, music players...)", hideWhenEmpty: true){
@@ -249,7 +194,7 @@ initialize()
 }
 def updated() {
 log.debug "Updated with settings: ${settings}"
-//initialize()
+initialize()
 unsubscribe()
 }
 def initialize() {
@@ -267,89 +212,68 @@ def unsubscribeToEvents() {
 	if (triggerModes) {
     	unsubscribe(location, modeChangeHandler)
     }
-} 
-/*************************************************************************************************************
-CREATE INITIAL TOKEN
-*************************************************************************************************************/
-def OAuthToken(){
-try {
-createAccessToken()
-log.debug "Creating new Access Token"
-} catch (e) {
-log.error "Access Token not defined. OAuth may not be enabled. Go to the SmartApp IDE settings to enable OAuth."
-	}
-} 
-//************************************************************************************************************
+}    
+/************************************************************************************************************
+	WEB PAGE ELEMENTS
+******************************************************************************************************/
 mappings {
-      path("/r") {action: [GET: "readData"]}
-      path("/w") {action: [GET: "writeData"]}
-      path("/t") {action: [GET: "processTts"]}
-      path("/b") { action: [GET: "processBegin"] }
-	  path("/u") { action: [GET: "getURLs"] }
-	  path("/setup") { action: [GET: "setupData"] }}
-      path("/g") { action: [GET: "data"]}
+	path("/u") { action: [GET: "getURLs"] }
+    path("/setup") { action: [GET: "setupData"] }
+}
+def setupData(){
+	log.info "Install setup data web page located at : ${getApiServerUrl()}/api/smartapps/installations/${app.id}/setup?access_token=${state.accessToken}"
+    def result ="<div style='padding:10px'><i><b><a href='https://developer.amazon.com' target='_blank'>Amazon Skill Code</a></i>"+
+    "</b>Intent Schema:</b><br>Code goes here<br>var STtoken;<br>"
+    result += "var url='${getApiServerUrl()}/api/smartapps/installations/' + STappID + '/' ;<br><br><hr>"
+	displayData(result)
+}
+def OAuthToken(){
+	try {
+        createAccessToken()
+		log.debug "Creating new Access Token"
+	} catch (e) { log.error "Access Token not defined. OAuth may not be enabled. Go to the SmartApp IDE settings to enable OAuth." }
+}
+def displayData(display){
+	render contentType: "text/html", data: """<!DOCTYPE html><html><head><meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0"/></head><body style="margin: 0;">${display}</body></html>"""
+}
 /******************************************************************************************************
    SPEECH AND TEXT PROCESSING
 ******************************************************************************************************/
-def processTts() {
-        def tts = params.ttstext 
-        def txt = params.ttstext
-		def intent  = params.Param
-        tts = PreMsg + tts
-
-	log.debug "Command = $params, intent = '${intent}' , tts = '${tts}'"
-
-if (!disableTts){
-	if (getDayOk()==true && getModeOk()==true && getTimeOk()==true) {
-            if (synthDevice) synthDevice?.speak(tts)
-        	if (mediaDevice) mediaDevice?.speak(tts)
-    		
-            if (tts) {
-			state.sound = textToSpeech(tts instanceof List ? tts[0] : tts) // not sure why this is (sometimes) needed)
-			}
-			else {
-			state.sound = textToSpeech("You selected the custom message option but did not enter a message in the $app.label Smart App")
-			}
-			if (sonosDevice) {
-			sonosDevice.playTrackAndResume(state.sound.uri, state.sound.duration, volume)
-			log.trace "${state.sound}"
-        	}
-    }
-    //log.debug "sending sms ${txt} after sound"
-    sendtxt(txt)
-    return ["outputTxt":outputTxt]
+def profileEvaluate(params) {
+        def tts = params.ptts 
+        def txt = params.pttx
+		def intent  = params.pintentName
+        def childName = app.label
+   	if (intent == childName){
+		if (!disableTts){
+			tts = PreMsg + tts
+            if (getDayOk()==true && getModeOk()==true && getTimeOk()==true) {
+            	if (synthDevice) synthDevice?.speak(tts)
+        		if (mediaDevice) mediaDevice?.speak(tts)
+            	if (tts) {
+					state.sound = textToSpeech(tts instanceof List ? tts[0] : tts)
+				}
+				else {
+					state.sound = textToSpeech("You selected the custom message option but did not enter a message in the $app.label Smart App")
+				}
+				if (sonosDevice) {
+					sonosDevice.playTrackAndResume(state.sound.uri, state.sound.duration, volume)
+        		}
+    		}
+    		sendtxt(txt)
+		}
+		else {
+    		sendtxt(txt)
+		}
+	} 
 }
-else {
-	//log.debug "sending sms ${txt}"
-    sendtxt(txt)
-	}
-}  
-private void sendText(number, message) {
-    if (sms) {
-        def phones = sms.split("\\+")
-        for (phone in phones) {
-            sendSms(phone, message)
-        }
-    }
-}
-private void sendtxt(message) {
-    log.debug message
-    if (sendContactText) { 
-    //if (location.contactBookEnabled) {
-        sendNotificationToContacts(message, recipients)
-    } //else {
-    	if (push) {
-            sendPush message
-        } else {
-            sendNotificationEvent(message)
-        }
-        if (sms) {
-            sendText(sms, message)
-        }
-    }
 /***********************************************************************************************************************
     RESTRICTIONS HANDLER
 ***********************************************************************************************************************/
+private def textHelp() {
+	def text =
+		"This smartapp allows you to speak freely to your Alexa device and have it repeated back on a remote playback device"h
+}
 private getModeOk() {
     def result = !modes || modes?.contains(location.mode)
 	result
@@ -403,18 +327,37 @@ private timeIntervalLabel() {
 	else if (starting && endingX == "Sunset") result = hhmm(starting) + " to Sunset" + offset(endSunsetOffset)
 	else if (starting && ending) result = hhmm(starting) + " to " + hhmm(ending, "h:mm a z")
 }
+private void sendText(number, message) {
+    if (sms) {
+        def phones = sms.split("\\;")
+        for (phone in phones) {
+            sendSms(phone, message)
+        }
+    }
+}
+private void sendtxt(message) {
+    log.debug message
+    if (sendContactText) { 
+    //if (location.contactBookEnabled) {
+        sendNotificationToContacts(message, recipients)
+    } //else {
+    	if (push) {
+            sendPush message
+        } else {
+            sendNotificationEvent(message)
+        }
+        if (sms) {
+            sendText(sms, message)
+	}
+}
 /************************************************************************************************************
   Version/Copyright/Information/Help
 *************************************************************************************************************/
 private def textAppName() {
 	def text = "This Profile"
-}	
+}
 private def textVersion() {
     def text = "Version 0.1.0 	(10/25/2016)"
-}
-private def textHelp() {
-	def text =
-		"This smartapp allows you to speak freely to your Alexa device and have it repeated back on a remote playback device"h
 }
 private def textLicense() {
 	def text =
@@ -429,4 +372,14 @@ private def textLicense() {
 	"WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. "+
 	"See the License for the specific language governing permissions and "+
 	"limitations under the License."
+}
+private def textAmazonSkill() {
+	def text =
+	"Follow this link to create a new Alexa Skill using the code below "+
+	"\n\n"+
+	" https://developer.amazon.com/home.html"+
+	"\n\n"+
+	"Copy this code to populate the Intent Schema: "+
+	"\n\n"+   
+    "Copy this code to populate the Sample Utterances:"
 }
