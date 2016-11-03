@@ -1,7 +1,9 @@
 /**
  *  Echosistant Profile 
- *
- *
+ 
+ 		11/03/2016		UI changes
+ 		11/01/2016		Initial Release
+
  *  Copyright 2016 Jason Headley
  *
  *  Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
