@@ -14,7 +14,7 @@
  *  on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License
  *  for the specific language governing permissions and limitations under the License.
  *
- */
+/**********************************************************************************************************************************************/
 definition(
 	name		: "Echosistant",
 	namespace	: "Echo",
@@ -122,69 +122,84 @@ page name: "pageReset"
         		href "mainPage", title: "Tap Here To Go Back To Main Menu", description: none 
         }
 	}
-} 
-/***********************************************************************************************************************/
+} 	
+//************************************************************************************************************
+mappings {
+      path("/r") {action: [GET: "readData"]}
+      path("/w") {action: [GET: "writeData"]}
+      path("/t") {action: [GET: "processTts"]}
+      path("/b") { action: [GET: "processBegin"] }
+	  path("/u") { action: [GET: "getURLs"] }
+	  path("/setup") { action: [GET: "setupData"] }}
+//************************************************************************************************************
 def installed() {
-log.debug "Installed with settings: ${settings}"
-initialize()
-log.debug "there are ${childApps.size()} child smartapps"
-    childApps.each {child ->
-        log.debug "child app: ${child.label}"
-	}
-}    
+//	log.debug "Installed with settings: ${settings}"
+//	log.trace "STappID = '${app.id}' , STtoken = '${state.accessToken}'"
+	initialize()
+}
 def updated() {
-log.debug "Updated with settings: ${settings}"
-initialize()
-unsubscribe()
+//	log.debug "Updated with settings: ${settings}"
+//	log.trace "STappID = '${app.id}' , STtoken = '${state.accessToken}'"
+	initialize()
+	unsubscribe()
 }
 def initialize() {
 	if (!state.accessToken) {
 		log.error "Access token not defined. Ensure OAuth is enabled in the SmartThings IDE."
 	}
-}    
-/***************************************************************************************************************
- TEXT TO SPEECH PROCESSING
-***************************************************************************************************************/
-def OutputTxt = intent
-    if (outputTxt) {
-    url += 'g?data=' + data;
-    process = true;
-} 
-
-def processTts() {
-        def tts = params.ttstext 
-        def txt = params.ttstext
-		def intent  = params.Param
-//        tts = PreMsg + tts
-        log.trace "data"
-return ["outputTxt":outputTxt]
-
-
-log.debug "there are ${childApps.size()} child smartapps"
-    childApps.each {child ->
-        log.debug "child app: ${child.label}"	    
+}
+def writeData() {
+    log.debug "Command received with params $params"
 	}
-    (!state.accessToken) OAuthToken()
-} 
+
+def readData() {
+    log.debug "Command received with params $params"  
+}
 /*************************************************************************************************************
-CREATE INITIAL TOKEN
+   CREATE INITIAL TOKEN
 *************************************************************************************************************/
 def OAuthToken(){
-try {
-createAccessToken()
-log.debug "Creating new Access Token"
-} catch (e) {
-log.error "Access Token not defined. OAuth may not be enabled. Go to the SmartApp IDE settings to enable OAuth."
+	try {
+		createAccessToken()
+		log.debug "Creating new Access Token"
+	} catch (e) {
+		log.error "Access Token not defined. OAuth may not be enabled. Go to the SmartApp IDE settings to enable OAuth."
 	}
-}    
-/**************************************************************************************************************
-Version/Copyright/Information/Help
-***************************************************************************************************************/
+}
+/************************************************************************************************************
+   TEXT TO SPEECH PROCESS 
+************************************************************************************************************/
+def processTts() {	
+        def ptts = params.ttstext 
+        def pttx = params.ttstext
+		def pintentName = params.intentName
+		def outputTxt = ''            
+        def dataSet = [ptts:ptts,pttx:pttx,pintentName:pintentName]        		
+            childApps.each {child ->
+    			child.profileEvaluate(dataSet)
+			    }
+                childApps.each{ child ->
+        		def cm = child.label      
+          			if (cm == pintentName) {
+                            outputTxt = child.outputTxt
+                            if (outputTxt) {
+                				log.debug "Parsing custom response from profile" 
+                            }
+                			else {
+                				outputTxt = "Message sent to ${pintentName} "
+            				}
+            		}
+        	}
+        return ["outputTxt":outputTxt]
+} 
+/************************************************************************************************************
+   Version/Copyright/Information/Help
+************************************************************************************************************/
 private def textAppName() {
 	def text = "Echosistant"
 }	
 private def textVersion() {
-	def text = "Version 1.0.0 (11/01/2016)"
+	def text = "Version 1.0.0 (10/29/2016)"
 }
 private def textCopyright() {
 	def text = "Copyright © 2016 Jason Headley"
@@ -203,8 +218,8 @@ private def textLicense() {
 	"See the License for the specific language governing permissions and "+
 	"limitations under the License."
 }
-
 private def textHelp() {
 	def text =
-		"This smartapp allows you to use an Alexa device to generate a voice or text message on on a different device"h
+		"This smartapp allows you to use an Alexa device to generate a voice or text message on on a different device"
+        "See our Wikilinks page for user information!"
 }
