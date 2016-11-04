@@ -1,9 +1,7 @@
 /**
  * EchoSistant - The Ultimate Voice and Text Messaging Assistant Using Your Alexa Enable Device.
  *		
- *		11/04/2016		Clean-up code (Bobby)
- *		11/03/2016		UI changes      
- *		11/01/2016		Initial Release
+ *		11/04/2016     Version 1.0		Initial Release
  *
  * ROADMAP
  * - External TTS
@@ -202,7 +200,7 @@ private def textAppName() {
 	def text = "EchoSistant"
 }	
 private def textVersion() {
-	def text = "Version 1.0.0 (11/1/2016)"
+	def text = "Version 1.0.0 (11/4/2016)"
 }
 private def textCopyright() {
 	def text = "Copyright © 2016 Jason Headley"
