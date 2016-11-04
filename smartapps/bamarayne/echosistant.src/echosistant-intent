@@ -1,11 +1,11 @@
 {
   "intents": [
     {
-"intent": "Repeat",
+"intent": "PASTE PROFILE NAME HERE",
 "slots": [
 {
 "name": "ttstext",
-"type": "AMAZON.LITERAL"
+"type": "LITERAL"
 }
 ]
 }
