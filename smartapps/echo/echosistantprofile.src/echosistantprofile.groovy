@@ -37,26 +37,13 @@ preferences {
     				page name: "sonos"
         	page name: "restrictions"
     			page name: "certainTime"
-    	page name: "about"	
+    		
 }
 //************************************************************************************************************
 //Show main page
-def mainPage() {
-    dynamicPage(name: "mainPage", title:"                      ${textAppName()}", install: true, uninstall: false) {
+def mainPage() {	       
+    dynamicPage(name: "mainPage", title:"                      ${textAppName()}", install: true, uninstall: true) {
         section("") {
- 	href "configuration", title: "Profile Configuration", description: "Tap here to configure installed application options (Pre-messages, restrictions, texts...)",
-  			 	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Config.png"
-    href "about", title: "About '${textAppName()}'", description: "Tap to get version, license information, Securty Tokens, and to remove the app",
-            	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_About.png"
-            }
-            section("                               Rename Profile"){
-        	label title:"              Rename Profile ", required:true, defaultValue: "${textAppName()}"    		
-        }
-	}
-}
-def configuration() {
-	dynamicPage(name: "configuration", uninstall: false) {
-    	section (""){
     		href "speech", title: "Audio Pre-message and Alexa Response", description: "Tap here to configure", 
             	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_msg.png"
 			href "textMessage", title: "Text Messages", description: "Tap here to set up text messages", 
@@ -65,42 +52,15 @@ def configuration() {
             	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Media.png"
 			href "restrictions", title: "Profile Restrictions", description: "Tap here to configure this Profiles Restrictions", 
             	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Rest.png"
- 		}
+        }
+        section ("") {
+ 		   	label title:"              Rename Profile ", required:false, defaultValue: "New Profile"  
+            }
+        section ("") {
+          	paragraph "      Tap below to remove this Profile"    	
+        }
 	}
 }    
-page name: "about"
-	def about(){
-		dynamicPage(name: "about", uninstall: true) {
-           section ("Security Tokens - FOR CHILD APP ONLY"){
-            	paragraph ("Log into the IDE on your computer and navigate to the Live Logs tab. Leave that window open, come back here, and open this section")
-                input "ShowTokens", "bool", title: "Show Security Tokens", default: false, submitOnChange: true
-                if (ShowTokens) paragraph "The Security Tokens are now displayed in the Live Logs section of the IDE"
-            	def msg = state.accessToken != null ? state.accessToken : "Could not create Access Token. OAuth may not be enabled. "+
-				"Go to the SmartApp IDE settings to enable OAuth."	
-                if (ShowTokens) log.info "STappID = '${app.id}' , STtoken = '${state.accessToken}'"
-                if (ShowTokens) paragraph "Access token:\n${msg}\n\nApplication ID:\n${app.id}"
-			}
-			section ("Revoke/Renew Access Token & Application ID"){
-				href "Tokens", title: "Revoke/Reset Security Access Token", description: none
-			}
-			section ("Apache License"){
-				input "ShowLicense", "bool", title: "Show License", default: false, submitOnChange: true
-				def msg = textLicense()
-					if (ShowLicense) paragraph "${msg}"
-			}
-			section("SmartApp Instructions") { paragraph ("For detailed installation and how-to instruction, follow the link below") 
-			}
-            section ("Source Code to create the Amazon Skill"){
-            if (!state.accessToken) OAuthToken()
-            if (!state.accessToken)  paragraph "**You must enable OAuth via the IDE to produce the command cheat sheet**"             
-            else href url:"${getApiServerUrl()}/api/smartapps/installations/${app.id}/setup?access_token=${state.accessToken}", 
-            style:"embedded", required:false, title: "", 
-            description: "Tap to display the code needed to build Amazon Skill.\n"+
-            "Use Live Logging in the SmartThings IDE to obtain the address for use on your computer broswer."
-			}
-			section("Tap below to remove the ${textAppName()} application.  This will remove this Profile only from the SmartThings mobile App."){}
-		}
-}
 def restrictions(){
     dynamicPage(name: "restrictions", title: "Configure Restrictions", uninstall: false){
      	section ("Mode Restrictions") {
@@ -215,29 +175,6 @@ def unsubscribeToEvents() {
     	unsubscribe(location, modeChangeHandler)
     }
 }    
-/************************************************************************************************************
-	WEB PAGE ELEMENTS
-******************************************************************************************************/
-mappings {
-	path("/u") { action: [GET: "getURLs"] }
-    path("/setup") { action: [GET: "setupData"] }
-}
-def setupData(){
-	log.info "Install setup data web page located at : ${getApiServerUrl()}/api/smartapps/installations/${app.id}/setup?access_token=${state.accessToken}"
-    def result ="<div style='padding:10px'><i><b><a href='https://developer.amazon.com' target='_blank'>Amazon Skill Code</a></i>"+
-    "</b>Intent Schema:</b><br>Code goes here<br>var STtoken;<br>"
-    result += "var url='${getApiServerUrl()}/api/smartapps/installations/' + STappID + '/' ;<br><br><hr>"
-	displayData(result)
-}
-def OAuthToken(){
-	try {
-        createAccessToken()
-		log.debug "Creating new Access Token"
-	} catch (e) { log.error "Access Token not defined. OAuth may not be enabled. Go to the SmartApp IDE settings to enable OAuth." }
-}
-def displayData(display){
-	render contentType: "text/html", data: """<!DOCTYPE html><html><head><meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0"/></head><body style="margin: 0;">${display}</body></html>"""
-}
 /******************************************************************************************************
    SPEECH AND TEXT PROCESSING
 ******************************************************************************************************/
@@ -374,14 +311,4 @@ private def textLicense() {
 	"WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. "+
 	"See the License for the specific language governing permissions and "+
 	"limitations under the License."
-}
-private def textAmazonSkill() {
-	def text =
-	"Follow this link to create a new Alexa Skill using the code below "+
-	"\n\n"+
-	" https://developer.amazon.com/home.html"+
-	"\n\n"+
-	"Copy this code to populate the Intent Schema: "+
-	"\n\n"+   
-    "Copy this code to populate the Sample Utterances:"
 }

@@ -1,5 +1,5 @@
 /**
- * Echosistant - The Ultimate Voice and Text Messaging Assistant Using Your Alexa Enable Device.
+ * EchoSistant - The Ultimate Voice and Text Messaging Assistant Using Your Alexa Enable Device.
  *		
  *		11/03/2016		UI changes      
  *		11/01/2016		Initial Release
@@ -17,23 +17,24 @@
  *
 /**********************************************************************************************************************************************/
 definition(
-	name		: "Echosistant",
+	name		: "EchoSistant",
 	namespace	: "Echo",
 	author		: "JH",
 	description	: "The Ultimate Voice and Text Messaging Assistant Using Your Alexa Enable Device.",
 	category	: "My Apps",
+    singleInstance: true,
 	iconUrl		: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/app-Echosistant.png",
 	iconX2Url	: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/app-Echosistant@2x.png",
 	iconX3Url	: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/app-Echosistant@2x.png")
 /**********************************************************************************************************************************************/
 preferences {  //SHOW MAIN PAGE
-	page(name: "mainPage", title: "Echosistant", install: true, uninstall: false) {
+	page(name: "mainPage", title: "EchoSistant", install: true, uninstall: false) {
 		section {
-        	href "profiles", title: "Configure Profiles", description: "Tap here to view and create new profiles....",
+        	href "profiles", title: "Profiles", description: "Tap here to view and create new profiles....",
             image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Config.png"
 		}
 		section {
-			href "about", title: "About Echosistant", description: "Tap here for App information...Tokens, Version, License...",
+			href "about", title: "About EchoSistant", description: "Tap here for App information...Tokens, Version, License...",
             image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_About.png"
 		}
     }
@@ -197,7 +198,7 @@ def processTts() {
    Version/Copyright/Information/Help
 ************************************************************************************************************/
 private def textAppName() {
-	def text = "Echosistant"
+	def text = "EchoSistant"
 }	
 private def textVersion() {
 	def text = "Version 1.0.0 (10/29/2016)"
