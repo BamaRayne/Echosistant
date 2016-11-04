@@ -1,6 +1,7 @@
 /**
  *  Echosistant Profile 
  *
+ *		11/04/2016		clean-up (Bobby)
  *		11/03/2016		UI changes      
  *		11/01/2016		Initial Release    
  *
@@ -42,7 +43,7 @@ preferences {
 //************************************************************************************************************
 //Show main page
 def mainPage() {	       
-    dynamicPage(name: "mainPage", title:"                      ${textAppName()}", install: true, uninstall: true) {
+    dynamicPage(name: "mainPage", title:"", install: true, uninstall: true) {
         section("") {
     		href "speech", title: "Audio Pre-message and Alexa Response", description: "Tap here to configure", 
             	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_msg.png"
@@ -151,13 +152,13 @@ def certainTime() {
 	}
 }
 def installed() {
-log.debug "Installed with settings: ${settings}"
-initialize()
+	log.debug "Installed with settings: ${settings}"
+	initialize()
 }
 def updated() {
-log.debug "Updated with settings: ${settings}"
-initialize()
-unsubscribe()
+	log.debug "Updated with settings: ${settings}"
+	initialize()
+	unsubscribe()
 }
 def initialize() {
 	profileEvaluate(parent.processTts())
@@ -167,7 +168,7 @@ def subscribeToEvents() {
 		subscribe(runMode, location.currentMode, modeChangeHandler)
 	}
     if (runDay) {
-       subscribe(runDay, location.day, location.currentDay)
+   		subscribe(runDay, location.day, location.currentDay)
        }
 } 
 def unsubscribeToEvents() {
@@ -181,7 +182,7 @@ def unsubscribeToEvents() {
 def profileEvaluate(params) {
         def tts = params.ptts 
         def txt = params.pttx
-		def intent  = params.pintentName
+	def intent  = params.pintentName
         def childName = app.label
    	if (intent == childName){
 		if (!disableTts){
@@ -209,10 +210,6 @@ def profileEvaluate(params) {
 /***********************************************************************************************************************
     RESTRICTIONS HANDLER
 ***********************************************************************************************************************/
-private def textHelp() {
-	def text =
-		"This smartapp allows you to speak freely to your Alexa device and have it repeated back on a remote playback device"h
-}
 private getModeOk() {
     def result = !modes || modes?.contains(location.mode)
 	result
@@ -266,6 +263,9 @@ private timeIntervalLabel() {
 	else if (starting && endingX == "Sunset") result = hhmm(starting) + " to Sunset" + offset(endSunsetOffset)
 	else if (starting && ending) result = hhmm(starting) + " to " + hhmm(ending, "h:mm a z")
 }
+/***********************************************************************************************************************
+    SMS HANDLER
+***********************************************************************************************************************/
 private void sendText(number, message) {
     if (sms) {
         def phones = sms.split("\\;")
@@ -288,27 +288,4 @@ private void sendtxt(message) {
         if (sms) {
             sendText(sms, message)
 	}
-}
-/************************************************************************************************************
-  Version/Copyright/Information/Help
-*************************************************************************************************************/
-private def textAppName() {
-	def text = "This Profile"
-}
-private def textVersion() {
-    def text = "Version 0.1.0 	(10/25/2016)"
-}
-private def textLicense() {
-	def text =
-	"Licensed under the Apache License, Version 2.0 (the 'License'); "+
-	"you may not use this file except in compliance with the License. "+
-	"You may obtain a copy of the License at"+
-	"\n\n"+
-	" http://www.apache.org/licenses/LICENSE-2.0"+
-	"\n\n"+
-	"Unless required by applicable law or agreed to in writing, software "+
-	"distributed under the License is distributed on an 'AS IS' BASIS, "+
-	"WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. "+
-	"See the License for the specific language governing permissions and "+
-	"limitations under the License."
 }
