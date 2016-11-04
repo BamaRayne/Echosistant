@@ -4,6 +4,13 @@
  *		11/04/2016		Clean-up code (Bobby)
  *		11/03/2016		UI changes      
  *		11/01/2016		Initial Release
+ *
+ * ROADMAP
+ * - External TTS
+ * - External SMS
+ * - CoRE integration
+ * - Replay last message
+ *
  * Credits
  * Thank you to MichaelS (creator of AskAlexa) for guidance and for letting me use his outstanding Wiki
  * and to begin this project using his code as a jump start.  Thanks goes to Keith @n8xd for his hero with  
