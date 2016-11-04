@@ -4,6 +4,11 @@
  *		11/04/2016		Clean-up code (Bobby)
  *		11/03/2016		UI changes      
  *		11/01/2016		Initial Release
+ * Credits
+ * Thank you to MichaelS (creator of AskAlexa) for guidance and for letting me use his outstanding Wiki
+ * and to begin this project using his code as a jump start.  Thanks goes to Keith @n8xd for his hero with  
+ * troubleshooting my lambda code. And a huge thank you to @SBDOBRESCU, the co-author of this project, for 
+ * jumping on board and helping me expand this project into something more. 
  *
  *  Copyright 2016 Jason Headley
  *
