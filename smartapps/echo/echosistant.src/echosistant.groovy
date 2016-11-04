@@ -1,7 +1,7 @@
 /**
  * EchoSistant - The Ultimate Voice and Text Messaging Assistant Using Your Alexa Enable Device.
- *		11/04/2016		Clean-up code
- *		11/04/2016		UI changes 
+ *		
+ *		11/04/2016		Clean-up code (Bobby)
  *		11/03/2016		UI changes      
  *		11/01/2016		Initial Release
  *
