@@ -1,9 +1,7 @@
 /**
  *  Echosistant Profile 
  *
- *		11/04/2016		clean-up (Bobby)
- *		11/03/2016		UI changes      
- *		11/01/2016		Initial Release    
+ *		11/04/2016     Version 1.0		Initial Release    
  *
  *  Copyright 2016 Jason Headley
  *
