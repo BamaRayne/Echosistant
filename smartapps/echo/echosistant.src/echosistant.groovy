@@ -127,21 +127,16 @@ page name: "pageReset"
 } 	
 //************************************************************************************************************
 mappings {
-      path("/r") {action: [GET: "readData"]}
-      path("/w") {action: [GET: "writeData"]}
       path("/t") {action: [GET: "processTts"]}
-      path("/b") { action: [GET: "processBegin"] }
-	  path("/u") { action: [GET: "getURLs"] }
-	  path("/setup") { action: [GET: "setupData"] }}
+      }
 //************************************************************************************************************
 def installed() {
-//	log.debug "Installed with settings: ${settings}"
+	log.debug "Installed with settings: ${settings}"
 //	log.trace "STappID = '${app.id}' , STtoken = '${state.accessToken}'"
 	initialize()
 }
 def updated() {
-//	log.debug "Updated with settings: ${settings}"
-//	log.trace "STappID = '${app.id}' , STtoken = '${state.accessToken}'"
+	log.debug "Updated with settings: ${settings}"
 	initialize()
 	unsubscribe()
 }
@@ -149,13 +144,6 @@ def initialize() {
 	if (!state.accessToken) {
 		log.error "Access token not defined. Ensure OAuth is enabled in the SmartThings IDE."
 	}
-}
-def writeData() {
-    log.debug "Command received with params $params"
-	}
-
-def readData() {
-    log.debug "Command received with params $params"  
 }
 /*************************************************************************************************************
    CREATE INITIAL TOKEN
@@ -201,7 +189,7 @@ private def textAppName() {
 	def text = "EchoSistant"
 }	
 private def textVersion() {
-	def text = "Version 1.0.0 (10/29/2016)"
+	def text = "Version 1.0.0 (11/1/2016)"
 }
 private def textCopyright() {
 	def text = "Copyright © 2016 Jason Headley"
