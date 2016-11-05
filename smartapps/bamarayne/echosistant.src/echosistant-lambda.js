@@ -1,10 +1,13 @@
 /**
  *  Alexa Speaks - Lambda Code
  *
- *  Version 1.0.0  11/04/2016 Initial Release
- *
- *  11/04/2016 Copyright © 2016 Jason Headley
+ *  Version 1.0.0 - 10/29/2016 Copyright © 2016 Jason Headley
+ *  Special thanks for Michael Struck @MichaelS (Developer of AskAlexa) for allowing me
+ *  to build off of his base code.  Special thanks to Keith DeLong  @N8XD for his 
+ *  assistance in troubleshooting.... as I learned.....  Special thanks to Bobby
+ *  @SBDOBRESCU for jumping on board and being a co-consipirator in this adventure.
  *  
+ *  Version 1.0.0 - Initial release
  * 
  *  Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  *  in compliance with the License. You may obtain a copy of the License at:
@@ -21,8 +24,8 @@
     exports.handler = function( event, context ) {
     var https = require( 'https' );
     // Paste app code here between the breaks------------------------------------------------
-    var STappID = 'xxxxx';
-    var STtoken = 'xxxxx';
+    var STappID = 'xxxxxxx';
+    var STtoken = 'xxxxxxx';
     var url='https://graph.api.smartthings.com:443/api/smartapps/installations/' + STappID + '/' ;
     //---------------------------------------------------------------------------------------
         var cardName ="";
