@@ -1,7 +1,7 @@
 /**
- *  Alexa Speaks - Lambda Code
+ *  EchoSistant - Lambda Code
  *
- *  Version 1.0.0 - 10/29/2016 Copyright © 2016 Jason Headley
+ *  Version 1.0.0 - 11/04/2016 Copyright © 2016 Jason Headley
  *  Special thanks for Michael Struck @MichaelS (Developer of AskAlexa) for allowing me
  *  to build off of his base code.  Special thanks to Keith DeLong  @N8XD for his 
  *  assistance in troubleshooting.... as I learned.....  Special thanks to Bobby
