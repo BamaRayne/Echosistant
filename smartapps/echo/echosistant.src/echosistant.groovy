@@ -1,7 +1,8 @@
 /**
  * EchoSistant - The Ultimate Voice and Text Messaging Assistant Using Your Alexa Enable Device.
  *		
- *		11/04/2016     Version 1.0		Initial Release
+ *		11/05/2016		Version 1.0.1	OAuth error fix
+ *		11/04/2016      Version 1.0		Initial Release
  *
  * ROADMAP
  * - External TTS
@@ -153,8 +154,9 @@ def updated() {
 	unsubscribe()
 }
 def initialize() {
+		if (!state.accessToken)
 		OAuthToken()
-		log.error "Access token not defined. Ensure OAuth is enabled in the SmartThings IDE."
+	//	log.error "Access token not defined. Ensure OAuth is enabled in the SmartThings IDE."
 		log.trace "STappID = '${app.id}' , STtoken = '${state.accessToken}'"
 }
 /*************************************************************************************************************
@@ -201,7 +203,7 @@ private def textAppName() {
 	def text = "EchoSistant"
 }	
 private def textVersion() {
-	def text = "Version 1.0.0 (11/4/2016)"
+	def text = "Version 1.0.1 (11/5/2016)"
 }
 private def textCopyright() {
 	def text = "Copyright © 2016 Jason Headley"
