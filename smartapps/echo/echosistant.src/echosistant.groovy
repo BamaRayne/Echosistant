@@ -143,18 +143,19 @@ mappings {
 //************************************************************************************************************
 def installed() {
 	log.debug "Installed with settings: ${settings}"
-//	log.trace "STappID = '${app.id}' , STtoken = '${state.accessToken}'"
+	log.trace "STappID = '${app.id}' , STtoken = '${state.accessToken}'"
 	initialize()
-}
+	}
+
 def updated() {
 	log.debug "Updated with settings: ${settings}"
-	initialize()
+  	initialize()
 	unsubscribe()
 }
 def initialize() {
-	if (!state.accessToken) {
+		OAuthToken()
 		log.error "Access token not defined. Ensure OAuth is enabled in the SmartThings IDE."
-	}
+		log.trace "STappID = '${app.id}' , STtoken = '${state.accessToken}'"
 }
 /*************************************************************************************************************
    CREATE INITIAL TOKEN
