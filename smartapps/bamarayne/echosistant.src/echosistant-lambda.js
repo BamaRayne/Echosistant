@@ -28,7 +28,7 @@
     var STtoken = 'xxxxx';
     var url='https://graph.api.smartthings.com:443/api/smartapps/installations/' + STappID + '/' ;
     //---------------------------------------------------------------------------------------
-        var cardName ="";
+         var cardName ="";
         var endSession = true;
         var processedText;
         var process = false;
