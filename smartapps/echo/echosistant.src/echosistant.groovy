@@ -55,11 +55,12 @@ preferences {  //SHOW MAIN PAGE
 		}
     }
 }
+	page(name: "profiles", title: "Profiles", install: true, uninstall: false) {
         section {
         	app(name: "Profiles", appName: "echosistantProfile", namespace: "Echo", description: "Create New Profile...", multiple: true)
             image: "https://github.com/BamaRayne/Echosistant/blob/master/smartapps/bamarayne/echosistant.src/Echosistant_Config.png"
 	}
-
+	}
 page name: "about"
 	def about(){
 		dynamicPage(name: "about", uninstall: true) {
