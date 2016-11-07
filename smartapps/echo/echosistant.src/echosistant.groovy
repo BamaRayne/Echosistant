@@ -1,7 +1,7 @@
 /**
  * EchoSistant - The Ultimate Voice and Text Messaging Assistant Using Your Alexa Enable Device.
  *		
- * 
+ *		11/06/2016		Version 1.0.1f	Additional Debug messages and Alexa missing profile Response
  *		11/06/2016		Version 1.0.1d	Debug measures fixed
  *		11/06/2016		Version 1.0.1c  Debug measures added
  *		11/05/2016		Version 1.0.1b	OAuth Fix and Version # update 
@@ -155,8 +155,8 @@ mappings {
       }
 //************************************************************************************************************
 def installed() {
-	log.debug "Installed with settings: ${settings}"
-	log.trace "STappID = '${app.id}' , STtoken = '${state.accessToken}'"
+	if (debug) log.debug "Installed with settings: ${settings}"
+	if (debug) log.trace "STappID = '${app.id}' , STtoken = '${state.accessToken}'"
 	initialize()
 }
 def updated() {
@@ -204,7 +204,8 @@ def processTts() {
             childApps.each {child ->
     			child.profileEvaluate(dataSet)
                 }
-                                childApps.each{ child ->
+                
+                childApps.each{ child ->
         		def cm = child.label      
           			if (cm == pintentName) {
                             outputTxt = child.outputTxt
@@ -214,9 +215,14 @@ def processTts() {
                             	outputTxt = "Message sent to ${pintentName} "
                             }
             		}
+            }
+            if (outputTxt == '' ) {
+            	if (debug) log.debug "#4 No matching profile between profile: '${cm}' and intent '${pintentName}'"  
+				outputTxt = "Sorry, I was unable to find a profile named ${pintentName}, please check your spelling"
         	}
- if (debug) log.debug "#4 Alexa verbal response = '${outputTxt}'"  
-return ["outputTxt":outputTxt] 
+ 			
+            if (debug) log.debug "#5 Alexa verbal response = '${outputTxt}'"  
+			return ["outputTxt":outputTxt] 
 }
 /************************************************************************************************************
    Version/Copyright/Information/Help
