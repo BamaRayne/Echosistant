@@ -2,6 +2,7 @@
  * EchoSistant - The Ultimate Voice and Text Messaging Assistant Using Your Alexa Enable Device.
  *		
  * 
+ *		11/06/2016		Version 1.0.1d	Debug measures fixed
  *		11/06/2016		Version 1.0.1c  Debug measures added
  *		11/05/2016		Version 1.0.1b	OAuth Fix and Version # update 
  *		11/05/2016 		Version 1.0.1a	OAuth Log error	@ 11:46EST OAuth - Bobby
@@ -224,7 +225,7 @@ private def textAppName() {
 	def text = "EchoSistant"
 }	
 private def textVersion() {
-	def text = "Version 1.0.1c (11/06/2016)"
+	def text = "Version 1.0.1d (11/06/2016)"
 }
 private def textCopyright() {
 	def text = "Copyright © 2016 Jason Headley"
