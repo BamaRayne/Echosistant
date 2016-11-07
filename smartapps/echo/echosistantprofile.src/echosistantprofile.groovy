@@ -1,6 +1,7 @@
 /**
- *  Echosistant Profile 
+ *  Echosistant Profile
  *
+ *		11/06/2016		Version 1.0.1a	Additional Debug messages
  *		11/06/2016		Version 1.0.1	Debugging added
  *		11/04/2016     	Version 1.0		Initial Release    
  *
@@ -105,7 +106,7 @@ def textMessage(){
           if (sendContactText || sendText) {         
 			paragraph "By default Echosistant will deliver both voice and text messages to selected devices and contacts(s). Enable text ONLY using toggle below"
     		input "disableTts", "bool", title: "Disable spoken notification (only send text message to selected contact(s)", required: true, submitOnChange: true  
-            if (debug) log.debug "'${disableTts}"
+            if (parent.debug) log.debug "'${disableTts}"
             }
 		}        
 	}  
@@ -152,11 +153,11 @@ def certainTime() {
 	}
 }
 def installed() {
-	log.debug "Installed with settings: ${settings}"
+	if (parent.debug) log.debug "Installed with settings: ${settings}"
 	initialize()
 }
 def updated() {
-	log.debug "Updated with settings: ${settings}"
+	if (parent.debug) log.debug "Updated with settings: ${settings}"
 	initialize()
 	unsubscribe()
 }
@@ -189,7 +190,9 @@ def profileEvaluate(params) {
         tts = PreMsg + tts
             if (getDayOk()==true && getModeOk()==true && getTimeOk()==true) {
                	if (synthDevice) synthDevice?.speak(tts)
-        		if (mediaDevice) mediaDevice?.speak(tts)
+        			    if (parent.debug) log.debug "Sending message to Synthesis Devices"  
+                if (mediaDevice) mediaDevice?.speak(tts)
+                		if (parent.debug) log.debug "Sending message to Media Devices"  
             	if (tts) {
 					state.sound = textToSpeech(tts instanceof List ? tts[0] : tts)
 				}
@@ -198,12 +201,15 @@ def profileEvaluate(params) {
 				}
 				if (sonosDevice) {
 					sonosDevice.playTrackAndResume(state.sound.uri, state.sound.duration, volume)
+                    if (parent.debug) log.debug "Sending message to Sonos Devices"  
         		}
     		}
     		sendtxt(txt)
+             	if (parent.debug) log.debug "Sending sms and voice message to selected phones and speakers"  
 		}
 		else {
     		sendtxt(txt)
+            	if (parent.debug) log.debug "Only sending sms because disable voice message is ON"  
 		}
 	} 
 }
@@ -212,13 +218,17 @@ def profileEvaluate(params) {
 ***********************************************************************************************************************/
 private getModeOk() {
     def result = !modes || modes?.contains(location.mode)
+    def mode = location.mode
+    	if (parent.debug) log.trace "modeOk = $result; Location Mode is: $mode"
 	result
 } 
 private getDayOk() {
     def df = new java.text.SimpleDateFormat("EEEE")
-		location.timeZone ? df.setTimeZone(location.timeZone) : df.setTimeZone(TimeZone.getTimeZone("America/New_York"))
+	def timeZone = location.timeZone
+    	location.timeZone ? df.setTimeZone(location.timeZone) : df.setTimeZone(TimeZone.getTimeZone("America/New_York"))
 		def day = df.format(new Date())
 	    def result = !runDay || runDay?.contains(day)
+        	if (parent.debug) log.trace "getDayOk = $result. Location time zone is: $timeZone"
         return result
 }
 private getTimeOk() {
@@ -239,7 +249,8 @@ private getTimeOk() {
 		else if(endingX == "Sunset") stop = s.sunset.time
 		else if(ending) stop = timeToday(ending,location.timeZone).time
 		result = start < stop ? currTime >= start && currTime <= stop : currTime <= stop || currTime >= start
-	}
+			if (parent.debug) log.trace "getTimeOk = $result."
+    }
 	return result
 }
 private hhmm(time, fmt = "h:mm a") {
@@ -269,23 +280,28 @@ private timeIntervalLabel() {
 private void sendText(number, message) {
     if (sms) {
         def phones = sms.split("\\;")
+        	if (parent.debug) log.trace "SMS phones = $phones."
         for (phone in phones) {
             sendSms(phone, message)
         }
     }
 }
 private void sendtxt(message) {
-    log.debug "Profile output is '${message}'"
+    if (parent.debug) log.debug "Profile output is '${message}'"
     if (sendContactText) { 
     //if (location.contactBookEnabled) {
         sendNotificationToContacts(message, recipients)
+        if (parent.debug) log.trace "Sending text to recipients(s) $recipients."
     } //else {
     	if (push) {
             sendPush message
+               if (parent.debug) log.trace "Sending push $message."
         } else {
             sendNotificationEvent(message)
+            	 if (parent.debug) log.trace "Sending notification event: $message."
         }
         if (sms) {
             sendText(sms, message)
+             if (parent.debug) log.trace "Starting sms sending processwith message: $message."
 	}
 }
