@@ -2,6 +2,7 @@
  * EchoSistant - The Ultimate Voice and Text Messaging Assistant Using Your Alexa Enable Device.
  *		
  * 
+ *		11/06/2016		Version 1.0.1c  Debug measures added
  *		11/05/2016		Version 1.0.1b	OAuth Fix and Version # update 
  *		11/05/2016 		Version 1.0.1a	OAuth Log error	@ 11:46EST OAuth - Bobby
  *		11/05/2016		Version 1.0.1	OAuth error fix
@@ -14,8 +15,8 @@
  * - Replay last message
  *
  * Credits
- * Thank you to MichaelS (creator of AskAlexa) for guidance and for letting me use his outstanding Wiki
- * and to begin this project using his code as a jump start.  Thanks goes to Keith @n8xd for his hero with  
+ * Thank you to @MichaelS (creator of AskAlexa) for guidance and for letting me use his outstanding Wiki
+ * and to begin this project using his code as a jump start.  Thanks goes to Keith @n8xd for his help with  
  * troubleshooting my lambda code. And a huge thank you to @SBDOBRESCU, the co-author of this project, for 
  * jumping on board and helping me expand this project into something more. 
  *
@@ -54,12 +55,11 @@ preferences {  //SHOW MAIN PAGE
 		}
     }
 }
-	page(name: "profiles", title: "Profiles", install: true, uninstall: false) {
-    	section {
-            app(name: "Profiles", appName: "echosistantProfile", namespace: "Echo", description: "Create New Profile...", multiple: true)
+        section {
+        	app(name: "Profiles", appName: "echosistantProfile", namespace: "Echo", description: "Create New Profile...", multiple: true)
             image: "https://github.com/BamaRayne/Echosistant/blob/master/smartapps/bamarayne/echosistant.src/Echosistant_Config.png"
 	}
-}
+
 page name: "about"
 	def about(){
 		dynamicPage(name: "about", uninstall: true) {
@@ -84,8 +84,15 @@ page name: "about"
 				def msg = textLicense()
 					if (ShowLicense) paragraph "${msg}"
 			}
-			section("SmartApp Instructions") { paragraph ("For detailed installation and how-to instruction, follow the link below") 
-			}
+            section("Debugging") {
+            	input "debug", "bool", title: "Enable Debug Logging", default: false, submitOnChange: true 
+            //    input "info", "bool", title: "Enable Information Logging", default: false, submitOnChange: true
+                if (debug) log.info "${textAppName()}\n${textVersion()}"//\n${textCopyright()}"
+                     }
+           
+			section ("Directions, information, and troubleshooting") { 
+			href url:"http://thingsthataresmart.wiki/index.php?title=EchoSistant", title: "EchoSistant Wiki", description: none
+            }
 			section("Tap below to remove the ${textAppName()} application.  This will remove ALL Profiles and the App from the SmartThings mobile App."){}
 		}
 }      
@@ -149,20 +156,26 @@ def installed() {
 	log.debug "Installed with settings: ${settings}"
 	log.trace "STappID = '${app.id}' , STtoken = '${state.accessToken}'"
 	initialize()
-	}
-
+}
 def updated() {
-	log.debug "Updated with settings: ${settings}"
-  	initialize()
-	unsubscribe()
+	if (debug) log.debug "Updated with settings: ${settings}"
+    initialize()
+	unsubscribe()    
 }
 def initialize() {
+def children = getChildApps()
+if (debug) log.debug "$children.size Profiles installed"
+children.each { child ->
+//    log.debug "Child app id: $child.id"
+}
+     
 	if (!state.accessToken) {
                OAuthToken()
 		paragraph "You must enable OAuth via the IDE to setup this app"
-		log.trace "STappID = '${app.id}' , STtoken = '${state.accessToken}'"
-				}
-}
+		log.trace "STappID = '${app.id}' , STtoken = '${state.accessToken}'"            
+		}
+    }
+
 /*************************************************************************************************************
    CREATE INITIAL TOKEN
 *************************************************************************************************************/
@@ -177,29 +190,32 @@ def OAuthToken(){
 /************************************************************************************************************
    TEXT TO SPEECH PROCESS 
 ************************************************************************************************************/
-def processTts() {	
-        def ptts = params.ttstext 
+def processTts() {
+		def ptts = params.ttstext 
+       		if (debug) log.debug "#1 Message received from Lambda (ptts) = '${ptts}'"
         def pttx = params.ttstext
-		def pintentName = params.intentName
-		def outputTxt = ''            
+        	if (debug) log.debug "#2 Message received from Lambda (pttx) = '${pttx}'"
+        def pintentName = params.intentName
+			if (debug) log.debug "#3 Profile being called = '${pintentName}'"
+        def outputTxt = ''
         def dataSet = [ptts:ptts,pttx:pttx,pintentName:pintentName]        		
             childApps.each {child ->
     			child.profileEvaluate(dataSet)
-			    }
-                childApps.each{ child ->
+                }
+                                childApps.each{ child ->
         		def cm = child.label      
           			if (cm == pintentName) {
                             outputTxt = child.outputTxt
                             if (outputTxt) {
-                				log.debug "Parsing custom response from profile" 
-                            }
+                			}
                 			else {
-                				outputTxt = "Message sent to ${pintentName} "
-            				}
+                            	outputTxt = "Message sent to ${pintentName} "
+                            }
             		}
         	}
-        return ["outputTxt":outputTxt]
-} 
+ if (debug) log.debug "#4 Alexa verbal response = '${outputTxt}'"  
+return ["outputTxt":outputTxt] 
+}
 /************************************************************************************************************
    Version/Copyright/Information/Help
 ************************************************************************************************************/
@@ -207,7 +223,7 @@ private def textAppName() {
 	def text = "EchoSistant"
 }	
 private def textVersion() {
-	def text = "Version 1.0.1b (11/5/2016)"
+	def text = "Version 1.0.1c (11/06/2016)"
 }
 private def textCopyright() {
 	def text = "Copyright © 2016 Jason Headley"

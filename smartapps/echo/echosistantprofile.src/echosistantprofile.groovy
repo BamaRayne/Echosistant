@@ -104,7 +104,8 @@ def textMessage(){
           if (sendContactText || sendText) {         
 			paragraph "By default Echosistant will deliver both voice and text messages to selected devices and contacts(s). Enable text ONLY using toggle below"
     		input "disableTts", "bool", title: "Disable spoken notification (only send text message to selected contact(s)", required: true, submitOnChange: true  
-            }            
+            if (debug) log.debug "'${disableTts}"
+            }
 		}        
 	}  
 }
@@ -180,13 +181,13 @@ def unsubscribeToEvents() {
 def profileEvaluate(params) {
         def tts = params.ptts 
         def txt = params.pttx
-	def intent  = params.pintentName
+        def intent  = params.pintentName
         def childName = app.label
-   	if (intent == childName){
+    if (intent == childName){
 		if (!disableTts){
-			tts = PreMsg + tts
+        tts = PreMsg + tts
             if (getDayOk()==true && getModeOk()==true && getTimeOk()==true) {
-            	if (synthDevice) synthDevice?.speak(tts)
+               	if (synthDevice) synthDevice?.speak(tts)
         		if (mediaDevice) mediaDevice?.speak(tts)
             	if (tts) {
 					state.sound = textToSpeech(tts instanceof List ? tts[0] : tts)
@@ -217,7 +218,7 @@ private getDayOk() {
 		location.timeZone ? df.setTimeZone(location.timeZone) : df.setTimeZone(TimeZone.getTimeZone("America/New_York"))
 		def day = df.format(new Date())
 	    def result = !runDay || runDay?.contains(day)
-    	return result
+        return result
 }
 private getTimeOk() {
 	def result = true
@@ -273,7 +274,7 @@ private void sendText(number, message) {
     }
 }
 private void sendtxt(message) {
-    log.debug message
+    log.debug "Profile output is '${message}'"
     if (sendContactText) { 
     //if (location.contactBookEnabled) {
         sendNotificationToContacts(message, recipients)
