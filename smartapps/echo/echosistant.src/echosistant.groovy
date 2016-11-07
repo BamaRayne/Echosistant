@@ -76,7 +76,7 @@ page name: "about"
             	def msg = state.accessToken != null ? state.accessToken : "Could not create Access Token. OAuth may not be enabled. "+
 				"Go to the SmartApp IDE settings to enable OAuth."	
                 if (ShowTokens) log.info "STappID = '${app.id}' , STtoken = '${state.accessToken}'"
-		if (ShowTokens) log.info " API url: ${getApiServerUrl()}/api/smartapps/installations/${app.id}/cheat?access_token=${state.accessToken}"
+		if (ShowTokens) log.info " API url: ${getApiServerUrl()}/api/smartapps/installations/${app.id}"
                 if (ShowTokens) paragraph "Access token:\n${msg}\n\nApplication ID:\n${app.id}"
 			}
 			section ("Revoke/Renew Access Token & Application ID"){
@@ -113,7 +113,7 @@ page name: "Tokens"
 					def msg = state.accessToken != null ? state.accessToken : "Could not create Access Token. "+
     				"OAuth may not be enabled. Go to the SmartApp IDE settings to enable OAuth." 
 					log.info "STappID = '${app.id}' , STtoken = '${state.accessToken}'"
-					log.info " API url: ${getApiServerUrl()}/api/smartapps/installations/${app.id}/cheat?access_token=${state.accessToken}"
+					log.info " API url: ${getApiServerUrl()}/api/smartapps/installations/${app.id}"
 			section ("Reset Access Token / Application ID"){
 				href "pageConfirmation", title: "Reset Access Token and Application ID", description: none
 		}
@@ -145,7 +145,7 @@ page name: "pageReset"
 				paragraph "${msg}"
                 paragraph "The new access token and app ID are now displayed in the Live Logs tab of the IDE."
                 log.info "STappID = '${app.id}' , STtoken = '${state.accessToken}'"
-		log.info " API url: ${getApiServerUrl()}/api/smartapps/installations/${app.id}/cheat?access_token=${state.accessToken}"
+		log.info " API url: ${getApiServerUrl()}/api/smartapps/installations/${app.id}"
 			}
 			section(" "){ 
         		href "mainPage", title: "Tap Here To Go Back To Main Menu", description: none 
@@ -160,7 +160,7 @@ mappings {
 def installed() {
 	if (debug) log.debug "Installed with settings: ${settings}"
 	if (debug) log.trace "STappID = '${app.id}' , STtoken = '${state.accessToken}'"
-	if (debug) log.info " API url: ${getApiServerUrl()}/api/smartapps/installations/${app.id}/cheat?access_token=${state.accessToken}"
+	if (debug) log.info " API url: ${getApiServerUrl()}/api/smartapps/installations/${app.id}"
 	initialize()
 }
 def updated() {
@@ -179,7 +179,7 @@ children.each { child ->
                OAuthToken()
 		paragraph "You must enable OAuth via the IDE to setup this app"
 		log.trace "STappID = '${app.id}' , STtoken = '${state.accessToken}'"  
-		log.info " API url: ${getApiServerUrl()}/api/smartapps/installations/${app.id}/cheat?access_token=${state.accessToken}"
+		log.info " API url: ${getApiServerUrl()}/api/smartapps/installations/${app.id}"
 		}
     }
 
