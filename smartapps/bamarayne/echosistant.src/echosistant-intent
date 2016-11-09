@@ -1,11 +1,15 @@
 {
   "intents": [
     {
-"intent": "PASTE PROFILE NAME HERE",
+"intent": "Teenagers",
 "slots": [
 {
 "name": "ttstext",
 "type": "LITERAL"
+},
+  {
+    "name": "ttstts",
+    "type": "LITERAL"
 }
 ]
 }
