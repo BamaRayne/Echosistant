@@ -1,8 +1,9 @@
 /**
  *  Echosistant Profile 
  *
- *		11/03/2016		UI changes      
- *		11/01/2016		Initial Release    
+ * 		11/06/2016		Version 1.0.1a	Additional Debug messages
+ *		11/06/2016		Version 1.0.1	Debugging added
+ *		11/04/2016     	Version 1.0		Initial Release    
  *
  *  Copyright 2016 Jason Headley
  *
@@ -37,26 +38,13 @@ preferences {
     				page name: "sonos"
         	page name: "restrictions"
     			page name: "certainTime"
-    	page name: "about"	
+            page name: "CoRE"
 }
 //************************************************************************************************************
 //Show main page
-def mainPage() {
-    dynamicPage(name: "mainPage", title:"                      ${textAppName()}", install: true, uninstall: false) {
+def mainPage() {	       
+    dynamicPage(name: "mainPage", title:"", install: true, uninstall: true) {
         section("") {
- 	href "configuration", title: "Profile Configuration", description: "Tap here to configure installed application options (Pre-messages, restrictions, texts...)",
-  			 	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Config.png"
-    href "about", title: "About '${textAppName()}'", description: "Tap to get version, license information, Securty Tokens, and to remove the app",
-            	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_About.png"
-            }
-            section("                               Rename Profile"){
-        	label title:"              Rename Profile ", required:true, defaultValue: "${textAppName()}"    		
-        }
-	}
-}
-def configuration() {
-	dynamicPage(name: "configuration", uninstall: false) {
-    	section (""){
     		href "speech", title: "Audio Pre-message and Alexa Response", description: "Tap here to configure", 
             	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_msg.png"
 			href "textMessage", title: "Text Messages", description: "Tap here to set up text messages", 
@@ -65,41 +53,30 @@ def configuration() {
             	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Media.png"
 			href "restrictions", title: "Profile Restrictions", description: "Tap here to configure this Profiles Restrictions", 
             	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Rest.png"
- 		}
+            href "CoRE", title: "CoRE Integration", description: "Tap here to configure CoRE options...",
+            	image: "https://cdn.rawgit.com/ady624/CoRE/master/resources/images/app-CoRE.png"
+        }
+        section ("") {
+ 		   	label title:"              Rename Profile ", required:false, defaultValue: "New Profile"  
+            }
+        section ("") {
+          	paragraph "      Tap below to remove this Profile"    	
+        }
 	}
-}    
-page name: "about"
-	def about(){
-		dynamicPage(name: "about", uninstall: true) {
-           section ("Security Tokens - FOR CHILD APP ONLY"){
-            	paragraph ("Log into the IDE on your computer and navigate to the Live Logs tab. Leave that window open, come back here, and open this section")
-                input "ShowTokens", "bool", title: "Show Security Tokens", default: false, submitOnChange: true
-                if (ShowTokens) paragraph "The Security Tokens are now displayed in the Live Logs section of the IDE"
-            	def msg = state.accessToken != null ? state.accessToken : "Could not create Access Token. OAuth may not be enabled. "+
-				"Go to the SmartApp IDE settings to enable OAuth."	
-                if (ShowTokens) log.info "STappID = '${app.id}' , STtoken = '${state.accessToken}'"
-                if (ShowTokens) paragraph "Access token:\n${msg}\n\nApplication ID:\n${app.id}"
-			}
-			section ("Revoke/Renew Access Token & Application ID"){
-				href "Tokens", title: "Revoke/Reset Security Access Token", description: none
-			}
-			section ("Apache License"){
-				input "ShowLicense", "bool", title: "Show License", default: false, submitOnChange: true
-				def msg = textLicense()
-					if (ShowLicense) paragraph "${msg}"
-			}
-			section("SmartApp Instructions") { paragraph ("For detailed installation and how-to instruction, follow the link below") 
-			}
-            section ("Source Code to create the Amazon Skill"){
-            if (!state.accessToken) OAuthToken()
-            if (!state.accessToken)  paragraph "**You must enable OAuth via the IDE to produce the command cheat sheet**"             
-            else href url:"${getApiServerUrl()}/api/smartapps/installations/${app.id}/setup?access_token=${state.accessToken}", 
-            style:"embedded", required:false, title: "", 
-            description: "Tap to display the code needed to build Amazon Skill.\n"+
-            "Use Live Logging in the SmartThings IDE to obtain the address for use on your computer broswer."
-			}
-			section("Tap below to remove the ${textAppName()} application.  This will remove this Profile only from the SmartThings mobile App."){}
-		}
+} 
+def CoRE() {
+	dynamicPage(name: "CoRE", install: false, uninstall: false) {
+		section { paragraph "CoRE Trigger Settings" }
+		section (" "){
+   			input "CoREName", "enum", title: "Choose CoRE Piston", options: parent.state.CoREPistons, required: false, multiple: false
+        	input "cDelay", "number", title: "Default Delay (Minutes) To Trigger", defaultValue: 0, required: false
+        }
+        if (!parent.state.CoREPistons){
+        	section("Missing CoRE pistons"){
+				paragraph "It looks like you don't have the CoRE SmartApp installed, or you haven't created any pistons yet. To use this capability, please install CoRE or, if already installed, create some pistons, then try again."
+            }
+        }	
+    }
 }
 def restrictions(){
     dynamicPage(name: "restrictions", title: "Configure Restrictions", uninstall: false){
@@ -119,11 +96,11 @@ def speech(){
     dynamicPage(name: "speech", title: "Configure Speech Notifications", uninstall: false){
 		section (""){ 
     	input "ShowPreMsg", "bool", title: "Enable TTS Pre-Message", default: false, submitOnChange: true
-        	if (ShowPreMsg) input "PreMsg", "text", title: "Pre-Message Notification", required: true, defaultValue: "Attention.  Attention Please   "
+        	if (ShowPreMsg) input "PreMsg", "text", title: "Pre-Message Notification", required: false, defaultValue: "Attention, Attention please..  "
             }
         section ( "" ){
         input "feedBack", "bool", title: "Enable Custom Alexa Response", default: false, submitOnChange: true
-        	if (feedBack) input "outputTxt", "text", title: "Alexa Response", defaultValue: "Message Sent", required: false
+        	if (feedBack) input "outputTxt", "text", title: "Alexa Response", defaultValue: none, required: false
       	} 
     }
 }
@@ -145,7 +122,8 @@ def textMessage(){
           if (sendContactText || sendText) {         
 			paragraph "By default Echosistant will deliver both voice and text messages to selected devices and contacts(s). Enable text ONLY using toggle below"
     		input "disableTts", "bool", title: "Disable spoken notification (only send text message to selected contact(s)", required: true, submitOnChange: true  
-            }            
+             if (parent.debug) log.debug "'${disableTts}"
+            }
 		}        
 	}  
 }
@@ -191,23 +169,25 @@ def certainTime() {
 	}
 }
 def installed() {
-log.debug "Installed with settings: ${settings}"
-initialize()
+	if (parent.debug) log.debug "Installed with settings: ${settings}"
+	initialize()
 }
 def updated() {
-log.debug "Updated with settings: ${settings}"
-initialize()
-unsubscribe()
+	if (parent.debug) log.debug "Updated with settings: ${settings}"
+	initialize()
+	unsubscribe()
 }
 def initialize() {
 	profileEvaluate(parent.processTts())
+subscribe(location, "CoRE", coreHandler)
+sendLocationEvent(name: "EchoSistant", value: "refresh", data: [macros: parent ? parent.getCoREMacroList() : getCoREMacroList()] , isStateChange: true, descriptionText: "Echosistant Profile list refresh")
 }    
 def subscribeToEvents() {
 	if (runModes) {
 		subscribe(runMode, location.currentMode, modeChangeHandler)
 	}
     if (runDay) {
-       subscribe(runDay, location.day, location.currentDay)
+   		subscribe(runDay, location.day, location.currentDay)
        }
 } 
 def unsubscribeToEvents() {
@@ -215,43 +195,22 @@ def unsubscribeToEvents() {
     	unsubscribe(location, modeChangeHandler)
     }
 }    
-/************************************************************************************************************
-	WEB PAGE ELEMENTS
-******************************************************************************************************/
-mappings {
-	path("/u") { action: [GET: "getURLs"] }
-    path("/setup") { action: [GET: "setupData"] }
-}
-def setupData(){
-	log.info "Install setup data web page located at : ${getApiServerUrl()}/api/smartapps/installations/${app.id}/setup?access_token=${state.accessToken}"
-    def result ="<div style='padding:10px'><i><b><a href='https://developer.amazon.com' target='_blank'>Amazon Skill Code</a></i>"+
-    "</b>Intent Schema:</b><br>Code goes here<br>var STtoken;<br>"
-    result += "var url='${getApiServerUrl()}/api/smartapps/installations/' + STappID + '/' ;<br><br><hr>"
-	displayData(result)
-}
-def OAuthToken(){
-	try {
-        createAccessToken()
-		log.debug "Creating new Access Token"
-	} catch (e) { log.error "Access Token not defined. OAuth may not be enabled. Go to the SmartApp IDE settings to enable OAuth." }
-}
-def displayData(display){
-	render contentType: "text/html", data: """<!DOCTYPE html><html><head><meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0"/></head><body style="margin: 0;">${display}</body></html>"""
-}
 /******************************************************************************************************
    SPEECH AND TEXT PROCESSING
 ******************************************************************************************************/
 def profileEvaluate(params) {
         def tts = params.ptts 
         def txt = params.pttx
-		def intent  = params.pintentName
+        def intent  = params.pintentName
         def childName = app.label
-   	if (intent == childName){
+    if (intent == childName){
 		if (!disableTts){
-			tts = PreMsg + tts
+        tts = PreMsg + tts
             if (getDayOk()==true && getModeOk()==true && getTimeOk()==true) {
-            	if (synthDevice) synthDevice?.speak(tts)
-        		if (mediaDevice) mediaDevice?.speak(tts)
+               	if (synthDevice) synthDevice?.speak(tts)
+        		if (parent.debug) log.debug "Sending message to Synthesis Devices"  
+                if (mediaDevice) mediaDevice?.speak(tts)
+                if (parent.debug) log.debug "Sending message to Media Devices"  
             	if (tts) {
 					state.sound = textToSpeech(tts instanceof List ? tts[0] : tts)
 				}
@@ -260,32 +219,60 @@ def profileEvaluate(params) {
 				}
 				if (sonosDevice) {
 					sonosDevice.playTrackAndResume(state.sound.uri, state.sound.duration, volume)
-        		}
+        		if (parent.debug) log.debug "Sending message to Sonos Devices"         				
+                }
     		}
     		sendtxt(txt)
-		}
+			if (parent.debug) log.debug "Sending sms and voice message to selected phones and speakers"
+        }
 		else {
     		sendtxt(txt)
-		}
+			if (parent.debug) log.debug "Only sending sms because disable voice message is ON"
+        }
 	} 
+}
+//CoRE Handler-----------------------------------------------------------
+def CoREResults(sDelay){	
+	String result = ""
+    def delay
+    if (cDelay>0 || sDelay>0) delay = sDelay==0 ? cDelay as int : sDelay as int
+	result = (!delay || delay == 0) ? "I am triggering the CORE macro named '${app.label}'. " : delay==1 ? "I'll trigger the '${app.label}' CORE macro in ${delay} minute. " : "I'll trigger the '${app.label}' CORE macro in ${delay} minutes. "
+		if (sDelay == 9999) { 
+		result = "I am cancelling all scheduled executions of the CORE macro, '${app.label}'. "  
+		state.scheduled = false
+		unschedule() 
+	}
+	if (!state.scheduled) {
+		if (!delay || delay == 0) CoREHandler() 
+		else if (delay < 9999) { runIn(delay*60, CoREHandler, [overwrite: true]) ; state.scheduled=true}
+		if (delay < 9999) result = voicePost && !noAck ? replaceVoiceVar(voicePost, delay) : noAck ? " " : result
+	}
+	else result = "The CORE macro, '${app.label}', is already scheduled to run. You must cancel the execution or wait until it runs before you can run it again. %1%"
+	return result
+}
+def CoREHandler(){ 
+	state.scheduled = false
+    def data = [pistonName: CoREName, args: "I am activating the CoRE Macro: '${app.label}'."]
+    sendLocationEvent (name: "CoRE", value: "execute", data: data, isStateChange: true, descriptionText: "Ask Alexa triggered '${CoREName}' piston.")
+	if (noteFeedAct && noteFeed) sendNotificationEvent("Ask Alexa activated CoRE macro: '${app.label}'.")
 }
 /***********************************************************************************************************************
     RESTRICTIONS HANDLER
 ***********************************************************************************************************************/
-private def textHelp() {
-	def text =
-		"This smartapp allows you to speak freely to your Alexa device and have it repeated back on a remote playback device"h
-}
 private getModeOk() {
     def result = !modes || modes?.contains(location.mode)
 	result
 } 
 private getDayOk() {
     def df = new java.text.SimpleDateFormat("EEEE")
-		location.timeZone ? df.setTimeZone(location.timeZone) : df.setTimeZone(TimeZone.getTimeZone("America/New_York"))
+		def timeZone = location.timeZone
+        location.timeZone ? df.setTimeZone(location.timeZone) : df.setTimeZone(TimeZone.getTimeZone("America/New_York"))
 		def day = df.format(new Date())
 	    def result = !runDay || runDay?.contains(day)
-    	return result
+        def mode = location.mode
+        if (parent.debug) log.trace "modeOk = $result; Location Mode is: $mode"
+        if (parent.debug) log.trace "getDayOk = $result. Location time zone is: $timeZone"
+        return result
 }
 private getTimeOk() {
 	def result = true
@@ -305,8 +292,9 @@ private getTimeOk() {
 		else if(endingX == "Sunset") stop = s.sunset.time
 		else if(ending) stop = timeToday(ending,location.timeZone).time
 		result = start < stop ? currTime >= start && currTime <= stop : currTime <= stop || currTime >= start
-	}
-	return result
+	if (parent.debug) log.trace "getTimeOk = $result."
+    }
+    return result
 }
 private hhmm(time, fmt = "h:mm a") {
 	def t = timeToday(time, location.timeZone)
@@ -329,59 +317,33 @@ private timeIntervalLabel() {
 	else if (starting && endingX == "Sunset") result = hhmm(starting) + " to Sunset" + offset(endSunsetOffset)
 	else if (starting && ending) result = hhmm(starting) + " to " + hhmm(ending, "h:mm a z")
 }
+/***********************************************************************************************************************
+    SMS HANDLER
+***********************************************************************************************************************/
 private void sendText(number, message) {
     if (sms) {
         def phones = sms.split("\\;")
+        if (parent.debug) log.trace "SMS phones = $phones."
         for (phone in phones) {
             sendSms(phone, message)
         }
     }
 }
 private void sendtxt(message) {
-    log.debug message
+    if (parent.debug) log.debug "Profile output is '${message}'"
     if (sendContactText) { 
     //if (location.contactBookEnabled) {
         sendNotificationToContacts(message, recipients)
+    	if (parent.debug) log.trace "Sending text to recipients(s) $recipients."
     } //else {
     	if (push) {
             sendPush message
+        	if (parent.debug) log.trace "Sending push $message."
         } else {
             sendNotificationEvent(message)
+        	if (parent.debug) log.trace "Sending notification event: $message."
         }
         if (sms) {
             sendText(sms, message)
 	}
-}
-/************************************************************************************************************
-  Version/Copyright/Information/Help
-*************************************************************************************************************/
-private def textAppName() {
-	def text = "This Profile"
-}
-private def textVersion() {
-    def text = "Version 0.1.0 	(10/25/2016)"
-}
-private def textLicense() {
-	def text =
-	"Licensed under the Apache License, Version 2.0 (the 'License'); "+
-	"you may not use this file except in compliance with the License. "+
-	"You may obtain a copy of the License at"+
-	"\n\n"+
-	" http://www.apache.org/licenses/LICENSE-2.0"+
-	"\n\n"+
-	"Unless required by applicable law or agreed to in writing, software "+
-	"distributed under the License is distributed on an 'AS IS' BASIS, "+
-	"WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. "+
-	"See the License for the specific language governing permissions and "+
-	"limitations under the License."
-}
-private def textAmazonSkill() {
-	def text =
-	"Follow this link to create a new Alexa Skill using the code below "+
-	"\n\n"+
-	" https://developer.amazon.com/home.html"+
-	"\n\n"+
-	"Copy this code to populate the Intent Schema: "+
-	"\n\n"+   
-    "Copy this code to populate the Sample Utterances:"
 }
