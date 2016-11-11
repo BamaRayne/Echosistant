@@ -2,7 +2,8 @@
  * EchoSistant - The Ultimate Voice and Text Messaging Assistant Using Your Alexa Enable Device.
  *		
  * 
- *										OAuth bug fix, additional debug, CoRE integration prep.
+ *		11/12/2016		version 1.1.0	OAuth bug fix, additional debug actions, Alexa feedback options, Intent and Utterance file updates
+ *										Control Switches on/off with delay off
  *		11/07/2016		Version 1.0.1f	Additional Debug messages and Alexa missing profile Response
  *		11/06/2016		Version 1.0.1d	Debug measures fixed
  *		11/06/2016		Version 1.0.1c  Debug measures added
@@ -161,7 +162,7 @@ def installed() {
 	initialize()
 }
 def childUninstalled() {
-	sendLocationEvent(name: "EchoSistant", value: "refresh", data: [profiles: parent ? parent.getCoREList() : getCoreProfileList()] , isStateChange: true, descriptionText: "EchoSistant Profile list refresh")
+//	sendLocationEvent(name: "EchoSistant", value: "refresh", data: [profiles: parent ? parent.getCoREList() : getCoreProfileList()] , isStateChange: true, descriptionText: "EchoSistant Profile list refresh")
 }
 def updated() {
 	if (debug) log.debug "Updated with settings: ${settings}"
@@ -180,8 +181,8 @@ children.each { child ->
     paragraph "You must enable OAuth via the IDE to setup this app"
 }
 		log.trace "STappID = '${app.id}' , STtoken = '${state.accessToken}'"            
-subscribe(location, "CoRE", coreHandler)
-sendLocationEvent(name: "EchoSistant", value: "refresh", data: [profiles: parent ? parent.getCoREProfileList() : getCoREProfileList()] , isStateChange: true, descriptionText: "EchoSistant Profile list refresh")
+//subscribe(location, "CoRE", coreHandler)
+//sendLocationEvent(name: "EchoSistant", value: "refresh", data: [profiles: parent ? parent.getCoREProfileList() : getCoREProfileList()] , isStateChange: true, descriptionText: "EchoSistant Profile list refresh")
 	}
 }
 /*************************************************************************************************************
@@ -196,42 +197,41 @@ def OAuthToken(){
 	}
 }
 /************************************************************************************************************
-Pi   TEXT TO SPEECH PROCESS 
+   TEXT TO SPEECH PROCESS 
 ************************************************************************************************************/
+  
 def processTts() {
-		def ptts = params.ttstext 
-       		if (debug) log.debug "#1 Message received from Lambda (ptts) = '${ptts}'"
+		def replayMessage = params.ttstext
+        def ptts = params.ttstext 
+            if (debug) log.debug "#1 Message received from Lambda (ptts) = '${ptts}'"
         def pttx = params.ttstext
         	if (debug) log.debug "#2 Message received from Lambda (pttx) = '${pttx}'"
         def pintentName = params.intentName
 			if (debug) log.debug "#3 Profile being called = '${pintentName}'"
         def outputTxt = ''
-        def dataSet = [ptts:ptts,pttx:pttx,pintentName:pintentName]        		
-            childApps.each {child ->
+        def dataSet = [ptts:ptts,pttx:pttx,pintentName:pintentName] 
+                childApps.each {child ->
     			child.profileEvaluate(dataSet)
                 }
-                              
-                childApps.each{ child ->
-        		def cm = child.label      
-          			if (cm == pintentName) {
-                    outputTxt = child.outputTxt
-                            if (outputTxt) {
-                			}
-                			else { 
-                            if (childfeedback) outputTxt = "Message sent to ${pintentName} "
-                                	
-                            }
-            		}
-           }
-           
-           if (outputTxt == '' ) {
-           if (debug) log.debug "#4 No matching profile between profile: '${cm}' and intent '${pintentName}'"  
-			outputTxt = "Sorry, I was unable to find a profile named ${pintentName}, please check your spelling"
+                childApps.each { child ->
+        		def cm = child.label
+                	if (child.AfeedBack)
+                	if (cm == pintentName) {
+                    		if (child.Acustom) outputTxt = child.outputTxt
+                            	else
+                            if (child.Arepeat) outputTxt = "I have delivered the following message to '${cm}',  " + ptts
+								else 
+                            if (pintentName == repeatMessage) return result
+                            	else
+                                outputTxt = "Message sent to ${pintentName} "
+							if (debug) log.debug "#5 Alexa verbal response = '${outputTxt}'"
+	                            }
+							}                                
+            return ["outputTxt":outputTxt]
+          
 }
-			
-        if (debug) log.debug "#5 Alexa verbal response = '${outputTxt}'"  
-		return ["outputTxt":outputTxt] 
-        }
+
+
 /************************************************************************************************************
    Version/Copyright/Information/Help
 ************************************************************************************************************/
