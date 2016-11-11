@@ -1,6 +1,9 @@
 /**
  *  Echosistant Profile 
  *
+ *		11/12/2016		version 1.1.0	OAuth bug fix, additional debug actions, Alexa feedback options, Intent and Utterance file updates
+ *										Control Switches on/off with delay off
+ *		11/09/2016		Version 1.0.1b	Message Config Options
  * 		11/06/2016		Version 1.0.1a	Additional Debug messages
  *		11/06/2016		Version 1.0.1	Debugging added
  *		11/04/2016     	Version 1.0		Initial Release    
@@ -36,6 +39,7 @@ preferences {
     			page name: "textMessage"
         		page name: "audioDevices"
     				page name: "sonos"
+            page name: "devices"
         	page name: "restrictions"
     			page name: "certainTime"
             page name: "CoRE"
@@ -45,16 +49,18 @@ preferences {
 def mainPage() {	       
     dynamicPage(name: "mainPage", title:"", install: true, uninstall: true) {
         section("") {
-    		href "speech", title: "Audio Pre-message and Alexa Response", description: "Tap here to configure", 
+    		href "speech", title: "Audio Message Options", description: "Tap here to configure", 
             	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_msg.png"
-			href "textMessage", title: "Text Messages", description: "Tap here to set up text messages", 
+			href "textMessage", title: "Text Messages", description: "Tap here to configure", 
             	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Text.png"
-			href "audioDevices", title: "Audio Playback Devices", description: "Tap here to choose your playback devices", 
+			href "audioDevices", title: "Audio Playback Devices", description: "Tap here to configure", 
             	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Media.png"
-			href "restrictions", title: "Profile Restrictions", description: "Tap here to configure this Profiles Restrictions", 
+			href "restrictions", title: "Profile Restrictions", description: "Tap here to configure", 
+                image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Rest.png"
+            href "devices", title: "Control these devices", description: "Tap here to configure",
             	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Rest.png"
-            href "CoRE", title: "CoRE Integration", description: "Tap here to configure CoRE options...",
-            	image: "https://cdn.rawgit.com/ady624/CoRE/master/resources/images/app-CoRE.png"
+//            href "CoRE", title: "CoRE Integration", description: "Tap here to configure CoRE options...",
+//            	image: "https://cdn.rawgit.com/ady624/CoRE/master/resources/images/app-CoRE.png"
         }
         section ("") {
  		   	label title:"              Rename Profile ", required:false, defaultValue: "New Profile"  
@@ -64,20 +70,34 @@ def mainPage() {
         }
 	}
 } 
-def CoRE() {
-	dynamicPage(name: "CoRE", install: false, uninstall: false) {
-		section { paragraph "CoRE Trigger Settings" }
-		section (" "){
-   			input "CoREName", "enum", title: "Choose CoRE Piston", options: parent.state.CoREPistons, required: false, multiple: false
-        	input "cDelay", "number", title: "Default Delay (Minutes) To Trigger", defaultValue: 0, required: false
-        }
-        if (!parent.state.CoREPistons){
-        	section("Missing CoRE pistons"){
-				paragraph "It looks like you don't have the CoRE SmartApp installed, or you haven't created any pistons yet. To use this capability, please install CoRE or, if already installed, create some pistons, then try again."
-            }
-        }	
-    }
-}
+//def CoRE() {
+//	dynamicPage(name: "CoRE", install: false, uninstall: false) {
+//		section { paragraph "CoRE Trigger Settings" }
+//		section (" "){
+//   			input "CoREName", "enum", title: "Choose CoRE Piston", options: parent.state.CoREPistons, required: false, multiple: false
+//        	input "cDelay", "number", title: "Default Delay (Minutes) To Trigger", defaultValue: 0, required: false
+//        }
+//        if (!parent.state.CoREPistons){
+//        	section("Missing CoRE pistons"){
+//				paragraph "It looks like you don't have the CoRE SmartApp installed, or you haven't created any pistons yet. To use this capability, please install CoRE or, if already installed, create some pistons, then try again."
+//            }
+//        }	
+//    }
+//}
+def devices(){
+    dynamicPage(name: "devices", install: false, uninstall: false) {
+        section { paragraph "Switches/Dimmers/Colored lights"} 
+        section("Choose the switches to turn on with this profile...", hideWhenEmpty: true) {
+            input "switches", "capability.switch", title: "Choose Switches", multiple: true, required: false
+            input "dimmers", "capability.switchLevel", title: "Choose Dimmers", multiple: true, required: false
+            input "cLights", "capability.colorControl", title: "Choose Colored Lights", multiple: true, required: false, submitOnChange: true
+    	}
+        section("And then off after a set amount of time..."){
+			input "minutesLater", "number", title: "Minutes?", defaultValue: 0, required: false
+            input "secondsLater", "number", title: "Seconds?", defaultValue: 0, required: false
+		}
+	}
+}        
 def restrictions(){
     dynamicPage(name: "restrictions", title: "Configure Restrictions", uninstall: false){
      	section ("Mode Restrictions") {
@@ -95,13 +115,27 @@ def restrictions(){
 def speech(){
     dynamicPage(name: "speech", title: "Configure Speech Notifications", uninstall: false){
 		section (""){ 
-    	input "ShowPreMsg", "bool", title: "Enable TTS Pre-Message", default: false, submitOnChange: true
-        	if (ShowPreMsg) input "PreMsg", "text", title: "Pre-Message Notification", required: false, defaultValue: "Attention, Attention please..  "
+    	input "ShowPreMsg", "bool", title: "Pre-Message", defaultValue: true, submitOnChange: true
+        	if (ShowPreMsg) input "PreMsg", "text", title: "Pre-Message to play before your message", required: false, defaultValue: "Attention, Attention please..  "
+            if (!ShowPreMsg) paragraph "Enable for pre-messages"
+            if (ShowPreMsg) paragraph "Disable to stop pre-messages"
             }
         section ( "" ){
-        input "feedBack", "bool", title: "Enable Custom Alexa Response", default: false, submitOnChange: true
-        	if (feedBack) input "outputTxt", "text", title: "Alexa Response", defaultValue: none, required: false
-      	} 
+        input "Acustom", "bool", title: "Custom Alexa Responses", default: false, submitOnChange: true
+        	if (Acustom) input "outputTxt", "text", title: "Custom Alexa Responses", defaultValue: none, required: false
+      		if (!Acustom) paragraph "Enable for Custom Alexa Responses"
+            if (Acustom) paragraph "Disable to stop Custom Alexa Responses"
+        }
+        section ( "" ){
+        input "AfeedBack", "bool", title: "Alexa Feedback Responses", defaultValue: true, submitOnChange: true
+			if (!AfeedBack) paragraph "Enable for Alexa Responses"
+        	if (AfeedBack) paragraph "Disable to stop all Alexa Responses"
+        }
+        section ( "" ){
+        input "Arepeat", "bool", title: "Repeat message to Sender", defaultValue: false, submitOnChange: true
+			if (!Arepeat) paragraph "Enable to have Alexa repeat the message to the Sender"
+        	if (Arepeat) paragraph "Disable to stop Alexa from repeating message to the Sender"
+        }
     }
 }
 def textMessage(){
@@ -134,7 +168,7 @@ def audioDevices(){
             }
         section("Speech Synthesizer Devices (LanDroid, etc...)", hideWhenEmpty: true){
         	input "synthDevice", "capability.speechSynthesis", title: "Choose Speech Synthesis Devices", multiple: true, required: false, submitOnChange: true
-        	if (synthDevice) input "synthVolume", "number", title: "Speaker Volume", description: "0-100%", required: false
+        //	if (synthDevice) input "synthVolume", "number", title: "Speaker Volume", description: "0-100%", required: false
          }
 	}
 }
@@ -172,24 +206,26 @@ def installed() {
 	if (parent.debug) log.debug "Installed with settings: ${settings}"
 	initialize()
 }
+
 def updated() {
 	if (parent.debug) log.debug "Updated with settings: ${settings}"
 	initialize()
 	unsubscribe()
 }
+
 def initialize() {
 	profileEvaluate(parent.processTts())
-subscribe(location, "CoRE", coreHandler)
-sendLocationEvent(name: "EchoSistant", value: "refresh", data: [macros: parent ? parent.getCoREMacroList() : getCoREMacroList()] , isStateChange: true, descriptionText: "Echosistant Profile list refresh")
-}    
+}
+
 def subscribeToEvents() {
 	if (runModes) {
 		subscribe(runMode, location.currentMode, modeChangeHandler)
 	}
     if (runDay) {
    		subscribe(runDay, location.day, location.currentDay)
-       }
-} 
+	} 
+}
+
 def unsubscribeToEvents() {
 	if (triggerModes) {
     	unsubscribe(location, modeChangeHandler)
@@ -199,7 +235,7 @@ def unsubscribeToEvents() {
    SPEECH AND TEXT PROCESSING
 ******************************************************************************************************/
 def profileEvaluate(params) {
-        def tts = params.ptts 
+		def tts = params.ptts 
         def txt = params.pttx
         def intent  = params.pintentName
         def childName = app.label
@@ -208,9 +244,9 @@ def profileEvaluate(params) {
         tts = PreMsg + tts
             if (getDayOk()==true && getModeOk()==true && getTimeOk()==true) {
                	if (synthDevice) synthDevice?.speak(tts)
-        		if (parent.debug) log.debug "Sending message to Synthesis Devices"  
+        			    if (parent.debug) log.debug "Sending message to Synthesis Devices"  
                 if (mediaDevice) mediaDevice?.speak(tts)
-                if (parent.debug) log.debug "Sending message to Media Devices"  
+                		if (parent.debug) log.debug "Sending message to Media Devices"  
             	if (tts) {
 					state.sound = textToSpeech(tts instanceof List ? tts[0] : tts)
 				}
@@ -219,20 +255,29 @@ def profileEvaluate(params) {
 				}
 				if (sonosDevice) {
 					sonosDevice.playTrackAndResume(state.sound.uri, state.sound.duration, volume)
-        		if (parent.debug) log.debug "Sending message to Sonos Devices"         				
-                }
+                    if (parent.debug) log.debug "Sending message to Sonos Devices"  
+        		}
     		}
     		sendtxt(txt)
-			if (parent.debug) log.debug "Sending sms and voice message to selected phones and speakers"
-        }
+             	if (parent.debug) log.debug "Sending sms and voice message to selected phones and speakers"  
+		}
 		else {
     		sendtxt(txt)
-			if (parent.debug) log.debug "Only sending sms because disable voice message is ON"
-        }
-	} 
+            	if (parent.debug) log.debug "Only sending sms because disable voice message is ON"  
+		}
+	switches.on()
+    def delay = minutesLater * 60
+    def delaySeconds = secondsLater
+	if (parent.debug) log.debug "Turning off in ${minutesLater} minutes (${delaySeconds}seconds)"
+	if (delay >0) runIn(delay, turnOffSwitch)
+    if (delaySeconds >0) runIn(secondsLater, turnOffSwitch)
+    }
+}
+def turnOffSwitch() {
+	switches.off()
 }
 //CoRE Handler-----------------------------------------------------------
-def CoREResults(sDelay){	
+/*def CoREResults(sDelay){	
 	String result = ""
     def delay
     if (cDelay>0 || sDelay>0) delay = sDelay==0 ? cDelay as int : sDelay as int
@@ -255,7 +300,7 @@ def CoREHandler(){
     def data = [pistonName: CoREName, args: "I am activating the CoRE Macro: '${app.label}'."]
     sendLocationEvent (name: "CoRE", value: "execute", data: data, isStateChange: true, descriptionText: "Ask Alexa triggered '${CoREName}' piston.")
 	if (noteFeedAct && noteFeed) sendNotificationEvent("Ask Alexa activated CoRE macro: '${app.label}'.")
-}
+}*/
 /***********************************************************************************************************************
     RESTRICTIONS HANDLER
 ***********************************************************************************************************************/
@@ -330,12 +375,11 @@ private void sendText(number, message) {
     }
 }
 private void sendtxt(message) {
-    if (parent.debug) log.debug "Profile output is '${message}'"
     if (sendContactText) { 
-    //if (location.contactBookEnabled) {
+    if (location.contactBookEnabled) {
         sendNotificationToContacts(message, recipients)
     	if (parent.debug) log.trace "Sending text to recipients(s) $recipients."
-    } //else {
+    } else {
     	if (push) {
             sendPush message
         	if (parent.debug) log.trace "Sending push $message."
@@ -344,6 +388,9 @@ private void sendtxt(message) {
         	if (parent.debug) log.trace "Sending notification event: $message."
         }
         if (sms) {
-            sendText(sms, message)
+            sendText(sms, message)	
+            }		
+        }
 	}
 }
+
