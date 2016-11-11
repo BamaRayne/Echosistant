@@ -90,7 +90,6 @@ def devices(){
         section("Choose the switches to turn on with this profile...", hideWhenEmpty: true) {
             input "switches", "capability.switch", title: "Choose Switches", multiple: true, required: false
             input "dimmers", "capability.switchLevel", title: "Choose Dimmers", multiple: true, required: false
-            input "cLights", "capability.colorControl", title: "Choose Colored Lights", multiple: true, required: false, submitOnChange: true
     	}
         section("And then off after a set amount of time..."){
 			input "minutesLater", "number", title: "Minutes?", defaultValue: 0, required: false
@@ -265,16 +264,20 @@ def profileEvaluate(params) {
     		sendtxt(txt)
             	if (parent.debug) log.debug "Only sending sms because disable voice message is ON"  
 		}
-	switches.on()
+	switches?.on()
+    dimmers?.on()
     def delay = minutesLater * 60
     def delaySeconds = secondsLater
 	if (parent.debug) log.debug "Turning off in ${minutesLater} minutes (${delaySeconds}seconds)"
 	if (delay >0) runIn(delay, turnOffSwitch)
     if (delaySeconds >0) runIn(secondsLater, turnOffSwitch)
-    }
+    if (delay >0) runIn(delay, turnOffDimmers)
+    if (delaySeconds >0) runIn(secondsLater, turnOffDimmers)
+	}
 }
 def turnOffSwitch() {
-	switches.off()
+	switches?.off()
+    dimmers?.off()
 }
 //CoRE Handler-----------------------------------------------------------
 /*def CoREResults(sDelay){	
