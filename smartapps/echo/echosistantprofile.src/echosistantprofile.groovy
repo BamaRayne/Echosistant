@@ -404,4 +404,3 @@ private void sendtxt(message) {
         }
 	}
 }
-
