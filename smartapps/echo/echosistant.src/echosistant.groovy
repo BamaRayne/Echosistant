@@ -1,7 +1,10 @@
 /**
  * EchoSistant - The Ultimate Voice and Text Messaging Assistant Using Your Alexa Enable Device.
  *		
- *		11/06/2016		Version 1.0.1f	Additional Debug messages and Alexa missing profile Response
+ * 
+ *		11/12/2016		version 1.1.0	OAuth bug fix, additional debug actions, Alexa feedback options, Intent and Utterance file updates
+ *										Control Switches on/off with delay off, pre-message "null" bug
+ *		11/07/2016		Version 1.0.1f	Additional Debug messages and Alexa missing profile Response
  *		11/06/2016		Version 1.0.1d	Debug measures fixed
  *		11/06/2016		Version 1.0.1c  Debug measures added
  *		11/05/2016		Version 1.0.1b	OAuth Fix and Version # update 
@@ -47,28 +50,31 @@ definition(
 preferences {  //SHOW MAIN PAGE
 	page(name: "mainPage", title: "EchoSistant", install: true, uninstall: false) {
 		section {
-        	href "profiles", title: "Profiles", description: "Tap here to view and create new profiles....",
+        	href "profiles", title: "View and Create Profiles", description: "Tap here to view and create new profiles....",
             image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Config.png"
-		}
+			}
 		section {
 			href "about", title: "About EchoSistant", description: "Tap here for App information...Tokens, Version, License...",
             image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_About.png"
-		}
-    }
-}
+			}
+        section ("EchoSistant Smartapp Information") {
+        	paragraph "${textAppName()}\n${textVersion()}\n${textCopyright()}",
+            image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/app-Echosistant.png"
+            }
+        section ("Directions, How-to's, and Troubleshooting") { 
+			href url:"http://thingsthataresmart.wiki/index.php?title=EchoSistant", title: "EchoSistant Wiki", description: none
+        	}
+    	}
+	}
 	page(name: "profiles", title: "Profiles", install: true, uninstall: false) {
         section {
         	app(name: "Profiles", appName: "echosistantProfile", namespace: "Echo", description: "Create New Profile...", multiple: true)
             image: "https://github.com/BamaRayne/Echosistant/blob/master/smartapps/bamarayne/echosistant.src/Echosistant_Config.png"
-	}
-	}
+			}
+		}
 page name: "about"
 	def about(){
 		dynamicPage(name: "about", uninstall: true) {
-			section {
-            	paragraph "${textAppName()}\n${textVersion()}\n${textCopyright()}",
-            	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/app-Echosistant.png"
-            }
             section ("Security Tokens - FOR PARENT APP ONLY"){
             	paragraph ("Log into the IDE on your computer and navigate to the Live Logs tab. Leave that window open, come back here, and open this section")
                 input "ShowTokens", "bool", title: "Show Security Tokens", default: false, submitOnChange: true
@@ -76,29 +82,23 @@ page name: "about"
             	def msg = state.accessToken != null ? state.accessToken : "Could not create Access Token. OAuth may not be enabled. "+
 				"Go to the SmartApp IDE settings to enable OAuth."	
                 if (ShowTokens) log.info "STappID = '${app.id}' , STtoken = '${state.accessToken}'"
-		if (ShowTokens) log.info " API url: ${getApiServerUrl()}/api/smartapps/installations/${app.id}"
                 if (ShowTokens) paragraph "Access token:\n${msg}\n\nApplication ID:\n${app.id}"
-			}
+				}
 			section ("Revoke/Renew Access Token & Application ID"){
 				href "Tokens", title: "Revoke/Reset Security Access Token", description: none
-			}
+				}
 			section ("Apache License"){
 				input "ShowLicense", "bool", title: "Show License", default: false, submitOnChange: true
 				def msg = textLicense()
 					if (ShowLicense) paragraph "${msg}"
-			}
+				}
             section("Debugging") {
             	input "debug", "bool", title: "Enable Debug Logging", default: false, submitOnChange: true 
-            //    input "info", "bool", title: "Enable Information Logging", default: false, submitOnChange: true
-                if (debug) log.info "${textAppName()}\n${textVersion()}"//\n${textCopyright()}"
-                     }
-           
-			section ("Directions, information, and troubleshooting") { 
-			href url:"http://thingsthataresmart.wiki/index.php?title=EchoSistant", title: "EchoSistant Wiki", description: none
-            }
+            if (debug) log.info "${textAppName()}\n${textVersion()}"
+            	}
 			section("Tap below to remove the ${textAppName()} application.  This will remove ALL Profiles and the App from the SmartThings mobile App."){}
-		}
-}      
+			}
+		}      
 page name: "Tokens"
 	def Tokens(){
 		dynamicPage(name: "Tokens", title: "Security Tokens", uninstall: false){
@@ -108,17 +108,16 @@ page name: "Tokens"
 				if (!state.accessToken) {
                 	OAuthToken()
 					paragraph "You must enable OAuth via the IDE to setup this app"
-				}
-            }
+					}
+            	}
 					def msg = state.accessToken != null ? state.accessToken : "Could not create Access Token. "+
     				"OAuth may not be enabled. Go to the SmartApp IDE settings to enable OAuth." 
-					log.info "STappID = '${app.id}' , STtoken = '${state.accessToken}'"
-					log.info " API url: ${getApiServerUrl()}/api/smartapps/installations/${app.id}"
+					log.trace "STappID = '${app.id}' , STtoken = '${state.accessToken}'"
 			section ("Reset Access Token / Application ID"){
 				href "pageConfirmation", title: "Reset Access Token and Application ID", description: none
-		}
-	}
-} 
+				}
+			}
+		} 
 page name: "pageConfirmation"
 	def pageConfirmation(){
 		dynamicPage(name: "pageConfirmation", title: "Reset/Renew Access Token Confirmation", uninstall: false){
@@ -127,12 +126,12 @@ page name: "pageConfirmation"
 				paragraph "PLEASE CONFIRM! By resetting the access token you will disable the ability to interface this SmartApp with your Amazon Echo."+
             	"You will need to copy the new access token to your Amazon Lambda code to re-enable access." +
 				"Tap below to go back to the main menu with out resetting the token. You may also tap Done above."
-			}
+				}
 			section(" "){
         		href "mainPage", title: "Cancel And Go Back To Main Menu", description: none 
-       	}
-	}
-}
+       			}
+			}
+		}
 page name: "pageReset"
 	def pageReset(){
 		dynamicPage(name: "pageReset", title: "Access Token Reset", uninstall: false){
@@ -145,13 +144,12 @@ page name: "pageReset"
 				paragraph "${msg}"
                 paragraph "The new access token and app ID are now displayed in the Live Logs tab of the IDE."
                 log.info "STappID = '${app.id}' , STtoken = '${state.accessToken}'"
-		log.info " API url: ${getApiServerUrl()}/api/smartapps/installations/${app.id}"
 			}
 			section(" "){ 
         		href "mainPage", title: "Tap Here To Go Back To Main Menu", description: none 
-        }
-	}
-} 	
+        		}
+			}
+		} 	
 //************************************************************************************************************
 mappings {
       path("/t") {action: [GET: "processTts"]}
@@ -160,8 +158,10 @@ mappings {
 def installed() {
 	if (debug) log.debug "Installed with settings: ${settings}"
 	if (debug) log.trace "STappID = '${app.id}' , STtoken = '${state.accessToken}'"
-	if (debug) log.info " API url: ${getApiServerUrl()}/api/smartapps/installations/${app.id}"
 	initialize()
+}
+def childUninstalled() {
+//	sendLocationEvent(name: "EchoSistant", value: "refresh", data: [profiles: parent ? parent.getCoREList() : getCoreProfileList()] , isStateChange: true, descriptionText: "EchoSistant Profile list refresh")
 }
 def updated() {
 	if (debug) log.debug "Updated with settings: ${settings}"
@@ -174,15 +174,16 @@ if (debug) log.debug "$children.size Profiles installed"
 children.each { child ->
 //    log.debug "Child app id: $child.id"
 }
-     
 	if (!state.accessToken) {
                OAuthToken()
-		paragraph "You must enable OAuth via the IDE to setup this app"
-		log.trace "STappID = '${app.id}' , STtoken = '${state.accessToken}'"  
-		log.info " API url: ${getApiServerUrl()}/api/smartapps/installations/${app.id}"
-		}
-    }
-
+    section() {
+    paragraph "You must enable OAuth via the IDE to setup this app"
+}
+		log.trace "STappID = '${app.id}' , STtoken = '${state.accessToken}'"            
+//subscribe(location, "CoRE", coreHandler)
+//sendLocationEvent(name: "EchoSistant", value: "refresh", data: [profiles: parent ? parent.getCoREProfileList() : getCoREProfileList()] , isStateChange: true, descriptionText: "EchoSistant Profile list refresh")
+	}
+}
 /*************************************************************************************************************
    CREATE INITIAL TOKEN
 *************************************************************************************************************/
@@ -198,37 +199,35 @@ def OAuthToken(){
    TEXT TO SPEECH PROCESS 
 ************************************************************************************************************/
 def processTts() {
-		def ptts = params.ttstext 
-       		if (debug) log.debug "#1 Message received from Lambda (ptts) = '${ptts}'"
+		def replayMessage = params.ttstext
+        def ptts = params.ttstext 
+            if (debug) log.debug "#1 Message received from Lambda (ptts) = '${ptts}'"
         def pttx = params.ttstext
         	if (debug) log.debug "#2 Message received from Lambda (pttx) = '${pttx}'"
         def pintentName = params.intentName
 			if (debug) log.debug "#3 Profile being called = '${pintentName}'"
         def outputTxt = ''
-        def dataSet = [ptts:ptts,pttx:pttx,pintentName:pintentName]        		
-            childApps.each {child ->
+        def dataSet = [ptts:ptts,pttx:pttx,pintentName:pintentName] 
+                childApps.each {child ->
     			child.profileEvaluate(dataSet)
                 }
-                
-                childApps.each{ child ->
-        		def cm = child.label      
-          			if (cm == pintentName) {
-                            outputTxt = child.outputTxt
-                            if (outputTxt) {
-                			}
-                			else {
-                            	outputTxt = "Message sent to ${pintentName} "
-                            }
-            		}
-            }
-            if (outputTxt == '' ) {
-            	if (debug) log.debug "#4 No matching profile between profile: '${cm}' and intent '${pintentName}'"  
-				outputTxt = "Sorry, I was unable to find a profile named ${pintentName}, please check your spelling"
-        	}
- 			
-            if (debug) log.debug "#5 Alexa verbal response = '${outputTxt}'"  
-			return ["outputTxt":outputTxt] 
-}
+                childApps.each { child ->
+        		def cm = child.label
+                	if (child.AfeedBack)
+                	if (cm == pintentName) {
+                    		if (child.Acustom) outputTxt = child.outputTxt
+                            	else
+                            if (child.Arepeat) outputTxt = "I have delivered the following message to '${cm}',  " + ptts
+								else 
+                            if (pintentName == repeatMessage) return result
+                            	else
+                                outputTxt = "Message sent to ${pintentName} "
+							if (debug) log.debug "#5 Alexa verbal response = '${outputTxt}'"
+	                            }
+							}                                
+            return ["outputTxt":outputTxt]
+          
+}            
 /************************************************************************************************************
    Version/Copyright/Information/Help
 ************************************************************************************************************/
@@ -259,4 +258,5 @@ private def textHelp() {
 	def text =
 		"This smartapp allows you to use an Alexa device to generate a voice or text message on on a different device"
         "See our Wikilinks page for user information!"
-}
+
+	}
