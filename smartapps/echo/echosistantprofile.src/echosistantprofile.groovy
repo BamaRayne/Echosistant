@@ -267,11 +267,11 @@ def profileEvaluate(params) {
     		}
     		sendtxt(txt)
              	if (parent.debug) log.debug "Sending sms and voice message to selected phones and speakers"  
-		}
-		else {
-    		sendtxt(txt)
-            	if (parent.debug) log.debug "Only sending sms because disable voice message is ON"  
-		}
+				}
+					else {
+    					sendtxt(txt)
+            				if (parent.debug) log.debug "Only sending sms because disable voice message is ON"  
+							}
 	switches?.on()
     dimmers?.on()
 // bug   if (delay) def delay = minutesLater*60

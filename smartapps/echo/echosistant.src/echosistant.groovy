@@ -235,7 +235,7 @@ private def textAppName() {
 	def text = "EchoSistant"
 }	
 private def textVersion() {
-	def text = "Version 1.0.1f (11/07/2016)"
+	def text = "Version 1.1.0 (11/12/2016)"
 }
 private def textCopyright() {
 	def text = "Copyright © 2016 Jason Headley"
