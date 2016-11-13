@@ -2,8 +2,9 @@
  * EchoSistant - The Ultimate Voice and Text Messaging Assistant Using Your Alexa Enable Device.
  *		
  * 
- *		11/13/2016		version 1.1.1	Addition - Repeat last message
- *		11/12/2016		version 1.1.0	OAuth bug fix, additional debug actions, Alexa feedback options, Intent and Utterance file updates
+ *		11/13/2016		Version 1.1.1a	Roadmap update and spelling errors
+ *		11/13/2016		Version 1.1.1	Addition - Repeat last message
+ *		11/12/2016		Version 1.1.0	OAuth bug fix, additional debug actions, Alexa feedback options, Intent and Utterance file updates
  *										Control Switches on/off with delay off, pre-message "null" bug
  *		11/07/2016		Version 1.0.1f	Additional Debug messages and Alexa missing profile Response
  *		11/06/2016		Version 1.0.1d	Debug measures fixed
@@ -14,10 +15,13 @@
  *		11/04/2016      Version 1.0		Initial Release
  *
  * ROADMAP
- * - External TTS
- * - External SMS
- * - CoRE integration
- * - Replay last message
+ * Profile count and name list
+ * CoRE integration (milestone)
+ * External TTS
+ * External SMS
+ * Continuation Commands with a conversational mode (milestone)
+ *
+ *
  *
  * Credits
  * Thank you to @MichaelS (creator of AskAlexa) for guidance and for letting me use his outstanding Wiki
@@ -250,7 +254,7 @@ private def textAppName() {
 	def text = "EchoSistant"
 }	
 private def textVersion() {
-	def text = "Version 1.1.1 (11/13/2016)"
+	def text = "Version 1.1.1a (11/13/2016)"
 }
 private def textCopyright() {
 	def text = "Copyright © 2016 Jason Headley"
