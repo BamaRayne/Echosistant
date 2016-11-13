@@ -2,6 +2,7 @@
  * EchoSistant - The Ultimate Voice and Text Messaging Assistant Using Your Alexa Enable Device.
  *		
  * 
+ *		11/13/2016		version 1.1.1	Addition - Repeat last message
  *		11/12/2016		version 1.1.0	OAuth bug fix, additional debug actions, Alexa feedback options, Intent and Utterance file updates
  *										Control Switches on/off with delay off, pre-message "null" bug
  *		11/07/2016		Version 1.0.1f	Additional Debug messages and Alexa missing profile Response
@@ -169,10 +170,13 @@ def updated() {
 	unsubscribe()    
 }
 def initialize() {
+def lastMessage = " "
+state.lastMessage = null
+def lastIntent  = intentName
+state.lastIntent  = null
 def children = getChildApps()
 if (debug) log.debug "$children.size Profiles installed"
 children.each { child ->
-//    log.debug "Child app id: $child.id"
 }
 	if (!state.accessToken) {
                OAuthToken()
@@ -199,35 +203,46 @@ def OAuthToken(){
    TEXT TO SPEECH PROCESS 
 ************************************************************************************************************/
 def processTts() {
-		def replayMessage = params.ttstext
-        def ptts = params.ttstext 
+		def ptts = params.ttstext 
             if (debug) log.debug "#1 Message received from Lambda (ptts) = '${ptts}'"
-        def pttx = params.ttstext
-        	if (debug) log.debug "#2 Message received from Lambda (pttx) = '${pttx}'"
-        def pintentName = params.intentName
+     //   def pttx = params.ttstext
+     //   	if (debug) log.debug "#2 Message received from Lambda (pttx) = '${pttx}'"
+   		def pintentName = params.intentName
 			if (debug) log.debug "#3 Profile being called = '${pintentName}'"
-        def outputTxt = ''
-        def dataSet = [ptts:ptts,pttx:pttx,pintentName:pintentName] 
-                childApps.each {child ->
-    			child.profileEvaluate(dataSet)
-                }
-                childApps.each { child ->
-        		def cm = child.label
-                	if (child.AfeedBack)
-                	if (cm == pintentName) {
-                    		if (child.Acustom) outputTxt = child.outputTxt
-                            	else
-                            if (child.Arepeat) outputTxt = "I have delivered the following message to '${cm}',  " + ptts
-								else 
-                            if (pintentName == repeatMessage) return result
-                            	else
-                                outputTxt = "Message sent to ${pintentName} "
-							if (debug) log.debug "#5 Alexa verbal response = '${outputTxt}'"
-	                            }
-							}                                
-            return ["outputTxt":outputTxt]
-          
-}            
+  		def outputTxt = ''
+    	def dataSet = [ptts:ptts,pttx:pttx,pintentName:pintentName] 
+		def repeat = "repeat"
+       		    if (ptts==repeat) {
+                if (debug) log.debug "lastIntent = ${state.lastIntent}" 
+				outputTxt = "The last message sent was," + state.lastMessage + ", and it was sent to, " + state.lastIntent 
+			//	state.lastMessage = "there is no message to repeat"
+				}
+				else {
+    				if (ptts){
+     				state.lastMessage = ptts
+                    state.lastIntent = pintentName
+                    childApps.each {child ->
+						child.profileEvaluate(dataSet)
+            			}
+            			childApps.each { child ->
+    					def cm = child.label
+                if (child.AfeedBack)
+            	if (cm == pintentName) {
+                		if (child.Acustom) outputTxt = child.outputTxt
+                        	else
+                        if (child.Arepeat) outputTxt = "I have delivered the following message to '${cm}',  " + ptts
+							else 
+                        if (pintentName == repeatMessage) return result
+                        	else
+                            outputTxt = "Message sent to ${pintentName} "
+								if (debug) log.debug "#5 Alexa verbal response = '${outputTxt}'"
+           }  
+                  }
+						}
+                        }
+        return ["outputTxt":outputTxt]
+      		if (debug) log.debug "#6 Alexa response sent to Lambda = '${outputTxt}'"
+        }
 /************************************************************************************************************
    Version/Copyright/Information/Help
 ************************************************************************************************************/
@@ -235,7 +250,7 @@ private def textAppName() {
 	def text = "EchoSistant"
 }	
 private def textVersion() {
-	def text = "Version 1.1.0 (11/12/2016)"
+	def text = "Version 1.1.1 (11/13/2016)"
 }
 private def textCopyright() {
 	def text = "Copyright © 2016 Jason Headley"
@@ -258,5 +273,4 @@ private def textHelp() {
 	def text =
 		"This smartapp allows you to use an Alexa device to generate a voice or text message on on a different device"
         "See our Wikilinks page for user information!"
-
-	}
+		}

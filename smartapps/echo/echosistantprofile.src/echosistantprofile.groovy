@@ -118,7 +118,7 @@ def speech(){
     dynamicPage(name: "speech", title: "Configure Speech Notifications", uninstall: false){
 		section (""){ 
     	input "ShowPreMsg", "bool", title: "Pre-Message", defaultValue: true, submitOnChange: true
-        	if (ShowPreMsg) input "PreMsg", "text", title: "Pre-Message to play before your message", description: none, required: false, defaultValue: "Attention, Attention please..  "
+        	if (ShowPreMsg) input "PreMsg", "Text", title: "Pre-Message", description: "Pre-Message to play before your message", required: false, defaultValue: "Attention, Attention please..  "
             if (!ShowPreMsg) paragraph "Enable for pre-messages"
             if (ShowPreMsg) paragraph "Disable to stop pre-messages"
             }
@@ -129,16 +129,20 @@ def speech(){
             if (Acustom) paragraph "Disable to stop Custom Alexa Responses"
         }
         section ( "" ){
-        input "AfeedBack", "bool", title: "Alexa Feedback Responses", defaultValue: true, submitOnChange: true
-			if (!AfeedBack) paragraph "Enable for Alexa Responses"
-        	if (AfeedBack) paragraph "Disable to stop all Alexa Responses"
-        }
-        section ( "" ){
         input "Arepeat", "bool", title: "Repeat message to Sender", defaultValue: false, submitOnChange: true
 			if (!Arepeat) paragraph "Enable to have Alexa repeat the message to the Sender"
         	if (Arepeat) paragraph "Disable to stop Alexa from repeating message to the Sender"
         }
-    }
+    	section ( "" ){
+        input "AfeedBack", "bool", title: "Disable Alexa Feedback Responses", defaultValue: true, submitOnChange: true
+			if (!AfeedBack) paragraph "Enable for Alexa Responses"
+        	if (AfeedBack) paragraph "Disable to stop all Alexa Responses"
+        } 
+        section ( "" ){
+        input "disableTts", "bool", title: "Disable All spoken notifications (Use for sending texts or when controlling only devices and a verbal response is not wanted.)", required: false, submitOnChange: true  
+             if (parent.debug) log.debug "'${disableTts}"
+        }
+	}
 }
 def textMessage(){
 	dynamicPage(name: "textMessage", uninstall: false) {
@@ -157,7 +161,7 @@ def textMessage(){
 		 section ( "" ){            
           if (sendContactText || sendText) {         
 			paragraph "By default Echosistant will deliver both voice and text messages to selected devices and contacts(s). Enable text ONLY using toggle below"
-    		input "disableTts", "bool", title: "Disable spoken notification (only send text message to selected contact(s)", required: true, submitOnChange: true  
+    		input "disableTts", "bool", title: "Disable spoken notification (only send text message to selected contact(s)", required: false, submitOnChange: true  
              if (parent.debug) log.debug "'${disableTts}"
             }
 		}        
@@ -217,6 +221,10 @@ def updated() {
 
 def initialize() {
 	profileEvaluate(parent.processTts())
+	def lastMessage = " "
+	state.lastMessage = null
+	def lastIntent  = " "
+	state.lastIntent  = null
 }
 
 def subscribeToEvents() {
@@ -237,23 +245,28 @@ def unsubscribeToEvents() {
    SPEECH AND TEXT PROCESSING
 ******************************************************************************************************/
 def profileEvaluate(params) {
-		def tts = params.ptts 
-        def txt = params.pttx
+		def tts = params.ptts
+        if (parent.debug) log.debug "#1 params.ptts = '${params.ptts}'"
+    //    def txt = params.pttx
+    //    if (parent.debug) log.debug "#2 params.pttx = '${params.pttx}'"
         def intent  = params.pintentName
         def childName = app.label
-    if (intent == childName){
-		if (!disableTts){
+       	params.lastMessage = clastMessage 
+    	if (intent == childName){
+        if (!disableTts){
         if (PreMsg) {
-        tts = PreMsg + tts 
+        tts = PreMsg + tts
+        if (parent.debug) log.debug "#3 tts = '${tts}'"
         }
         	else {
             tts = tts
+            if (parent.debug) log.debug "#4 tts = '${tts}'"
             }
             if (getDayOk()==true && getModeOk()==true && getTimeOk()==true) {
                	if (synthDevice) synthDevice?.speak(tts)
-        			    if (parent.debug) log.debug "Sending message to Synthesis Devices"  
+        			    if (parent.debug) log.debug "#5 Sending message to Synthesis Devices"  
                 if (mediaDevice) mediaDevice?.speak(tts)
-                		if (parent.debug) log.debug "Sending message to Media Devices"  
+                		if (parent.debug) log.debug "#6 Sending message to Media Devices"  
             	if (tts) {
 					state.sound = textToSpeech(tts instanceof List ? tts[0] : tts)
 				}
@@ -274,7 +287,9 @@ def profileEvaluate(params) {
 							}
 	switches?.on()
     dimmers?.on()
-// bug   if (delay) def delay = minutesLater*60
+    if (delay) {
+    def delay = minutesLater*60
+    }
     def delaySeconds = secondsLater
 	if (parent.debug) log.debug "Turning off in ${minutesLater} minutes (${delaySeconds}seconds)"
 	if (delay >0) runIn(delay, turnOffSwitch)
