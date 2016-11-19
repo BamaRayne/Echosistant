@@ -58,10 +58,6 @@ def mainPage() {
             	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_msg.png"
 			href "textMessage", title: "Text Messages...", description: "Tap here to configure", 
             	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Text.png"
-//			href "routines", title: "Execute Routines...", description: "Tap here to configure",
-//            	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Rest.png"
-//			href "devices", title: "Control Devices...", description: "Tap here to configure",
-//            	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Rest.png"
             href "pOptions", title: "Extra Profile Options...", description: "Tap here to configure",
             	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Rest.png"
             href "restrictions", title: "Restrictions", description: "Tap here to configure", 
@@ -112,26 +108,36 @@ def routines(){
             // sort them alphabetically
             actions.sort()
                     section("Hello Home Actions") {
-                            if (parent.debug) log.trace actions
+                            if (parent.debug) log.info actions
                 // use the actions as the options for an enum input
-                input "action", "enum", title: "Select an action to execute", options: actions, multiple: true
+                input "runRoutine", "enum", title: "Select a Routine(s) to execute", required: false, options: actions, multiple: true
 			}
 		}
     }
 }
 def devices(){
     dynamicPage(name: "devices", title: "Configure Device Control...", install: false, uninstall: false) {
-        section { paragraph "Switches/Dimmers"} 
+        section { paragraph "Switches"} 
         section("Choose the switches to turn on with this profile...", hideWhenEmpty: true) {
 			input "switches", "capability.switch", title: "Control These Switches...", multiple: true, required: false, submitOnChange:true
-// add later            if (switches) input "switchesCMD", "enum", title: "Command To Send To Switches", options:["on":"Turn on","off":"Turn off", "toggle":"Toggle the switches' on/off state"], multiple: false, required: false
+           if (switches) input "switchesCMD", "enum", title: "Command To Send To Switches", options:["on":"Turn on","off":"Turn off", "toggle":"Toggle the switches' on/off state"], multiple: false, required: false
+        }
+         section("Turn on these switches after a delay of..."){
+         	input "secondsLaterOn", "number", title: "Seconds?", defaultValue: none, required: false
+        }
+        section("And then turn them off after a delay of..."){
+			input "secondsLaterOff", "number", title: "Seconds?", defaultValue: none, required: false
+        }
+        section("Choose the dimmers to turn on with this profile...", hideWhenEmpty: true) {
             input "dimmers", "capability.switchLevel", title: "Control These Dimmers...", multiple: true, required: false , submitOnChange:true
-// add later            if (dimmers) input "dimmersCMD", "enum", title: "Command To Send To Dimmers", options:["on":"Turn on","off":"Turn off","set":"Set level", "toggle":"Toggle the dimmers' on/off state"], multiple: false, required: false, submitOnChange:true
-// add later            if (dimmersCMD == "set" && dimmers) input "dimmersLVL", "number", title: "Dimmers Level", description: "Set dimmer level", required: false, defaultValue: 0
+            if (dimmers) input "dimmersCMD", "enum", title: "Command To Send To Dimmers", options:["on":"Turn on","off":"Turn off","set":"Set level", "toggle":"Toggle the dimmers' on/off state"], multiple: false, required: false, submitOnChange:true
+            if (dimmers) input "setLevel", "number", title: "Dimmers Level", description: "Set dimmer level", required: false, defaultValue: none
     	}
-        section("And then off after a set amount of time..."){
-// bug			input "minutesLater", "number", title: "Minutes?", defaultValue: 0, required: false
-            input "secondsLater", "number", title: "Seconds?", defaultValue: 0, required: false
+         section("Turn on these dimmers after a delay of..."){
+         	input "secondsLaterOn", "number", title: "Seconds?", defaultValue: none, required: false
+         }
+        section("And then turn them off after a delay of..."){
+			input "secondsLaterOff", "number", title: "Seconds?", defaultValue: none, required: false
 		}
 	}
 }        
@@ -209,8 +215,7 @@ def audioDevices(){
             }
         section("Speech Synthesizer Devices (LanDroid, etc...)", hideWhenEmpty: true){
         	input "synthDevice", "capability.speechSynthesis", title: "Choose Speech Synthesis Devices", multiple: true, required: false, submitOnChange: true
-        //	if (synthDevice) input "synthVolume", "number", title: "Speaker Volume", description: "0-100%", required: false
-         }
+		}
 	}
 }
 def sonos(){
@@ -246,24 +251,19 @@ def certainTime() {
 def installed() {
 	if (parent.debug) log.debug "Installed with settings: ${settings}"
 	initialize()
+	subscribe(theSwitch, "switch.on", switchOnHandler)
 }
-
 def updated() {
 	if (parent.debug) log.debug "Updated with settings: ${settings}"
 	initialize()
 	unsubscribe()
 }
-
 def initialize() {
-	profileEvaluate(parent.processTts())
 	def lastMessage = " "
 	state.lastMessage = null
 	def lastIntent  = " "
 	state.lastIntent  = null
-    //location.helloHome?.execute(settings."homePhrase${initialize}" )
-    //location.helloHome?.execute(settings.onAction) 
-     }
-
+    }
 def subscribeToEvents() {
 	if (runModes) {
 		subscribe(runMode, location.currentMode, modeChangeHandler)
@@ -272,7 +272,6 @@ def subscribeToEvents() {
    		subscribe(runDay, location.day, location.currentDay)
 	} 
 }
-
 def unsubscribeToEvents() {
 	if (triggerModes) {
     	unsubscribe(location, modeChangeHandler)
@@ -281,16 +280,15 @@ def unsubscribeToEvents() {
 /******************************************************************************************************
    SPEECH AND TEXT PROCESSING
 ******************************************************************************************************/
- 
 def profileEvaluate(params) {
-		def tts = params.ptts
-        if (parent.debug) log.debug "#1 params.ptts = '${params.ptts}'"
+		
+        def tts = params.ptts
         def txt = params.pttx
-        if (parent.debug) log.debug "#2 params.pttx = '${params.pttx}'"
-        def intent  = params.pintentName
+        def intent = params.pintentName
         def childName = app.label
        	params.lastMessage = clastMessage 
     	if (intent == childName){
+        location.helloHome?.execute(runRoutine)
         if (!disableTts){
         if (PreMsg) 
         tts = PreMsg + tts
@@ -300,8 +298,7 @@ def profileEvaluate(params) {
             if (parent.debug) log.debug "#4 tts = '${tts}'"
             }
             if (getDayOk()==true && getModeOk()==true && getTimeOk()==true) {
-            	location.helloHome?.execute(settings."homePhrase${actions}" )
-               	if (synthDevice) synthDevice?.speak(tts)
+            	if (synthDevice) synthDevice?.speak(tts)
         			    if (parent.debug) log.debug "#5 Sending message to Synthesis Devices"  
                 if (mediaDevice) mediaDevice?.speak(tts)
                 		if (parent.debug) log.debug "#6 Sending message to Media Devices"  
@@ -323,35 +320,19 @@ def profileEvaluate(params) {
     					sendtxt(txt)
            				if (parent.debug) log.debug "Only sending sms because disable voice message is ON"  
 		}
-location.helloHome?.execute(settings."homePhrase${action}" )
-}	
-   
+   	switches?.on()
+    dimmers?.on()
+	if (parent.debug) log.debug "Turning off in (${delaySeconds}seconds)"
+    if (delaySeconds >0) runIn(secondsLater, turnOffSwitch)
+	}
 }
+def turnOffSwitch() {
+	switches?.off()
+    dimmers?.off()
+}	
+//Device Handlers-----------------------------------------------------------
 
 
-//def delaySeconds = secondsLater 
-//	if (switches) {
-//		switches?.on()
-//    	dimmers?.on()
-//	if (delaySeconds)  runIn(secondsLater, turnOffswitches)
-//    if (delaySeconds) (runIn(secondsLater, turnOffDimmers)) 
-//    def delay = minutesLater*60  
-//    if (delay >=0) runIn(delay, turnOffSwitch)
-//    if (delay >=0) runIn(delay, turnOffDimmers)
-   
-   
-    
-//	if (parent.debug) log.debug "Turning off in ${minutesLater} minutes and (${delaySeconds}seconds)"
-		
-//}
-//    turnOffSwitches()  
-//    switches?.off()
-//    dimmers?.off()
-//	}		
-//}	
-//}	
-
-    
 //CoRE Handler-----------------------------------------------------------
 /*def CoREResults(sDelay){	
 	String result = ""
@@ -464,5 +445,3 @@ private void sendtxt(message) {
             sendText(sms, message)
 	}
 }
-
-//if (macroType ==~ /Control|CoRE/) customAck += cDelay>1 ? "; activates ${cDelay} minutes after triggered" : cDelay==1 ? "; activates one minute after triggered" : ""
