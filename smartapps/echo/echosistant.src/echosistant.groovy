@@ -1,7 +1,8 @@
-/**
+/*
  * EchoSistant - The Ultimate Voice and Text Messaging Assistant Using Your Alexa Enable Device.
  *		
  * 
+ *		11/20/2016		Version 1.2.0	Fixes: SMS&Push not working, calling multiple profiles at initialize. Additions: Run Routines and Switch enhancements
  *		11/13/2016		Version 1.1.1a	Roadmap update and spelling errors
  *		11/13/2016		Version 1.1.1	Addition - Repeat last message
  *		11/12/2016		Version 1.1.0	OAuth bug fix, additional debug actions, Alexa feedback options, Intent and Utterance file updates
@@ -166,7 +167,7 @@ def installed() {
 	initialize()
 }
 def childUninstalled() {
-//	sendLocationEvent(name: "EchoSistant", value: "refresh", data: [profiles: parent ? parent.getCoREList() : getCoreProfileList()] , isStateChange: true, descriptionText: "EchoSistant Profile list refresh")
+	sendLocationEvent(name: "EchoSistant", value: "refresh", data: [profiles: parent ? parent.getCoREList() : getCoreProfileList()] , isStateChange: true, descriptionText: "EchoSistant Profile list refresh")
 }
 def updated() {
 	if (debug) log.debug "Updated with settings: ${settings}"
@@ -188,8 +189,8 @@ children.each { child ->
     paragraph "You must enable OAuth via the IDE to setup this app"
 }
 		log.trace "STappID = '${app.id}' , STtoken = '${state.accessToken}'"            
-//subscribe(location, "CoRE", coreHandler)
-//sendLocationEvent(name: "EchoSistant", value: "refresh", data: [profiles: parent ? parent.getCoREProfileList() : getCoREProfileList()] , isStateChange: true, descriptionText: "EchoSistant Profile list refresh")
+subscribe(location, "CoRE", coreHandler)
+sendLocationEvent(name: "EchoSistant", value: "refresh", data: [profiles: parent ? parent.getCoREProfileList() : getCoREProfileList()] , isStateChange: true, descriptionText: "EchoSistant Profile list refresh")
 	}
 }
 /*************************************************************************************************************
@@ -209,8 +210,8 @@ def OAuthToken(){
 def processTts() {
 		def ptts = params.ttstext 
             if (debug) log.debug "#1 Message received from Lambda (ptts) = '${ptts}'"
-     //   def pttx = params.ttstext
-     //   	if (debug) log.debug "#2 Message received from Lambda (pttx) = '${pttx}'"
+        def pttx = params.ttstext
+        	if (debug) log.debug "#2 Message received from Lambda (pttx) = '${pttx}'"
    		def pintentName = params.intentName
 			if (debug) log.debug "#3 Profile being called = '${pintentName}'"
   		def outputTxt = ''
@@ -219,7 +220,6 @@ def processTts() {
        		    if (ptts==repeat) {
                 if (debug) log.debug "lastIntent = ${state.lastIntent}" 
 				outputTxt = "The last message sent was," + state.lastMessage + ", and it was sent to, " + state.lastIntent 
-			//	state.lastMessage = "there is no message to repeat"
 				}
 				else {
     				if (ptts){
@@ -238,15 +238,16 @@ def processTts() {
 							else 
                         if (pintentName == repeatMessage) return result
                         	else
-                            outputTxt = "Message sent to ${pintentName} "
+                            outputTxt = "Message sent to ${pintentName}, " 
 								if (debug) log.debug "#5 Alexa verbal response = '${outputTxt}'"
            }  
                   }
 						}
                         }
         return ["outputTxt":outputTxt]
-      		if (debug) log.debug "#6 Alexa response sent to Lambda = '${outputTxt}'"
+        if (debug) log.debug "#6 Alexa response sent to Lambda = '${outputTxt}'"
         }
+        
 /************************************************************************************************************
    Version/Copyright/Information/Help
 ************************************************************************************************************/
@@ -254,7 +255,7 @@ private def textAppName() {
 	def text = "EchoSistant"
 }	
 private def textVersion() {
-	def text = "Version 1.1.1a (11/13/2016)"
+	def text = "Version 1.2.0 (11/20/2016)"
 }
 private def textCopyright() {
 	def text = "Copyright © 2016 Jason Headley"
