@@ -1,6 +1,10 @@
 /**
  *  Echosistant Profile 
  *
+ *		
+ *		11/20/2016		Version 1.2.0	Bug Fixes: SMS & Push not working, calling multiple profiles at initialize. Additions: Run Routines and Switch enhancements 
+ *										Code for Switch enhancements come from @SBDOBRESCU
+ *		11/18/2016		Version 1.2.0	Added Triggering Routines, fixed SMS not sending.
  *		11/12/2016		version 1.1.0	OAuth bug fix, additional debug actions, Alexa feedback options, Intent and Utterance file updates
  *										Control Switches on/off with delay off, pre-message "null" bug
  *		11/09/2016		Version 1.0.1b	Message Config Options
@@ -35,30 +39,30 @@ preferences {
     page name:"mainPage"
     	page name:"configuration"
     		page name: "notifications"
-        		page name: "speech"
-    			page name: "textMessage"
-        		page name: "audioDevices"
+        		page name: "mOptions"
+    			page name: "audioDevices"
     				page name: "sonos"
-            page name: "devices"
+            page name: "pOptions"        
+            	page name: "devices"
+            	page name: "routines"
         	page name: "restrictions"
     			page name: "certainTime"
             page name: "CoRE"
 }
-//************************************************************************************************************
-//Show main page
+/***********************************************************************************************************************
+    UI CONFIGURATION
+***********************************************************************************************************************/
 def mainPage() {	       
     dynamicPage(name: "mainPage", title:"", install: true, uninstall: true) {
         section("") {
-    		href "speech", title: "Audio Message Options", description: "Tap here to configure", 
-            	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_msg.png"
-			href "textMessage", title: "Text Messages", description: "Tap here to configure", 
-            	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Text.png"
-			href "audioDevices", title: "Audio Playback Devices", description: "Tap here to configure", 
+    		href "audioDevices", title: "Audio Playback Devices...", description: "Tap here to configure", 
             	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Media.png"
-			href "restrictions", title: "Profile Restrictions", description: "Tap here to configure", 
-                image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Rest.png"
-            href "devices", title: "Control these devices", description: "Tap here to configure",
+            href "mOptions", title: "Message Options...", description: "Tap here to configure", 
+            	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_msg.png"
+            href "pOptions", title: "Extra Control Settings...", description: "Tap here to configure",
             	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Rest.png"
+            href "restrictions", title: "Restrictions", description: "Tap here to configure", 
+                image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Rest.png"
 //            href "CoRE", title: "CoRE Integration", description: "Tap here to configure CoRE options...",
 //            	image: "https://cdn.rawgit.com/ady624/CoRE/master/resources/images/app-CoRE.png"
         }
@@ -70,34 +74,65 @@ def mainPage() {
         }
 	}
 } 
-//def CoRE() {
-//	dynamicPage(name: "CoRE", install: false, uninstall: false) {
-//		section { paragraph "CoRE Trigger Settings" }
-//		section (" "){
-//   			input "CoREName", "enum", title: "Choose CoRE Piston", options: parent.state.CoREPistons, required: false, multiple: false
-//        	input "cDelay", "number", title: "Default Delay (Minutes) To Trigger", defaultValue: 0, required: false
-//        }
-//        if (!parent.state.CoREPistons){
-//        	section("Missing CoRE pistons"){
-//				paragraph "It looks like you don't have the CoRE SmartApp installed, or you haven't created any pistons yet. To use this capability, please install CoRE or, if already installed, create some pistons, then try again."
-//            }
-//        }	
-//    }
-//}
+def CoRE() {
+	dynamicPage(name: "CoRE", install: false, uninstall: false) {
+		section { paragraph "CoRE Trigger Settings" }
+		section (" "){
+   			input "CoREName", "enum", title: "Choose CoRE Piston", options: parent.state.CoREPistons, required: false, multiple: false
+        	input "cDelay", "number", title: "Default Delay (Minutes) To Trigger", defaultValue: 0, required: false
+        }
+        if (!parent.state.CoREPistons){
+        	section("Missing CoRE pistons"){
+				paragraph "It looks like you don't have the CoRE SmartApp installed, or you haven't created any pistons yet. To use this capability, please install CoRE or, if already installed, create some pistons, then try again."
+            }
+        }	
+    }
+}
+page name: "pOptions"
+	def pOptions(){
+		dynamicPage(name: "pOptions", uninstall: false) {
+            section (""){
+				href "routines", title: "Execute Routines...", description: "Tap here to configure",
+            	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Rest.png"
+				}    
+			section {
+				href "devices", title: "Control Devices...", description: "Tap here to configure...",
+       		    image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Rest.png"
+				}
+            section {
+                 href "CoRE", title: "CoRE Integration", description: "Tap here to configure CoRE options...",
+            	image: "https://cdn.rawgit.com/ady624/CoRE/master/resources/images/app-CoRE.png"
+                }
+	}
+}				
+def routines(){
+    dynamicPage(name: "routines", title: "Select Hello Home Action(s) (Routines) to Execute", install: false, uninstall: false) {
+        // get the available actions
+            def actions = location.helloHome?.getPhrases()*.label
+            if (actions) {
+            // sort them alphabetically
+            actions.sort()
+                    section("") {
+                            if (parent.debug) log.info actions
+                // use the actions as the options for an enum input
+                input "runRoutine", "enum", title: "Select a Routine(s) to execute", required: false, options: actions, multiple: true
+			}
+		}
+    }
+}
 def devices(){
-    dynamicPage(name: "devices", install: false, uninstall: false) {
-        section { paragraph "Switches/Dimmers"} 
-        section("Choose the switches to turn on with this profile...", hideWhenEmpty: true) {
+    dynamicPage(name: "devices", title: "Select switches to turn on with this profile",install: false, uninstall: false) {
+        section {} 
+        section("", hideWhenEmpty: true) {
 			input "switches", "capability.switch", title: "Control These Switches...", multiple: true, required: false, submitOnChange:true
 // add later            if (switches) input "switchesCMD", "enum", title: "Command To Send To Switches", options:["on":"Turn on","off":"Turn off", "toggle":"Toggle the switches' on/off state"], multiple: false, required: false
-            input "dimmers", "capability.switchLevel", title: "Control These Dimmers...", multiple: true, required: false , submitOnChange:true
-// add later            if (dimmers) input "dimmersCMD", "enum", title: "Command To Send To Dimmers", options:["on":"Turn on","off":"Turn off","set":"Set level", "toggle":"Toggle the dimmers' on/off state"], multiple: false, required: false, submitOnChange:true
-// add later            if (dimmersCMD == "set" && dimmers) input "dimmersLVL", "number", title: "Dimmers Level", description: "Set dimmer level", required: false, defaultValue: 0
-    	}
-        section("And then off after a set amount of time..."){
-// bug			input "minutesLater", "number", title: "Minutes?", defaultValue: 0, required: false
-            input "secondsLater", "number", title: "Seconds?", defaultValue: 0, required: false
-		}
+        }
+         section("Turn on these switches after a delay of..."){
+         	input "sSecondsOn", "number", title: "Seconds?", defaultValue: none, required: false
+         }
+		 section("And then turn them off after a delay of..."){
+			input "sSecondsOff", "number", title: "Seconds?", defaultValue: none, required: false
+        }
 	}
 }        
 def restrictions(){
@@ -114,34 +149,43 @@ def restrictions(){
         }   
 	}
 }	
-def speech(){
-    dynamicPage(name: "speech", title: "Configure Speech Notifications", uninstall: false){
-		section (""){ 
-    	input "ShowPreMsg", "bool", title: "Pre-Message", defaultValue: true, submitOnChange: true
-        	if (ShowPreMsg) input "PreMsg", "Text", title: "Pre-Message", description: "Pre-Message to play before your message", required: false, defaultValue: "Attention, Attention please..  "
-            if (!ShowPreMsg) paragraph "Enable for pre-messages"
-            if (ShowPreMsg) paragraph "Disable to stop pre-messages"
+def mOptions(){
+    dynamicPage(name: "mOptions", title: " ", uninstall: false){
+		section ("Configure Audio Messages"){ 
+    	input "ShowPreMsg", "bool", title: "Pre-Message (plays before message)", defaultValue: true, submitOnChange: true
+        	if (ShowPreMsg) input "PreMsg", "Text", title: "Pre-Message", description: "Pre-Message to play before your message", required: false, defaultValue: "Attention, Attention please..  ", submitOnChange: true
             }
         section ( "" ){
-        input "Acustom", "bool", title: "Custom Alexa Responses", default: false, submitOnChange: true
-        	if (Acustom) input "outputTxt", "text", title: "Custom Alexa Responses", defaultValue: none, required: false
-      		if (!Acustom) paragraph "Enable for Custom Alexa Responses"
-            if (Acustom) paragraph "Disable to stop Custom Alexa Responses"
+        input "Acustom", "bool", title: "Custom Alexa Responses to sender", defaultValue: false, submitOnChange: true
+        	if (Acustom) input "outputTxt", "text", title: "Custom Alexa Responses to sender", defaultValue: none, required: false, submitOnChange: true
         }
         section ( "" ){
-        input "Arepeat", "bool", title: "Repeat message to Sender", defaultValue: false, submitOnChange: true
-			if (!Arepeat) paragraph "Enable to have Alexa repeat the message to the Sender"
-        	if (Arepeat) paragraph "Disable to stop Alexa from repeating message to the Sender"
+        input "Arepeat", "bool", title: "Alexa repeats message back to sender", defaultValue: false, submitOnChange: true
         }
     	section ( "" ){
-        input "AfeedBack", "bool", title: "Disable Alexa Feedback Responses", defaultValue: true, submitOnChange: true
-			if (!AfeedBack) paragraph "Enable for Alexa Responses"
-        	if (AfeedBack) paragraph "Disable to stop all Alexa Responses"
+        input "AfeedBack", "bool", title: "Alexa Feedback Responses (disable to silence Alexa)", defaultValue: true, submitOnChange: true
         } 
         section ( "" ){
         input "disableTts", "bool", title: "Disable All spoken notifications (Use for sending texts or when controlling only devices and a verbal response is not wanted.)", required: false, submitOnChange: true  
              if (parent.debug) log.debug "'${disableTts}"
         }
+		section ("Configure Text Messages"){ 
+    	input "sendContactText", "bool", title: "Enable Text Notifications to Contact Book (if available)", required: true, submitOnChange: true
+        	if (sendContactText) input "recipients", "contact", title: "Send text notifications to (optional)", multiple: true, required: false
+        }       	
+        section ( "" ){            
+        input "sendText", "bool", title: "Enable Text Notifications to non-contact book phone(s)", required: true, submitOnChange: true           
+        	if (sendText){      
+           	paragraph "You may enter multiple phone numbers separated by semicolon to deliver the Alexa message as a text and a push notification. E.g. 8045551122;8046663344"
+            input name: "sms", title: "Send text notification to (optional):", type: "phone", required: false
+			input "push", "bool", title: "Send Push Notification (optional)", required: false, defaultValue: false
+           	}            
+		}
+		section ( "" ){            
+        	if (sendContactText || sendText) {         
+			paragraph "By default Echosistant will deliver both voice and text messages to selected devices and contacts(s). Enable text ONLY using toggle below"
+            }
+		}
 	}
 }
 def textMessage(){
@@ -152,14 +196,14 @@ def textMessage(){
          }       	
          section ( "" ){            
          input "sendText", "bool", title: "Enable Text Notifications to non-contact book phone(s)", required: true, submitOnChange: true           
-             if (sendText){      
-                    paragraph "You may enter multiple phone numbers separated by semicolon to deliver the Alexa message as a text and a push notification. E.g. 8045551122;8046663344"
-                	input name: "sms", title: "Send text notification to (optional):", type: "phone", required: false
-					input "push", "bool", title: "Send Push Notification (optional)", required: false, defaultValue: false
-            	}            
-			}
-		 section ( "" ){            
-          if (sendContactText || sendText) {         
+            if (sendText){      
+            paragraph "You may enter multiple phone numbers separated by semicolon to deliver the Alexa message as a text and a push notification. E.g. 8045551122;8046663344"
+            input name: "sms", title: "Send text notification to (optional):", type: "phone", required: false
+			input "push", "bool", title: "Send Push Notification (optional)", required: false, defaultValue: false
+            }            
+		}
+		section ( "" ){            
+        if (sendContactText || sendText) {         
 			paragraph "By default Echosistant will deliver both voice and text messages to selected devices and contacts(s). Enable text ONLY using toggle below"
     		input "disableTts", "bool", title: "Disable spoken notification (only send text message to selected contact(s)", required: false, submitOnChange: true  
              if (parent.debug) log.debug "'${disableTts}"
@@ -174,8 +218,7 @@ def audioDevices(){
             }
         section("Speech Synthesizer Devices (LanDroid, etc...)", hideWhenEmpty: true){
         	input "synthDevice", "capability.speechSynthesis", title: "Choose Speech Synthesis Devices", multiple: true, required: false, submitOnChange: true
-        //	if (synthDevice) input "synthVolume", "number", title: "Speaker Volume", description: "0-100%", required: false
-         }
+		}
 	}
 }
 def sonos(){
@@ -211,22 +254,17 @@ def certainTime() {
 def installed() {
 	if (parent.debug) log.debug "Installed with settings: ${settings}"
 	initialize()
+	subscribe(theSwitch, "switch.on", switchOnHandler)
 }
-
 def updated() {
 	if (parent.debug) log.debug "Updated with settings: ${settings}"
 	initialize()
 	unsubscribe()
 }
-
 def initialize() {
-	profileEvaluate(parent.processTts())
-	def lastMessage = " "
 	state.lastMessage = null
-	def lastIntent  = " "
 	state.lastIntent  = null
-}
-
+    }
 def subscribeToEvents() {
 	if (runModes) {
 		subscribe(runMode, location.currentMode, modeChangeHandler)
@@ -235,7 +273,6 @@ def subscribeToEvents() {
    		subscribe(runDay, location.day, location.currentDay)
 	} 
 }
-
 def unsubscribeToEvents() {
 	if (triggerModes) {
     	unsubscribe(location, modeChangeHandler)
@@ -245,65 +282,71 @@ def unsubscribeToEvents() {
    SPEECH AND TEXT PROCESSING
 ******************************************************************************************************/
 def profileEvaluate(params) {
-		def tts = params.ptts
-        if (parent.debug) log.debug "#1 params.ptts = '${params.ptts}'"
-    //    def txt = params.pttx
-    //    if (parent.debug) log.debug "#2 params.pttx = '${params.pttx}'"
-        def intent  = params.pintentName
+        def tts = params.ptts
+        def txt = params.pttx
+        def intent = params.pintentName
         def childName = app.label
-       	params.lastMessage = clastMessage 
-    	if (intent == childName){
-        if (!disableTts){
-        if (PreMsg) {
-        tts = PreMsg + tts
-        if (parent.debug) log.debug "#3 tts = '${tts}'"
-        }
+        if (intent == childName){
+        	location.helloHome?.execute(runRoutine)
+         	if (sSecondsOn) {
+             	if (parent.debug) log.debug "Scheduling switches to turn on in '${sSecondsOn}' seconds"
+            	runIn(sSecondsOn, turnOnSwitch)
+			}	
         	else {
-            tts = tts
-            if (parent.debug) log.debug "#4 tts = '${tts}'"
-            }
-            if (getDayOk()==true && getModeOk()==true && getTimeOk()==true) {
-               	if (synthDevice) synthDevice?.speak(tts)
-        			    if (parent.debug) log.debug "#5 Sending message to Synthesis Devices"  
-                if (mediaDevice) mediaDevice?.speak(tts)
-                		if (parent.debug) log.debug "#6 Sending message to Media Devices"  
-            	if (tts) {
-					state.sound = textToSpeech(tts instanceof List ? tts[0] : tts)
+        		if (parent.debug) log.debug "Turning switches on"
+                switches?.on()
+        	}
+          	if (sSecondsOff) {
+             	if (parent.debug) log.debug "Scheduling switches to turn off in '${sSecondsOff}' seconds"
+          		runIn(sSecondsOff, turnOffSwitch)
+			}	
+        	else {
+        		if (parent.debug) log.debug "Turning switches off"
+                switches?.off()
+        }
+            if (!disableTts){
+        			if (PreMsg) 
+        				tts = PreMsg + tts
+        				if (parent.debug) log.debug "#3 tts = '${tts}'"
+         			else {
+            			tts = tts
+            			if (parent.debug) log.debug "#4 tts = '${tts}'"
+            		}
+            			if (getDayOk()==true && getModeOk()==true && getTimeOk()==true) {
+            					if (synthDevice) synthDevice?.speak(tts)
+        			    			if (parent.debug) log.debug "#5 Sending message to Synthesis Devices"  
+                				if (mediaDevice) mediaDevice?.speak(tts)
+                					if (parent.debug) log.debug "#6 Sending message to Media Devices"  
+            						if (tts) {
+										state.sound = textToSpeech(tts instanceof List ? tts[0] : tts)
+									}
+									else {
+										state.sound = textToSpeech("You selected the custom message option but did not enter a message in the $app.label Smart App")
+									}
+								if (sonosDevice) {
+										sonosDevice.playTrackAndResume(state.sound.uri, state.sound.duration, volume)
+                    						if (parent.debug) log.debug "Sending message to Sonos Devices"  
+        						}
+    					}
+    					sendtxt(txt) 
+            	if (parent.debug) log.debug "Sending sms and voice message to selected phones and speakers"  
 				}
 				else {
-					state.sound = textToSpeech("You selected the custom message option but did not enter a message in the $app.label Smart App")
-				}
-				if (sonosDevice) {
-					sonosDevice.playTrackAndResume(state.sound.uri, state.sound.duration, volume)
-                    if (parent.debug) log.debug "Sending message to Sonos Devices"  
-        		}
-    		}
-    		sendtxt(txt)
-             	if (parent.debug) log.debug "Sending sms and voice message to selected phones and speakers"  
-				}
-					else {
     					sendtxt(txt)
-            				if (parent.debug) log.debug "Only sending sms because disable voice message is ON"  
-							}
+           					if (parent.debug) log.debug "Only sending sms because disable voice message is ON"  
+				}
+		}
+}
+def turnOnSwitch() {
 	switches?.on()
     dimmers?.on()
-    if (delay) {
-    def delay = minutesLater*60
-    }
-    def delaySeconds = secondsLater
-	if (parent.debug) log.debug "Turning off in ${minutesLater} minutes (${delaySeconds}seconds)"
-	if (delay >0) runIn(delay, turnOffSwitch)
-    if (delaySeconds >0) runIn(secondsLater, turnOffSwitch)
-    if (delay >0) runIn(delay, turnOffDimmers)
-    if (delaySeconds >0) runIn(secondsLater, turnOffDimmers)
-	}
-}
+}	
 def turnOffSwitch() {
 	switches?.off()
     dimmers?.off()
-}
+}	
 //CoRE Handler-----------------------------------------------------------
-/*def CoREResults(sDelay){	
+def CoREResults(sDelay){	
 	String result = ""
     def delay
     if (cDelay>0 || sDelay>0) delay = sDelay==0 ? cDelay as int : sDelay as int
@@ -326,7 +369,7 @@ def CoREHandler(){
     def data = [pistonName: CoREName, args: "I am activating the CoRE Macro: '${app.label}'."]
     sendLocationEvent (name: "CoRE", value: "execute", data: data, isStateChange: true, descriptionText: "Ask Alexa triggered '${CoREName}' piston.")
 	if (noteFeedAct && noteFeed) sendNotificationEvent("Ask Alexa activated CoRE macro: '${app.label}'.")
-}*/
+}
 /***********************************************************************************************************************
     RESTRICTIONS HANDLER
 ***********************************************************************************************************************/
@@ -394,28 +437,23 @@ private timeIntervalLabel() {
 private void sendText(number, message) {
     if (sms) {
         def phones = sms.split("\\;")
-        if (parent.debug) log.trace "SMS phones = $phones."
         for (phone in phones) {
             sendSms(phone, message)
         }
     }
 }
 private void sendtxt(message) {
+    log.debug message
     if (sendContactText) { 
-    if (location.contactBookEnabled) {
+    //if (location.contactBookEnabled) {
         sendNotificationToContacts(message, recipients)
-    	if (parent.debug) log.trace "Sending text to recipients(s) $recipients."
-    } else {
+    } //else {
     	if (push) {
             sendPush message
-        	if (parent.debug) log.trace "Sending push $message."
         } else {
             sendNotificationEvent(message)
-        	if (parent.debug) log.trace "Sending notification event: $message."
         }
         if (sms) {
-            sendText(sms, message)	
-            }		
-        }
+            sendText(sms, message)
 	}
 }
