@@ -46,7 +46,7 @@ preferences {
             	page name: "routines"
         	page name: "restrictions"
     			page name: "certainTime"
-    //      page name: "CoRE"
+            page name: "CoRE"
 }
 /***********************************************************************************************************************
     UI CONFIGURATION
@@ -73,7 +73,7 @@ def mainPage() {
         }
 	}
 } 
-/*def CoRE() {
+def CoRE() {
 	dynamicPage(name: "CoRE", install: false, uninstall: false) {
 		section { paragraph "CoRE Trigger Settings" }
 		section (" "){
@@ -86,7 +86,7 @@ def mainPage() {
             }
         }	
     }
-}*/
+}
 page name: "pOptions"
 	def pOptions(){
 		dynamicPage(name: "pOptions", uninstall: false) {
@@ -97,7 +97,11 @@ page name: "pOptions"
 			section {
 				href "devices", title: "Control Devices...", description: "Tap here to configure...",
        		    image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Rest.png"
-		}
+				}
+            section {
+                 href "CoRE", title: "CoRE Integration", description: "Tap here to configure CoRE options...",
+            	image: "https://cdn.rawgit.com/ady624/CoRE/master/resources/images/app-CoRE.png"
+                }
 	}
 }				
 def routines(){
@@ -128,14 +132,6 @@ def devices(){
 		 section("And then turn them off after a delay of..."){
 			input "sSecondsOff", "number", title: "Seconds?", defaultValue: none, required: false
         }
-        section("Choose the dimmers to turn on with this profile...", hideWhenEmpty: true) {
-            input "dimmers", "capability.switchLevel", title: "Control These Dimmers...", multiple: true, required: false , submitOnChange:true
-    	}
- //later add the section to set level       
-        
-        section("And then turn them all off after a delay of..."){
-			input "dSecondsOff", "number", title: "Seconds?", defaultValue: none, required: false
-		}
 	}
 }        
 def restrictions(){
@@ -285,33 +281,28 @@ def unsubscribeToEvents() {
    SPEECH AND TEXT PROCESSING
 ******************************************************************************************************/
 def profileEvaluate(params) {
-		
         def tts = params.ptts
         def txt = params.pttx
         def intent = params.pintentName
         def childName = app.label
-       	    	
         if (intent == childName){
         	location.helloHome?.execute(runRoutine)
-        	
          	if (sSecondsOn) {
              	if (parent.debug) log.debug "Scheduling switches to turn on in '${sSecondsOn}' seconds"
             	runIn(sSecondsOn, turnOnSwitch)
 			}	
         	else {
         		if (parent.debug) log.debug "Turning switches on"
-                switches.on()
+                switches?.on()
         	}
-
           	if (sSecondsOff) {
              	if (parent.debug) log.debug "Scheduling switches to turn off in '${sSecondsOff}' seconds"
           		runIn(sSecondsOff, turnOffSwitch)
 			}	
         	else {
         		if (parent.debug) log.debug "Turning switches off"
-                switches.off()
+                switches?.off()
         }
-            
             if (!disableTts){
         			if (PreMsg) 
         				tts = PreMsg + tts
@@ -343,24 +334,18 @@ def profileEvaluate(params) {
     					sendtxt(txt)
            					if (parent.debug) log.debug "Only sending sms because disable voice message is ON"  
 				}
-   	
 		}
 }
-
 def turnOnSwitch() {
 	switches?.on()
     dimmers?.on()
 }	
-
 def turnOffSwitch() {
 	switches?.off()
     dimmers?.off()
 }	
-//Device Handlers-----------------------------------------------------------
-
-
 //CoRE Handler-----------------------------------------------------------
-/*def CoREResults(sDelay){	
+def CoREResults(sDelay){	
 	String result = ""
     def delay
     if (cDelay>0 || sDelay>0) delay = sDelay==0 ? cDelay as int : sDelay as int
@@ -383,7 +368,7 @@ def CoREHandler(){
     def data = [pistonName: CoREName, args: "I am activating the CoRE Macro: '${app.label}'."]
     sendLocationEvent (name: "CoRE", value: "execute", data: data, isStateChange: true, descriptionText: "Ask Alexa triggered '${CoREName}' piston.")
 	if (noteFeedAct && noteFeed) sendNotificationEvent("Ask Alexa activated CoRE macro: '${app.label}'.")
-}*/
+}
 /***********************************************************************************************************************
     RESTRICTIONS HANDLER
 ***********************************************************************************************************************/
