@@ -47,7 +47,7 @@ preferences {
             	page name: "routines"
         	page name: "restrictions"
     			page name: "certainTime"
-            page name: "CoRE"
+ //           page name: "CoRE"
 }
 /***********************************************************************************************************************
     UI CONFIGURATION
@@ -74,7 +74,7 @@ def mainPage() {
         }
 	}
 } 
-def CoRE() {
+/*def CoRE() {
 	dynamicPage(name: "CoRE", install: false, uninstall: false) {
 		section { paragraph "CoRE Trigger Settings" }
 		section (" "){
@@ -87,7 +87,7 @@ def CoRE() {
             }
         }	
     }
-}
+}*/
 page name: "pOptions"
 	def pOptions(){
 		dynamicPage(name: "pOptions", uninstall: false) {
@@ -99,10 +99,10 @@ page name: "pOptions"
 				href "devices", title: "Control Devices...", description: "Tap here to configure...",
        		    image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Rest.png"
 				}
-            section {
+/*            section {
                  href "CoRE", title: "CoRE Integration", description: "Tap here to configure CoRE options...",
             	image: "https://cdn.rawgit.com/ady624/CoRE/master/resources/images/app-CoRE.png"
-                }
+                }*/
 	}
 }				
 def routines(){
