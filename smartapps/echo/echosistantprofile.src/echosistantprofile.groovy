@@ -1,6 +1,7 @@
 /**
  *  Echosistant Profile 
  *
+ *		11/20/2016		Version 1.2.0a	Added delays (Bobby)
  *		11/19/2016		Version 1.2.0	Bug Fixes: SMS & Push not working, calling multiple profiles at initialize. Additions: Run Routines and Switch enhancements
  *		11/18/2016		Version 1.2.0	Added Triggering Routines, fixed SMS not sending.
  *		11/12/2016		version 1.1.0	OAuth bug fix, additional debug actions, Alexa feedback options, Intent and Utterance file updates
@@ -121,17 +122,19 @@ def devices(){
 			input "switches", "capability.switch", title: "Control These Switches...", multiple: true, required: false, submitOnChange:true
 // add later            if (switches) input "switchesCMD", "enum", title: "Command To Send To Switches", options:["on":"Turn on","off":"Turn off", "toggle":"Toggle the switches' on/off state"], multiple: false, required: false
         }
-// add later         section("Turn on these switches after a delay of..."){
-// add later          	input "secondsLaterOn", "number", title: "Seconds?", defaultValue: none, required: false
-// add later         }
-// add later        section("And then turn them off after a delay of..."){
-// add later			input "Sdelay", "number", title: "Seconds?", defaultValue: none, required: false
-// add later        }
+         section("Turn on these switches after a delay of..."){
+         	input "sSecondsOn", "number", title: "Seconds?", defaultValue: none, required: false
+         }
+		 section("And then turn them off after a delay of..."){
+			input "sSecondsOff", "number", title: "Seconds?", defaultValue: none, required: false
+        }
         section("Choose the dimmers to turn on with this profile...", hideWhenEmpty: true) {
             input "dimmers", "capability.switchLevel", title: "Control These Dimmers...", multiple: true, required: false , submitOnChange:true
     	}
+ //later add the section to set level       
+        
         section("And then turn them all off after a delay of..."){
-			input "delay", "number", title: "Seconds?", defaultValue: none, required: false
+			input "dSecondsOff", "number", title: "Seconds?", defaultValue: none, required: false
 		}
 	}
 }        
@@ -262,9 +265,7 @@ def updated() {
 	unsubscribe()
 }
 def initialize() {
-	def lastMessage = " "
 	state.lastMessage = null
-	def lastIntent  = " "
 	state.lastIntent  = null
     }
 def subscribeToEvents() {
@@ -289,59 +290,76 @@ def profileEvaluate(params) {
         def txt = params.pttx
         def intent = params.pintentName
         def childName = app.label
-    	if (intent == childName){
-        location.helloHome?.execute(runRoutine)
-        if (!disableTts){
-        if (PreMsg) 
-        tts = PreMsg + tts
-        if (parent.debug) log.debug "#3 tts = '${tts}'"
-         	else {
-            tts = tts
-            if (parent.debug) log.debug "#4 tts = '${tts}'"
-            }
-            if (getDayOk()==true && getModeOk()==true && getTimeOk()==true) {
-            	if (synthDevice) synthDevice?.speak(tts)
-        			    if (parent.debug) log.debug "#5 Sending message to Synthesis Devices"  
-                if (mediaDevice) mediaDevice?.speak(tts)
-                		if (parent.debug) log.debug "#6 Sending message to Media Devices"  
-            	if (tts) {
-					state.sound = textToSpeech(tts instanceof List ? tts[0] : tts)
+       	    	
+        if (intent == childName){
+        	location.helloHome?.execute(runRoutine)
+        	
+         	if (sSecondsOn) {
+             	if (parent.debug) log.debug "Scheduling switches to turn on in '${sSecondsOn}' seconds"
+            	runIn(sSecondsOn, turnOnSwitch)
+			}	
+        	else {
+        		if (parent.debug) log.debug "Turning switches on"
+                switches.on()
+        	}
+
+          	if (sSecondsOff) {
+             	if (parent.debug) log.debug "Scheduling switches to turn off in '${sSecondsOff}' seconds"
+          		runIn(sSecondsOff, turnOffSwitch)
+			}	
+        	else {
+        		if (parent.debug) log.debug "Turning switches off"
+                switches.off()
+        }
+            
+            if (!disableTts){
+        			if (PreMsg) 
+        				tts = PreMsg + tts
+        				if (parent.debug) log.debug "#3 tts = '${tts}'"
+         			else {
+            			tts = tts
+            			if (parent.debug) log.debug "#4 tts = '${tts}'"
+            		}
+            			if (getDayOk()==true && getModeOk()==true && getTimeOk()==true) {
+            					if (synthDevice) synthDevice?.speak(tts)
+        			    			if (parent.debug) log.debug "#5 Sending message to Synthesis Devices"  
+                				if (mediaDevice) mediaDevice?.speak(tts)
+                					if (parent.debug) log.debug "#6 Sending message to Media Devices"  
+            						if (tts) {
+										state.sound = textToSpeech(tts instanceof List ? tts[0] : tts)
+									}
+									else {
+										state.sound = textToSpeech("You selected the custom message option but did not enter a message in the $app.label Smart App")
+									}
+								if (sonosDevice) {
+										sonosDevice.playTrackAndResume(state.sound.uri, state.sound.duration, volume)
+                    						if (parent.debug) log.debug "Sending message to Sonos Devices"  
+        						}
+    					}
+    					sendtxt(txt) 
+            	if (parent.debug) log.debug "Sending sms and voice message to selected phones and speakers"  
 				}
 				else {
-					state.sound = textToSpeech("You selected the custom message option but did not enter a message in the $app.label Smart App")
-				}
-				if (sonosDevice) {
-					sonosDevice.playTrackAndResume(state.sound.uri, state.sound.duration, volume)
-                    if (parent.debug) log.debug "Sending message to Sonos Devices"  
-        		}
-    		}
-    		sendtxt(txt) 
-            if (parent.debug) log.debug "Sending sms and voice message to selected phones and speakers"  
-			}
-					else {
     					sendtxt(txt)
-           				if (parent.debug) log.debug "Only sending sms because disable voice message is ON"  
+           					if (parent.debug) log.debug "Only sending sms because disable voice message is ON"  
+				}
+   	
 		}
-   	switches?.on()
-    dimmers?.on()
-    if (parent.debug) log.debug "Turning off switches in (${delay}seconds)"
-    if (delay >0) runIn(delay, turnOffSwitch)
-//   	if (delay >0) runIn(delay, turnOffDimmers)
-//	if (parent.debug) log.debug "Turning off dimmers in (${Ddelay}seconds)"
-	}
 }
+
+def turnOnSwitch() {
+	switches?.on()
+    dimmers?.on()
+}	
+
 def turnOffSwitch() {
 	switches?.off()
     dimmers?.off()
 }	
-/***********************************************************************************************************************
-    DEVICES HANDLER
-***********************************************************************************************************************/
+//Device Handlers-----------------------------------------------------------
 
 
-/***********************************************************************************************************************
-    CORE HANDLER
-***********************************************************************************************************************/
+//CoRE Handler-----------------------------------------------------------
 /*def CoREResults(sDelay){	
 	String result = ""
     def delay
