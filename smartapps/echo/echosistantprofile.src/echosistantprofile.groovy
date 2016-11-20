@@ -111,7 +111,7 @@ def routines(){
             if (actions) {
             // sort them alphabetically
             actions.sort()
-                    section("Hello Home Actions") {
+                    section("") {
                             if (parent.debug) log.info actions
                 // use the actions as the options for an enum input
                 input "runRoutine", "enum", title: "Select a Routine(s) to execute", required: false, options: actions, multiple: true
@@ -120,9 +120,9 @@ def routines(){
     }
 }
 def devices(){
-    dynamicPage(name: "devices", install: false, uninstall: false) {
+    dynamicPage(name: "devices", title: "Select switches to turn on with this profile",install: false, uninstall: false) {
         section {} 
-        section("Choose the switches to turn on with this profile...", hideWhenEmpty: true) {
+        section("", hideWhenEmpty: true) {
 			input "switches", "capability.switch", title: "Control These Switches...", multiple: true, required: false, submitOnChange:true
 // add later            if (switches) input "switchesCMD", "enum", title: "Command To Send To Switches", options:["on":"Turn on","off":"Turn off", "toggle":"Toggle the switches' on/off state"], multiple: false, required: false
         }
@@ -149,8 +149,8 @@ def restrictions(){
 	}
 }	
 def mOptions(){
-    dynamicPage(name: "mOptions", title: "Configure Audio and Text Messages...", uninstall: false){
-		section (""){ 
+    dynamicPage(name: "mOptions", title: " ", uninstall: false){
+		section ("Configure Audio Messages"){ 
     	input "ShowPreMsg", "bool", title: "Pre-Message (plays before message)", defaultValue: true, submitOnChange: true
         	if (ShowPreMsg) input "PreMsg", "Text", title: "Pre-Message", description: "Pre-Message to play before your message", required: false, defaultValue: "Attention, Attention please..  ", submitOnChange: true
             }
@@ -168,7 +168,7 @@ def mOptions(){
         input "disableTts", "bool", title: "Disable All spoken notifications (Use for sending texts or when controlling only devices and a verbal response is not wanted.)", required: false, submitOnChange: true  
              if (parent.debug) log.debug "'${disableTts}"
         }
-		section (""){ 
+		section ("Configure Text Messages"){ 
     	input "sendContactText", "bool", title: "Enable Text Notifications to Contact Book (if available)", required: true, submitOnChange: true
         	if (sendContactText) input "recipients", "contact", title: "Send text notifications to (optional)", multiple: true, required: false
         }       	
