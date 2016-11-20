@@ -1,6 +1,7 @@
 /**
  *  Echosistant Profile 
  *
+ *		11/19/2016		Version 1.2.0	Bug Fixes: SMS & Push not working, calling multiple profiles at initialize. Additions: Run Routines and Switch enhancements
  *		11/18/2016		Version 1.2.0	Added Triggering Routines, fixed SMS not sending.
  *		11/12/2016		version 1.1.0	OAuth bug fix, additional debug actions, Alexa feedback options, Intent and Utterance file updates
  *										Control Switches on/off with delay off, pre-message "null" bug
@@ -36,29 +37,27 @@ preferences {
     page name:"mainPage"
     	page name:"configuration"
     		page name: "notifications"
-        		page name: "speech"
-    			page name: "textMessage"
-        		page name: "audioDevices"
+        		page name: "mOptions"
+    			page name: "audioDevices"
     				page name: "sonos"
             page name: "pOptions"        
             	page name: "devices"
             	page name: "routines"
         	page name: "restrictions"
     			page name: "certainTime"
-      //      page name: "CoRE"
+    //      page name: "CoRE"
 }
-//************************************************************************************************************
-//Show main page
+/***********************************************************************************************************************
+    UI CONFIGURATION
+***********************************************************************************************************************/
 def mainPage() {	       
     dynamicPage(name: "mainPage", title:"", install: true, uninstall: true) {
         section("") {
     		href "audioDevices", title: "Audio Playback Devices...", description: "Tap here to configure", 
             	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Media.png"
-            href "speech", title: "Audio Message Options...", description: "Tap here to configure", 
+            href "mOptions", title: "Message Options...", description: "Tap here to configure", 
             	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_msg.png"
-			href "textMessage", title: "Text Messages...", description: "Tap here to configure", 
-            	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Text.png"
-            href "pOptions", title: "Extra Profile Options...", description: "Tap here to configure",
+            href "pOptions", title: "Extra Control Settings...", description: "Tap here to configure",
             	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Rest.png"
             href "restrictions", title: "Restrictions", description: "Tap here to configure", 
                 image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Rest.png"
@@ -116,28 +115,23 @@ def routines(){
     }
 }
 def devices(){
-    dynamicPage(name: "devices", title: "Configure Device Control...", install: false, uninstall: false) {
-        section { paragraph "Switches"} 
+    dynamicPage(name: "devices", install: false, uninstall: false) {
+        section {} 
         section("Choose the switches to turn on with this profile...", hideWhenEmpty: true) {
 			input "switches", "capability.switch", title: "Control These Switches...", multiple: true, required: false, submitOnChange:true
-           if (switches) input "switchesCMD", "enum", title: "Command To Send To Switches", options:["on":"Turn on","off":"Turn off", "toggle":"Toggle the switches' on/off state"], multiple: false, required: false
+// add later            if (switches) input "switchesCMD", "enum", title: "Command To Send To Switches", options:["on":"Turn on","off":"Turn off", "toggle":"Toggle the switches' on/off state"], multiple: false, required: false
         }
-         section("Turn on these switches after a delay of..."){
-         	input "secondsLaterOn", "number", title: "Seconds?", defaultValue: none, required: false
-        }
-        section("And then turn them off after a delay of..."){
-			input "secondsLaterOff", "number", title: "Seconds?", defaultValue: none, required: false
-        }
+// add later         section("Turn on these switches after a delay of..."){
+// add later          	input "secondsLaterOn", "number", title: "Seconds?", defaultValue: none, required: false
+// add later         }
+// add later        section("And then turn them off after a delay of..."){
+// add later			input "Sdelay", "number", title: "Seconds?", defaultValue: none, required: false
+// add later        }
         section("Choose the dimmers to turn on with this profile...", hideWhenEmpty: true) {
             input "dimmers", "capability.switchLevel", title: "Control These Dimmers...", multiple: true, required: false , submitOnChange:true
-            if (dimmers) input "dimmersCMD", "enum", title: "Command To Send To Dimmers", options:["on":"Turn on","off":"Turn off","set":"Set level", "toggle":"Toggle the dimmers' on/off state"], multiple: false, required: false, submitOnChange:true
-            if (dimmers) input "setLevel", "number", title: "Dimmers Level", description: "Set dimmer level", required: false, defaultValue: none
     	}
-         section("Turn on these dimmers after a delay of..."){
-         	input "secondsLaterOn", "number", title: "Seconds?", defaultValue: none, required: false
-         }
-        section("And then turn them off after a delay of..."){
-			input "secondsLaterOff", "number", title: "Seconds?", defaultValue: none, required: false
+        section("And then turn them all off after a delay of..."){
+			input "delay", "number", title: "Seconds?", defaultValue: none, required: false
 		}
 	}
 }        
@@ -155,34 +149,43 @@ def restrictions(){
         }   
 	}
 }	
-def speech(){
-    dynamicPage(name: "speech", title: "Configure Speech Notifications", uninstall: false){
+def mOptions(){
+    dynamicPage(name: "mOptions", title: "Configure Audio and Text Messages...", uninstall: false){
 		section (""){ 
-    	input "ShowPreMsg", "bool", title: "Pre-Message", defaultValue: true, submitOnChange: true
-        	if (ShowPreMsg) input "PreMsg", "Text", title: "Pre-Message", description: "Pre-Message to play before your message", required: false, defaultValue: "Attention, Attention please..  "
-            if (!ShowPreMsg) paragraph "Enable for pre-messages"
-            if (ShowPreMsg) paragraph "Disable to stop pre-messages"
+    	input "ShowPreMsg", "bool", title: "Pre-Message (plays before message)", defaultValue: true, submitOnChange: true
+        	if (ShowPreMsg) input "PreMsg", "Text", title: "Pre-Message", description: "Pre-Message to play before your message", required: false, defaultValue: "Attention, Attention please..  ", submitOnChange: true
             }
         section ( "" ){
-        input "Acustom", "bool", title: "Custom Alexa Responses", default: false, submitOnChange: true
-        	if (Acustom) input "outputTxt", "text", title: "Custom Alexa Responses", defaultValue: none, required: false
-      		if (!Acustom) paragraph "Enable for Custom Alexa Responses"
-            if (Acustom) paragraph "Disable to stop Custom Alexa Responses"
+        input "Acustom", "bool", title: "Custom Alexa Responses to sender", defaultValue: false, submitOnChange: true
+        	if (Acustom) input "outputTxt", "text", title: "Custom Alexa Responses to sender", defaultValue: none, required: false, submitOnChange: true
         }
         section ( "" ){
-        input "Arepeat", "bool", title: "Repeat message to Sender", defaultValue: false, submitOnChange: true
-			if (!Arepeat) paragraph "Enable to have Alexa repeat the message to the Sender"
-        	if (Arepeat) paragraph "Disable to stop Alexa from repeating message to the Sender"
+        input "Arepeat", "bool", title: "Alexa repeats message back to sender", defaultValue: false, submitOnChange: true
         }
     	section ( "" ){
-        input "AfeedBack", "bool", title: "Disable Alexa Feedback Responses", defaultValue: true, submitOnChange: true
-			if (!AfeedBack) paragraph "Enable for Alexa Responses"
-        	if (AfeedBack) paragraph "Disable to stop all Alexa Responses"
+        input "AfeedBack", "bool", title: "Alexa Feedback Responses (disable to silence Alexa)", defaultValue: true, submitOnChange: true
         } 
         section ( "" ){
         input "disableTts", "bool", title: "Disable All spoken notifications (Use for sending texts or when controlling only devices and a verbal response is not wanted.)", required: false, submitOnChange: true  
              if (parent.debug) log.debug "'${disableTts}"
         }
+		section (""){ 
+    	input "sendContactText", "bool", title: "Enable Text Notifications to Contact Book (if available)", required: true, submitOnChange: true
+        	if (sendContactText) input "recipients", "contact", title: "Send text notifications to (optional)", multiple: true, required: false
+        }       	
+        section ( "" ){            
+        input "sendText", "bool", title: "Enable Text Notifications to non-contact book phone(s)", required: true, submitOnChange: true           
+        	if (sendText){      
+           	paragraph "You may enter multiple phone numbers separated by semicolon to deliver the Alexa message as a text and a push notification. E.g. 8045551122;8046663344"
+            input name: "sms", title: "Send text notification to (optional):", type: "phone", required: false
+			input "push", "bool", title: "Send Push Notification (optional)", required: false, defaultValue: false
+           	}            
+		}
+		section ( "" ){            
+        	if (sendContactText || sendText) {         
+			paragraph "By default Echosistant will deliver both voice and text messages to selected devices and contacts(s). Enable text ONLY using toggle below"
+            }
+		}
 	}
 }
 def textMessage(){
@@ -193,14 +196,14 @@ def textMessage(){
          }       	
          section ( "" ){            
          input "sendText", "bool", title: "Enable Text Notifications to non-contact book phone(s)", required: true, submitOnChange: true           
-             if (sendText){      
-                    paragraph "You may enter multiple phone numbers separated by semicolon to deliver the Alexa message as a text and a push notification. E.g. 8045551122;8046663344"
-                	input name: "sms", title: "Send text notification to (optional):", type: "phone", required: false
-					input "push", "bool", title: "Send Push Notification (optional)", required: false, defaultValue: false
-            	}            
-			}
-		 section ( "" ){            
-          if (sendContactText || sendText) {         
+            if (sendText){      
+            paragraph "You may enter multiple phone numbers separated by semicolon to deliver the Alexa message as a text and a push notification. E.g. 8045551122;8046663344"
+            input name: "sms", title: "Send text notification to (optional):", type: "phone", required: false
+			input "push", "bool", title: "Send Push Notification (optional)", required: false, defaultValue: false
+            }            
+		}
+		section ( "" ){            
+        if (sendContactText || sendText) {         
 			paragraph "By default Echosistant will deliver both voice and text messages to selected devices and contacts(s). Enable text ONLY using toggle below"
     		input "disableTts", "bool", title: "Disable spoken notification (only send text message to selected contact(s)", required: false, submitOnChange: true  
              if (parent.debug) log.debug "'${disableTts}"
@@ -286,7 +289,6 @@ def profileEvaluate(params) {
         def txt = params.pttx
         def intent = params.pintentName
         def childName = app.label
-       	params.lastMessage = clastMessage 
     	if (intent == childName){
         location.helloHome?.execute(runRoutine)
         if (!disableTts){
@@ -322,18 +324,24 @@ def profileEvaluate(params) {
 		}
    	switches?.on()
     dimmers?.on()
-	if (parent.debug) log.debug "Turning off in (${delaySeconds}seconds)"
-    if (delaySeconds >0) runIn(secondsLater, turnOffSwitch)
+    if (parent.debug) log.debug "Turning off switches in (${delay}seconds)"
+    if (delay >0) runIn(delay, turnOffSwitch)
+//   	if (delay >0) runIn(delay, turnOffDimmers)
+//	if (parent.debug) log.debug "Turning off dimmers in (${Ddelay}seconds)"
 	}
 }
 def turnOffSwitch() {
 	switches?.off()
     dimmers?.off()
 }	
-//Device Handlers-----------------------------------------------------------
+/***********************************************************************************************************************
+    DEVICES HANDLER
+***********************************************************************************************************************/
 
 
-//CoRE Handler-----------------------------------------------------------
+/***********************************************************************************************************************
+    CORE HANDLER
+***********************************************************************************************************************/
 /*def CoREResults(sDelay){	
 	String result = ""
     def delay
