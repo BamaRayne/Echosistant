@@ -167,7 +167,7 @@ def installed() {
 	initialize()
 }
 def childUninstalled() {
-	sendLocationEvent(name: "EchoSistant", value: "refresh", data: [profiles: parent ? parent.getCoREList() : getCoreProfileList()] , isStateChange: true, descriptionText: "EchoSistant Profile list refresh")
+	sendLocationEvent(name: "echoSistant", value: "refresh", data: [profiles: parent ? parent.getCoREList() : getCoreProfileList()] , isStateChange: true, descriptionText: "echoSistant Profile list refresh")
 }
 def updated() {
 	if (debug) log.debug "Updated with settings: ${settings}"
@@ -190,7 +190,7 @@ children.each { child ->
 }
 		log.trace "STappID = '${app.id}' , STtoken = '${state.accessToken}'"            
 subscribe(location, "CoRE", coreHandler)
-sendLocationEvent(name: "EchoSistant", value: "refresh", data: [profiles: parent ? parent.getCoREProfileList() : getCoREProfileList()] , isStateChange: true, descriptionText: "EchoSistant Profile list refresh")
+sendLocationEvent(name: "echoSistant", value: "refresh", data: [profiles: parent ? parent.getCoREProfileList() : getCoREProfileList()] , isStateChange: true, descriptionText: "echoSistant Profile list refresh")
 	}
 }
 /*************************************************************************************************************
@@ -252,7 +252,7 @@ def processTts() {
    Version/Copyright/Information/Help
 ************************************************************************************************************/
 private def textAppName() {
-	def text = "EchoSistant"
+	def text = "echoSistant"
 }	
 private def textVersion() {
 	def text = "Version 1.2.0 (11/20/2016)"

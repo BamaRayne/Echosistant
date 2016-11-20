@@ -47,7 +47,7 @@ preferences {
             	page name: "routines"
         	page name: "restrictions"
     			page name: "certainTime"
- //           page name: "CoRE"
+            page name: "CoRE"
 }
 /***********************************************************************************************************************
     UI CONFIGURATION
@@ -74,7 +74,7 @@ def mainPage() {
         }
 	}
 } 
-/*def CoRE() {
+def CoRE() {
 	dynamicPage(name: "CoRE", install: false, uninstall: false) {
 		section { paragraph "CoRE Trigger Settings" }
 		section (" "){
@@ -87,7 +87,7 @@ def mainPage() {
             }
         }	
     }
-}*/
+}
 page name: "pOptions"
 	def pOptions(){
 		dynamicPage(name: "pOptions", uninstall: false) {
@@ -99,10 +99,10 @@ page name: "pOptions"
 				href "devices", title: "Control Devices...", description: "Tap here to configure...",
        		    image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Rest.png"
 				}
-/*            section {
+            section {
                  href "CoRE", title: "CoRE Integration", description: "Tap here to configure CoRE options...",
             	image: "https://cdn.rawgit.com/ady624/CoRE/master/resources/images/app-CoRE.png"
-                }*/
+                }
 	}
 }				
 def routines(){
@@ -350,9 +350,9 @@ def CoREResults(sDelay){
 	String result = ""
     def delay
     if (cDelay>0 || sDelay>0) delay = sDelay==0 ? cDelay as int : sDelay as int
-	result = (!delay || delay == 0) ? "I am triggering the CORE macro named '${app.label}'. " : delay==1 ? "I'll trigger the '${app.label}' CORE macro in ${delay} minute. " : "I'll trigger the '${app.label}' CORE macro in ${delay} minutes. "
+	result = (!delay || delay == 0) ? "I am triggering the CORE profile named '${app.label}'. " : delay==1 ? "I'll trigger the '${app.label}' CORE profile in ${delay} minute. " : "I'll trigger the '${app.label}' CORE profile in ${delay} minutes. "
 		if (sDelay == 9999) { 
-		result = "I am cancelling all scheduled executions of the CORE macro, '${app.label}'. "  
+		result = "I am cancelling all scheduled executions of the CORE profile, '${app.label}'. "  
 		state.scheduled = false
 		unschedule() 
 	}
@@ -361,14 +361,14 @@ def CoREResults(sDelay){
 		else if (delay < 9999) { runIn(delay*60, CoREHandler, [overwrite: true]) ; state.scheduled=true}
 		if (delay < 9999) result = voicePost && !noAck ? replaceVoiceVar(voicePost, delay) : noAck ? " " : result
 	}
-	else result = "The CORE macro, '${app.label}', is already scheduled to run. You must cancel the execution or wait until it runs before you can run it again. %1%"
+	else result = "The CORE profile, '${app.label}', is already scheduled to run. You must cancel the execution or wait until it runs before you can run it again. "
 	return result
 }
 def CoREHandler(){ 
 	state.scheduled = false
     def data = [pistonName: CoREName, args: "I am activating the CoRE Macro: '${app.label}'."]
     sendLocationEvent (name: "CoRE", value: "execute", data: data, isStateChange: true, descriptionText: "Ask Alexa triggered '${CoREName}' piston.")
-	if (noteFeedAct && noteFeed) sendNotificationEvent("Ask Alexa activated CoRE macro: '${app.label}'.")
+	/*if (noteFeedAct && noteFeed)*/ sendNotificationEvent("echoSistant activated CoRE profile: '${app.label}'.")
 }
 /***********************************************************************************************************************
     RESTRICTIONS HANDLER
