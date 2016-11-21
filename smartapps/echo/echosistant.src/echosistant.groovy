@@ -2,6 +2,7 @@
  * EchoSistant - The Ultimate Voice and Text Messaging Assistant Using Your Alexa Enable Device.
  *		
  * 
+ *      11/21/2016.     Version 1.2.1.  Bug fix
  *		11/20/2016		Version 1.2.0	Fixes: SMS&Push not working, calling multiple profiles at initialize. Additions: Run Routines and Switch enhancements
  *		11/13/2016		Version 1.1.1a	Roadmap update and spelling errors
  *		11/13/2016		Version 1.1.1	Addition - Repeat last message
@@ -156,6 +157,11 @@ page name: "pageReset"
         		}
 			}
 		} 	
+        def echoSistantHandler(evt) {
+	log.debug "Refreshing CoRE Piston List"
+    if (evt.value =="installed") { state.CoREPistons = evt.jsonData && evt.jsonData?.pistons ? evt.jsonData.pistons : [] }
+}
+def getCoREMacroList(){ return getChildApps().findAll {it.macroType !="CoRE"}.label }
 //************************************************************************************************************
 mappings {
       path("/t") {action: [GET: "processTts"]}
@@ -166,13 +172,16 @@ def installed() {
 	if (debug) log.trace "STappID = '${app.id}' , STtoken = '${state.accessToken}'"
 	initialize()
 }
-def childUninstalled() {
-	sendLocationEvent(name: "echoSistant", value: "refresh", data: [profiles: parent ? parent.getCoREList() : getCoreProfileList()] , isStateChange: true, descriptionText: "echoSistant Profile list refresh")
-}
+
 def updated() {
 	if (debug) log.debug "Updated with settings: ${settings}"
     initialize()
-	unsubscribe()    
+	unsubscribe()
+}
+def getProfileList() { return getChildApps()*.label }
+if (debug) log.debug "Your installed Profiles are ${getChildApps()*.label}"
+def childUninstalled() {
+	sendLocationEvent(name: "echoSistant", value: "refresh", data: [profiles: parent ? parent.getCoREList() : getCoreProfileList()] , isStateChange: true, descriptionText: "echoSistant Profile list refresh")
 }
 def initialize() {
 def lastMessage = " "
@@ -184,15 +193,14 @@ if (debug) log.debug "$children.size Profiles installed"
 children.each { child ->
 }
 	if (!state.accessToken) {
+        subscribe(location, "CoRE", coreHandler) 
                OAuthToken()
     section() {
     paragraph "You must enable OAuth via the IDE to setup this app"
 }
-		log.trace "STappID = '${app.id}' , STtoken = '${state.accessToken}'"            
-subscribe(location, "CoRE", coreHandler)
-sendLocationEvent(name: "echoSistant", value: "refresh", data: [profiles: parent ? parent.getCoREProfileList() : getCoREProfileList()] , isStateChange: true, descriptionText: "echoSistant Profile list refresh")
-	}
-}
+		log.trace "STappID = '${app.id}' , STtoken = '${state.accessToken}'"            		
+	}  
+ }
 /*************************************************************************************************************
    CREATE INITIAL TOKEN
 *************************************************************************************************************/
@@ -247,7 +255,6 @@ def processTts() {
         return ["outputTxt":outputTxt]
         if (debug) log.debug "#6 Alexa response sent to Lambda = '${outputTxt}'"
         }
-        
 /************************************************************************************************************
    Version/Copyright/Information/Help
 ************************************************************************************************************/
@@ -255,7 +262,7 @@ private def textAppName() {
 	def text = "echoSistant"
 }	
 private def textVersion() {
-	def text = "Version 1.2.0 (11/20/2016)"
+	def text = "Version 1.2.1 (11/21/2016)"
 }
 private def textCopyright() {
 	def text = "Copyright © 2016 Jason Headley"
