@@ -1,9 +1,8 @@
 /**
  *  Echosistant Profile 
  *
- *		
+ *		11/20/2016		Version 2.0.0	Bug Fixes, added repeat fr each profile		
  *		11/20/2016		Version 1.2.0	Bug Fixes: SMS & Push not working, calling multiple profiles at initialize. Additions: Run Routines and Switch enhancements 
- *										Code for Switch enhancements come from @SBDOBRESCU
  *		11/18/2016		Version 1.2.0	Added Triggering Routines, fixed SMS not sending.
  *		11/12/2016		version 1.1.0	OAuth bug fix, additional debug actions, Alexa feedback options, Intent and Utterance file updates
  *										Control Switches on/off with delay off, pre-message "null" bug
@@ -60,9 +59,9 @@ def mainPage() {
             href "mOptions", title: "Message Options...", description: "Tap here to configure", 
             	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_msg.png"
             href "pOptions", title: "Extra Control Settings...", description: "Tap here to configure",
-            	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Rest.png"
+            	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Plus.png"
             href "restrictions", title: "Restrictions", description: "Tap here to configure", 
-                image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Rest.png"
+                image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Extra.png"
 //            href "CoRE", title: "CoRE Integration", description: "Tap here to configure CoRE options...",
 //            	image: "https://cdn.rawgit.com/ady624/CoRE/master/resources/images/app-CoRE.png"
         }
@@ -93,11 +92,11 @@ page name: "pOptions"
 		dynamicPage(name: "pOptions", uninstall: false) {
             section (""){
 				href "routines", title: "Execute Routines...", description: "Tap here to configure",
-            	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Rest.png"
+            	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Routines.png"
 				}    
 			section {
 				href "devices", title: "Control Devices...", description: "Tap here to configure...",
-       		    image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Rest.png"
+       		    image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_devices.png"
 				}
 /*          section {
                  href "CoRE", title: "CoRE Integration", description: "Tap here to configure CoRE options...",
@@ -125,7 +124,6 @@ def devices(){
         section {} 
         section("", hideWhenEmpty: true) {
 			input "switches", "capability.switch", title: "Control These Switches...", multiple: true, required: false, submitOnChange:true
-// add later            if (switches) input "switchesCMD", "enum", title: "Command To Send To Switches", options:["on":"Turn on","off":"Turn off", "toggle":"Toggle the switches' on/off state"], multiple: false, required: false
         }
          section("Turn on these switches after a delay of..."){
          	input "sSecondsOn", "number", title: "Seconds?", defaultValue: none, required: false
@@ -259,8 +257,6 @@ def certainTime() {
 def installed() {
 	if (parent.debug) log.debug "Installed with settings: ${settings}"
 	initialize()
-	subscribe(theSwitch, "switch.on", switchOnHandler)
-    subscribe(location, "CoRE", coreHandler) 
 }
 def updated() {
 	if (parent.debug) log.debug "Updated with settings: ${settings}"
@@ -269,7 +265,7 @@ def updated() {
 }
 def initialize() {
 	state.lastMessage = null
-	state.lastIntent  = null
+    state.lastTime  = null
     }
 def subscribeToEvents() {
 	if (runModes) {
@@ -298,7 +294,7 @@ def profileEvaluate(params) {
         	location.helloHome?.execute(runRoutine)
          	if (sSecondsOn) {
              	if (parent.debug) log.debug "Scheduling switches to turn on in '${sSecondsOn}' seconds"
-            	runIn(sSecondsOn, [overwrite: true],turnOnSwitch)
+            	runIn(sSecondsOn,turnOnSwitch)
 			}	
         	else {
         		if (parent.debug) log.debug "Turning switches on"
@@ -306,7 +302,7 @@ def profileEvaluate(params) {
         	}
           	if (sSecondsOff) {
              	if (parent.debug) log.debug "Scheduling switches to turn off in '${sSecondsOff}' seconds"
-          		runIn(sSecondsOff, [overwrite: true],turnOffSwitch)
+          		runIn(sSecondsOff,turnOffSwitch)
 			}	
         	else {
         		if (parent.debug) log.debug "Turning switches off"
@@ -316,10 +312,10 @@ def profileEvaluate(params) {
         			if (PreMsg) 
         				tts = PreMsg + tts
         				if (parent.debug) log.debug "#3 tts = '${tts}'"
-         			else {
+                    else {
             			tts = tts
             			if (parent.debug) log.debug "#4 tts = '${tts}'"
-            		}
+                    }
             			if (getDayOk()==true && getModeOk()==true && getTimeOk()==true) {
             					if (synthDevice) synthDevice?.speak(tts)
         			    			if (parent.debug) log.debug "#5 Sending message to Synthesis Devices"  
@@ -337,10 +333,14 @@ def profileEvaluate(params) {
         						}
     					}
     					sendtxt(txt) 
+                        state.lastMessage = tts
+                        state.lastTime = new Date(now()).format("h:mm aa", location.timeZone)
             	if (parent.debug) log.debug "Sending sms and voice message to selected phones and speakers"  
 				}
 				else {
     					sendtxt(txt)
+                        state.lastMessage = txt
+                        state.lastTime = new Date(now()).format("h:mm aa", location.timeZone)
            					if (parent.debug) log.debug "Only sending sms because disable voice message is ON"  
 				}
         }
@@ -357,7 +357,15 @@ if (intent == childName){
 	switches?.off()
     dimmers?.off()
 	}   
-}	
+}
+//Last Message Handler-----------------------------------------------------------
+
+def getLastMessage() {
+	def cOutputTxt = "The last message sent to " + app.label + " was," + state.lastMessage + ", and it was sent at, " + state.lastTime
+	return  cOutputTxt 
+	if (parent.debug) log.debug "Sending last message to parent '${cOutputTxt}' "
+}
+
 //CoRE Handler-----------------------------------------------------------
 def CoREResults(sDelay){	
 	String result = ""
