@@ -259,8 +259,6 @@ def certainTime() {
 def installed() {
 	if (parent.debug) log.debug "Installed with settings: ${settings}"
 	initialize()
-	subscribe(theSwitch, "switch.on", switchOnHandler)
-    subscribe(location, "CoRE", coreHandler) 
 }
 def updated() {
 	if (parent.debug) log.debug "Updated with settings: ${settings}"
@@ -298,7 +296,7 @@ def profileEvaluate(params) {
         	location.helloHome?.execute(runRoutine)
          	if (sSecondsOn) {
              	if (parent.debug) log.debug "Scheduling switches to turn on in '${sSecondsOn}' seconds"
-            	runIn(sSecondsOn, [overwrite: true],turnOnSwitch)
+            	runIn(sSecondsOn, turnOnSwitch)
 			}	
         	else {
         		if (parent.debug) log.debug "Turning switches on"
@@ -306,7 +304,7 @@ def profileEvaluate(params) {
         	}
           	if (sSecondsOff) {
              	if (parent.debug) log.debug "Scheduling switches to turn off in '${sSecondsOff}' seconds"
-          		runIn(sSecondsOff, [overwrite: true],turnOffSwitch)
+          		runIn(sSecondsOff,turnOffSwitch)
 			}	
         	else {
         		if (parent.debug) log.debug "Turning switches off"
