@@ -1,8 +1,9 @@
 /**
  *  Echosistant Profile 
  *
- *		11/20/2016		Version 1.2.0a	Added delays (Bobby)
- *		11/19/2016		Version 1.2.0	Bug Fixes: SMS & Push not working, calling multiple profiles at initialize. Additions: Run Routines and Switch enhancements
+ *		
+ *		11/20/2016		Version 1.2.0	Bug Fixes: SMS & Push not working, calling multiple profiles at initialize. Additions: Run Routines and Switch enhancements 
+ *										Code for Switch enhancements come from @SBDOBRESCU
  *		11/18/2016		Version 1.2.0	Added Triggering Routines, fixed SMS not sending.
  *		11/12/2016		version 1.1.0	OAuth bug fix, additional debug actions, Alexa feedback options, Intent and Utterance file updates
  *										Control Switches on/off with delay off, pre-message "null" bug
@@ -98,10 +99,10 @@ page name: "pOptions"
 				href "devices", title: "Control Devices...", description: "Tap here to configure...",
        		    image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Rest.png"
 				}
-            section {
+/*          section {
                  href "CoRE", title: "CoRE Integration", description: "Tap here to configure CoRE options...",
             	image: "https://cdn.rawgit.com/ady624/CoRE/master/resources/images/app-CoRE.png"
-                }
+                } */
 	}
 }				
 def routines(){
@@ -157,6 +158,11 @@ def mOptions(){
         section ( "" ){
         input "Acustom", "bool", title: "Custom Alexa Responses to sender", defaultValue: false, submitOnChange: true
         	if (Acustom) input "outputTxt", "text", title: "Custom Alexa Responses to sender", defaultValue: none, required: false, submitOnChange: true
+        }
+        section ( "" ){
+        input "ContCmds", "bool", title: "Continued commands to send multiple messages...", defaultValue: false, submitOnChange: true
+        	if (ContCmds) {paragraph "This option allows you to send multiple messages to the initial Recipient ONLY.  To send to a different Recipient, you MUST re-initialize Alexa."
+        	}
         }
         section ( "" ){
         input "Arepeat", "bool", title: "Alexa repeats message back to sender", defaultValue: false, submitOnChange: true
@@ -254,6 +260,7 @@ def installed() {
 	if (parent.debug) log.debug "Installed with settings: ${settings}"
 	initialize()
 	subscribe(theSwitch, "switch.on", switchOnHandler)
+    subscribe(location, "CoRE", coreHandler) 
 }
 def updated() {
 	if (parent.debug) log.debug "Updated with settings: ${settings}"
@@ -286,10 +293,12 @@ def profileEvaluate(params) {
         def intent = params.pintentName
         def childName = app.label
         if (intent == childName){
+           	sendLocationEvent(name: "echoSistantProfile", value: app.label, data: data, displayed: true, isStateChange: true, descriptionText: "EchoSistant activated '${app.label}' profile.")
+      		if (parent.debug) log.debug "sendNotificationEvent sent to CoRE was '${app.label}' from the TTS process section"
         	location.helloHome?.execute(runRoutine)
          	if (sSecondsOn) {
              	if (parent.debug) log.debug "Scheduling switches to turn on in '${sSecondsOn}' seconds"
-            	runIn(sSecondsOn, turnOnSwitch)
+            	runIn(sSecondsOn, [overwrite: true],turnOnSwitch)
 			}	
         	else {
         		if (parent.debug) log.debug "Turning switches on"
@@ -297,7 +306,7 @@ def profileEvaluate(params) {
         	}
           	if (sSecondsOff) {
              	if (parent.debug) log.debug "Scheduling switches to turn off in '${sSecondsOff}' seconds"
-          		runIn(sSecondsOff, turnOffSwitch)
+          		runIn(sSecondsOff, [overwrite: true],turnOffSwitch)
 			}	
         	else {
         		if (parent.debug) log.debug "Turning switches off"
@@ -334,24 +343,29 @@ def profileEvaluate(params) {
     					sendtxt(txt)
            					if (parent.debug) log.debug "Only sending sms because disable voice message is ON"  
 				}
-		}
+        }
 }
+
 def turnOnSwitch() {
+if (intent == childName){
 	switches?.on()
     dimmers?.on()
-}	
+	}
+}    
 def turnOffSwitch() {
+if (intent == childName){
 	switches?.off()
     dimmers?.off()
+	}   
 }	
 //CoRE Handler-----------------------------------------------------------
 def CoREResults(sDelay){	
 	String result = ""
     def delay
     if (cDelay>0 || sDelay>0) delay = sDelay==0 ? cDelay as int : sDelay as int
-	result = (!delay || delay == 0) ? "I am triggering the CORE macro named '${app.label}'. " : delay==1 ? "I'll trigger the '${app.label}' CORE macro in ${delay} minute. " : "I'll trigger the '${app.label}' CORE macro in ${delay} minutes. "
+	result = (!delay || delay == 0) ? "I am triggering the CORE profile named '${app.label}'. " : delay==1 ? "I'll trigger the '${app.label}' CORE profile in ${delay} minute. " : "I'll trigger the '${app.label}' CORE profile in ${delay} minutes. "
 		if (sDelay == 9999) { 
-		result = "I am cancelling all scheduled executions of the CORE macro, '${app.label}'. "  
+		result = "I am cancelling all scheduled executions of the CORE profile, '${app.label}'. "  
 		state.scheduled = false
 		unschedule() 
 	}
@@ -360,14 +374,14 @@ def CoREResults(sDelay){
 		else if (delay < 9999) { runIn(delay*60, CoREHandler, [overwrite: true]) ; state.scheduled=true}
 		if (delay < 9999) result = voicePost && !noAck ? replaceVoiceVar(voicePost, delay) : noAck ? " " : result
 	}
-	else result = "The CORE macro, '${app.label}', is already scheduled to run. You must cancel the execution or wait until it runs before you can run it again. %1%"
+	else result = "The CORE profile, '${app.label}', is already scheduled to run. You must cancel the execution or wait until it runs before you can run it again. "
 	return result
 }
 def CoREHandler(){ 
 	state.scheduled = false
     def data = [pistonName: CoREName, args: "I am activating the CoRE Macro: '${app.label}'."]
     sendLocationEvent (name: "CoRE", value: "execute", data: data, isStateChange: true, descriptionText: "Ask Alexa triggered '${CoREName}' piston.")
-	if (noteFeedAct && noteFeed) sendNotificationEvent("Ask Alexa activated CoRE macro: '${app.label}'.")
+	/*if (noteFeedAct && noteFeed)*/ sendNotificationEvent("echoSistant activated CoRE profile: '${app.label}'.")
 }
 /***********************************************************************************************************************
     RESTRICTIONS HANDLER
