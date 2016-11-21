@@ -70,7 +70,10 @@ preferences {  //SHOW MAIN PAGE
         section ("Directions, How-to's, and Troubleshooting") { 
 			href url:"http://thingsthataresmart.wiki/index.php?title=EchoSistant", title: "EchoSistant Wiki", description: none
         	}
-    	}
+        section ("Rename Main Intent") { 
+			input "mainIntent", "text", title: "Main Intent", defaultValue: "assistant", required: false
+        	}
+}
 	}
 	page(name: "profiles", title: "Profiles", install: true, uninstall: false) {
         section {
@@ -178,25 +181,24 @@ def updated() {
 	unsubscribe()
 }
 def getProfileList() { return getChildApps()*.label }
-if (debug) log.debug "Your installed Profiles are ${getChildApps()*.label}"
+	if (debug) log.debug "Your installed Profiles are ${getChildApps()*.label}"
 def childUninstalled() {
 	sendLocationEvent(name: "echoSistant", value: "refresh", data: [profiles: parent ? parent.getCoREList() : getCoreProfileList()] , isStateChange: true, descriptionText: "echoSistant Profile list refresh")
 }
 def initialize() {
-def lastMessage = " "
-state.lastMessage = null
-def lastIntent  = intentName
-state.lastIntent  = null
-def children = getChildApps()
-if (debug) log.debug "$children.size Profiles installed"
-children.each { child ->
-}
+	state.lastMessage = null
+	state.lastIntent  = null
+    state.lastTime  = null
+	def children = getChildApps()
+	if (debug) log.debug "$children.size Profiles installed"
+		children.each { child ->
+		}
 	if (!state.accessToken) {
         subscribe(location, "CoRE", coreHandler) 
                OAuthToken()
-    section() {
-    paragraph "You must enable OAuth via the IDE to setup this app"
-}
+    	section() {
+    	paragraph "You must enable OAuth via the IDE to setup this app"
+		}
 		log.trace "STappID = '${app.id}' , STtoken = '${state.accessToken}'"            		
 	}  
  }
@@ -221,36 +223,65 @@ def processTts() {
         	if (debug) log.debug "#2 Message received from Lambda (pttx) = '${pttx}'"
    		def pintentName = params.intentName
 			if (debug) log.debug "#3 Profile being called = '${pintentName}'"
-  		def outputTxt = ''
+        def outputTxt = ''
     	def dataSet = [ptts:ptts,pttx:pttx,pintentName:pintentName] 
 		def repeat = "repeat"
-       		    if (ptts==repeat) {
-                if (debug) log.debug "lastIntent = ${state.lastIntent}" 
-				outputTxt = "The last message sent was," + state.lastMessage + ", and it was sent to, " + state.lastIntent 
+       	def pMainIntent ="assistant"
+        	if (mainIntent){
+            		pMainIntent = mainIntent
+        	}
+        if (debug) log.debug "#4 Main intent being called = '${pMainIntent}'"    
+        if (ptts==repeat) {
+				if (pMainIntent == pintentName) {
+                outputTxt = "The last message sent was," + state.lastMessage + ", and it was sent to, " + state.lastIntent + ", at, " + state.lastTime 
 				}
-				else {
-    				if (ptts){
+                else {
+                      	childApps.each { child ->
+    						def cLast = child.label
+            				if (cLast == pintentName) {
+                        		if (debug) log.debug "Last Child was = '${cLast}'"  
+                                def cLastMessage 
+                       			def cLastTime
+                                outputTxt = child.getLastMessage()
+                                if (debug) log.debug "Profile matched is ${cLast}, last profile message was ${outputTxt}" 
+                			}
+               		}
+               }
+        }    
+		else {
+    			if (ptts){
      				state.lastMessage = ptts
                     state.lastIntent = pintentName
+                    state.lastTime = new Date(now()).format("h:mm aa", location.timeZone)
                     childApps.each {child ->
 						child.profileEvaluate(dataSet)
             			}
             			childApps.each { child ->
     					def cm = child.label
-                if (child.AfeedBack)
-            	if (cm == pintentName) {
-                		if (child.Acustom) outputTxt = child.outputTxt
-                        	else
-                        if (child.Arepeat) outputTxt = "I have delivered the following message to '${cm}',  " + ptts
-							else 
-                        if (pintentName == repeatMessage) return result
-                        	else
-                            outputTxt = "Message sent to ${pintentName}, " 
-								if (debug) log.debug "#5 Alexa verbal response = '${outputTxt}'"
-           }  
-                  }
-						}
-                        }
+                	if (child.AfeedBack) {
+            			if (cm == pintentName) {
+                			if (child.Acustom) {
+                            outputTxt = child.outputTxt
+                            }
+                            else {
+                        		if (child.Arepeat) {
+                                outputTxt = "I have delivered the following message to '${cm}',  " + ptts
+								}
+                                else {
+                        			if (pintentName == repeatMessage) {
+                                    	return result
+                                    }
+                        			else {
+                            			outputTxt = "Message sent to ${pintentName}, " 
+										if (debug) log.debug "#5 Alexa verbal response = '${outputTxt}'"
+           							}
+                                }
+                             }
+           				}  
+                  	}
+				}
+      		}
+         }
         return ["outputTxt":outputTxt]
         if (debug) log.debug "#6 Alexa response sent to Lambda = '${outputTxt}'"
         }
