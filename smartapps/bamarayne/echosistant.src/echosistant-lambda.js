@@ -94,6 +94,11 @@ else if (ttstext=="sure") {
         areWeDone=false;
     output("please continue...", context, areWeDone);
 }
+else if (ttstext=="repeat") {
+                url += 't?ttstext=' + ttstext + '&intentName=' + intentName;
+                process = true;
+                areWeDone = true;
+}
 else if (intentName) {
                 url += 't?ttstext=' + ttstext + '&intentName=' + intentName;
                 process = true;
