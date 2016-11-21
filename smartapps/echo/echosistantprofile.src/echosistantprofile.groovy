@@ -97,7 +97,7 @@ page name: "pOptions"
 				}    
 			section {
 				href "devices", title: "Control Devices...", description: "Tap here to configure...",
-       		    image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_decives.png"
+       		    image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_devices.png"
 				}
             section {
                  href "CoRE", title: "CoRE Integration", description: "Tap here to configure CoRE options...",
