@@ -1,7 +1,7 @@
 /**
  *  Echosistant Profile 
  *
- *		
+*		11/21/2016		Version 1.2.0	Added new icons 		
  *		11/20/2016		Version 1.2.0	Bug Fixes: SMS & Push not working, calling multiple profiles at initialize. Additions: Run Routines and Switch enhancements 
  *										Code for Switch enhancements come from @SBDOBRESCU
  *		11/18/2016		Version 1.2.0	Added Triggering Routines, fixed SMS not sending.
