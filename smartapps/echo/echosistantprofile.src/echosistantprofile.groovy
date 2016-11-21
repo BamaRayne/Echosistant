@@ -60,9 +60,9 @@ def mainPage() {
             href "mOptions", title: "Message Options...", description: "Tap here to configure", 
             	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_msg.png"
             href "pOptions", title: "Extra Control Settings...", description: "Tap here to configure",
-            	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Rest.png"
+            	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Plus.png"
             href "restrictions", title: "Restrictions", description: "Tap here to configure", 
-                image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Rest.png"
+                image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Extra.png"
 //            href "CoRE", title: "CoRE Integration", description: "Tap here to configure CoRE options...",
 //            	image: "https://cdn.rawgit.com/ady624/CoRE/master/resources/images/app-CoRE.png"
         }
@@ -93,11 +93,11 @@ page name: "pOptions"
 		dynamicPage(name: "pOptions", uninstall: false) {
             section (""){
 				href "routines", title: "Execute Routines...", description: "Tap here to configure",
-            	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Rest.png"
+            	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Routines.png"
 				}    
 			section {
 				href "devices", title: "Control Devices...", description: "Tap here to configure...",
-       		    image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Rest.png"
+       		    image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_decives.png"
 				}
             section {
                  href "CoRE", title: "CoRE Integration", description: "Tap here to configure CoRE options...",
