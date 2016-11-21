@@ -52,9 +52,50 @@ output(" It has been my pleasure.  Goodbye ", context, "Amazon Stop", areWeDone)
 }
 else if (ttstext=="nope") {
 areWeDone=true;
+        var cardName ="";
+        var stop;
+        var areWeDone = false;
+        var endSession = true;
+        var processedText;
+        var process = false;
+        var intentName = event.request.intent.name;
+        var ttstext = event.request.intent.slots.ttstext.value;
+        var ttsintentname = event.request.intent.slots.ttstext.name.value;
+        var ttsTxt;
+        var speechText;
+        var outputTxt;
+        var cancel;
+        var no;
+console.log (event.request.type);
+if (ttstext=="stop") {
+areWeDone=true;
+output(" Stopping. Goodbye ", context, "Amazon Stop", areWeDone);
+} 
+else if (ttstext=="no") {
+areWeDone=true;
+output(" It has been my pleasure.  Goodbye ", context, "Amazon Stop", areWeDone);
+}
+else if (ttstext=="nope") {
+areWeDone=true;
 output(" It has been my pleasure.  Goodbye ", context, "Amazon Stop", areWeDone);
 }
 else if (ttstext=="no thank you") {
+areWeDone=true;
+output(" It has been my pleasure.  Goodbye ", context, "Amazon Stop", areWeDone);
+}
+else if (ttstext=="no we're done") {
+areWeDone=true;
+output(" It has been my pleasure.  Goodbye ", context, "Amazon Stop", areWeDone);
+}
+else if (ttstext=="no we're good") {
+areWeDone=true;
+output(" It has been my pleasure.  Goodbye ", context, "Amazon Stop", areWeDone);
+}
+else if (ttstext=="no I'm done") {
+areWeDone=true;
+output(" It has been my pleasure.  Goodbye ", context, "Amazon Stop", areWeDone);
+}
+else if (ttstext=="no thanks") {
 areWeDone=true;
 output(" It has been my pleasure.  Goodbye ", context, "Amazon Stop", areWeDone);
 }
@@ -64,11 +105,19 @@ output(" Cancelling. Goodbye ", context, "Amazon Stop", areWeDone);
 }
 else if (ttstext=="yes") {
         areWeDone=false;    
-    output(" You can send another message to this profile.", context, areWeDone);
+    output("please continue...", context, areWeDone);
 }
 else if (ttstext=="okay") {
         areWeDone=false;
-    output("please continue", context, areWeDone);
+    output("please continue...", context, areWeDone);
+}
+else if (ttstext=="yeah") {
+        areWeDone=false;
+    output("please continue...", context, areWeDone);
+}
+else if (ttstext=="sure") {
+        areWeDone=false;
+    output("please continue...", context, areWeDone);
 }
 else if (intentName) {
                 url += 't?ttstext=' + ttstext + '&intentName=' + intentName;
