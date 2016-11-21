@@ -23,35 +23,10 @@
 exports.handler = function( event, context ) {
     var https = require( 'https' );
     // Paste app code here between the breaks------------------------------------------------
-    var STappID = '4f781469-4736-4835-bf19-d74ed17883f9';
-    var STtoken = 'e652c6f4-7e55-45f1-b492-96b7d6e1e83e';
+    var STappID = 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx';
+    var STtoken = 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx';
     var url='https://graph.api.smartthings.com:443/api/smartapps/installations/' + STappID + '/' ;
         //---------------------------------------------------------------------------------------
-        var cardName ="";
-        var stop;
-        var areWeDone = false;
-        var endSession = true;
-        var processedText;
-        var process = false;
-        var intentName = event.request.intent.name;
-        var ttstext = event.request.intent.slots.ttstext.value;
-        var ttsintentname = event.request.intent.slots.ttstext.name.value;
-        var ttsTxt;
-        var speechText;
-        var outputTxt;
-        var cancel;
-        var no;
-console.log (event.request.type);
-if (ttstext=="stop") {
-areWeDone=true;
-output(" Stopping. Goodbye ", context, "Amazon Stop", areWeDone);
-} 
-else if (ttstext=="no") {
-areWeDone=true;
-output(" It has been my pleasure.  Goodbye ", context, "Amazon Stop", areWeDone);
-}
-else if (ttstext=="nope") {
-areWeDone=true;
         var cardName ="";
         var stop;
         var areWeDone = false;
@@ -134,7 +109,7 @@ else {
                     var resJSON = JSON.parse(data);
                     var speechText = resJSON.outputTxt;
                     console.log(speechText);
-                    if (areWeDone === false) { speechText = speechText + ' Anything else?'; }
+                    if (areWeDone === false) { speechText = speechText + ', send another message?'; }
                     output(speechText, context, cardName, areWeDone);
                 } );
             } );
