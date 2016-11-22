@@ -163,7 +163,6 @@ page name: "pageReset"
 	log.debug "Refreshing CoRE Piston List"
     if (evt.value =="installed") { state.CoREPistons = evt.jsonData && evt.jsonData?.pistons ? evt.jsonData.pistons : [] }
 }
-def getCoREMacroList(){ return getChildApps().findAll {it.macroType !="CoRE"}.label }
 //************************************************************************************************************
 mappings {
       path("/t") {action: [GET: "processTts"]}
@@ -182,9 +181,6 @@ def updated() {
 }
 def getProfileList() { return getChildApps()*.label }
 	if (debug) log.debug "Your installed Profiles are ${getChildApps()*.label}"
-//def childUninstalled() {
-// sendLocationEvent(name: "echoSistant", value: "refresh", data: [profiles: parent ? parent.getCoREList() : getCoreProfileList()] , isStateChange: true, descriptionText: "echoSistant Profile list refresh")
-//}
 def initialize() {
 	state.lastMessage = null
 	state.lastIntent  = null
@@ -194,8 +190,7 @@ def initialize() {
 		children.each { child ->
 		}
 	if (!state.accessToken) {
-        //subscribe(location, "CoRE", coreHandler) 
-               OAuthToken()
+        OAuthToken()
     	section() {
     	paragraph "You must enable OAuth via the IDE to setup this app"
 		}
