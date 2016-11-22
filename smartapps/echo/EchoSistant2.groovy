@@ -115,9 +115,11 @@ def profiles() {
             paragraph "Profiles", 
             image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/app-Echosistant.png"
             }
-        	if (childApps.size()) section(childApps.size()==1 ? "One Profile configured" : childApps.size() + " Profiles configured" )
-        		section(" "){
-        			app(name: "profiles", appName: "echoSistant", namespace: "Echo", description: "Create New Profile...", multiple: true)
+        	if (childApps.size()) { 
+            	section(childApps.size()==1 ? "One Profile configured" : childApps.size() + " Profiles configured" )
+            }
+        	section(" "){
+        		app(name: "profiles", appName: "echoSistant", namespace: "Echo", description: "Create New Profile...", multiple: true)
         	}
 		} 
  }
@@ -539,28 +541,32 @@ def processTts() {
      				state.lastMessage = ptts
                     state.lastIntent = pintentName
                     state.lastTime = new Date(now()).format("h:mm aa", location.timeZone)
+                    if (debug) log.debug "Running main loop with '${ptts}'"                      
                     childApps.each {child ->
 						child.profileEvaluate(dataSet)
             			}
             			childApps.each { child ->
     						def cm = child.label
-                        	def cAcustom = child.Acustom
-                        	if (debug) log.debug "Acustom is '${cAcustom}'"  
-							def cArepeat = child.Arepeat
-                            if (debug) log.debug "Arepeat is '${cArepeat}'"  
-							def cAfeedBack = child.AfeedBack
             					if (cm == pintentName) {
-                                	pContCmds = child.ContCmds
+                              		def cAcustom = child.Acustom
+                        				if (debug) log.debug "Acustom is '${cAcustom}'"  
+									def cArepeat = child.Arepeat
+                            			if (debug) log.debug "Arepeat is '${cArepeat}'"  
+									def cAfeedBack = child.AfeedBack
+                                		if (debug) log.debug "AfeedBack is '${cAfeedBack}'"   
+                                    pContCmds = child.ContCmds
                             		if (debug) log.debug "Cont Command is '${pContCmds}'"  
-     	                			if (cAfeedBack) {
-                                		if (cAcustom) {
-                                        	if (debug) log.debug "Arepeat = '${child.Acustom}'"
+     	                			if (cAfeedBack != true) {
+                                		if (cAcustom != false) {
+                                        	if (debug) log.debug "cAcustom = '${cAcustom}'"
                             				outputTxt = child.outputTxt
+                                            if (debug) log.debug "outputTxt from cAcustom = '${outputTxt}'"
                             			}
                             			else {
-                        					if (child.Arepeat) {
-                                            	if (debug) log.debug "Arepeat = '${child.Arepeat}'"
+                        					if (cArepeat != false) {
+                                            	if (debug) log.debug "Arepeat = '${cArepeat}'"
                                             	outputTxt = "I have delivered the following message to '${cm}',  " + ptts
+                                                if (debug) log.debug "outputTxt from cArepeat = '${outputTxt}'"
 											}
                         					else {
                             					outputTxt = "Message sent to ${pintentName}, " 
