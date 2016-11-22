@@ -2,6 +2,7 @@
  * EchoSistant - The Ultimate Voice and Text Messaging Assistant Using Your Alexa Enable Device.
  *		
  * 
+ *		11/22/2016		Version 2.0.0	CoRE integration, Repeat last message by profile, Continued Commands. Bug fixes. 
  *		11/20/2016		Version 1.2.0	Fixes: SMS&Push not working, calling multiple profiles at initialize. Additions: Run Routines and Switch enhancements
  *		11/13/2016		Version 1.1.1a	Roadmap update and spelling errors
  *		11/13/2016		Version 1.1.1	Addition - Repeat last message
@@ -159,13 +160,9 @@ page name: "pageReset"
         		}
 			}
 		} 	
-        def echoSistantHandler(evt) {
-	log.debug "Refreshing CoRE Piston List"
-    if (evt.value =="installed") { state.CoREPistons = evt.jsonData && evt.jsonData?.pistons ? evt.jsonData.pistons : [] }
-}
 //************************************************************************************************************
 mappings {
-      path("/t") {action: [GET: "processTts"]}
+		path("/t") {action: [GET: "processTts"]}
       }
 //************************************************************************************************************
 def installed() {
@@ -173,15 +170,13 @@ def installed() {
 	if (debug) log.trace "STappID = '${app.id}' , STtoken = '${state.accessToken}'"
 	initialize()
 }
-
 def updated() {
 	if (debug) log.debug "Updated with settings: ${settings}"
     initialize()
 	unsubscribe()
 }
-def getProfileList() { return getChildApps()*.label }
-	if (debug) log.debug "Your installed Profiles are ${getChildApps()*.label}"
 def initialize() {
+	sendLocationEvent(name: "echoSistant", value: "refresh", data: [profiles: getProfileList()] , isStateChange: true, descriptionText: "echoSistant Profile list refresh")
 	state.lastMessage = null
 	state.lastIntent  = null
     state.lastTime  = null
@@ -196,7 +191,8 @@ def initialize() {
 		}
 		log.trace "STappID = '${app.id}' , STtoken = '${state.accessToken}'"            		
 	}  
- }
+}
+def getProfileList(){return getChildApps()*.label }
 /*************************************************************************************************************
    CREATE INITIAL TOKEN
 *************************************************************************************************************/
@@ -240,9 +236,9 @@ def processTts() {
                                 outputTxt = child.getLastMessage()
                                 if (debug) log.debug "Profile matched is ${cLast}, last profile message was ${outputTxt}" 
                 			}
-               		}
-               }
-        }    
+						}
+					}
+				}
 		else {
     			if (ptts){
      				state.lastMessage = ptts
@@ -287,7 +283,7 @@ private def textAppName() {
 	def text = "echoSistant"
 }	
 private def textVersion() {
-	def text = "Version 1.2.0 (11/20/2016)"
+	def text = "Version 2.0.0 (11/22/2016)"
 }
 private def textCopyright() {
 	def text = "Copyright © 2016 Jason Headley"
