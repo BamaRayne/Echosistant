@@ -1,5 +1,5 @@
 /*
- * EchoSistant - The Ultimate Voice and Text Messaging Assistant Using Your Alexa Enabled Device.
+ * echoSistant - The Ultimate Voice and Text Messaging Assistant Using Your Alexa Enabled Device.
  *		
  *		11/22/2016		Version 2.0.0	CoRE integration, continued Alexa commands, one app and many bug fixes.
  *		11/20/2016		Version 1.2.0	Fixes: SMS&Push not working, calling multiple profiles at initialize. Additions: Run Routines and Switch enhancements
@@ -329,8 +329,6 @@ def mOptions(){
         }
         section ( "" ){
         input "ContCmds", "enum", options: ["Yes", "No"], title: "Alow Alexa to prompt for additional commands...", defaultValue: "No", required: false, submitOnChange: true
-//if (ContCmds) {paragraph "This option allows you to send multiple messages to the initial Recipient ONLY.  To send to a different Recipient, you MUST re-initialize Alexa."
-//        }
         }
         section ( "" ){
         input "AfeedBack", "bool", title: "Disable Alexa Feedback Responses (silence Alexa)", defaultValue: false, submitOnChange: true
@@ -340,11 +338,6 @@ def mOptions(){
                 }
         
         } 
-        
-        section ( "Disable Audio Messages" ){
-        input "disableTts", "bool", title: "Disable All spoken notifications (Use for sending texts or when controlling only devices and a verbal response is not wanted.)", required: false, submitOnChange: true  
-             if (parent.debug) log.debug "disable Tt s='${disableTts}"
-        }
 		section ("Configure Text Messages"){ 
     	input "sendContactText", "bool", title: "Enable Text Notifications to Contact Book (if available)", required: true, submitOnChange: true
         	if (sendContactText) input "recipients", "contact", title: "Send text notifications to (optional)", multiple: true, required: false
@@ -356,11 +349,6 @@ def mOptions(){
             input name: "sms", title: "Send text notification to (optional):", type: "phone", required: false
 			input "push", "bool", title: "Send Push Notification (optional)", required: false, defaultValue: false
            	}            
-		}
-		section ( "" ){            
-        	if (sendContactText || sendText) {         
-			paragraph "By default Echosistant will deliver both voice and text messages to selected devices and contacts(s). Enable text ONLY using toggle below"
-            }
 		}
 	}
 }
@@ -381,8 +369,6 @@ def textMessage(){
 		section ( "" ){            
         if (sendContactText || sendText) {         
 			paragraph "By default Echosistant will deliver both voice and text messages to selected devices and contacts(s). Enable text ONLY using toggle below"
-    		input "disableTts", "bool", title: "Disable spoken notification (only send text message to selected contact(s)", required: false, submitOnChange: true  
-             if (parent.debug) log.debug "'${disableTts}"
             }
 		}        
 	}  
