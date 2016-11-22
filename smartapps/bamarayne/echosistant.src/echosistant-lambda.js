@@ -1,7 +1,7 @@
 /**
  *  EchoSistant - Lambda Code
  *
- *  Version 2.0.0 - 11/20/2016 Copyright © 2016 Jason Headley
+ *  Version 3.0.0 - 11/21/2016 Copyright © 2016 Jason Headley
  *  Special thanks for Michael Struck @MichaelS (Developer of AskAlexa) for allowing me
  *  to build off of his base code.  Special thanks to Keith DeLong  @N8XD for his 
  *  assistance in troubleshooting.... as I learned.....  Special thanks to Bobby
@@ -23,8 +23,8 @@
 exports.handler = function( event, context ) {
     var https = require( 'https' );
     // Paste app code here between the breaks------------------------------------------------
-    var STappID = 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx';
-    var STtoken = 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx';
+    var STappID = '459918a2-572e-4913-b820-97134c5a97c4';
+    var STtoken = 'a45f7540-b01b-4729-9dba-982d40e1574c';
     var url='https://graph.api.smartthings.com:443/api/smartapps/installations/' + STappID + '/' ;
         //---------------------------------------------------------------------------------------
         var cardName ="";
@@ -39,6 +39,7 @@ exports.handler = function( event, context ) {
         var ttsTxt;
         var speechText;
         var outputTxt;
+        var pContCmds
         var cancel;
         var no;
 console.log (event.request.type);
@@ -112,9 +113,16 @@ else {
                     https.get( url, function( response ) {
                     response.on( 'data', function( data ) {
                     var resJSON = JSON.parse(data);
+                    var pContCmds = resJSON.pContCmds;
                     var speechText = resJSON.outputTxt;
                     console.log(speechText);
-                    if (areWeDone === false) { speechText = speechText + ', send another message?'; }
+                    if (pContCmds == "Yes") { 
+                        areWeDone=false;
+                        speechText = speechText + ', send another message?'; 
+                    }
+                    else {
+                        areWeDone=true
+                    }
                     output(speechText, context, cardName, areWeDone);
                 } );
             } );
