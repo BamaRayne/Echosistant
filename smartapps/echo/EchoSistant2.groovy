@@ -308,7 +308,9 @@ def mOptions(){
     	input "ShowPreMsg", "bool", title: "Pre-Message (plays on Audio Playback Device before message)", defaultValue: false, submitOnChange: true
         	if (ShowPreMsg) input "PreMsg", "Text", title: "Pre-Message", description: "Pre-Message to play on Audio Playback Device before your message", 
             required: false, defaultValue: "Attention, Attention please,   ", submitOnChange: true
-            }
+        input "disableTts", "bool", title: "Disable All spoken notifications (Use for sending texts or when controlling only devices and a verbal response is not wanted.)", required: false, submitOnChange: true  
+             if (parent.debug) log.debug "disable Tt s='${disableTts}"       
+        }
         section ( "Configure Alexa Messages" ){
         input "Acustom", "bool", title: "Custom Response", defaultValue: false, submitOnChange: true
         	if (Acustom) {
