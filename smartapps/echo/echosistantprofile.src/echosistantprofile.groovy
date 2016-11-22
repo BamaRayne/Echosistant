@@ -62,8 +62,6 @@ def mainPage() {
             	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Plus.png"
             href "restrictions", title: "Restrictions", description: "Tap here to configure", 
                 image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Extra.png"
-//            href "CoRE", title: "CoRE Integration", description: "Tap here to configure CoRE options...",
-//            	image: "https://cdn.rawgit.com/ady624/CoRE/master/resources/images/app-CoRE.png"
         }
         section ("") {
  		   	label title:"              Rename Profile ", required:false, defaultValue: "New Profile"  
@@ -364,32 +362,6 @@ def getLastMessage() {
 	def cOutputTxt = "The last message sent to " + app.label + " was," + state.lastMessage + ", and it was sent at, " + state.lastTime
 	return  cOutputTxt 
 	if (parent.debug) log.debug "Sending last message to parent '${cOutputTxt}' "
-}
-
-//CoRE Handler-----------------------------------------------------------
-def CoREResults(sDelay){	
-	String result = ""
-    def delay
-    if (cDelay>0 || sDelay>0) delay = sDelay==0 ? cDelay as int : sDelay as int
-	result = (!delay || delay == 0) ? "I am triggering the CORE profile named '${app.label}'. " : delay==1 ? "I'll trigger the '${app.label}' CORE profile in ${delay} minute. " : "I'll trigger the '${app.label}' CORE profile in ${delay} minutes. "
-		if (sDelay == 9999) { 
-		result = "I am cancelling all scheduled executions of the CORE profile, '${app.label}'. "  
-		state.scheduled = false
-		unschedule() 
-	}
-	if (!state.scheduled) {
-		if (!delay || delay == 0) CoREHandler() 
-		else if (delay < 9999) { runIn(delay*60, CoREHandler, [overwrite: true]) ; state.scheduled=true}
-		if (delay < 9999) result = voicePost && !noAck ? replaceVoiceVar(voicePost, delay) : noAck ? " " : result
-	}
-	else result = "The CORE profile, '${app.label}', is already scheduled to run. You must cancel the execution or wait until it runs before you can run it again. "
-	return result
-}
-def CoREHandler(){ 
-	state.scheduled = false
-    def data = [pistonName: CoREName, args: "I am activating the CoRE Macro: '${app.label}'."]
-    sendLocationEvent (name: "CoRE", value: "execute", data: data, isStateChange: true, descriptionText: "Ask Alexa triggered '${CoREName}' piston.")
-	/*if (noteFeedAct && noteFeed)*/ sendNotificationEvent("echoSistant activated CoRE profile: '${app.label}'.")
 }
 /***********************************************************************************************************************
     RESTRICTIONS HANDLER
