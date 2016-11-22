@@ -182,9 +182,9 @@ def updated() {
 }
 def getProfileList() { return getChildApps()*.label }
 	if (debug) log.debug "Your installed Profiles are ${getChildApps()*.label}"
-def childUninstalled() {
-	sendLocationEvent(name: "echoSistant", value: "refresh", data: [profiles: parent ? parent.getCoREList() : getCoreProfileList()] , isStateChange: true, descriptionText: "echoSistant Profile list refresh")
-}
+//def childUninstalled() {
+// sendLocationEvent(name: "echoSistant", value: "refresh", data: [profiles: parent ? parent.getCoREList() : getCoreProfileList()] , isStateChange: true, descriptionText: "echoSistant Profile list refresh")
+//}
 def initialize() {
 	state.lastMessage = null
 	state.lastIntent  = null
@@ -194,7 +194,7 @@ def initialize() {
 		children.each { child ->
 		}
 	if (!state.accessToken) {
-        subscribe(location, "CoRE", coreHandler) 
+        //subscribe(location, "CoRE", coreHandler) 
                OAuthToken()
     	section() {
     	paragraph "You must enable OAuth via the IDE to setup this app"
