@@ -1,5 +1,5 @@
 /*
- * echoSistant - The Ultimate Voice and Text Messaging Assistant Using Your Alexa Enabled Device.
+ * EchoSistant - The Ultimate Voice and Text Messaging Assistant Using Your Alexa Enabled Device.
  *		
  *		11/22/2016		Version 2.0.0	CoRE integration, continued Alexa commands, one app and many bug fixes.
  *		11/20/2016		Version 1.2.0	Fixes: SMS&Push not working, calling multiple profiles at initialize. Additions: Run Routines and Switch enhancements
@@ -452,12 +452,8 @@ def childUninstalled() {
 
 def initialize() {
 	if (!parent){
-		state.lastMessage = null
-    	state.lastTime  = null
-	}
-    else{
-    	unschedule()
-		sendLocationEvent(name: "echoSistant", value: "refresh", data: [profiles: getProfileList()] , isStateChange: true, descriptionText: "echoSistant Profile list refresh")
+    	if (debug) log.debug "Initialize !parent"
+        sendLocationEvent(name: "echoSistant", value: "refresh", data: [profiles: getProfileList()] , isStateChange: true, descriptionText: "echoSistant Profile list refresh")
     	state.lastMessage = null
 		state.lastIntent  = null
     	state.lastTime  = null
@@ -470,6 +466,12 @@ def initialize() {
                 OAuthToken()
         		if (debug) log.debug "STappID = '${app.id}' , STtoken = '${state.accessToken}'" 
 			}
+
+	}
+    else{
+        if (debug) log.debug "Initialize else block"
+        state.lastMessage = null
+    	state.lastTime  = null
      }
 }
 
