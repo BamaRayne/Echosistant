@@ -39,7 +39,7 @@ exports.handler = function( event, context ) {
         var ttsTxt;
         var speechText;
         var outputTxt;
-        var pContCmds
+        var pContCmds;
         var cancel;
         var no;
 console.log (event.request.type);
@@ -121,7 +121,7 @@ else {
                         speechText = speechText + ', send another message?'; 
                     }
                     else {
-                        areWeDone=true
+                        areWeDone=true;
                     }
                     output(speechText, context, cardName, areWeDone);
                 } );
