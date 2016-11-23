@@ -132,10 +132,19 @@ def profiles() {
         
 def about(){
 	dynamicPage(name: "about", uninstall: true) {
-         section ("Directions, How-to's, and Troubleshooting") { 
+         	section ("Directions, How-to's, and Troubleshooting") { 
 			href url:"http://thingsthataresmart.wiki/index.php?title=EchoSistant", title: "EchoSistant Wiki", description: none
         	}
-         section ("Security Tokens - FOR PARENT APP ONLY"){
+			section("Debugging") {
+            	input "debug", "bool", title: "Enable Debug Logging", default: false, submitOnChange: true 
+            	if (debug) log.info "${textAppName()}\n${textVersion()}"
+            	}
+			section ("Apache License"){
+				input "ShowLicense", "bool", title: "Show License", default: false, submitOnChange: true
+				def msg = textLicense()
+					if (ShowLicense) paragraph "${msg}"
+				}
+			section ("Security Tokens - FOR PARENT APP ONLY"){
             	paragraph ("Log into the IDE on your computer and navigate to the Live Logs tab. Leave that window open, come back here, and open this section")
                 input "ShowTokens", "bool", title: "Show Security Tokens", default: false, submitOnChange: true
                 if (ShowTokens) paragraph "The Security Tokens are now displayed in the Live Logs section of the IDE"
@@ -147,16 +156,7 @@ def about(){
 			section ("Revoke/Renew Access Token & Application ID"){
 				href "Tokens", title: "Revoke/Reset Security Access Token", description: none
 				}
-			section ("Apache License"){
-				input "ShowLicense", "bool", title: "Show License", default: false, submitOnChange: true
-				def msg = textLicense()
-					if (ShowLicense) paragraph "${msg}"
-				}
-            section("Debugging") {
-            	input "debug", "bool", title: "Enable Debug Logging", default: false, submitOnChange: true 
-            if (debug) log.info "${textAppName()}\n${textVersion()}"
-            	}
-			section("Tap below to remove the ${textAppName()} application.  This will remove ALL Profiles and the App from the SmartThings mobile App."){}
+            section("Tap below to remove the ${textAppName()} application.  This will remove ALL Profiles and the App from the SmartThings mobile App."){}
 			}
 		}      
 
@@ -238,7 +238,18 @@ page name: "CoRE"
 def CoRE(){
 		dynamicPage(name: "CoRE", uninstall: false) {
             section ("Welcome to the CoRE integration page"){
-				paragraph ("Here you will find detailed directions on how to properly use the EchoSistant/CoRE integration")
+				paragraph ("--- This integration is in place to enhance the"+
+                " communication abilities of EchoSistant and your SmartThings"+
+                " Home Automation Project. It is not intended"+
+                " for the control of HA devices."+
+                " --- CoRE integration is currently one way only. You can NOT "+
+                " trigger profiles from within CoRE. CoRE listens for a "+
+                " profile execution and then performs the programmed tasks."+
+				" --- Configuration is simple. In EchoSistant create your profile."+
+                " Then open CoRE and create a new piston. In the condition section"+
+                " choose 'Echosistant Profile' as the trigger. Choose the appropriate"+
+                " profile and then finish configuring the piston."+
+                " --- When the profile is executed the CoRE piston will also execute.")
     	}
     }
 }    
@@ -318,7 +329,7 @@ def mOptions(){
             	input "outputTxt", "text", title: "Input custom phrase...", 
             	required: false, defaultValue: "Message sent,   ", submitOnChange: true
         	}
-        input "Arepeat", "bool", title: "Repeat Message", defaultValue: true, submitOnChange: true
+        input "Arepeat", "bool", title: "Alexa repeats message to sender when sent", defaultValue: true, submitOnChange: true
             if (Arepeat) {
         		paragraph "Alexa repeats the same message that was delivered to the Playback Device(s)." 
                 }
@@ -560,7 +571,7 @@ def processTts() {
                                             if (debug) log.debug "outputTxt from cAcustom = '${outputTxt}'"
                             			}
                             			else {
-                        					if (cArepeat != false) {
+                        					if (cArepeat == !false || cArepeat == null ) {
                                             	if (debug) log.debug "Arepeat = '${cArepeat}'"
                                             	outputTxt = "I have delivered the following message to '${cm}',  " + ptts
                                                 if (debug) log.debug "outputTxt from cArepeat = '${outputTxt}'"
@@ -789,3 +800,4 @@ private def profileNum() {
         
         if (parent.debug) log.debug "Child size from apps '${profiles}'"
 		}
+ 
