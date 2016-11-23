@@ -23,8 +23,8 @@
 exports.handler = function( event, context ) {
     var https = require( 'https' );
     // Paste app code here between the breaks------------------------------------------------
-    var STappID = '459918a2-572e-4913-b820-97134c5a97c4';
-    var STtoken = 'a45f7540-b01b-4729-9dba-982d40e1574c';
+    var STappID = 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx';
+    var STtoken = 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx';
     var url='https://graph.api.smartthings.com:443/api/smartapps/installations/' + STappID + '/' ;
         //---------------------------------------------------------------------------------------
         var cardName ="";
@@ -116,7 +116,10 @@ else {
                     var pContCmds = resJSON.pContCmds;
                     var speechText = resJSON.outputTxt;
                     console.log(speechText);
-                    if (pContCmds == "Yes") { 
+                    if (ttstext == "repeat") {
+                        areWeDone=true;
+                    }
+                    else if (pContCmds == "Yes") { 
                         areWeDone=false;
                         speechText = speechText + ', send another message?'; 
                     }
