@@ -794,10 +794,3 @@ private def textHelp() {
 		"This smartapp allows you to use an Alexa device to generate a voice or text message on on a different device"
         "See our Wikilinks page for user information!"
 		}
-private def profileNum() {
-        def profiles = childApps.size()
-            	//(childApps.size()==1 ? "One Profile configured" : childApps.size() + " Profiles configured" )
-        
-        if (parent.debug) log.debug "Child size from apps '${profiles}'"
-		}
- 
