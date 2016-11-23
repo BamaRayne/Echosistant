@@ -334,13 +334,11 @@ def mOptions(){
                 }          
         }
         section ( "" ){
-        section ( "" ){
         input "AfeedBack", "bool", title: "Disable Alexa Feedback Responses (silence Alexa)", defaultValue: false, submitOnChange: true
         	if (AfeedBack) {
         		paragraph "Alexa is now quiet. To resume custom Alexa messages, please disable this option." 
                 if (parent.debug) log.debug "Afeedback = '${AfeedBack}"
                 }
-        } 
         } 
 		section ("Configure Text Messages"){ 
     	input "sendContactText", "bool", title: "Enable Text Notifications to Contact Book (if available)", required: true, submitOnChange: true
