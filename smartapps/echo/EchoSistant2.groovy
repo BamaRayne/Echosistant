@@ -227,23 +227,14 @@ def mainProfilePage() {
 	}
 } 
 
-//FUTURE DEVELOPMENT - NOT IN USE
-/***********************************************************************************************************************
-def CoRE() {
-	dynamicPage(name: "CoRE", install: false, uninstall: false) {
-		section { paragraph "CoRE Trigger Settings" }
-		section (" "){
-   			input "CoREName", "enum", title: "Choose CoRE Piston", options: parent.state.CoREPistons, required: false, multiple: false
-        	input "cDelay", "number", title: "Default Delay (Minutes) To Trigger", defaultValue: 0, required: false
-        }
-        if (!parent.state.CoREPistons){
-        	section("Missing CoRE pistons"){
-				paragraph "It looks like you don't have the CoRE SmartApp installed, or you haven't created any pistons yet. To use this capability, please install CoRE or, if already installed, create some pistons, then try again."
-            }
-        }	
+page name: "CoRE"
+def CoRE(){
+		dynamicPage(name: "CoRE", uninstall: false) {
+            section ("Welcome to the CoRE integration page"){
+				paragraph ("Here you will find detailed directions on how to properly use the EchoSistant/CoRE integration")
+    	}
     }
-}
-***********************************************************************************************************************/
+}    
 page name: "pOptions"
 	def pOptions(){
 		dynamicPage(name: "pOptions", uninstall: false) {
@@ -255,10 +246,10 @@ page name: "pOptions"
 				href "devices", title: "Control Devices...", description: "Tap here to configure...",
        		    image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_devices.png"
 				}
-/*          section {
-                 href "CoRE", title: "CoRE Integration", description: "Tap here to configure CoRE options...",
+          section {
+                href "CoRE", title: "CoRE Integration", description: "Tap here to configure CoRE options...",
             	image: "https://cdn.rawgit.com/ady624/CoRE/master/resources/images/app-CoRE.png"
-                } */
+                } 
 	}
 }				
 def routines(){
