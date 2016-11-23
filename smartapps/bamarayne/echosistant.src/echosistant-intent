@@ -1,7 +1,8 @@
 {
   "intents": [
     {
-"intent": "PROFILE NAME",
+// In the line below copy and paste your profile name between the ""
+"intent": "COY PROFILE NAME HERE",
 "slots": [
 {
 "name": "ttstext",
