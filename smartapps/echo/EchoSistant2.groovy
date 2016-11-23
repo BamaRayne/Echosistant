@@ -1,7 +1,7 @@
 /*
  * EchoSistant - The Ultimate Voice and Text Messaging Assistant Using Your Alexa Enabled Device.
  *		
- *		11/22/2016		Version 2.0.0	CoRE integration, continued Alexa commands, one app and many bug fixes.
+ *		11/22/2016		Version 2.0.0	CoRE integration, Cont Commands per profile, Repeat Message per profile, one app and many bug fixes.
  *		11/20/2016		Version 1.2.0	Fixes: SMS&Push not working, calling multiple profiles at initialize. Additions: Run Routines and Switch enhancements
  *		11/13/2016		Version 1.1.1a	Roadmap update and spelling errors
  *		11/13/2016		Version 1.1.1	Addition - Repeat last message
@@ -16,9 +16,11 @@
  *		11/04/2016      Version 1.0		Initial Release
  *
  * ROADMAP
- * Profile count and name list
+ * Alarms and Timers with Voice Feedback
  * External TTS
  * External SMS
+ * Google Calendar
+ * Personal Message Que per User
  *
  *
  *
@@ -42,12 +44,12 @@
 /**********************************************************************************************************************************************/
 
 definition(
-	name			: "echoSistant${parent ? " - Profile" : ""}",
+	name			: "EchoSistant${parent ? " - Profile" : ""}",
 	namespace		: "Echo",
 	author			: "JH",
 	description		: "The Ultimate Voice and Text Messaging Assistant Using Your Alexa Enabled Device.",
 	singleInstance	: true,
-    parent: parent ? "Echo.echoSistant" : null,
+    parent: parent ? "Echo.EchoSistant" : null,
     category		: "My Apps",
 	iconUrl			: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/app-Echosistant.png",
 	iconX2Url		: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/app-Echosistant@2x.png",
@@ -87,21 +89,21 @@ def pageMain() { if (!parent) mainParentPage() else mainProfilePage() }
     PARENT UI CONFIGURATION
 ***********************************************************************************************************************/
 def mainParentPage() {	
-	dynamicPage(name: "mainParentPage", title: "echoSistant", install: true, uninstall: false) {
+	dynamicPage(name: "mainParentPage", title: "EchoSistant", install: true, uninstall: false) {
 		section {
         	href "profiles", title: "View and Create Profiles", description: "Tap here to view and create new profiles....",
             image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Config.png"
 			}
 		section {
-			href "about", title: "About echoSistant", description: "Tap here for App information...Tokens, Version, License...",
+			href "about", title: "About EchoSistant", description: "Tap here for App information...Tokens, Version, License...",
             image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_About.png"
 			}
-        section ("echoSistant Smartapp Information") {
+        section ("EchoSistant Smartapp Information") {
         	paragraph "${textAppName()}\n${textVersion()}\n${textCopyright()}",
             image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/app-Echosistant.png"
             }
         section ("Directions, How-to's, and Troubleshooting") { 
-			href url:"http://thingsthataresmart.wiki/index.php?title=EchoSistant", title: "echoSistant Wiki", description: none
+			href url:"http://thingsthataresmart.wiki/index.php?title=EchoSistant", title: "EchoSistant Wiki", description: none
         	}
         section ("Rename Main Intent") { 
 			input "mainIntent", "text", title: "Main Intent", defaultValue: "assistant", required: false
@@ -119,7 +121,7 @@ def profiles() {
             	section(childApps.size()==1 ? "One Profile configured" : childApps.size() + " Profiles configured" )
             }
         	section(" "){
-        		app(name: "profiles", appName: "echoSistant", namespace: "Echo", description: "Create New Profile...", multiple: true)
+        		app(name: "profiles", appName: "EchoSistant", namespace: "Echo", description: "Create New Profile...", multiple: true)
         	}
 		} 
  }
@@ -305,11 +307,11 @@ def restrictions(){
 def mOptions(){
     dynamicPage(name: "mOptions", title: " ", uninstall: false){
 		section ("Configure Audio Messages for the Playback Device(s)"){ 
-    	input "ShowPreMsg", "bool", title: "Pre-Message (plays on Audio Playback Device before message)", defaultValue: false, submitOnChange: true
-        	if (ShowPreMsg) input "PreMsg", "Text", title: "Pre-Message", description: "Pre-Message to play on Audio Playback Device before your message", 
+    	input "ShowPreMsg", "bool", title: "Pre-Message (plays on Audio Playback Device before message)", defaultValue: true, submitOnChange: true
+        	if (ShowPreMsg) input "PreMsg", "Text", title: "Pre-Message", description: "Pre-Message to play on Audio Playback Device before your message",
             required: false, defaultValue: "Attention, Attention please,   ", submitOnChange: true
-        input "disableTts", "bool", title: "Disable All spoken notifications (Use for sending texts or when controlling only devices and a verbal response is not wanted.)", required: false, submitOnChange: true  
-             if (parent.debug) log.debug "disable Tt s='${disableTts}"       
+        input "disableTts", "bool", title: "Disable All spoken notifications (No voice output from the speakers or Alexa)", required: false, submitOnChange: true  
+             if (parent.debug) log.debug "disable TTS='${disableTts}"       
         }
         section ( "Configure Alexa Messages" ){
         input "Acustom", "bool", title: "Custom Response", defaultValue: false, submitOnChange: true
@@ -318,7 +320,7 @@ def mOptions(){
             	input "outputTxt", "text", title: "Input custom phrase...", 
             	required: false, defaultValue: "Message sent,   ", submitOnChange: true
         	}
-        input "Arepeat", "bool", title: "Repeat Message", defaultValue: false, submitOnChange: true
+        input "Arepeat", "bool", title: "Repeat Message", defaultValue: true, submitOnChange: true
             if (Arepeat) {
         		paragraph "Alexa repeats the same message that was delivered to the Playback Device(s)." 
                 }
@@ -328,8 +330,8 @@ def mOptions(){
             }
         }
         section ( "" ){
-        input "ContCmds", "enum", options: ["Yes", "No"], title: "Alow Alexa to prompt for additional commands...", defaultValue: "No", required: false, submitOnChange: true
-        }
+        input "ContCmds", "bool", title: "Allow Alexa to prompt for additional commands...", defaultValue: false, submitOnChange: true
+                }
         section ( "" ){
         input "AfeedBack", "bool", title: "Disable Alexa Feedback Responses (silence Alexa)", defaultValue: false, submitOnChange: true
         	if (AfeedBack) {
@@ -500,9 +502,9 @@ def processTts() {
    		def pintentName = params.intentName
 			if (debug) log.debug "#3 Profile being called = '${pintentName}'"
         def outputTxt = ''
-    	def pContCmds = "No"
+    	def pContCmds = "false"
         def dataSet = [ptts:ptts,pttx:pttx,pintentName:pintentName] 
-		def repeat = "repeat"
+		def repeat = "repeat last message"
        	def pMainIntent ="assistant"
         	if (mainIntent){
             		pMainIntent = mainIntent
@@ -749,7 +751,7 @@ private void sendtxt(message) {
    Version/Copyright/Information/Help
 ************************************************************************************************************/
 private def textAppName() {
-	def text = "echoSistant"
+	def text = "EchoSistant"
 }	
 private def textVersion() {
 	def text = "Version 2.0.0 (11/22/2016)"
