@@ -95,16 +95,20 @@ def mainParentPage() {
             image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Config.png"
 			}
 		section {
-			href "about", title: "About EchoSistant", description: "Tap here for App information...Tokens, Version, License...",
+			href "about", title: "Settings and Security", description: "Tap here for App information...Tokens, Version, License...",
             image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_About.png"
 			}
         section ("EchoSistant Smartapp Information") {
-        	paragraph "${textAppName()}\n${textVersion()}\n${textCopyright()}",
-            image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/app-Echosistant.png"
-            }
-        section ("Directions, How-to's, and Troubleshooting") { 
-			href url:"http://thingsthataresmart.wiki/index.php?title=EchoSistant", title: "EchoSistant Wiki", description: none
-        	}
+        	def profiles = childApps.size()     
+            href(name: "", title: "*  ${textAppName()}\n*  ${textVersion()}\n*  ${profiles} Profiles Created"+
+            					  "\n*  ${textCopyright()}\n*  Click Here to visit EchoSistant Wiki",
+             description: "" ,
+             required: false,
+             image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/app-Echosistant.png",
+             url: "http://thingsthataresmart.wiki/index.php?title=EchoSistant")
+            
+            
+            }      
         section ("Rename Main Intent") { 
 			input "mainIntent", "text", title: "Main Intent", defaultValue: "assistant", required: false
         	}
@@ -128,6 +132,9 @@ def profiles() {
         
 def about(){
 	dynamicPage(name: "about", uninstall: true) {
+         section ("Directions, How-to's, and Troubleshooting") { 
+			href url:"http://thingsthataresmart.wiki/index.php?title=EchoSistant", title: "EchoSistant Wiki", description: none
+        	}
          section ("Security Tokens - FOR PARENT APP ONLY"){
             	paragraph ("Log into the IDE on your computer and navigate to the Live Logs tab. Leave that window open, come back here, and open this section")
                 input "ShowTokens", "bool", title: "Show Security Tokens", default: false, submitOnChange: true
@@ -322,14 +329,18 @@ def mOptions(){
         }
         section ( "" ){
         input "ContCmds", "bool", title: "Allow Alexa to prompt for additional commands...", defaultValue: false, submitOnChange: true
-                }
+        	if (ContCmds) {
+            	input "ContCmdsR", "bool", title: "Should Alexa prompt for additional commands after repeat command was given?", defaultValue: true, submitOnChange: true
+                }          
+        }
+        section ( "" ){
         section ( "" ){
         input "AfeedBack", "bool", title: "Disable Alexa Feedback Responses (silence Alexa)", defaultValue: false, submitOnChange: true
         	if (AfeedBack) {
         		paragraph "Alexa is now quiet. To resume custom Alexa messages, please disable this option." 
                 if (parent.debug) log.debug "Afeedback = '${AfeedBack}"
                 }
-        
+        } 
         } 
 		section ("Configure Text Messages"){ 
     	input "sendContactText", "bool", title: "Enable Text Notifications to Contact Book (if available)", required: true, submitOnChange: true
@@ -494,6 +505,7 @@ def processTts() {
 			if (debug) log.debug "#3 Profile being called = '${pintentName}'"
         def outputTxt = ''
     	def pContCmds = "false"
+        def pContCmdsR = "false"
         def dataSet = [ptts:ptts,pttx:pttx,pintentName:pintentName] 
 		def repeat = "repeat last message"
        	def pMainIntent ="assistant"
@@ -513,6 +525,10 @@ def processTts() {
                                 def cLastMessage 
                        			def cLastTime
                                 pContCmds = child.ContCmds
+                                pContCmdsR = child.ContCmdsR
+                                if (pContCmdsR == false) {
+                                	pContCmds = pContCmdsR
+                                }
                                 outputTxt = child.getLastMessage()
                                 if (debug) log.debug "Profile matched is ${cLast}, last profile message was ${outputTxt}" 
                 			}
@@ -546,7 +562,7 @@ def processTts() {
                                             if (debug) log.debug "outputTxt from cAcustom = '${outputTxt}'"
                             			}
                             			else {
-                        					if (cArepeat != false) {
+                        					if (cArepeat == false || cArepeat == null ) {
                                             	if (debug) log.debug "Arepeat = '${cArepeat}'"
                                             	outputTxt = "I have delivered the following message to '${cm}',  " + ptts
                                                 if (debug) log.debug "outputTxt from cArepeat = '${outputTxt}'"
@@ -768,4 +784,10 @@ private def textHelp() {
 	def text =
 		"This smartapp allows you to use an Alexa device to generate a voice or text message on on a different device"
         "See our Wikilinks page for user information!"
+		}
+private def profileNum() {
+        def profiles = childApps.size()
+            	//(childApps.size()==1 ? "One Profile configured" : childApps.size() + " Profiles configured" )
+        
+        if (parent.debug) log.debug "Child size from apps '${profiles}'"
 		}
