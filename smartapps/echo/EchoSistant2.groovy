@@ -560,7 +560,7 @@ def processTts() {
                                             if (debug) log.debug "outputTxt from cAcustom = '${outputTxt}'"
                             			}
                             			else {
-                        					if (cArepeat == false || cArepeat == null ) {
+                        					if (cArepeat != false) {
                                             	if (debug) log.debug "Arepeat = '${cArepeat}'"
                                             	outputTxt = "I have delivered the following message to '${cm}',  " + ptts
                                                 if (debug) log.debug "outputTxt from cArepeat = '${outputTxt}'"
