@@ -1,6 +1,7 @@
 /*
  * EchoSistant - The Ultimate Voice and Text Messaging Assistant Using Your Alexa Enabled Device.
  *		
+ *		11/23/2016		Version 2.0.1	Bug fix: Pre-message not showing correctly.  Set to default false.
  *		11/22/2016		Version 2.0.0	CoRE integration, Cont Commands per profile, Repeat Message per profile, one app and many bug fixes.
  *		11/20/2016		Version 1.2.0	Fixes: SMS&Push not working, calling multiple profiles at initialize. Additions: Run Routines and Switch enhancements
  *		11/13/2016		Version 1.1.1a	Roadmap update and spelling errors
@@ -316,9 +317,10 @@ def restrictions(){
 def mOptions(){
     dynamicPage(name: "mOptions", title: " ", uninstall: false){
 		section ("Configure Audio Messages for the Playback Device(s)"){ 
-    	input "ShowPreMsg", "bool", title: "Pre-Message (plays on Audio Playback Device before message)", defaultValue: true, submitOnChange: true
-        	if (ShowPreMsg) input "PreMsg", "Text", title: "Pre-Message", description: "Pre-Message to play on Audio Playback Device before your message",
-            required: false, defaultValue: "Attention, Attention please,   ", submitOnChange: true
+    	input "ShowPreMsg", "bool", title: "Pre-Message (plays on Audio Playback Device before message)", defaultValue: false, submitOnChange: true
+        	if (ShowPreMsg) input "PreMsg", "Text", title: "Pre-Message", defaultValue: "Attention, Attention please,   ", submitOnChange: true,
+            description: "Pre-Message to play on Audio Playback Device before your message", required: false 
+           
         input "disableTts", "bool", title: "Disable All spoken notifications (No voice output from the speakers or Alexa)", required: false, submitOnChange: true  
              if (parent.debug) log.debug "disable TTS='${disableTts}"       
         }
@@ -770,7 +772,7 @@ private def textAppName() {
 	def text = "EchoSistant"
 }	
 private def textVersion() {
-	def text = "Version 2.0.0 (11/22/2016)"
+	def text = "Version 2.0.1 (11/23/2016)"
 }
 private def textCopyright() {
 	def text = "Copyright © 2016 Jason Headley"
