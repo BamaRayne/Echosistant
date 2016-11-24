@@ -1,7 +1,6 @@
 {
   "intents": [
     {
-// In the line below copy and paste your profile name between the ""
 "intent": "COPY PROFILE NAME HERE",
 "slots": [
 {
