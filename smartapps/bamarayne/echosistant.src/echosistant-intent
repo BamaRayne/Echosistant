@@ -1,15 +1,15 @@
 {
   "intents": [
     {
-"intent": "COPY PROFILE NAME HERE",
+"intent": "YourProfileNameHere",
 "slots": [
 {
 "name": "ttstext",
-"type": "LITERAL"
+"type": "LIST_OF_WORDS"
 },
   {
     "name": "ttstts",
-    "type": "LITERAL"
+    "type": "LIST_OF_WORDS"
 }
 ]
 }
