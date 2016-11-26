@@ -1,6 +1,8 @@
 /*
  * EchoSistant - The Ultimate Voice and Text Messaging Assistant Using Your Alexa Enabled Device.
  *		
+ *		11/25/2016		Version 2.0.2	Additions: Msg to Notify Tab in Mobile App, Reconfigure Msg Options page
+ *		11/23/2016		Version 2.0.1	Bug fix: Pre-message not showing correctly.  Set to default false.
  *		11/22/2016		Version 2.0.0	CoRE integration, Cont Commands per profile, Repeat Message per profile, one app and many bug fixes.
  *		11/20/2016		Version 1.2.0	Fixes: SMS&Push not working, calling multiple profiles at initialize. Additions: Run Routines and Switch enhancements
  *		11/13/2016		Version 1.1.1a	Roadmap update and spelling errors
@@ -315,53 +317,49 @@ def restrictions(){
 }	
 def mOptions(){
     dynamicPage(name: "mOptions", title: " ", uninstall: false){
-		section ("Configure Audio Messages for the Playback Device(s)"){ 
-    	input "ShowPreMsg", "bool", title: "Pre-Message (plays on Audio Playback Device before message)", defaultValue: true, submitOnChange: true
-        	if (ShowPreMsg) input "PreMsg", "Text", title: "Pre-Message", description: "Pre-Message to play on Audio Playback Device before your message",
-            required: false, defaultValue: "Attention, Attention please,   ", submitOnChange: true
-        input "disableTts", "bool", title: "Disable All spoken notifications (No voice output from the speakers or Alexa)", required: false, submitOnChange: true  
-             if (parent.debug) log.debug "disable TTS='${disableTts}"       
+		section ("Configure Audio Messages - Msg Recipient Options"){ 
+    	input "ShowPreMsg", "bool", title: "Pre-Message (plays on Audio Playback Device before message)", defaultValue: false, submitOnChange: true
+        	if (ShowPreMsg) input "PreMsg", "Text", title: "Pre-Message...", defaultValue: "Attention, Attention please,   ", submitOnChange: true, required: false 
         }
-        section ( "Configure Alexa Messages" ){
-        input "Acustom", "bool", title: "Custom Response", defaultValue: false, submitOnChange: true
+        section ( "Configure Audio Messages - Msg Sender Options" ){
+        input "Acustom", "bool", title: "Custom Response from Alexa...", defaultValue: false, submitOnChange: true
         	if (Acustom) {
-           		paragraph "Alexa speaks this custom phrase after the message was delivered to the Playback Device(s)."
-            	input "outputTxt", "text", title: "Input custom phrase...", 
-            	required: false, defaultValue: "Message sent,   ", submitOnChange: true
+            	input "outputTxt", "text", title: "Input custom phrase...", required: false, defaultValue: "Message sent,   ", submitOnChange: true
         	}
-        input "Arepeat", "bool", title: "Alexa repeats message to sender when sent", defaultValue: true, submitOnChange: true
+        input "Arepeat", "bool", title: "Alexa repeats message to sender when sent...", defaultValue: true, submitOnChange: true
             if (Arepeat) {
-        		paragraph "Alexa repeats the same message that was delivered to the Playback Device(s)." 
-                }
+        	}
           	if (Arepeat && Acustom){
           		paragraph "NOTE: only one custom Alexa response can"+
             		  " be delivered at once. Please only enable Custom Response OR Repeat Message"
             }
         }
         section ( "" ){
-        input "ContCmds", "bool", title: "Allow Alexa to prompt for additional commands...", defaultValue: false, submitOnChange: true
-        	if (ContCmds) {
-            	input "ContCmdsR", "bool", title: "Should Alexa prompt for additional commands after repeat command was given?", defaultValue: true, submitOnChange: true
-                }          
+        input "ContCmds", "bool", title: "Allow Alexa to prompt for additional commands after message is delivered...", defaultValue: false, submitOnChange: true
+       	input "ContCmdsR", "bool", title: "Allow Alexa to prompt for additional commands after Repeat command is given...", defaultValue: true, submitOnChange: true
         }
         section ( "" ){
-        input "AfeedBack", "bool", title: "Disable Alexa Feedback Responses (silence Alexa)", defaultValue: false, submitOnChange: true
+        input "AfeedBack", "bool", title: "Turn on to disable Alexa Feedback Responses (silence Alexa) Overrides all other Alexa Options...", defaultValue: false, submitOnChange: true
         	if (AfeedBack) {
-        		paragraph "Alexa is now quiet. To resume custom Alexa messages, please disable this option." 
                 if (parent.debug) log.debug "Afeedback = '${AfeedBack}"
                 }
         } 
 		section ("Configure Text Messages"){ 
-    	input "sendContactText", "bool", title: "Enable Text Notifications to Contact Book (if available)", required: true, submitOnChange: true
+		input "sendContactText", "bool", title: "Enable Text Notifications to Contact Book (if available)", required: true, submitOnChange: true
         	if (sendContactText) input "recipients", "contact", title: "Send text notifications to (optional)", multiple: true, required: false
         }       	
         section ( "" ){            
-        input "sendText", "bool", title: "Enable Text Notifications to non-contact book phone(s)", required: true, submitOnChange: true           
+		input "sendText", "bool", title: "Enable Text Notifications to non-contact book phone(s)", required: true, submitOnChange: true           
         	if (sendText){      
            	paragraph "You may enter multiple phone numbers separated by semicolon to deliver the Alexa message as a text and a push notification. E.g. 8045551122;8046663344"
             input name: "sms", title: "Send text notification to (optional):", type: "phone", required: false
 			input "push", "bool", title: "Send Push Notification (optional)", required: false, defaultValue: false
-           	}            
+			}            
+		}
+		section ("Configure Misc Message Options"){
+       	input "notify", "bool", title: "Send message to Mobile App Notifications Tab (optional)", required: false, defaultValue: false, submitOnChange: true
+        input "disableTts", "bool", title: "Disable All spoken notifications (No voice output from the speakers or Alexa)", required: false, submitOnChange: true  
+             if (parent.debug) log.debug "disable TTS='${disableTts}"       
 		}
 	}
 }
@@ -371,12 +369,12 @@ def textMessage(){
     	input "sendContactText", "bool", title: "Enable Text Notifications to Contact Book (if available)", required: true, submitOnChange: true
         	if (sendContactText) input "recipients", "contact", title: "Send text notifications to (optional)", multiple: true, required: false
          }       	
-         section ( "" ){            
+         section ( "" ){ 
          input "sendText", "bool", title: "Enable Text Notifications to non-contact book phone(s)", required: true, submitOnChange: true           
             if (sendText){      
             paragraph "You may enter multiple phone numbers separated by semicolon to deliver the Alexa message as a text and a push notification. E.g. 8045551122;8046663344"
-            input name: "sms", title: "Send text notification to (optional):", type: "phone", required: false
-			input "push", "bool", title: "Send Push Notification (optional)", required: false, defaultValue: false
+            input name: "sms", title: "Send text notification to phone #(optional):", type: "phone", required: false, submitOnChange: true
+			input "push", "bool", title: "Send Push Notification (optional)", required: false, defaultValue: false, submitOnChange: true
             }            
 		}
 		section ( "" ){            
@@ -755,12 +753,14 @@ private void sendtxt(message) {
     } 
     if (push) {
         sendPush message
-    } else {
+    } 
+    ////////// Send message to notifications tab in mobile app
+	if (notify) {
         sendNotificationEvent(message)
     }
     if (sms) {
-        sendText(sms, message)
-	}
+        sendText(sms, message)		
+    }
 }
 
 /************************************************************************************************************
@@ -770,7 +770,7 @@ private def textAppName() {
 	def text = "EchoSistant"
 }	
 private def textVersion() {
-	def text = "Version 2.0.0 (11/22/2016)"
+	def text = "Version 2.0.1 (11/23/2016)"
 }
 private def textCopyright() {
 	def text = "Copyright © 2016 Jason Headley"
