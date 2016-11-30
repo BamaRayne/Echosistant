@@ -608,10 +608,7 @@ def profileEvaluate(params) {
         def childName = app.label       
         def data = [args: tts ]
         if (intent == childName){
-        	if (parent.debug) {
-            childDebug()
-            }
-           	sendLocationEvent(name: "echoSistantProfile", value: app.label, data: data, displayed: true, isStateChange: true, descriptionText: "EchoSistant activated '${app.label}' profile.")
+        	sendLocationEvent(name: "echoSistantProfile", value: app.label, data: data, displayed: true, isStateChange: true, descriptionText: "EchoSistant activated '${app.label}' profile.")
       		if (parent.debug) log.debug "sendNotificationEvent sent to CoRE was '${app.label}' from the TTS process section"
         	location.helloHome?.execute(runRoutine)
 			if (sSecondsOn) {
@@ -817,7 +814,7 @@ private def textAppName() {
 	def text = "EchoSistant"
 }	
 private def textVersion() {
-	def text = "Version 2.0.1 (11/23/2016)"
+	def text = "Version 3.0.0 Alpha (11/30/2016)"
 }
 private def textCopyright() {
 	def text = "Copyright © 2016 Jason Headley"
