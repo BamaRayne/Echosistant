@@ -1,0 +1,22 @@
+{
+  "intents": [
+    {
+      "intent": "assistant",
+      "slots": [
+        {
+          "name" : "pProfiles",
+          "type" : "LIST_OF_PROFILES"
+        },
+         {
+			"name": "ttstext",
+			"type": "LIST_OF_WORDS"
+        },
+
+        {
+          "name" : "pCommands",
+          "type" : "LIST_OF_COMMANDS"
+        }
+        ]
+    }
+    ]
+}
