@@ -105,7 +105,7 @@ else if (ttstext === "repeat"+"last"+"message") {
                 areWeDone = false;
 }
 else if (intentName) {
-                url += 't?ttstext=' + ttstext + '&intentName=' + intentName;
+                url += 't?ttstext=' + ttstext + 'i?&intentName=' + intentName + 'c?&pCommands=' + pCommands + 'p?&pProfiles=' + pProfiles;
                 process = true;
 }
 if (!process) {
