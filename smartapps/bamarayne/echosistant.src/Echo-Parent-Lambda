@@ -100,12 +100,12 @@ else if (ttstext=="sure") {
     output("please continue...", context, areWeDone);
 }
 else if (ttstext === "repeat"+"last"+"message") {
-                url += 't?ttstext=' + ttstext + 'i?&intentName=' + intentName + 'c?&pCommands=' + pCommands + 'p?&pProfiles=' + pProfiles;
+                url += 't?ttstext=' + ttstext + '&intentName=' + intentName + '&pCommands=' + pCommands + '&pProfiles=' + pProfiles;
                 process = true;
                 areWeDone = false;
 }
 else if (intentName) {
-                url += 't?ttstext=' + ttstext + 'i?&intentName=' + intentName + 'c?&pCommands=' + pCommands + 'p?&pProfiles=' + pProfiles;
+                url += 't?ttstext=' + ttstext + '&intentName=' + intentName + '&pCommands=' + pCommands + '&pProfiles=' + pProfiles;
                 process = true;
 }
 if (!process) {
