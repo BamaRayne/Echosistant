@@ -1,0 +1,14 @@
+assistant is too {pCommands} in {pProfiles}
+assistant is too {pCommands} in the {pProfiles}
+assistant is too {pCommands} in {pProfiles} room
+assistant is too {pCommands} in the {pProfiles} room
+assistant is too {pCommands} {pProfiles}
+
+assistant the {pProfiles} is {pCommands}
+
+assistant make {pProfiles} light {pCommands}
+assistant make it {pProfiles} in {pCommands}
+
+assistant turn {pCommands} the {pProfiles} light
+
+assistant is {pCommands} {pProfiles}
