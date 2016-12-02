@@ -309,7 +309,16 @@ def devices(){
 		section("And then turn them off after a delay of..."){
 			input "sSecondsOff", "number", title: "Seconds?", defaultValue: none, required: false
 		}
-	}
+        section ("Thermostats", hideWhenEmpty: true){
+            input "tstat", "capability.thermostat", title: "Control These Thermostat(s)...", multiple: true, required: false
+        }
+        section ("Locks", hideWhenEmpty: true){
+            input "lock", "capability.lock", title: "Control These Lock(s)...", multiple: true, required: false
+        }
+        section ("Doors", hideWhenEmpty: true){
+     input "doors", "capability.doorControl", title: "Control These Door(s)...)" , multiple: true, required: false, submitOnChange: true    
+		}
+    }
 }        
 def restrictions(){
     dynamicPage(name: "restrictions", title: "Configure Restrictions", uninstall: false){
@@ -515,15 +524,11 @@ def unsubscribeToEvents() {
 ************************************************************************************************************/
 def processTts() {
 		def ptts = params.ttstext 
-            if (debug) log.debug "Message received from Lambda (ptts) = '${ptts}'"
         def pttx = params.ttstext
-        	if (debug) log.debug "Message received from Lambda (pttx) = '${pttx}'"
    		def pintentName = params.intentName
-			if (debug) log.debug "Profile being called = '${pintentName}'"
         def pCommands = params.pCommands
-        	if (debug) log.debug "Message received from Lambda (pCommands) = '${pCommands}'"
         def pProfiles = params.pProfiles
-            if (debug) log.debug "Message received from Lambda (pProfiles) = '${pProfiles}'"
+            if (debug) log.debug "Message received from Lambda with: (pProfiles) = '${pProfiles}', (pCommands) = '${pCommands}', intentName = '${pintentName}', (ptts) = '${ptts}'"
 
         def outputTxt = ''
     	def pContCmds = "false"
@@ -536,11 +541,7 @@ def processTts() {
         	if (mainIntent){
             		pMainIntent = mainIntent
         	}
-        
-        if (pMainIntent == pProfiles) {
-        			pintentName = pProfiles
-        }
-        
+   
         if (ptts==repeat) {
 				if (pMainIntent == pintentName) {
                 outputTxt = "The last message sent was," + state.lastMessage + ", and it was sent to, " + state.lastIntent + ", at, " + state.lastTime 
@@ -661,34 +662,35 @@ def profileControl(params) {
         def profile = params.pProfiles
         def command = params.pCommands
         def childName = app.label       
-
-
-        if (profile == childName){
-			
-           location.helloHome?.execute(runRoutine)
- 		if (command == "dark") {
-             switches?.on()
-		}
+        if (parent.debug) log.debug "Message received from Parent with: (profile) = '${profile}', (command) = '${command}', intent = '${intent}', childName = '${childName}' "
+        
+        if (profile.toLowerCase()  == childName.toLowerCase()){
+			if (parent.debug) log.debug "Profile called is '${profile}' with command '${command}'"
+ 		
+        if (command == "dark" || command == "brighter" || command == "on") {
             if (sSecondsOn) {
             	runIn(sSecondsOn,turnOnSwitch)
                 runIn(sSecondsOn,turnOnOtherSwitch)
                 runIn(sSecondsOn,turnOnDimmers)
                 runIn(sSecondsOn,turnOnOtherDimmers)
                 }
-                else if (!sSecondsOn){
-       	    	deviceControl()
-				}	
-       		if (sSecondsOff) {
+             else {
+       	    	if (parent.debug) log.debug "Turning switches off"
+                switches?.on()
+				}
+          }
+		if (command == "bright" || command == "darker" || command == "off") {     	
+        	if (sSecondsOff) {
           		runIn(sSecondsOff,turnOffSwitch)
                 runIn(sSecondsOff,turnOffOtherSwitch)
                 runIn(sSecondsOff,turnOffDimmers)
                 runIn(sSecondsOff,turnOffOtherDimmers)
 			}	
-            //!!!!!!What happend to!!!!!! 
-        	//else {
-        	//	if (parent.debug) log.debug "Turning switches off"
-            //    switches?.off()
-            
+        	else {
+        		if (parent.debug) log.debug "Turning switches off"
+                switches?.off()
+            }
+        }
 	}
 }
 /***********************************************************************************************************************
@@ -791,21 +793,24 @@ private void sendtxt(message) {
    Switch/Dimmer Handlers
 ************************************************************************************************************/
 def turnOnSwitch() {
-if (intent == childName){
-	switches?.on()
-    otherSwitch?.on()
-    dimmers?.on()
-    otherDimmers?.on()
-	}   
+		if (intent == childName){
+			switches?.on()
+    		otherSwitch?.on()
+    		dimmers?.on()
+    		otherDimmers?.on()
+		}   
 }
+
 def turnOffSwitch() {
-if (intent == childName){
-	switches?.off()
-    otherSwitch?.off()
-    dimmers?.off()
-    otherDimmers?.off()
-	}   
+		if (intent == childName){
+			switches?.off()
+    		otherSwitch?.off()
+    		dimmers?.off()
+    		otherDimmers?.off()
+		}   
 } 
+
+/************************************************************************************************************
 private deviceControl() {
          if (switchCmd == "on") {
             	switches?.on()
@@ -832,7 +837,7 @@ private deviceControl() {
 		}            
 	}
 }
-
+************************************************************************************************************/
 
 /************************************************************************************************************
    Version/Copyright/Information/Help
