@@ -515,21 +515,32 @@ def unsubscribeToEvents() {
 ************************************************************************************************************/
 def processTts() {
 		def ptts = params.ttstext 
-            if (debug) log.debug "#1 Message received from Lambda (ptts) = '${ptts}'"
+            if (debug) log.debug "Message received from Lambda (ptts) = '${ptts}'"
         def pttx = params.ttstext
-        	if (debug) log.debug "#2 Message received from Lambda (pttx) = '${pttx}'"
+        	if (debug) log.debug "Message received from Lambda (pttx) = '${pttx}'"
    		def pintentName = params.intentName
-			if (debug) log.debug "#3 Profile being called = '${pintentName}'"
+			if (debug) log.debug "Profile being called = '${pintentName}'"
+        def pCommands = params.pCommands
+        	if (debug) log.debug "Message received from Lambda (pCommands) = '${pCommands}'"
+        def pProfiles = params.pProfiles
+            if (debug) log.debug "Message received from Lambda (pProfiles) = '${pProfiles}'"
+
         def outputTxt = ''
     	def pContCmds = "false"
         def pContCmdsR = "false"
         def dataSet = [ptts:ptts,pttx:pttx,pintentName:pintentName] 
-		def repeat = "repeat last message"
+		def controlData = [pCommands:pCommands,pProfiles:pProfiles,pintentName:pintentName] 
+
+        def repeat = "repeat last message"
        	def pMainIntent ="assistant"
         	if (mainIntent){
             		pMainIntent = mainIntent
         	}
-        if (debug) log.debug "#4 Main intent being called = '${pMainIntent}'"    
+        
+        if (pMainIntent == pProfiles) {
+        			pintentName = pProfiles
+        }
+        
         if (ptts==repeat) {
 				if (pMainIntent == pintentName) {
                 outputTxt = "The last message sent was," + state.lastMessage + ", and it was sent to, " + state.lastIntent + ", at, " + state.lastTime 
@@ -560,33 +571,26 @@ def processTts() {
                     if (debug) log.debug "Running main loop with '${ptts}'"                      
                     childApps.each {child ->
 						child.profileEvaluate(dataSet)
-            			}
+            			child.profileControl(controlData)
+                        }
             			childApps.each { child ->
     						def cm = child.label
             					if (cm == pintentName) {
                               		def cAcustom = child.Acustom
-                        				if (debug) log.debug "Acustom is '${cAcustom}'"  
 									def cArepeat = child.Arepeat
-                            			if (debug) log.debug "Arepeat is '${cArepeat}'"  
 									def cAfeedBack = child.AfeedBack
-                                		if (debug) log.debug "AfeedBack is '${cAfeedBack}'"   
                                     pContCmds = child.ContCmds
-                            		if (debug) log.debug "Cont Command is '${pContCmds}'"  
      	                			if (cAfeedBack != true) {
                                 		if (cAcustom != false) {
-                                        	if (debug) log.debug "cAcustom = '${cAcustom}'"
                             				outputTxt = child.outputTxt
-                                            if (debug) log.debug "outputTxt from cAcustom = '${outputTxt}'"
                             			}
                             			else {
                         					if (cArepeat == !false || cArepeat == null ) {
-                                            	if (debug) log.debug "Arepeat = '${cArepeat}'"
                                             	outputTxt = "I have delivered the following message to '${cm}',  " + ptts
-                                                if (debug) log.debug "outputTxt from cArepeat = '${outputTxt}'"
 											}
                         					else {
                             					outputTxt = "Message sent to ${pintentName}, " 
-												if (debug) log.debug "#5 Alexa verbal response = '${outputTxt}'"
+												if (debug) log.debug "Alexa verbal response = '${outputTxt}'"
            									}
                                 		}
                              		}
@@ -604,28 +608,12 @@ def processTts() {
 def profileEvaluate(params) {
         def tts = params.ptts
         def txt = params.pttx
-        def intent = params.pintentName
+        def intent = params.pintentName        
         def childName = app.label       
         def data = [args: tts ]
         if (intent == childName){
         	sendLocationEvent(name: "echoSistantProfile", value: app.label, data: data, displayed: true, isStateChange: true, descriptionText: "EchoSistant activated '${app.label}' profile.")
       		if (parent.debug) log.debug "sendNotificationEvent sent to CoRE was '${app.label}' from the TTS process section"
-        	location.helloHome?.execute(runRoutine)
-			if (sSecondsOn) {
-            	runIn(sSecondsOn,turnOnSwitch)
-                runIn(sSecondsOn,turnOnOtherSwitch)
-                runIn(sSecondsOn,turnOnDimmers)
-                runIn(sSecondsOn,turnOnOtherDimmers)
-                }
-                else if (!sSecondsOn){
-       	    	deviceControl()
-				}	
-       		if (sSecondsOff) {
-          		runIn(sSecondsOff,turnOffSwitch)
-                runIn(sSecondsOff,turnOffOtherSwitch)
-                runIn(sSecondsOff,turnOffDimmers)
-                runIn(sSecondsOff,turnOffOtherDimmers)
-					}	
             if (!disableTts){
         			if (PreMsg) 
         				tts = PreMsg + tts
@@ -664,6 +652,45 @@ def profileEvaluate(params) {
         }
 }
 
+/******************************************************************************************************
+   CONTROL PROCESSING
+******************************************************************************************************/
+def profileControl(params) {
+
+        def intent = params.pintentName
+        def profile = params.pProfiles
+        def command = params.pCommands
+        def childName = app.label       
+
+
+        if (profile == childName){
+			
+           location.helloHome?.execute(runRoutine)
+ 		if (command == "dark") {
+             switches?.on()
+		}
+            if (sSecondsOn) {
+            	runIn(sSecondsOn,turnOnSwitch)
+                runIn(sSecondsOn,turnOnOtherSwitch)
+                runIn(sSecondsOn,turnOnDimmers)
+                runIn(sSecondsOn,turnOnOtherDimmers)
+                }
+                else if (!sSecondsOn){
+       	    	deviceControl()
+				}	
+       		if (sSecondsOff) {
+          		runIn(sSecondsOff,turnOffSwitch)
+                runIn(sSecondsOff,turnOffOtherSwitch)
+                runIn(sSecondsOff,turnOffDimmers)
+                runIn(sSecondsOff,turnOffOtherDimmers)
+			}	
+            //!!!!!!What happend to!!!!!! 
+        	//else {
+        	//	if (parent.debug) log.debug "Turning switches off"
+            //    switches?.off()
+            
+	}
+}
 /***********************************************************************************************************************
     LAST MESSAGE HANDLER
 ***********************************************************************************************************************/
