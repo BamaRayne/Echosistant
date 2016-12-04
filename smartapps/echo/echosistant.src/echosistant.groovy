@@ -65,8 +65,6 @@ preferences {
     page name: "pageMain"
     //Parent Pages    
     page name: "mainParentPage"
-    page name: "Profiles"
-    page name: "Profiles"
     page name: "about"
     page name: "Tokens"
     page name: "pageConfirmation"
@@ -215,30 +213,31 @@ def pageReset(){
 def mainProfilePage() {	
     dynamicPage(name: "mainProfilePage", title:"", install: true, uninstall: true) {
         section  ("Follow the wizard to create your profiles...") {
-            input "profileTypes", "enum", title: "Choose a Profile Type", options:["Dev":"Device Control Profile", Msg:"Voice Message Profile", "Status":"Device Status Profile"], multiple: false, required: false, submitOnChange: true
+            input "profileTypes", "enum", title: "Choose a Profile Type", options:["DevC":"Device Control Profile","Msg":"Voice Message Profile","Stat":"Device Status Profile"], multiple: false, required: false, submitOnChange: true
 			}
-			if (profileTypes == "Msg") {
+			if (profileTypes == "Msg" || profileTypes == "DevC") {
        		section ("") {
         	href "audioDevices", title: "I Want My Messages To Playback On These Devices...", description: "Tap here to configure", 
             	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Media.png"            
+            	}
             }
-            if (audioDevices) {
+            if (profileTypes == "Msg" || profileTypes == "Stat" || profileTypes == "DevC")  {
             section ("") {
             href "mOptions", title: "I Want To Use These Message Configuration Options...", description: "Tap here to configure", 
             	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_msg.png"
             	}
             }    
-            if (mOptions) {
+            if (profileTypes == "Msg" || profileTypes == "DevC") {
             section ("") {
             href "pOptions", title: "I Want To Control These Devices When This Message Is Sent...", description: "Tap here to configure",
             	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Plus.png"
             	}
             }
-            if (pOptions) {
+            if (profileTypes) {
             section ("") {
             href "restrictions", title: "I Want These Restrictions For This Message Profile", description: "Tap here to configure", 
                 image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Extra.png"
-        		}
+        		
             }
         }    
         section ("") {
@@ -665,6 +664,7 @@ def profileEvaluate(params) {
                         state.lastTime = new Date(now()).format("h:mm aa", location.timeZone)
            					if (parent.debug) log.debug "Only sending sms because disable voice message is ON"  
 				}
+                deviceControl()
         }
 }
 
@@ -826,7 +826,7 @@ def turnOffSwitch() {
 		}   
 } 
 
-/************************************************************************************************************
+
 private deviceControl() {
          if (switchCmd == "on") {
             	switches?.on()
@@ -853,7 +853,7 @@ private deviceControl() {
 		}            
 	}
 }
-************************************************************************************************************/
+
 
 /************************************************************************************************************
    Version/Copyright/Information/Help
