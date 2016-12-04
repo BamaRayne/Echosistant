@@ -66,14 +66,14 @@ preferences {
     //Parent Pages    
     page name: "mainParentPage"
     page name: "Profiles"
+    page name: "Profiles"
     page name: "about"
     page name: "Tokens"
     page name: "pageConfirmation"
     page name: "pageReset"
     //Profile Pages    
     page name: "mainProfilePage"
-    page name: "cProfiles"
-    page name: "vProfiles"
+    page name: "Profiles"
 	page name: "configuration"
     		page name: "notifications"
         		page name: "mOptions"
@@ -94,12 +94,8 @@ def pageMain() { if (!parent) mainParentPage() else mainProfilePage() }
 ***********************************************************************************************************************/
 def mainParentPage() {	
 	dynamicPage(name: "mainParentPage", title: "EchoSistant", install: true, uninstall: false) {
-		section {
-			href "cProfiles", title: "Create Profiles", description: "Tap here to choose and create new profiles...",
-            image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Config.png"
-			}
-		section {
-        	href "vProfiles", title: "View Profiles", description: "Tap here to view your profiles....",
+        section {
+        	href "Profiles", title: "Profiles", description: "Tap here to view and create your profiles....",
             image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Config.png"
 			}    
 		section {
@@ -110,51 +106,28 @@ def mainParentPage() {
         	def Profiles = childApps.size()     
             href(name: "", title: "*  ${textAppName()}\n*  ${textVersion()}\n*  ${Profiles} Profiles Created"+
             					  "\n*  ${textCopyright()}\n*  Click Here to visit EchoSistant Wiki",
-             description: "" ,
-             required: false,
-             image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/app-Echosistant.png",
-             url: "http://thingsthataresmart.wiki/index.php?title=EchoSistant")
-            
-            
+            description: "" ,
+            required: false,
+            image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/app-Echosistant.png",
+            url: "http://thingsthataresmart.wiki/index.php?title=EchoSistant")
             }      
         section ("Rename Main Intent") { 
 			input "mainIntent", "text", title: "Main Intent", defaultValue: "assistant", required: false
-        	}
+        }
 	}
 }
-
-def vProfiles() {
-		dynamicPage (name: "vProfiles", title: "", install: false, uninstall: false) {
-        	section ("") {
-            paragraph "View Completed Profiles", 
-            image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/app-Echosistant.png"
-            }
-        	if (childApps.size()) { 
+def Profiles() {
+		dynamicPage (name: "Profiles", title: "", install: false, uninstall: false) {
+        if (childApps.size()) { 
             	section(childApps.size()==1 ? "One Profile configured" : childApps.size() + " Profiles configured" )
-          	section(" "){
-        		app(appName: "EchoSistant", namespace: "Echo", multiple: true)
+         section("Create New Profiles"){
+        		app(appName: "EchoSistant", namespace: "Echo", multiple: true, description: "Tap Here to Create a New Profile...")
         	}
-
+          section ("Remove Profiles ") {
+ 		   	label title:"              Rename Profile ", required:false, defaultValue: "New Profile"  
+            }
 		}
     } 
-}
-def cProfiles(){
-    dynamicPage(name: "cProfiles", title: "Choose Profile type and create new profiles...", uninstall: false){
-    	section ("Voice Profiles") {
-        	input "Voice", "bool", title: "Create A Voice/SMS Messaging Profile...", default: false, submitOnChange: true
-            if (Voice) {
-            	app(name: "Profiles", appName: "EchoSistant", namespace: "Echo", description: "Create A Voice Messaging Profile...", multiple: true)
-        	}
-		    input "Device", "bool", title: "Create A Device Control Profile...", default: false, submitOnChange: true 
-            if (Device) {
-        		app(name: "Profiles", appName: "EchoSistant", namespace: "Echo", description: "Create A Device Control Profile...", multiple: true)
-        	}
-            input "Status", "bool", title: "Create A Status Feedback Profile...", default: false, submitOnChange: true
-            if (Status) {
-        		app(name: "Profiles", appName: "EchoSistant", namespace: "Echo", description: "Create A Status Feedback Profile...", multiple: true)
-        	}
-		}
-    }
 }
 def about(){
 	dynamicPage(name: "about", uninstall: true) {
@@ -239,32 +212,45 @@ def pageReset(){
 /***********************************************************************************************************************
     PROFILE UI CONFIGURATION
 ***********************************************************************************************************************/
-def mainProfilePage() {	       
+def mainProfilePage() {	
     dynamicPage(name: "mainProfilePage", title:"", install: true, uninstall: true) {
-        section("") {
-        	if (parent.Voice || parent.Status) {
-        	href "audioDevices", title: "Audio Playback Devices...", description: "Tap here to configure", 
+        section  ("Follow the wizard to create your profiles...") {
+            input "profileTypes", "enum", title: "Choose a Profile Type", options:["Dev":"Device Control Profile", Msg:"Voice Message Profile", "Status":"Device Status Profile"], multiple: false, required: false, submitOnChange: true
+			}
+			if (profileTypes == "Msg") {
+       		section ("") {
+        	href "audioDevices", title: "I Want My Messages To Playback On These Devices...", description: "Tap here to configure", 
             	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Media.png"            
             }
-            if (parent.Voice || parent.Device || parent.Status) {
-            href "mOptions", title: "Message Options...", description: "Tap here to configure", 
+            if (audioDevices) {
+            section ("") {
+            href "mOptions", title: "I Want To Use These Message Configuration Options...", description: "Tap here to configure", 
             	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_msg.png"
-            }
-            if (parent.Voice || parent.Device) {
-            href "pOptions", title: "Extra Control Settings...", description: "Tap here to configure",
+            	}
+            }    
+            if (mOptions) {
+            section ("") {
+            href "pOptions", title: "I Want To Control These Devices When This Message Is Sent...", description: "Tap here to configure",
             	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Plus.png"
+            	}
             }
-            href "restrictions", title: "Restrictions", description: "Tap here to configure", 
+            if (pOptions) {
+            section ("") {
+            href "restrictions", title: "I Want These Restrictions For This Message Profile", description: "Tap here to configure", 
                 image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Extra.png"
-        	}
+        		}
+            }
+        }    
         section ("") {
  		   	label title:"              Rename Profile ", required:false, defaultValue: "New Profile"  
             }
         section ("") {
           	paragraph "      Tap below to remove this Profile"    	
+        	
         }
 	}
 } 
+   
 page name: "CoRE"
 def CoRE(){
 		dynamicPage(name: "CoRE", uninstall: false) {
@@ -295,7 +281,7 @@ page name: "pOptions"
 				href "devices", title: "Control Devices...", description: "Tap here to configure",
        		    image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_devices.png"
 				}
-          section {
+          	section {
                 href "CoRE", title: "CoRE Integration", description: "Tap here to configure CoRE options...",
             	image: "https://cdn.rawgit.com/ady624/CoRE/master/resources/images/app-CoRE.png"
                 } 
@@ -318,7 +304,6 @@ def routines(){
 }
 def devices(){
     dynamicPage(name: "devices", title: "Select Devices to use with this profile",install: false, uninstall: false) {
-        section {} 
         section ("Switches", hideWhenEmpty: true){
             input "switches", "capability.switch", title: "Control These Switches...", multiple: true, required: false, submitOnChange: true
             if (switches) input "switchCmd", "enum", title: "What do you want to do with these switches?", options:["on":"Turn on","off":"Turn off"], multiple: false, required: false, submitOnChange:true
@@ -346,8 +331,8 @@ def devices(){
             input "lock", "capability.lock", title: "Control These Lock(s)...", multiple: true, required: false
         }
         section ("Doors", hideWhenEmpty: true){
-     input "doors", "capability.doorControl", title: "Control These Door(s)...)" , multiple: true, required: false, submitOnChange: true    
-		}
+     		input "doors", "capability.doorControl", title: "Control These Door(s)...)" , multiple: true, required: false, submitOnChange: true    
+	    }
     }
 }        
 def restrictions(){
@@ -723,6 +708,7 @@ def profileControl(params) {
         }
 	}
 }
+
 /***********************************************************************************************************************
     LAST MESSAGE HANDLER
 ***********************************************************************************************************************/
