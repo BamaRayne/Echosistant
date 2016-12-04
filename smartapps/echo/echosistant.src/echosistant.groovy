@@ -47,8 +47,8 @@
 
 definition(
 	name			: "EchoSistant${parent ? " - Profile" : ""}",
-	namespace		: "Echo",
-	author			: "JH",
+    namespace		: "Echo",
+    author			: "JH",
 	description		: "The Ultimate Voice and Text Messaging Assistant Using Your Alexa Enabled Device.",
 	singleInstance	: true,
     parent: parent ? "Echo.EchoSistant" : null,
@@ -62,17 +62,19 @@ definition(
    PARENT PAGES
 ************************************************************************************************************/
 preferences {
-    page name:"pageMain"
+    page name: "pageMain"
     //Parent Pages    
-    page name:"mainParentPage"
-    page name:"profiles"
+    page name: "mainParentPage"
+    page name: "Profiles"
     page name: "about"
     page name: "Tokens"
     page name: "pageConfirmation"
     page name: "pageReset"
     //Profile Pages    
-    page name:"mainProfilePage"
-	page name:"configuration"
+    page name: "mainProfilePage"
+    page name: "cProfiles"
+    page name: "vProfiles"
+	page name: "configuration"
     		page name: "notifications"
         		page name: "mOptions"
     			page name: "audioDevices"
@@ -93,16 +95,20 @@ def pageMain() { if (!parent) mainParentPage() else mainProfilePage() }
 def mainParentPage() {	
 	dynamicPage(name: "mainParentPage", title: "EchoSistant", install: true, uninstall: false) {
 		section {
-        	href "profiles", title: "View and Create Profiles", description: "Tap here to view and create new profiles....",
+			href "cProfiles", title: "Create Profiles", description: "Tap here to choose and create new profiles...",
             image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Config.png"
 			}
+		section {
+        	href "vProfiles", title: "View Profiles", description: "Tap here to view your profiles....",
+            image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Config.png"
+			}    
 		section {
 			href "about", title: "Settings and Security", description: "Tap here for App information...Tokens, Version, License...",
             image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_About.png"
 			}
         section ("EchoSistant Smartapp Information") {
-        	def profiles = childApps.size()     
-            href(name: "", title: "*  ${textAppName()}\n*  ${textVersion()}\n*  ${profiles} Profiles Created"+
+        	def Profiles = childApps.size()     
+            href(name: "", title: "*  ${textAppName()}\n*  ${textVersion()}\n*  ${Profiles} Profiles Created"+
             					  "\n*  ${textCopyright()}\n*  Click Here to visit EchoSistant Wiki",
              description: "" ,
              required: false,
@@ -117,21 +123,39 @@ def mainParentPage() {
 	}
 }
 
-def profiles() {
-		dynamicPage (name: "profiles", title: "", install: false, uninstall: false) {
+def vProfiles() {
+		dynamicPage (name: "vProfiles", title: "", install: false, uninstall: false) {
         	section ("") {
-            paragraph "Profiles", 
+            paragraph "View Completed Profiles", 
             image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/app-Echosistant.png"
             }
         	if (childApps.size()) { 
             	section(childApps.size()==1 ? "One Profile configured" : childApps.size() + " Profiles configured" )
-            }
-        	section(" "){
-        		app(name: "profiles", appName: "EchoSistant", namespace: "Echo", description: "Create New Profile...", multiple: true)
+          	section(" "){
+        		app(appName: "EchoSistant", namespace: "Echo", multiple: true)
         	}
-	} 
-}
 
+		}
+    } 
+}
+def cProfiles(){
+    dynamicPage(name: "cProfiles", title: "Choose Profile type and create new profiles...", uninstall: false){
+    	section ("Voice Profiles") {
+        	input "Voice", "bool", title: "Create A Voice/SMS Messaging Profile...", default: false, submitOnChange: true
+            if (Voice) {
+            	app(name: "Profiles", appName: "EchoSistant", namespace: "Echo", description: "Create A Voice Messaging Profile...", multiple: true)
+        	}
+		    input "Device", "bool", title: "Create A Device Control Profile...", default: false, submitOnChange: true 
+            if (Device) {
+        		app(name: "Profiles", appName: "EchoSistant", namespace: "Echo", description: "Create A Device Control Profile...", multiple: true)
+        	}
+            input "Status", "bool", title: "Create A Status Feedback Profile...", default: false, submitOnChange: true
+            if (Status) {
+        		app(name: "Profiles", appName: "EchoSistant", namespace: "Echo", description: "Create A Status Feedback Profile...", multiple: true)
+        	}
+		}
+    }
+}
 def about(){
 	dynamicPage(name: "about", uninstall: true) {
          	section ("Directions, How-to's, and Troubleshooting") { 
@@ -218,15 +242,21 @@ def pageReset(){
 def mainProfilePage() {	       
     dynamicPage(name: "mainProfilePage", title:"", install: true, uninstall: true) {
         section("") {
-    		href "audioDevices", title: "Audio Playback Devices...", description: "Tap here to configure", 
-            	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Media.png"
+        	if (parent.Voice || parent.Status) {
+        	href "audioDevices", title: "Audio Playback Devices...", description: "Tap here to configure", 
+            	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Media.png"            
+            }
+            if (parent.Voice || parent.Device || parent.Status) {
             href "mOptions", title: "Message Options...", description: "Tap here to configure", 
             	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_msg.png"
+            }
+            if (parent.Voice || parent.Device) {
             href "pOptions", title: "Extra Control Settings...", description: "Tap here to configure",
             	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Plus.png"
+            }
             href "restrictions", title: "Restrictions", description: "Tap here to configure", 
                 image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Extra.png"
-        }
+        	}
         section ("") {
  		   	label title:"              Rename Profile ", required:false, defaultValue: "New Profile"  
             }
