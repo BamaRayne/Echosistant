@@ -213,38 +213,42 @@ def pageReset(){
 def mainProfilePage() {	
     dynamicPage(name: "mainProfilePage", title:"", install: true, uninstall: true) {
         section  ("Follow the wizard to create your profiles...") {
-            input "profileTypes", "enum", title: "Choose a Profile Type", options:["DevC":"Device Control Profile","Msg":"Voice Message Profile","Stat":"Device Status Profile"], multiple: false, required: false, submitOnChange: true
-			}
-			if (profileTypes == "Msg" || profileTypes == "DevC") {
-       		section ("") {
-        	href "audioDevices", title: "I Want My Messages To Playback On These Devices...", description: "Tap here to configure", 
+			paragraph "I want my profile to...."
+            input "MsgPro", "bool", title: "Send messages to remote speakers...", defaultValue: false, submitOnChange: true
+			if (MsgPro) {
+        		href "audioDevices", title: "I Want My Messages To Playback On These Devices...", description: "Tap here to configure", 
             	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Media.png"            
             	}
-            }
-            if (profileTypes == "Msg" || profileTypes == "Stat" || profileTypes == "DevC")  {
-            section ("") {
-            href "mOptions", title: "I Want To Use These Message Configuration Options...", description: "Tap here to configure", 
+            input "MsgCon", "bool", title: "... and I want these message options...", defaultValue: false, submitOnChange: true
+            if (MsgCon) {
+            	href "mOptions", title: "I Want To Use These Message Configuration Options...", description: "Tap here to configure", 
             	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_msg.png"
-            	}
-            }    
-            if (profileTypes == "Msg" || profileTypes == "DevC") {
-            section ("") {
-            href "pOptions", title: "I Want To Control These Devices When This Message Is Sent...", description: "Tap here to configure",
+            	}            
+            input "DevPro", "bool", title: "... and to control devices in my home...", defaultValue: false, submitOnChange: true
+			if (DevPro) {
+            	href "pOptions", title: "I Want To Control These Devices When This Message Is Sent...", description: "Tap here to configure",
             	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Plus.png"
             	}
+            input "RouPro", "bool", title: "... and to execute routines...", defaultValue: false, submitOnChange: true
+			if (RouPro) {  
+				href "routines", title: "Execute Routines...", description: "Tap here to configure",
+            	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Routines.png"
+				}
+            input "StaPro", "bool", title: "... and to give me status feedback about my home...", defaultValue: false, submitOnChange: true
+            if (StaPro) {
             }
-            if (profileTypes) {
-            section ("") {
-            href "restrictions", title: "I Want These Restrictions For This Message Profile", description: "Tap here to configure", 
+    		input "ResPro", "bool", title: "... using these restrictions.", defaultValue: false, submitOnChange: true
+            if (ResPro) {
+           		href "restrictions", title: "I Want These Restrictions For This Message Profile", description: "Tap here to configure", 
                 image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Extra.png"
-        		
             }
-        }    
+		}
         section ("") {
  		   	label title:"              Rename Profile ", required:false, defaultValue: "New Profile"  
             }
         section ("") {
           	paragraph "      Tap below to remove this Profile"    	
+        	
         	
         }
 	}
@@ -305,9 +309,11 @@ def devices(){
     dynamicPage(name: "devices", title: "Select Devices to use with this profile",install: false, uninstall: false) {
         section ("Switches", hideWhenEmpty: true){
             input "switches", "capability.switch", title: "Control These Switches...", multiple: true, required: false, submitOnChange: true
+            if (profileTypes == "DevC" || profileTypes == "Combo") {
             if (switches) input "switchCmd", "enum", title: "What do you want to do with these switches?", options:["on":"Turn on","off":"Turn off"], multiple: false, required: false, submitOnChange:true
         	if (switchCmd) input "otherSwitch", "capability.switch", title: "...and these other switches?", multiple: true, required: false, submitOnChange: true
             if (otherSwitch) input "otherSwitchCmd", "enum", title: "What do you want to do with these other switches?", options: ["on":"Turn on", "off":"Turn off"], multiple: false, required: false, submitOnChange: true
+        	}
         }
         section ("Dimmers", hideWhenEmpty: true){
             input "dimmers", "capability.switchLevel", title: "Control These Dimmers...", multiple: true, required: false , submitOnChange:true
