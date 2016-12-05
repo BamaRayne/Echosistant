@@ -627,11 +627,8 @@ def profileControl(params) {
         if (profile.toLowerCase()  == childName.toLowerCase()){
 			if (parent.debug) log.debug "Profile called is '${profile}' with command '${command}'"
  		
-		if (command == "dark" || command == "brighter" || command == "on" || command == "bright" || command == "darker" || command == "off") {
-        deviceControl()
-        }
 
-/*        if (command == "dark" || command == "brighter" || command == "on") {
+        if (command == "dark" || command == "brighter" || command == "on") {
             if (sSecondsOn) {
             	runIn(sSecondsOn,turnOnSwitch)
                 runIn(sSecondsOn,turnOnOtherSwitch)
@@ -654,7 +651,7 @@ def profileControl(params) {
         		if (parent.debug) log.debug "Turning switches off"
                 switches?.off()
             }
-        }*/
+        }
 	}
 }
 
