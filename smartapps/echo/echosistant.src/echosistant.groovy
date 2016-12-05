@@ -627,7 +627,11 @@ def profileControl(params) {
         if (profile.toLowerCase()  == childName.toLowerCase()){
 			if (parent.debug) log.debug "Profile called is '${profile}' with command '${command}'"
  		
-        if (command == "dark" || command == "brighter" || command == "on") {
+		if (command == "dark" || command == "brighter" || command == "on" || command == "bright" || command == "darker" || command == "off") {
+        deviceControl()
+        }
+
+/*        if (command == "dark" || command == "brighter" || command == "on") {
             if (sSecondsOn) {
             	runIn(sSecondsOn,turnOnSwitch)
                 runIn(sSecondsOn,turnOnOtherSwitch)
@@ -650,7 +654,7 @@ def profileControl(params) {
         		if (parent.debug) log.debug "Turning switches off"
                 switches?.off()
             }
-        }
+        }*/
 	}
 }
 
@@ -773,13 +777,26 @@ def turnOffSwitch() {
 
 
 private deviceControl() {
-         if (switchCmd == "on") {
+        if (intent == childName){
+            if (sSecondsOn) {
+            	if (parent.debug) log.debug "Turn switches on in '${sSecondsOn}' seconds"
+            	runIn(sSecondsOn,turnOnSwitch)
+                runIn(sSecondsOn,turnOnOtherSwitch)
+                runIn(sSecondsOn,turnOnDimmers)
+                runIn(sSecondsOn,turnOnOtherDimmers)
+                }
+            else {
+       	    	if (parent.debug) log.debug "Turning switches on"
+//                switches?.on()
+				
+                
+        	if  (switchCmd == "on") {
             	switches?.on()
                 }
-           		if (switchCmd == "off") {
+           		else if (switchCmd == "off") {
             		 switches?.off()
                 	}
-         if (otherSwitchCmd == "on") {
+          	if (otherSwitchCmd == "on") {
             	otherSwitch?.on()
                 }
             	else if (otherSwitchCmd == "off") {
@@ -795,8 +812,21 @@ private deviceControl() {
 				if (otherDimmersCMD == "set"){
         		def otherlevel = otherDimmersLVL < 0 || !otherDimmersLVL ?  0 : otherDimmersLVL >100 ? 100 : otherDimmersLVL as int
         		otherDimmers?.setLevel(otherlevel)
-		}            
+			}
+        }            
 	}
+}    
+            	if (sSecondsOff) {
+            	if (parent.debug) log.debug "Turn switches off in '${sSecondsOff}' seconds"            
+          		runIn(sSecondsOff,turnOffSwitch)
+                runIn(sSecondsOff,turnOffOtherSwitch)
+                runIn(sSecondsOff,turnOffDimmers)
+                runIn(sSecondsOff,turnOffOtherDimmers)
+			}	
+        	else {
+        		if (parent.debug) log.debug "Turning switches off"
+//                switches?.off()
+            }
 }
 
 
