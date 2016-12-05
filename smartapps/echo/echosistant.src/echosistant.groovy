@@ -1,7 +1,8 @@
 /*
  * EchoSistant - The Ultimate Voice and Text Messaging Assistant Using Your Alexa Enabled Device.
  *		
- *		??/??/2016		Version 3.0.0	Additions: Msg to Notify Tab in Mobile App, Reconfigure Msg Options page, More Control of Dimmers, and Switches
+ *		??/??/2016		Version 3.0.0	Additions: Msg to Notify Tab in Mobile App, Complete Reconfigure of Profile Build, More Control of Dimmers, and Switches,
+ *										Control of Thermostats, Doors, and Locks. Common speech device/room commands. Status Feedback.
  *		11/23/2016		Version 2.0.1	Bug fix: Pre-message not showing correctly.  Set to default false.
  *		11/22/2016		Version 2.0.0	CoRE integration, Cont Commands per profile, Repeat Message per profile, one app and many bug fixes.
  *		11/20/2016		Version 1.2.0	Fixes: SMS&Push not working, calling multiple profiles at initialize. Additions: Run Routines and Switch enhancements
@@ -74,12 +75,9 @@ preferences {
     page name: "Profiles"
 	page name: "configuration"
     		page name: "notifications"
-        		page name: "mOptions"
     			page name: "audioDevices"
     				page name: "sonos"
-            page name: "pOptions"        
             	page name: "devices"
-            	page name: "routines"
         	page name: "restrictions"
     			page name: "certainTime"
             page name: "CoRE"
@@ -115,15 +113,12 @@ def mainParentPage() {
 	}
 }
 def Profiles() {
-		dynamicPage (name: "Profiles", title: "", install: false, uninstall: false) {
+        dynamicPage (name: "Profiles", title: "", install: false, uninstall: false) {
         if (childApps.size()) { 
             	section(childApps.size()==1 ? "One Profile configured" : childApps.size() + " Profiles configured" )
-         section("Create New Profiles"){
+        section("Create New Profiles"){
         		app(appName: "EchoSistant", namespace: "Echo", multiple: true, description: "Tap Here to Create a New Profile...")
-        	}
-          section ("Remove Profiles ") {
- 		   	label title:"              Rename Profile ", required:false, defaultValue: "New Profile"  
-            }
+        	} 
 		}
     } 
 }
@@ -212,47 +207,92 @@ def pageReset(){
 ***********************************************************************************************************************/
 def mainProfilePage() {	
     dynamicPage(name: "mainProfilePage", title:"", install: true, uninstall: true) {
-        section  ("Follow the wizard to create your profiles...") {
-			paragraph "I want my profile to...."
-            input "MsgPro", "bool", title: "Send messages to remote speakers...", defaultValue: false, submitOnChange: true
-			if (MsgPro) {
-        		href "audioDevices", title: "I Want My Messages To Playback On These Devices...", description: "Tap here to configure", 
-            	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Media.png"            
-            	}
-            input "MsgCon", "bool", title: "... and I want these message options...", defaultValue: false, submitOnChange: true
-            if (MsgCon) {
-            	href "mOptions", title: "I Want To Use These Message Configuration Options...", description: "Tap here to configure", 
-            	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_msg.png"
-            	}            
-            input "DevPro", "bool", title: "... and to control devices in my home...", defaultValue: false, submitOnChange: true
-			if (DevPro) {
-            	href "pOptions", title: "I Want To Control These Devices When This Message Is Sent...", description: "Tap here to configure",
-            	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Plus.png"
-            	}
-            input "RouPro", "bool", title: "... and to execute routines...", defaultValue: false, submitOnChange: true
-			if (RouPro) {  
-				href "routines", title: "Execute Routines...", description: "Tap here to configure",
-            	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Routines.png"
+        section  ("I Want My New Profile To....") {
+            input "MsgPro", "bool", title: "Send messages to my speakers...", defaultValue: false, submitOnChange: true
+            	if (MsgPro) {
+        			href "audioDevices", title: "Using these speakers...", 
+            		image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Media.png"            
+                	}
+				if (MsgPro) {
+            		input "MsgOpt", "bool", title: "...as well as using these configuration options", defaultValue: false, submitOnChange: true,
+            		image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Media.png"
+            	if (MsgOpt) {
+            		input "ShowPreMsg", "bool", title: "Pre-Message (plays on Audio Playback Device before message)", defaultValue: false, submitOnChange: true
+        				if (ShowPreMsg) input "PreMsg", "Text", title: "Pre-Message...", defaultValue: none, submitOnChange: true, required: false 
+        			input "Acustom", "bool", title: "Custom Response from Alexa...", defaultValue: false, submitOnChange: true
+        				if (Acustom) input "outputTxt", "text", title: "Input custom phrase...", required: false, defaultValue: "Message sent,   ", submitOnChange: true
+       	 			input "Arepeat", "bool", title: "Alexa repeats message to sender when sent...", defaultValue: false, submitOnChange: true
+            			if (Arepeat) {			
+	          			if (Arepeat && Acustom){
+          					paragraph "NOTE: only one custom Alexa response can"+
+            		  		" be delivered at once. Please only enable Custom Response OR Repeat Message"
+						}
+                	}
+                	input "AfeedBack", "bool", title: "Turn on to disable Alexa Feedback Responses (silence Alexa) Overrides all other Alexa Options...", defaultValue: false, submitOnChange: true
+        	 			if (AfeedBack) {
+                		if (parent.debug) log.debug "Afeedback = '${AfeedBack}"
+                	}
+                    input "disableTts", "bool", title: "Disable All spoken notifications (No voice output from the speakers or Alexa)", required: false, submitOnChange: true  
+                	input "ContCmds", "bool", title: "Allow Alexa to prompt for additional commands after message is delivered...", defaultValue: false, submitOnChange: true
+       				input "ContCmdsR", "bool", title: "Allow Alexa to prompt for additional commands after Repeat command is given...", defaultValue: false, submitOnChange: true
+         				}
+					}
+                    
+			input "SMS", "bool", title: "And/Or sends Text Messages...", dafaultValue: false, submitOnChange: true
+            	if (SMS) {
+            		input "sendContactText", "bool", title: "Enable Text Notifications to Contact Book (if available)", required: true, submitOnChange: true
+        				if (sendContactText) input "recipients", "contact", title: "Send text notifications to (optional)", multiple: true, required: false
+					input "sendText", "bool", title: "Enable Text Notifications to non-contact book phone(s)", required: true, submitOnChange: true           
+        				if (sendText){      
+           				paragraph "You may enter multiple phone numbers separated by semicolon to deliver the Alexa message as a text and a push notification. E.g. 8045551122;8046663344"
+            		input name: "sms", title: "Send text notification to (optional):", type: "phone", required: false
+					}
+            	}        
+
+			input "DevPro", "bool", title: "And/Or control these devices in my home...", defaultValue: false, submitOnChange: true
+				if (DevPro) {
+					href "devices", title: "Control Devices...", description: "Tap here to configure",
+       		    	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_devices.png"
 				}
-            input "StaPro", "bool", title: "... and to give me status feedback about my home...", defaultValue: false, submitOnChange: true
-            if (StaPro) {
-            }
-    		input "ResPro", "bool", title: "... using these restrictions.", defaultValue: false, submitOnChange: true
-            if (ResPro) {
-           		href "restrictions", title: "I Want These Restrictions For This Message Profile", description: "Tap here to configure", 
-                image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Extra.png"
-            }
-		}
-        section ("") {
+            input "CoRE", "bool", title: "And I want to integrate this Profile with the CoRE SmartApp", defaultValue: false, submitOnChange: true
+            	if (CoRE) {
+                	href "CoRE", title: "Integrate CoRe..."
+                    }
+            input "RouPro", "bool", title: "And/Or execute these routines...", defaultValue: false, submitOnChange: true
+                if (RouPro) {
+                	def actions = location.helloHome?.getPhrases()*.label
+            		if (actions) {
+            			actions.sort()
+                    if (parent.debug) log.info actions
+                		input "runRoutine", "enum", title: "Select a Routine(s) to execute", required: false, options: actions, multiple: true,
+						image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Routines.png"
+						}
+					}
+            input "StaPro", "bool", title: "And/Or give me status feedback about my home", defaultValue: false, submitOnChange: true
+            	if (StaPro) {
+            		}
+                }
+                
+		section ("Global Options") {
+        input "MiscPro", "bool", title: "Along with these Misc Options...", defaultValue: false, submitOnChange: true  
+            if (MiscPro) {
+               	input "notify", "bool", title: "Send message to Mobile App Notifications Tab (optional)", required: false, defaultValue: false, submitOnChange: true
+             	input "push", "bool", title: "Send Push Notification (optional)", required: false, defaultValue: false
+                     if (parent.debug) log.debug "disable TTS='${disableTts}"       
+		        }
+            href "restrictions", title: "I Want These Restrictions For This Message Profile", description: "Tap here to configure",
+            image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Extra.png"
+			}
+            
+        section ("Name and/or Remove this Profile") {
  		   	label title:"              Rename Profile ", required:false, defaultValue: "New Profile"  
             }
+            
         section ("") {
           	paragraph "      Tap below to remove this Profile"    	
-        	
-        	
-        }
+        	}	
+		}       
 	}
-} 
    
 page name: "CoRE"
 def CoRE(){
@@ -273,48 +313,15 @@ def CoRE(){
     	}
     }
 }    
-page name: "pOptions"
-	def pOptions(){
-		dynamicPage(name: "pOptions", uninstall: false) {
-            section (""){
-				href "routines", title: "Execute Routines...", description: "Tap here to configure",
-            	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Routines.png"
-				}    
-			section {
-				href "devices", title: "Control Devices...", description: "Tap here to configure",
-       		    image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_devices.png"
-				}
-          	section {
-                href "CoRE", title: "CoRE Integration", description: "Tap here to configure CoRE options...",
-            	image: "https://cdn.rawgit.com/ady624/CoRE/master/resources/images/app-CoRE.png"
-                } 
-	}
-}				
-def routines(){
-    dynamicPage(name: "routines", title: "Select Hello Home Action(s) (Routines) to Execute", install: false, uninstall: false) {
-        // get the available actions
-            def actions = location.helloHome?.getPhrases()*.label
-            if (actions) {
-            // sort them alphabetically
-            actions.sort()
-                    section("") {
-                            if (parent.debug) log.info actions
-                // use the actions as the options for an enum input
-                input "runRoutine", "enum", title: "Select a Routine(s) to execute", required: false, options: actions, multiple: true
-			}
-		}
-    }
-}
+				
 def devices(){
     dynamicPage(name: "devices", title: "Select Devices to use with this profile",install: false, uninstall: false) {
         section ("Switches", hideWhenEmpty: true){
             input "switches", "capability.switch", title: "Control These Switches...", multiple: true, required: false, submitOnChange: true
-            if (profileTypes == "DevC" || profileTypes == "Combo") {
             if (switches) input "switchCmd", "enum", title: "What do you want to do with these switches?", options:["on":"Turn on","off":"Turn off"], multiple: false, required: false, submitOnChange:true
         	if (switchCmd) input "otherSwitch", "capability.switch", title: "...and these other switches?", multiple: true, required: false, submitOnChange: true
             if (otherSwitch) input "otherSwitchCmd", "enum", title: "What do you want to do with these other switches?", options: ["on":"Turn on", "off":"Turn off"], multiple: false, required: false, submitOnChange: true
         	}
-        }
         section ("Dimmers", hideWhenEmpty: true){
             input "dimmers", "capability.switchLevel", title: "Control These Dimmers...", multiple: true, required: false , submitOnChange:true
             if (dimmers) input "dimmersCMD", "enum", title: "Command To Send To Dimmers", options:["on":"Turn on","off":"Turn off","set":"Set level"], multiple: false, required: false, submitOnChange:true
@@ -354,75 +361,7 @@ def restrictions(){
         }   
 	}
 }	
-def mOptions(){
-    dynamicPage(name: "mOptions", title: " ", uninstall: false){
-		section ("Configure Audio Messages for Recipient"){ 
-    	input "ShowPreMsg", "bool", title: "Pre-Message (plays on Audio Playback Device before message)", defaultValue: false, submitOnChange: true
-        	if (ShowPreMsg) input "PreMsg", "Text", title: "Pre-Message...", defaultValue: "Attention, Attention please,   ", submitOnChange: true, required: false 
-        }
-        section ( "Configure Audio Messages for Sender" ){
-        input "Acustom", "bool", title: "Custom Response from Alexa...", defaultValue: false, submitOnChange: true
-        	if (Acustom) {
-            	input "outputTxt", "text", title: "Input custom phrase...", required: false, defaultValue: "Message sent,   ", submitOnChange: true
-        	}
-        input "Arepeat", "bool", title: "Alexa repeats message to sender when sent...", defaultValue: true, submitOnChange: true
-            if (Arepeat) {
-        	}
-          	if (Arepeat && Acustom){
-          		paragraph "NOTE: only one custom Alexa response can"+
-            		  " be delivered at once. Please only enable Custom Response OR Repeat Message"
-            }
-        }
-        section ( "Continued Commands for Sender" ){
-        input "ContCmds", "bool", title: "Allow Alexa to prompt for additional commands after message is delivered...", defaultValue: false, submitOnChange: true
-       	input "ContCmdsR", "bool", title: "Allow Alexa to prompt for additional commands after Repeat command is given...", defaultValue: true, submitOnChange: true
-        }
-        section ( "" ){
-        } 
-		section ("Configure Text Messages"){ 
-		input "sendContactText", "bool", title: "Enable Text Notifications to Contact Book (if available)", required: true, submitOnChange: true
-        	if (sendContactText) input "recipients", "contact", title: "Send text notifications to (optional)", multiple: true, required: false
-        }       	
-        section ( "" ){            
-		input "sendText", "bool", title: "Enable Text Notifications to non-contact book phone(s)", required: true, submitOnChange: true           
-        	if (sendText){      
-           	paragraph "You may enter multiple phone numbers separated by semicolon to deliver the Alexa message as a text and a push notification. E.g. 8045551122;8046663344"
-            input name: "sms", title: "Send text notification to (optional):", type: "phone", required: false
-			}            
-		}
-		section ("Configure Misc Message Options"){
-       	input "notify", "bool", title: "Send message to Mobile App Notifications Tab (optional)", required: false, defaultValue: false, submitOnChange: true
-        input "disableTts", "bool", title: "Disable All spoken notifications (No voice output from the speakers or Alexa)", required: false, submitOnChange: true  
-             if (parent.debug) log.debug "disable TTS='${disableTts}"       
-		        input "AfeedBack", "bool", title: "Turn on to disable Alexa Feedback Responses (silence Alexa) Overrides all other Alexa Options...", defaultValue: false, submitOnChange: true
-        	 if (AfeedBack) {
-                if (parent.debug) log.debug "Afeedback = '${AfeedBack}"
-                }
-		input "push", "bool", title: "Send Push Notification (optional)", required: false, defaultValue: false
-        }
-	}
-}
-def textMessage(){
-	dynamicPage(name: "textMessage", uninstall: false) {
-    	section (""){ 
-    	input "sendContactText", "bool", title: "Enable Text Notifications to Contact Book (if available)", required: true, submitOnChange: true
-        	if (sendContactText) input "recipients", "contact", title: "Send text notifications to (optional)", multiple: true, required: false
-         }       	
-         section ( "" ){ 
-         input "sendText", "bool", title: "Enable Text Notifications to non-contact book phone(s)", required: true, submitOnChange: true           
-            if (sendText){      
-            paragraph "You may enter multiple phone numbers separated by semicolon to deliver the Alexa message as a text and a push notification. E.g. 8045551122;8046663344"
-            input name: "sms", title: "Send text notification to phone #(optional):", type: "phone", required: false, submitOnChange: true
-			input "push", "bool", title: "Send Push Notification (optional)", required: false, defaultValue: false, submitOnChange: true
-            }            
-		}
-		section ( "" ){            
-        if (sendContactText || sendText) {         
-			paragraph "By default Echosistant will deliver both voice and text messages to selected devices and contacts(s). Enable text ONLY using toggle below"
-            }
-		}        
-	}  
-}
+
 def audioDevices(){
     dynamicPage(name: "audioDevices", title: "Media Devices", uninstall: false){
      	section("Media Speakers (Sonos, wi-fi, music players...)", hideWhenEmpty: true){
@@ -696,7 +635,7 @@ def profileControl(params) {
                 runIn(sSecondsOn,turnOnOtherDimmers)
                 }
              else {
-       	    	if (parent.debug) log.debug "Turning switches off"
+       	    	if (parent.debug) log.debug "Turning switches on"
                 switches?.on()
 				}
           }
