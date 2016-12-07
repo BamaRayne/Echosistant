@@ -216,11 +216,13 @@ def mainProfilePage() {
                 	input "audioMsg", "bool", title: "Audio Messages..", defaultValue: false, submitOnChange: true,
         			image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Media.png" 
                     if (audioMsg) {
-                    	href "audioDevices", title: "Using these speakers..." 
-                        }
-	                input "SMS", "bool", title: "Text & Push Messages...", dafaultValue: false, submitOnChange: true,
+        					href "sonos", title: "Using These Media Speakers", description: none
+        					input "synthDevice", "capability.speechSynthesis", title: "Using These Speech Synthesis Devices", multiple: true, required: false, submitOnChange: true
+	                		}
+                    input "SMS", "bool", title: "Text & Push Messages...", dafaultValue: false, submitOnChange: true,
                     image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Text.png" 
-            			if (SMS) {
+            			
+                        if (SMS) {
             				input "sendContactText", "bool", title: "Enable Text Notifications to Contact Book (if available)", required: true, submitOnChange: true
         						if (sendContactText) input "recipients", "contact", title: "Send text notifications to (optional)", multiple: true, required: false
 							input "sendText", "bool", title: "Enable Text Notifications to non-contact book phone(s)", required: true, submitOnChange: true           
@@ -262,7 +264,7 @@ def mainProfilePage() {
             input "StaPro", "bool", title: "And/Or give me status feedback about my home as well as Event Alerts...", defaultValue: false, submitOnChange: true,
             image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/echosistant_About.png"
             	if (StaPro) {
-                href "Alert", title: "Create an Event Alert...", description: "Tap here to configure"
+                href "Alert", title: "Create an Event Alert...", description: alertLabel ?: "Tap to set", state: alertLabel ? "complete" : null
                
                 }
 			}
@@ -310,8 +312,8 @@ def Alert(){
     input "ShowSwitches", "bool", title: "Switches and Dimmers", default: false, submitOnChange: true
 	if (ShowSwitches) {        
     		input "TheSwitch", "capability.switch", title: "Choose Switches...", required: false, multiple: true, submitOnChange: true
-    		input "audioTextOn", "textOn", title: "Play this message", description: "Message to play when the switch turns on", required: false, capitalization: "sentences"
-    		input "audioTextOff", "textOff", title: "Play this message", description: "Message to play when the switch turns off", required: false, capitalization: "sentences"
+    		input "audioTextOn", "audioTextOn", title: "Play this message", description: "Message to play when the switch turns on", required: false, capitalization: "sentences"
+    		input "audioTextOff", "audioTextOff", title: "Play this message", description: "Message to play when the switch turns off", required: false, capitalization: "sentences"
     		input "speech1", "capability.speechSynthesis", title: "Message Player", required: false, multiple: true
   			}
     	}
@@ -518,7 +520,8 @@ def installed() {
 }
 def updated() { 
 	if (debug) log.debug "Updated with settings: ${settings}"
-    initialize() 
+    initialize()
+    alertHandler(evt)
 }
 
 def getProfileList(){return getChildApps()*.label
@@ -531,7 +534,7 @@ def childUninstalled() {
 }
 
 def initialize() {
-	alertHandler(evt)
+    alertHandler(evt)	
 	if (!parent){
     	if (debug) log.debug "Initialize !parent"
         sendLocationEvent(name: "echoSistant", value: "refresh", data: [profiles: getProfileList()] , isStateChange: true, descriptionText: "echoSistant Profile list refresh")
@@ -556,15 +559,13 @@ def initialize() {
 }
 
 def subscribeToEvents() {
+    alertHandler(evt)
 	if (runModes) {
 		subscribe(runMode, location.currentMode, modeChangeHandler)
 	}
     if (runDay) {
    		subscribe(runDay, location.day, location.currentDay)
 	} 
-    if (switches) {
-    subscribeDevices()
-    }
 }
 def unsubscribeToEvents() {
 	if (triggerModes) {
@@ -922,50 +923,51 @@ private deviceControl() {
    Alerts Handler
 ************************************************************************************************************/
 def myHandler(evt) {
-    if ("on" == evt.value) {
-  	speech1?.speak(audioTextOn)
-    }
-    	else {
-        speech1?.speak(audioTextOff)
-        }
+if (getDayOk()==true && getModeOk()==true && getTimeOk()==true) {
+     if ("on" == evt.value) {
+  		speech1?.speak(audioTextOn)
+   		}
+    	if ("off" == evt.value) {
+        	speech1?.speak(audioTextOff)
+   			}
     if ("open" == evt.value) {
-  	speech2?.speak(audioTextOpen)
-    }
-    	else {
-        speech2?.speak(audioTextClosed)
-    }
+  		speech2?.speak(audioTextOpen)
+    	}
+    	if ("closed" == evt.value) {
+        	speech2?.speak(audioTextClosed)
+    		}
     if ("locked" == evt.value) {
-    speech3?.speak(audioTextLocked)
-    }
-    	else {
-        speech3?.speak(audioTextUnlocked)
-        }
+    	speech3?.speak(audioTextLocked)
+    	}
+    	if ("unlocked" == evt.value) {
+        	speech3?.speak(audioTextUnlocked)
+        	}
     if ("active" == evt.value) {
-    speech4?.speak(audioTextActive)
-    }
-    	else {
-        speech4?.speak(audioTextInactive)
-        }
+    	speech4?.speak(audioTextActive)
+    	}
+    	if ("inActive" == evt.value)  {
+        	speech4?.speak(audioTextInactive)
+        	}
     if ("present" == evt.value) {
-    speech5?.speak(audioTextPresent)
-    }
-    	else {
-        speech5?.speak(audioTextNotPresent)
-        }
+    	speech5?.speak(audioTextPresent)
+    	}
+    	if ("notPresent" == evt.value)  {
+        	speech5?.speak(audioTextNotPresent)
+        	}
     if ("dry" == evt.value) {
-    speech6?.speak(audioTextDry)
-    }
-    	else {
-        speech6?.speak(audioTextWet)
-        }
+    	speech6?.speak(audioTextDry)
+    	}
+    	if ("Wet" == evt.value) {
+        	speech6?.speak(audioTextWet)
+        	}
     if ("opening" == evt.value) {
-    speech7?.speak(audioTextOpening)
-    }
-    	else {
-        speech7?.speak(audioTextClosing)
-        }
+    	speech7?.speak(audioTextOpening)
+    	}
+    	if ("Closing" == evt.value) {
+        	speech7?.speak(audioTextClosing)
+	  	}
+	}
 }
-
 def alertHandler(evt) {
 	subscribe(TheSwitch, "switch", myHandler)
 	subscribe(TheContact, "contact.open", myHandler)
