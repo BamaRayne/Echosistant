@@ -66,22 +66,25 @@ preferences {
     page name: "pageMain"
     //Parent Pages    
     page name: "mainParentPage"
+    page name: "Profiles"
     page name: "about"
     page name: "Tokens"
     page name: "pageConfirmation"
     page name: "pageReset"
     //Profile Pages    
     page name: "mainProfilePage"
-    page name: "Alert"
-    page name: "Profiles"
-	page name: "configuration"
-    		page name: "notifications"
-    			page name: "audioDevices"
-    				page name: "sonos"
-            	page name: "devices"
-        	page name: "restrictions"
-    			page name: "certainTime"
-            page name: "CoRE"
+    page name: "MsgPro"
+    page name: "SMS"
+    page name: "MsgConfig"
+    page name: "DevPro"
+    page name: "StaPro"
+    page name: "Alerts"
+    page name: "CoRE"
+    page name: "devicesControl"
+    page name: "restrictions"
+    page name: "audioDevices" 
+    page name: "sonos"
+    page name: "certainTime"   
 }
 
 def pageMain() { if (!parent) mainParentPage() else mainProfilePage() }
@@ -152,7 +155,6 @@ def about(){
             section("Tap below to remove the ${textAppName()} application.  This will remove ALL Profiles and the App from the SmartThings mobile App."){}
 			}
 		}      
-
 def Tokens(){
 		dynamicPage(name: "Tokens", title: "Security Tokens", uninstall: false){
 			section(""){
@@ -207,105 +209,142 @@ def pageReset(){
     PROFILE UI CONFIGURATION
 ***********************************************************************************************************************/
 def mainProfilePage() {	
-    dynamicPage(name: "mainProfilePage", title:"", install: true, uninstall: true) {
-        section  ("I want this Profile to....") {
-            if (!RouPro && !StaPro && !DevPro) {
-            input "MsgPro", "bool", title: "Send these message types...", defaultValue: false, submitOnChange: true,
-            image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_msg.png" 
-            	if (MsgPro) {
-                	input "audioMsg", "bool", title: "Audio Messages..", defaultValue: false, submitOnChange: true,
-        			image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Media.png" 
-                    if (audioMsg) {
-        					href "sonos", title: "Using These Media Speakers", description: none
-        					input "synthDevice", "capability.speechSynthesis", title: "Using These Speech Synthesis Devices", multiple: true, required: false, submitOnChange: true
-	                		}
-                    input "SMS", "bool", title: "Text & Push Messages...", dafaultValue: false, submitOnChange: true,
-                    image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Text.png" 
-            			
-                        if (SMS) {
-            				input "sendContactText", "bool", title: "Enable Text Notifications to Contact Book (if available)", required: true, submitOnChange: true
-        						if (sendContactText) input "recipients", "contact", title: "Send text notifications to (optional)", multiple: true, required: false
-							input "sendText", "bool", title: "Enable Text Notifications to non-contact book phone(s)", required: true, submitOnChange: true           
-        						if (sendText){      
-           						paragraph "You may enter multiple phone numbers separated by semicolon to deliver the Alexa message as a text and a push notification. E.g. 8045551122;8046663344"
-            				input name: "sms", title: "Send text notification to (optional):", type: "phone", required: false
-							}
-                    		input "push", "bool", title: "Send Push Notification (optional)", required: false, defaultValue: false
-                     		if (parent.debug) log.debug "disable TTS='${disableTts}" 
-                    			}
-               		input "notify", "bool", title: "Send message to Mobile App Notifications Tab (optional)", required: false, defaultValue: false, submitOnChange: true,
-                    image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Text.png"
-                    	}
-					}                            
-			if (!MsgPro && !RouPro && !StaPro) {
-            input "DevPro", "bool", title: "And/Or control these devices in my home...", defaultValue: false, submitOnChange: true,
-            image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_devices.png"
-				if (DevPro) {
-					href "devices", title: "Control Devices...", description: "Tap here to configure",
-       		    	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_devices.png"
-                	href "CoRE", title: "Integrate CoRe...",
-                    image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_CoRE.png"
-                }
-            }
-            if (!MsgPro && !StaPro && !DevPro) {
-            input "RouPro", "bool", title: "And/Or execute these routines...", defaultValue: false, submitOnChange: true,
-            image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Routines.png"
-                if (RouPro) {
-                	def actions = location.helloHome?.getPhrases()*.label
-            		if (actions) {
-            			actions.sort()
-                    if (parent.debug) log.info actions
-                		input "runRoutine", "enum", title: "Select a Routine(s) to execute", required: false, options: actions, multiple: true,
-						image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Routines.png"
-							}
-						}
-					}
-            if (!MsgPro && !RouPro && !DevPro) {
-            input "StaPro", "bool", title: "And/Or give me status feedback about my home as well as Event Alerts...", defaultValue: false, submitOnChange: true,
-            image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/echosistant_About.png"
-            	if (StaPro) {
-                href "Alert", title: "Create an Event Alert...", description: alertLabel ?: "Tap to set", state: alertLabel ? "complete" : null
-               
-                }
-			}
-		}
-		section ("Global Profile Options") {
-            		input "MsgOpt", "bool", title: "I want to use these configuration options...", defaultValue: false, submitOnChange: true,
-            		image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Media.png"
-            	if (MsgOpt) {
-            		input "ShowPreMsg", "bool", title: "Pre-Message (plays on Audio Playback Device before message)", defaultValue: false, submitOnChange: true
-        				if (ShowPreMsg) input "PreMsg", "Text", title: "Pre-Message...", defaultValue: none, submitOnChange: true, required: false 
-        			input "Acustom", "bool", title: "Custom Response from Alexa...", defaultValue: false, submitOnChange: true
-        				if (Acustom) input "outputTxt", "text", title: "Input custom phrase...", required: false, defaultValue: "Message sent,   ", submitOnChange: true
-       	 			input "Arepeat", "bool", title: "Alexa repeats message to sender when sent...", defaultValue: false, submitOnChange: true
-            			if (Arepeat) {			
-	          			if (Arepeat && Acustom){
-          					paragraph "NOTE: only one custom Alexa response can"+
-            		  		" be delivered at once. Please only enable Custom Response OR Repeat Message"
-							}
-                		}
-                        
-                	input "AfeedBack", "bool", title: "Turn on to disable Alexa Feedback Responses (silence Alexa) Overrides all other Alexa Options...", defaultValue: false, submitOnChange: true
-        	 			if (AfeedBack) {
-                		if (parent.debug) log.debug "Afeedback = '${AfeedBack}"
-                	}
-                    input "disableTts", "bool", title: "Disable All spoken notifications (No voice output from the speakers or Alexa)", required: false, submitOnChange: true  
-                	input "ContCmds", "bool", title: "Allow Alexa to prompt for additional commands after message is delivered...", defaultValue: false, submitOnChange: true
-       				input "ContCmdsR", "bool", title: "Allow Alexa to prompt for additional commands after Repeat command is given...", defaultValue: false, submitOnChange: true
-         			}
-                   
-           		 	href "restrictions", title: "I Want These Restrictions For This Message Profile", description: "Tap here to configure",
-            		image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Extra.png"
-					}
-            	
-            
-            
+    dynamicPage(name: "mainProfilePage", title:"I Want This Profile To...", install: true, uninstall: true) {
+        section {
+           	href "MsgPro", title: "Send Audio Messages.....", defaultValue: false, submitOnChange: true, description: MsgProLabel ?: "Tap to set", state: MsgProLabel ? "complete" : null,
+   				image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Media.png" 
+            href "SMS", title: "Send Text & Push Messages.....", defaultValue: false, submitOnChange: true, description: SMSLabel ?: "Tap to set", state: SMSLabel ? "complete" : null,
+            	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Text.png" 
+			href "MsgConfig", title: "Configure Global Message Options.....", defaultValue: false, submitOnChange: true, description: MsgConfigLabel ?: "Tap to set", state: MsgConfigLabel ? "complete" : null,
+            	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Extra.png"   
+			href "DevPro", title: "Control These Devices.....", defaultValue: false, submitOnChange: true, description: DevProLabel ?: "Tap to set", state: DevProLabel ? "complete" : null,
+            	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_devices.png"            			
+            href "RouPro", title: "Execute These Routines.....", defaultValue: false, submitOnChange: true, description: RouProLabel ?: "Tap to set", state: RouProLabel ? "complete" : null,
+            	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Routines.png"            			
+            href "StaPro", title: "Give me status feedback about my home as well as Event Alerts...", defaultValue: false, submitOnChange: true, description: StaProLabel ?: "Tap to set", state: StaProLabel ? "complete" : null,
+            	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/echosistant_About.png"
+           	}
         section ("Name and/or Remove this Profile") {
  		   	label title:"              Rename Profile ", required:false, defaultValue: "New Profile"  
-            }
-		}       
+        }    
 	}
-page name: "Alert"
+}
+page name: "MsgPro"
+def MsgPro(){
+    dynamicPage(name: "MsgPro", title: "Using These Media Devices...", uninstall: false){
+     	section ("") {
+        	href "sonos", title: "Using These Media Speakers", description: none,
+            image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Media.png"
+        	input "synthDevice", "capability.speechSynthesis", title: "Using These Speech Synthesis Devices", multiple: true, required: false, submitOnChange: true,
+			image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Media.png"
+        }        
+	}   
+}
+page name: "SMS"
+def SMS(){
+    dynamicPage(name: "SMS", title: "Send SMS and/or Push Messages...", uninstall: false) {
+		section ("Text Messages") {
+        input "sendContactText", "bool", title: "Enable Text Notifications to Contact Book (if available)", required: true, submitOnChange: true,
+        image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Text.png" 
+        if (sendContactText) input "recipients", "contact", title: "Send text notifications to (optional)", multiple: true, required: false
+		input "sendText", "bool", title: "Enable Text Notifications to non-contact book phone(s)", required: true, submitOnChange: true ,          
+        image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Text.png" 
+        if (sendText){      
+        paragraph "You may enter multiple phone numbers separated by semicolon to deliver the Alexa message as a text and a push notification. E.g. 8045551122;8046663344"
+        input name: "sms", title: "Send text notification to (optional):", type: "phone", required: false
+			}
+        }    
+        section ("Push Messages") {
+        input "push", "bool", title: "Send Push Notification (optional)", required: false, defaultValue: false,
+        image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Text.png" 
+	       	if (parent.debug) log.debug "disable TTS='${disableTts}" 
+		input "notify", "bool", title: "Send message to Mobile App Notifications Tab (optional)", required: false, defaultValue: false, submitOnChange: true,
+		image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Text.png"
+        }        
+    }        
+}
+page name: "MsgConfig"
+def MsgConfig(){
+    dynamicPage(name: "MsgConfig", title: "Configure Global Profile Options...", uninstall: false) {
+		section ("MsgConfig") {
+        input "MsgOpt", "bool", title: "I want to use these configuration options...", defaultValue: false, submitOnChange: true,
+            image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Media.png"
+            if (MsgOpt) {
+            	input "ShowPreMsg", "bool", title: "Pre-Message (plays on Audio Playback Device before message)", defaultValue: false, submitOnChange: true
+        			if (ShowPreMsg) input "PreMsg", "Text", title: "Pre-Message...", defaultValue: none, submitOnChange: true, required: false 
+        		input "Acustom", "bool", title: "Custom Response from Alexa...", defaultValue: false, submitOnChange: true
+        			if (Acustom) input "outputTxt", "text", title: "Input custom phrase...", required: false, defaultValue: "Message sent,   ", submitOnChange: true
+       	 		input "Arepeat", "bool", title: "Alexa repeats message to sender when sent...", defaultValue: false, submitOnChange: true
+            		if (Arepeat) {			
+	          		if (Arepeat && Acustom){
+          				paragraph "NOTE: only one custom Alexa response can"+
+            		  	" be delivered at once. Please only enable Custom Response OR Repeat Message"
+						}
+                	}
+                input "AfeedBack", "bool", title: "Turn on to disable Alexa Feedback Responses (silence Alexa) Overrides all other Alexa Options...", defaultValue: false, submitOnChange: true
+        	 		if (AfeedBack) {
+                	if (parent.debug) log.debug "Afeedback = '${AfeedBack}"
+                	}
+               	input "disableTts", "bool", title: "Disable All spoken notifications (No voice output from the speakers or Alexa)", required: false, submitOnChange: true  
+              	input "ContCmds", "bool", title: "Allow Alexa to prompt for additional commands after message is delivered...", defaultValue: false, submitOnChange: true
+       			input "ContCmdsR", "bool", title: "Allow Alexa to prompt for additional commands after Repeat command is given...", defaultValue: false, submitOnChange: true
+         		}
+			}            	
+		section ("Mode Restrictions") {
+			input "modes", "mode", title: "Only when mode is", multiple: true, required: false, submitOnChange: true,
+            image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Extra.png"
+	        }        
+        section ("Days - Audio only on these days"){	
+            input "runDay", title: "Only on certain days of the week", multiple: true, required: false, submitOnChange: true,
+                "enum", options: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"],
+                image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Extra.png"
+			}
+        section ("Time - Audio only during these times"){
+            href "certainTime", title: "Only during a certain time", description: timeLabel ?: "Tap to set", state: timeLabel ? "complete" : null,
+            image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Extra.png"
+        	}   
+       
+	}
+}
+page name: "DevPro"
+def DevPro(){
+	dynamicPage(name: "DevPro", uninstall: false) {
+   		section ("Control these Devices") {
+    	href "devicesControl", title: "Control Devices...", description: "Tap here to configure",
+		image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_devices.png"
+		href "CoRE", title: "Integrate CoRe...",
+		image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_CoRE.png"
+		}
+	}
+}
+page name: "RouPro"
+def RouPro(){
+	dynamicPage(name: "RouPro", uninstall: false) {
+       		section ("Execute These Routines") {
+		image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Routines.png"
+		def actions = location.helloHome?.getPhrases()*.label 
+        if (actions) {
+		actions.sort()
+		if (parent.debug) log.info actions
+		input "runRoutine", "enum", title: "Select a Routine(s) to execute", required: false, options: actions, multiple: true,
+		image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Routines.png"
+			}
+		}
+	}		
+}
+page name: "StaPro"
+def StaPro(){
+	dynamicPage(name: "StaPro", title: "Status Feedback and Alerts", uninstall: false) {
+   		section ("") {
+        href "FeedBack", title: "Devices to get FeedBack from...", defaultValue: false, description: alertLabel ?: "Tap to set", state: alertLabel ? "complete" : null,
+        image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/echosistant_About.png"
+        image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/echosistant_About.png"
+        href "Alerts", title: "Create Event Alerts...", defaultValue: false, submitOnChange: true, description: alertLabel ?: "Tap to set", state: alertLabel ? "complete" : null,
+        image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/echosistant_About.png"
+		}
+	}
+}
+page name: "Alerts"
 def Alert(){
 	dynamicPage(name: "Alert", uninstall: false) {
    	section ("Switches and Dimmers") {
@@ -373,18 +412,6 @@ def Alert(){
 		}
     }
 }
-def switchOnHandler(evt) {
-    log.debug "switchOnHandler called: $evt"
-    theswitch.on()
-}
-def switchOffHandler(evt) {
-    log.debug "switchOffHandler called: $evt"
-}
-def audioEvent(evt) {
-  ("on" == evt.value) 
-  audioEvent()
-  } 
-    
 page name: "CoRE"
 def CoRE(){
 		dynamicPage(name: "CoRE", uninstall: false) {
@@ -404,9 +431,8 @@ def CoRE(){
     	}
     }
 }    
-				
-def devices(){
-    dynamicPage(name: "devices", title: "Select Devices to use with this profile",install: false, uninstall: false) {
+def devicesControl(){
+    dynamicPage(name: "devicesControl", title: "Select Devices to use with this profile",install: false, uninstall: false) {
         section ("Switches", hideWhenEmpty: true){
             input "switches", "capability.switch", title: "Control These Switches...", multiple: true, required: false, submitOnChange: true
             if (switches) input "switchCmd", "enum", title: "What do you want to do with these switches?", options:["on":"Turn on","off":"Turn off"], multiple: false, required: false, submitOnChange:true
@@ -510,6 +536,17 @@ mappings {
       path("/t") {action: [GET: "processTts"]}
       }i
 //************************************************************************************************************
+def switchOnHandler(evt) {
+    log.debug "switchOnHandler called: $evt"
+    theswitch.on()
+}
+def switchOffHandler(evt) {
+    log.debug "switchOffHandler called: $evt"
+}
+def audioEvent(evt) {
+  ("on" == evt.value) 
+  audioEvent()
+  } 
 
 def installed() {
 	if (debug) log.debug "Installed with settings: ${settings}"
