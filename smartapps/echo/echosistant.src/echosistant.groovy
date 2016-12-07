@@ -2,7 +2,7 @@
  * EchoSistant - The Ultimate Voice and Text Messaging Assistant Using Your Alexa Enabled Device.
  *		
  *		??/??/2016		Version 3.0.0	Additions: Msg to Notify Tab in Mobile App, Push Msg, Complete Reconfigure of Profile Build, More Control of Dimmers, and Switches,
- *										Control of Thermostats, Doors, and Locks. Common speech device/room commands. Status Feedback.
+ *										Control of Thermostats, Doors, and Locks. Common speech device/room commands. Status Feedback. Activity Alerts Page
  *		11/23/2016		Version 2.0.1	Bug fix: Pre-message not showing correctly.  Set to default false.
  *		11/22/2016		Version 2.0.0	CoRE integration, Cont Commands per profile, Repeat Message per profile, one app and many bug fixes.
  *		11/20/2016		Version 1.2.0	Fixes: SMS&Push not working, calling multiple profiles at initialize. Additions: Run Routines and Switch enhancements
@@ -72,6 +72,7 @@ preferences {
     page name: "pageReset"
     //Profile Pages    
     page name: "mainProfilePage"
+    page name: "Alert"
     page name: "Profiles"
 	page name: "configuration"
     		page name: "notifications"
@@ -258,9 +259,11 @@ def mainProfilePage() {
 						}
 					}
             if (!MsgPro && !RouPro && !DevPro) {
-            input "StaPro", "bool", title: "And/Or give me status feedback about my home", defaultValue: false, submitOnChange: true,
+            input "StaPro", "bool", title: "And/Or give me status feedback about my home as well as Event Alerts...", defaultValue: false, submitOnChange: true,
             image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/echosistant_About.png"
             	if (StaPro) {
+                href "Alert", title: "Create an Event Alert...", description: "Tap here to configure"
+               
                 }
 			}
 		}
@@ -300,7 +303,86 @@ def mainProfilePage() {
             }
 		}       
 	}
-   
+page name: "Alert"
+def Alert(){
+	dynamicPage(name: "Alert", uninstall: false) {
+   	section ("Switches and Dimmers") {
+    input "ShowSwitches", "bool", title: "Switches and Dimmers", default: false, submitOnChange: true
+	if (ShowSwitches) {        
+    		input "TheSwitch", "capability.switch", title: "Choose Switches...", required: false, multiple: true, submitOnChange: true
+    		input "audioTextOn", "textOn", title: "Play this message", description: "Message to play when the switch turns on", required: false, capitalization: "sentences"
+    		input "audioTextOff", "textOff", title: "Play this message", description: "Message to play when the switch turns off", required: false, capitalization: "sentences"
+    		input "speech1", "capability.speechSynthesis", title: "Message Player", required: false, multiple: true
+  			}
+    	}
+	section("Doors and Windows") {
+    input "ShowContacts", "bool", title: "Doors and Windows", default: false, submitOnChange: true
+	if (ShowContacts) {
+    		input "TheContact", "capability.contactSensor", title: "Choose Doors and Windows..", required: false, multiple: true, submitOnChange: true
+    		input "audioTextOpen", "textOpen", title: "Play this message", description: "Message to play when the door opens", required: false, capitalization: "sentences"
+    		input "audioTextClosed", "textClosed", title: "Play this message", description: "Message to play when the door closes", required: false, capitalization: "sentences"
+    		input "speech2", "capability.speechSynthesis", title: "Message Player", required: false, multiple: true
+  			}
+    	}
+	section("Locks") {
+    input "ShowLocks", "bool", title: "Locks", default: false, submitOnChange: true
+	if (ShowLocks) {
+    		input "TheLock", "capability.lock", title: "Choose Locks...", required: false, multiple: true
+    		input "audioTextLocked", "textLocked", title: "Play this message", description: "Message to play when the lock locks", required: false, capitalization: "sentences"
+    		input "audioTextUnlocked", "textUnlocked", title: "Play this message", description: "Message to play when the lock unlocks", required: false, capitalization: "sentences"
+    		input "speech3", "capability.speechSynthesis", title: "Message Player", required: false, multiple: true
+  			}
+    	}
+	section("Motion Sensors") {
+    input "ShowMotion", "bool", title: "Motion Sensors", default: false, submitOnChange: true
+	if (ShowMotion) {
+	    	input "TheMotion", "capability.motionSensor", title: "Choose Motion Sensors...", required: false, multiple: true
+	    	input "audioTextActive", "textActive", title: "Play this message", description: "Message to play when motion is detected", required: false, capitalization: "sentences"
+	    	input "audioTextInactive", "textInactive", title: "Play this message", description: "Message to play when motion stops", required: false, capitalization: "sentences"
+	    	input "speech4", "capability.speechSynthesis", title: "Message Player", required: false, multiple: true
+	  		}
+	    }
+  	section("Presence Sensors") {
+    input "ShowPresence", "bool", title: "Presence Sensors", default: false, submitOnChange: true
+	if (ShowPresence) {
+	    	input "ThePresence", "capability.presenceSensor", title: "Choose Presence Sensors...", required: false, multiple: true
+	    	input "audioTextPresent", "textPresent", title: "Play this message", description: "Message to play when the Sensor arrives", required: false, capitalization: "sentences"
+	    	input "audioTextNotPresent", "textNotPresent", title: "Play this message", description: "Message to play when the Sensor Departs", required: false, capitalization: "sentences"
+	    	input "speech5", "capability.speechSynthesis", title: "Message Player", required: false, multiple: true
+	  		}
+	  	}
+    section("Water Sensors") {
+    input "ShowWater", "bool", title: "Water Detectors", default: false, submitOnChange: true
+	if (ShowWater) {
+	    	input "TheWater", "capability.waterSensor", title: "Choose Water Sensors...", required: false, multiple: true
+	    	input "audioTextWet", "textWet", title: "Play this message", description: "Message to play when water is detected", required: false, capitalization: "sentences"
+	    	input "audioTextDry", "textDry", title: "Play this message", description: "Message to play when is no longer detected", required: false, capitalization: "sentences"
+	    	input "speech6", "capability.speechSynthesis", title: "Message Player", required: false, multiple: true
+	  		}
+		}
+    section("Garage Doors") {
+    input "ShowGarage", "bool", title: "Garage Doors", default: false, submitOnChange: true
+	if (ShowGarage) {
+	    	input "TheGarage", "capability.garageDoorControl", title: "Choose Garage Doors...", required: false, multiple: true
+	    	input "audioTextOpening", "textOpening", title: "Play this message", description: "Message to play when the Garage Door Opens", required: false, capitalization: "sentences"
+	        input "audioTextClosing", "textClosing", title: "Play this message", description: "Message to play when the Garage Door Closes", required: false, capitalization: "sentences" 
+			input "speech7", "capability.speechSynthesis", title: "Message Player", required: false, multiple: true
+			}
+		}
+    }
+}
+def switchOnHandler(evt) {
+    log.debug "switchOnHandler called: $evt"
+    theswitch.on()
+}
+def switchOffHandler(evt) {
+    log.debug "switchOffHandler called: $evt"
+}
+def audioEvent(evt) {
+  ("on" == evt.value) 
+  audioEvent()
+  } 
+    
 page name: "CoRE"
 def CoRE(){
 		dynamicPage(name: "CoRE", uninstall: false) {
@@ -430,7 +512,9 @@ mappings {
 def installed() {
 	if (debug) log.debug "Installed with settings: ${settings}"
     if (debug) log.trace "STappID = '${app.id}' , STtoken = '${state.accessToken}'"
-	initialize() 
+    alertHandler(evt)
+	initialize()
+    
 }
 def updated() { 
 	if (debug) log.debug "Updated with settings: ${settings}"
@@ -447,6 +531,7 @@ def childUninstalled() {
 }
 
 def initialize() {
+	alertHandler(evt)
 	if (!parent){
     	if (debug) log.debug "Initialize !parent"
         sendLocationEvent(name: "echoSistant", value: "refresh", data: [profiles: getProfileList()] , isStateChange: true, descriptionText: "echoSistant Profile list refresh")
@@ -462,7 +547,6 @@ def initialize() {
                 OAuthToken()
         		if (debug) log.debug "STappID = '${app.id}' , STtoken = '${state.accessToken}'" 
 			}
-
 	}
     else{
         if (debug) log.debug "Initialize else block"
@@ -478,12 +562,16 @@ def subscribeToEvents() {
     if (runDay) {
    		subscribe(runDay, location.day, location.currentDay)
 	} 
+    if (switches) {
+    subscribeDevices()
+    }
 }
 def unsubscribeToEvents() {
 	if (triggerModes) {
     	unsubscribe(location, modeChangeHandler)
     }
-}    
+} 
+
            
 /************************************************************************************************************
    TEXT TO SPEECH PROCESS (PARENT) 
@@ -830,6 +918,67 @@ private deviceControl() {
             }
 }
 
+/************************************************************************************************************
+   Alerts Handler
+************************************************************************************************************/
+def myHandler(evt) {
+    if ("on" == evt.value) {
+  	speech1?.speak(audioTextOn)
+    }
+    	else {
+        speech1?.speak(audioTextOff)
+        }
+    if ("open" == evt.value) {
+  	speech2?.speak(audioTextOpen)
+    }
+    	else {
+        speech2?.speak(audioTextClosed)
+    }
+    if ("locked" == evt.value) {
+    speech3?.speak(audioTextLocked)
+    }
+    	else {
+        speech3?.speak(audioTextUnlocked)
+        }
+    if ("active" == evt.value) {
+    speech4?.speak(audioTextActive)
+    }
+    	else {
+        speech4?.speak(audioTextInactive)
+        }
+    if ("present" == evt.value) {
+    speech5?.speak(audioTextPresent)
+    }
+    	else {
+        speech5?.speak(audioTextNotPresent)
+        }
+    if ("dry" == evt.value) {
+    speech6?.speak(audioTextDry)
+    }
+    	else {
+        speech6?.speak(audioTextWet)
+        }
+    if ("opening" == evt.value) {
+    speech7?.speak(audioTextOpening)
+    }
+    	else {
+        speech7?.speak(audioTextClosing)
+        }
+}
+
+def alertHandler(evt) {
+	subscribe(TheSwitch, "switch", myHandler)
+	subscribe(TheContact, "contact.open", myHandler)
+    subscribe(TheContact, "contact.closed", myHandler)
+    subscribe(TheLock, "lock.locked", myHandler)
+    subscribe(TheLock, "lock.unlocked", myHandler)
+    subscribe(TheMotion, "motion.active", myHandler)
+    subscribe(TheMotion, "motion.inactive", myHandler)
+    subscribe(ThePresence, "presence.present", myHandler)
+    subscribe(ThePresence, "presence.notPresent", myHandler)
+    subscribe(TheWater, "waterSensor.dry", myHandler)
+    subscribe(TheWater, "waterSensor.wet", myHandler)
+}
 /************************************************************************************************************
    Version/Copyright/Information/Help
 ************************************************************************************************************/
