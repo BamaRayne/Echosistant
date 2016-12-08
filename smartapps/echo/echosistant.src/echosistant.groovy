@@ -93,28 +93,31 @@ def pageMain() { if (!parent) mainParentPage() else mainProfilePage() }
     PARENT UI CONFIGURATION
 ***********************************************************************************************************************/
 def mainParentPage() {	
-	dynamicPage(name: "mainParentPage", title: "EchoSistant", install: true, uninstall: false) {
-        section {
-        	href "Profiles", title: "Profiles", description: "Tap here to view and create your profiles....",
-            image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Config.png"
-			}    
-		section {
-			href "about", title: "Settings and Security", description: "Tap here for App information...Tokens, Version, License...",
-            image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_About.png"
-			}
-        section ("EchoSistant Smartapp Information") {
-        	def Profiles = childApps.size()     
-            href(name: "", title: "*  ${textAppName()}\n*  ${textVersion()}\n*  ${Profiles} Profiles Created"+
-            					  "\n*  ${textCopyright()}\n*  Click Here to visit EchoSistant Wiki",
-            description: "" ,
-            required: false,
-            image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/app-Echosistant.png",
-            url: "http://thingsthataresmart.wiki/index.php?title=EchoSistant")
-            }      
-        section ("Rename Main Intent") { 
-			input "mainIntent", "text", title: "Main Intent", defaultValue: "assistant", required: false
-        }
-	}
+	
+        def pageProperties = [
+        name:       "mainParentPage",
+        title:      "",
+        nextPage:   null,
+        install:    true,
+        uninstall:  false
+    ]
+    
+
+   return dynamicPage(pageProperties) {
+        section ("") {
+        	href "Profiles", title: "Profiles", description: profilesDescr(), state: completeProfiles(),
+            	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Config.png"    
+			href "about", title: "Settings and Security", description: settingsDescr(), state: completeSettings(),
+            	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_About.png"
+            href title: "EchoSistant Support", description: supportDescr() , state: completeProfiles(),
+            	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/app-Echosistant.png",
+            	url: "http://thingsthataresmart.wiki/index.php?title=EchoSistant"    
+            }
+       	section ("") {
+            label title:"              Rename Echosistant", required:false, defaultValue: "New Profile"  
+			paragraph "${textCopyright()}"
+            }
+     }
 }
 def Profiles() {
         dynamicPage (name: "Profiles", title: "", install: false, uninstall: false) {
@@ -533,9 +536,28 @@ def OAuthToken(){
 
 //************************************************************************************************************
 mappings {
-      path("/t") {action: [GET: "processTts"]}
-      }i
+	path("/b") { action: [GET: "processBegin"] }
+	path("/c") { action: [GET: "controlDevices"] }
+    path("/t") {action: [GET: "processTts"]}
+}
 //************************************************************************************************************
+
+/************************************************************************************************************
+   TEXT TO SPEECH PROCESS (PARENT) 
+************************************************************************************************************/
+def processBegin(){
+    	log.debug "--Begin commands received--"
+    
+    def versionTxt = params.versionTxt 		
+    def versionDate = params.versionDate
+    
+    def pMain = app.label
+	def pContinue = "Yes"
+    	if (debug){
+        log.debug "Message received from Lambda with: (ver) = '${ver}', (date) = '${date}', and sent to Lambda: pMain = '${pMain}', pContinue = '${pContinue}'"
+        }
+    return ["pContinue":pContinue, "pMain":pMain]
+}   
 def switchOnHandler(evt) {
     log.debug "switchOnHandler called: $evt"
     theswitch.on()
@@ -609,31 +631,26 @@ def unsubscribeToEvents() {
     	unsubscribe(location, modeChangeHandler)
     }
 } 
-
-           
+     
 /************************************************************************************************************
    TEXT TO SPEECH PROCESS (PARENT) 
 ************************************************************************************************************/
 def processTts() {
 		def ptts = params.ttstext 
-        def pttx = params.ttstext
    		def pintentName = params.intentName
-        def pCommands = params.pCommands
-        def pProfiles = params.pProfiles
-            if (debug) log.debug "Message received from Lambda with: (pProfiles) = '${pProfiles}', (pCommands) = '${pCommands}', intentName = '${pintentName}', (ptts) = '${ptts}'"
-
+        def ttsintentname = params.ttsintentname
+            if (debug) log.debug "Message received from Lambda with: (ptts) = '${ptts}', (pintentName) = '${pintentName}', ttsintentname = '${ttsintentname}'"
         def outputTxt = ''
     	def pContCmds = "false"
         def pContCmdsR = "false"
         def dataSet = [ptts:ptts,pttx:pttx,pintentName:pintentName] 
 		def controlData = [pCommands:pCommands,pProfiles:pProfiles,pintentName:pintentName] 
-
         def repeat = "repeat last message"
        	def pMainIntent ="assistant"
         	if (mainIntent){
             		pMainIntent = mainIntent
         	}
-   
+        	if (debug) log.debug "#4 Main intent being called = '${pMainIntent}'"  
         if (ptts==repeat) {
 				if (pMainIntent == pintentName) {
                 outputTxt = "The last message sent was," + state.lastMessage + ", and it was sent to, " + state.lastIntent + ", at, " + state.lastTime 
@@ -664,7 +681,7 @@ def processTts() {
                     if (debug) log.debug "Running main loop with '${ptts}'"                      
                     childApps.each {child ->
 						child.profileEvaluate(dataSet)
-            			child.profileControl(controlData)
+            			//child.profileControl(controlData)
                         }
             			childApps.each { child ->
     						def cm = child.label
@@ -695,8 +712,22 @@ def processTts() {
 		return ["outputTxt":outputTxt, "pContCmds":pContCmds]
         if (debug) log.debug "#6 Alexa response sent to Lambda = '${outputTxt}', '${pContCmds}' "
 }
+
+/************************************************************************************************************
+   CONTROL PROCESS PROCESS (PARENT) 
+************************************************************************************************************/
+def controlDevices() {
+        def pCommand = params.pCommand
+        def pProfile = params.pProfile
+        def pNum = params.pNum
+        def pDevice = params.pDevice
+		def controlData = [pCommand:pCommand,pProfile:pProfile,pNum:pNum,pDevice:pDevice] 
+        
+	if (debug) log.debug "Message received from Lambda to control devices with settings: (pCommand) = '${pCommand}', (pProfile) = '${pProfile}', pNum = '${pNum}', (pDevice) = '${pDevice}'"
+}
+
 /******************************************************************************************************
-   SPEECH AND TEXT PROCESSING
+   SPEECH AND TEXT PROCESSING (PROFILE)
 ******************************************************************************************************/
 def profileEvaluate(params) {
         def tts = params.ptts
@@ -747,7 +778,7 @@ def profileEvaluate(params) {
 }
 
 /******************************************************************************************************
-   CONTROL PROCESSING
+   CONTROL PROCESSING (PROFILE)
 ******************************************************************************************************/
 def profileControl(params) {
 
@@ -1022,13 +1053,13 @@ def alertHandler(evt) {
    Version/Copyright/Information/Help
 ************************************************************************************************************/
 private def textAppName() {
-	def text = "EchoSistant"
+	def text = app.label
 }	
 private def textVersion() {
 	def text = "Version 3.0.0 Alpha (11/30/2016)"
 }
 private def textCopyright() {
-	def text = "Copyright © 2016 Jason Headley"
+	def text = "       Copyright © 2016 Jason Headley"
 }
 private def textLicense() {
 	def text =
@@ -1044,8 +1075,72 @@ private def textLicense() {
 	"See the License for the specific language governing permissions and "+
 	"limitations under the License."
 }
+
+private textProfiles() {
+def text = childApps.size()     
+}
+
 private def textHelp() {
 	def text =
 		"This smartapp allows you to use an Alexa device to generate a voice or text message on on a different device"
         "See our Wikilinks page for user information!"
 		}
+        
+/************************************************************************************************************
+   Page status and descriptions 
+************************************************************************************************************/       
+        
+def completeProfiles(){
+    def result = ""
+    if (childApps.size()) {
+    	result = "complete"	
+    }
+    result
+}
+
+def completeSettings(){
+    def result = ""
+    if (ShowTokens || debug || ShowLicense) {
+    	result = "complete"	
+    }
+    result
+}
+
+
+def profilesDescr() {
+    def text = "Tap here to configure settings"
+    def ch = childApps.size()     
+
+    if (ch == 1) {
+        text = "One profile has been configured. Tap here to change its settings or add more Profiles"
+    }
+    else {
+    	if (ch > 1) {
+        text = "${ch} Profiles have been configured. Tap here to change their settings or add more Profiles"
+     	}
+    }
+    
+    text
+}
+
+def settingsDescr() {
+    def text = "General settings have not been defined. Tap here to configure settings"
+	
+    if (ShowTokens) {
+			text = "Attention: Security Tokens are displayed in the Live Logs section of the IDE. Tap here to change this and other general settings"         
+	}
+    else {
+    	if (debug || ShowLicense) {c
+    		text = "Logging is enabled; details are displayed in the Live Logs section of the IDE. Tap here to change this and other general settings"
+    	}
+    	if (ShowLicense) {
+    		text = "License information is displayed on the next page. Tap here to change this and other general settings"
+    	}
+	}
+    
+    text
+}
+
+def supportDescr()  {
+	def text = "${textVersion()}\n Click to visit our Wiki Page"
+}
