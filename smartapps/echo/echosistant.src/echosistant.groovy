@@ -114,7 +114,7 @@ def mainParentPage() {
             	url: "http://thingsthataresmart.wiki/index.php?title=EchoSistant"    
             }
        	section ("") {
-            label title:"              Rename Echosistant", required:false, defaultValue: "New Profile"  
+            label title:"              Rename Echosistant", required:false, defaultValue: ""  
 			paragraph "${textCopyright()}"
             }
      }
@@ -214,7 +214,7 @@ def pageReset(){
 def mainProfilePage() {	
     dynamicPage(name: "mainProfilePage", title:"I Want This Profile To...", install: true, uninstall: true) {
         section {
-           	href "MsgPro", title: "Send Audio Messages.....", defaultValue: false, submitOnChange: true, description: MsgProLabel ?: "Tap to set", state: MsgProLabel ? "complete" : null,
+           	href "MsgPro", title: "Send Audio Messages.....", defaultValue: false, submitOnChange: true, description: MsgProLabel ?: "Tap to set", state: Configured ? "complete" : null,
    				image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Media.png" 
             href "SMS", title: "Send Text & Push Messages.....", defaultValue: false, submitOnChange: true, description: SMSLabel ?: "Tap to set", state: SMSLabel ? "complete" : null,
             	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Text.png" 
@@ -348,8 +348,8 @@ def StaPro(){
 	}
 }
 page name: "Alerts"
-def Alert(){
-	dynamicPage(name: "Alert", uninstall: false) {
+def Alerts(){
+	dynamicPage(name: "Alerts", uninstall: false) {
    	section ("Switches and Dimmers") {
     input "ShowSwitches", "bool", title: "Switches and Dimmers", default: false, submitOnChange: true
 	if (ShowSwitches) {        
@@ -542,19 +542,18 @@ mappings {
 }
 //************************************************************************************************************
 
-/************************************************************************************************************
-   TEXT TO SPEECH PROCESS (PARENT) 
-************************************************************************************************************/
+//************************************************************************************************************
+
 def processBegin(){
     	log.debug "--Begin commands received--"
     
-    def versionTxt = params.versionTxt 		
+    def Ver = params.versionTxt 		
     def versionDate = params.versionDate
     
     def pMain = app.label
 	def pContinue = "Yes"
     	if (debug){
-        log.debug "Message received from Lambda with: (ver) = '${ver}', (date) = '${date}', and sent to Lambda: pMain = '${pMain}', pContinue = '${pContinue}'"
+        log.debug "Message received from Lambda with: (ver) = '${Ver}', (date) = '${versionDate}', and sent to Lambda: pMain = '${pMain}', pContinue = '${pContinue}'"
         }
     return ["pContinue":pContinue, "pMain":pMain]
 }   
@@ -565,10 +564,6 @@ def switchOnHandler(evt) {
 def switchOffHandler(evt) {
     log.debug "switchOffHandler called: $evt"
 }
-def audioEvent(evt) {
-  ("on" == evt.value) 
-  audioEvent()
-  } 
 
 def installed() {
 	if (debug) log.debug "Installed with settings: ${settings}"
@@ -581,10 +576,12 @@ def updated() {
 	if (debug) log.debug "Updated with settings: ${settings}"
     initialize()
     alertHandler(evt)
+    if (debug) log.info getProfileList()
 }
 
 def getProfileList(){return getChildApps()*.label
 		if (debug) log.debug "Refreshing Profiles for CoRE, ${getChildApps()*.label}"
+
 }
 
 def childUninstalled() {
@@ -710,7 +707,6 @@ def processTts() {
       	}
         if (debug) log.debug "#6 Alexa response sent to Lambda = '${outputTxt}', '${pContCmds}' "
 		return ["outputTxt":outputTxt, "pContCmds":pContCmds]
-        if (debug) log.debug "#6 Alexa response sent to Lambda = '${outputTxt}', '${pContCmds}' "
 }
 
 /************************************************************************************************************
@@ -747,10 +743,14 @@ def profileEvaluate(params) {
             			if (parent.debug) log.debug "#4 tts = '${tts}'"
                     }
             			if (getDayOk()==true && getModeOk()==true && getTimeOk()==true) {
-            					if (synthDevice) synthDevice?.speak(tts)
-        			    			if (parent.debug) log.debug "#5 Sending message to Synthesis Devices"  
-                				if (mediaDevice) mediaDevice?.speak(tts)
+            					if (synthDevice) {
+                                synthDevice?.speak(tts) 
+        			    			if (parent.debug) log.debug "#5 Sending message to Synthesis Devices" 
+                                    }
+                				if (mediaDevice) {
+                                	mediaDevice?.speak(tts) 
                 					if (parent.debug) log.debug "#6 Sending message to Media Devices"  
+                                    }
             						if (tts) {
 										state.sound = textToSpeech(tts instanceof List ? tts[0] : tts)
 									}
@@ -759,9 +759,9 @@ def profileEvaluate(params) {
 									}
 								if (sonosDevice) {
 										sonosDevice.playTrackAndResume(state.sound.uri, state.sound.duration, volume)
-                    						if (parent.debug) log.debug "Sending message to Sonos Devices"  
-        						}
-    					}
+                    						if (parent.debug) log.debug "Sending message to Sonos Devices" 
+                                            }
+    								}
     					sendtxt(txt) 
                         state.lastMessage = tts
                         state.lastTime = new Date(now()).format("h:mm aa", location.timeZone)
@@ -802,8 +802,8 @@ def profileControl(params) {
              else {
        	    	if (parent.debug) log.debug "Turning switches on"
                 switches?.on()
-				}
-          }
+			}
+        }
 		if (command == "bright" || command == "darker" || command == "off") {     	
         	if (sSecondsOff) {
           		runIn(sSecondsOff,turnOffSwitch)
@@ -944,16 +944,13 @@ private deviceControl() {
                 runIn(sSecondsOn,turnOnDimmers)
                 runIn(sSecondsOn,turnOnOtherDimmers)
                 }
-            else {
-       	    	if (parent.debug) log.debug "Turning switches on"
-//                switches?.on()
-				
-        	if  (switchCmd == "on") {
-            	switches?.on()
-                }
+        	if (!sSecondsOn) {
+            	if  (switchCmd == "on") {
+	            	switches?.on()
+                    }
            		else if (switchCmd == "off") {
-            		 switches?.off()
-                	}
+	           		switches?.off()
+                    }
           	if (otherSwitchCmd == "on") {
             	otherSwitch?.on()
                 }
@@ -970,70 +967,95 @@ private deviceControl() {
 				if (otherDimmersCMD == "set"){
         		def otherlevel = otherDimmersLVL < 0 || !otherDimmersLVL ?  0 : otherDimmersLVL >100 ? 100 : otherDimmersLVL as int
         		otherDimmers?.setLevel(otherlevel)
-			}
-        }            
-	}
-}    
-            	if (sSecondsOff) {
+				}
+        	}            
+		}
+    }
+            	if (switchCMD == !off) {
+                if (sSecondsOff) {
             	if (parent.debug) log.debug "Turn switches off in '${sSecondsOff}' seconds"            
           		runIn(sSecondsOff,turnOffSwitch)
                 runIn(sSecondsOff,turnOffOtherSwitch)
                 runIn(sSecondsOff,turnOffDimmers)
                 runIn(sSecondsOff,turnOffOtherDimmers)
-			}	
-        	else {
-        		if (parent.debug) log.debug "Turning switches off"
-//                switches?.off()
-            }
-}
-
+				}	
+			}
+		}
 /************************************************************************************************************
    Alerts Handler
 ************************************************************************************************************/
 def myHandler(evt) {
 if (getDayOk()==true && getModeOk()==true && getTimeOk()==true) {
      if ("on" == evt.value) {
+     	if (audioTextOn) {
   		speech1?.speak(audioTextOn)
-   		}
-    	if ("off" == evt.value) {
-        	speech1?.speak(audioTextOff)
    			}
+        }
+    	if ("off" == evt.value) {
+        	if (audioTextOff) {
+        	speech1?.speak(audioTextOff)
+   				}
+            }
     if ("open" == evt.value) {
+    	if (audioTextOpen) {
   		speech2?.speak(audioTextOpen)
-    	}
-    	if ("closed" == evt.value) {
-        	speech2?.speak(audioTextClosed)
     		}
+        }
+    	if ("closed" == evt.value) {
+        	if (audioTextClosed) {
+        	speech2?.speak(audioTextClosed)
+    			}
+            }
     if ("locked" == evt.value) {
+    	if (audioTextLocked) {
     	speech3?.speak(audioTextLocked)
-    	}
+    		}
+        }
     	if ("unlocked" == evt.value) {
+        	if (audioTextUnlocked) {
         	speech3?.speak(audioTextUnlocked)
-        	}
+        		}
+            }
     if ("active" == evt.value) {
+    	if (audioTextActive) {
     	speech4?.speak(audioTextActive)
-    	}
+    		}
+        }
     	if ("inActive" == evt.value)  {
+        	if (audioTextInactive) {
         	speech4?.speak(audioTextInactive)
-        	}
+        		}
+            }
     if ("present" == evt.value) {
+    	if (audioTextPresent) {
     	speech5?.speak(audioTextPresent)
-    	}
+    		}
+        }
     	if ("notPresent" == evt.value)  {
+        	if (audioTextNotPresent) {
         	speech5?.speak(audioTextNotPresent)
-        	}
+        		}
+            }
     if ("dry" == evt.value) {
+    	if (audioTextDry) {
     	speech6?.speak(audioTextDry)
-    	}
+    		}
+        }
     	if ("Wet" == evt.value) {
+        	if (audioTextWet) {
         	speech6?.speak(audioTextWet)
-        	}
+        		}
+            }
     if ("opening" == evt.value) {
+    	if (audioTextOpening) {
     	speech7?.speak(audioTextOpening)
-    	}
+    		}
+        }
     	if ("Closing" == evt.value) {
+        	if (audioTextClosing) {
         	speech7?.speak(audioTextClosing)
-	  	}
+	  		}
+        }
 	}
 }
 def alertHandler(evt) {
@@ -1123,21 +1145,27 @@ def profilesDescr() {
     text
 }
 
+def Configured() {
+	def text = "Tap here to choose audio devices"
+    if (synthDevice) {
+    	text = "Configured"
+        }
+	}
 def settingsDescr() {
-    def text = "General settings have not been defined. Tap here to configure settings"
+    def text = "Tap here to configure settings"
 	
     if (ShowTokens) {
 			text = "Attention: Security Tokens are displayed in the Live Logs section of the IDE. Tap here to change this and other general settings"         
 	}
-    else {
-    	if (debug || ShowLicense) {c
-    		text = "Logging is enabled; details are displayed in the Live Logs section of the IDE. Tap here to change this and other general settings"
-    	}
-    	if (ShowLicense) {
-    		text = "License information is displayed on the next page. Tap here to change this and other general settings"
-    	}
-	}
-    
+    if (debug) {
+    	text = "Logging is enabled, view results in the IDE Live Logs"
+        }
+    else if (ShowLicense) {c
+    	text = "License information is displayed on the next page"
+        }
+    if (debug && ShowLicense) {c
+    		text = "Logging and Show License are enabled; details are displayed in the Live Logs section of the IDE. Tap here to change this and other general settings." 
+        }
     text
 }
 
