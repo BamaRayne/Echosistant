@@ -887,7 +887,7 @@ private timeIntervalLabel() {
 ***********************************************************************************************************************/
 private void sendText(number, message) {
     if (sms) {
-        def phones = sms.split("\\;")
+        def phones = sms.split("\\,")
         for (phone in phones) {
             sendSms(phone, message)
         }
@@ -1273,24 +1273,16 @@ def MsgProDescr() {
 }
 def completeSMS(){
     def result = ""
-    if (sendContactText || sms || push || notify) {
+    if (sendContactText || sms || push) {
     	result = "complete"	
     }
     result
 }
 def SMSDescr() {
-    def text = "Tap here to select contact(s)"
+    def text = "Tap here to configure message(s)"
 	
-    if (sendContactText || sms || push || notify) {
-//        if (sendContactText && !sms) {   
+    if (sendContactText || sms || push) {
             text = "Configured" //"Using this contact(s): ${recipients}. Tap to change" 
-//        }
-//        if (!sendContactText && sms) {
-//            text = "Configured" //"Using these phone number(s): ${sms}. Tap to change" 
-//        }
-//        if (sendContactText && sms) {
-//            text = "Configured" //"Using these contacts: ${recipients} AND ${sms}. Tap to change" 
-//        }
      }
     text
 }
