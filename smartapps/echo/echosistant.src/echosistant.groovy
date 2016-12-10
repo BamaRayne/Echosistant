@@ -4,7 +4,8 @@
  *
  *		12/09/2016		Version 3.0.1	Major overhaul of UI and process (in progress!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!)
  *		??/??/2016		Version 3.0.0	Additions: Msg to Notify Tab in Mobile App, Push Msg, Complete Reconfigure of Profile Build, More Control of Dimmers, and Switches,
- *										Control of Thermostats, Doors, and Locks. Common speech device/room commands. Status Feedback. Activity Alerts Page
+ *										Control of Thermostats, Doors, and Locks. Common speech device/room commands. Status Feedback. Activity Alerts Page, Toggle control 
+ *										of locks and switches, Flash option for switches.
  *		11/23/2016		Version 2.0.1	Bug fix: Pre-message not showing correctly.  Set to default false.
  *		11/22/2016		Version 2.0.0	CoRE integration, Cont Commands per profile, Repeat Message per profile, one app and many bug fixes.
  *		11/20/2016		Version 1.2.0	Fixes: SMS&Push not working, calling multiple profiles at initialize. Additions: Run Routines and Switch enhancements
@@ -316,9 +317,10 @@ page name: "DevPro"
                 if (actions) {
                     actions.sort()
                     if (parent.debug) log.info actions
-                    input "runRoutine", "enum", title: "Select a Routine(s) to execute", required: false, options: actions, multiple: true,
-                        image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Routines.png"
-            	}
+            	}                
+                input "runRoutine", "enum", title: "Select a Routine(s) to execute", required: false, options: actions, multiple: true,
+                image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Routines.png"
+
             }
         }
     }
@@ -330,7 +332,7 @@ page name: "devicesControl"
                         if (switches) input "switchCmd", "enum", title: "What do you want to do with these switches?", options:["on":"Turn on","off":"Turn off","toggle":"Toggle"], multiple: false, required: false, submitOnChange:true
                         if (switchCmd) input "otherSwitch", "capability.switch", title: "...and these other switches?", multiple: true, required: false, submitOnChange: true
                         if (otherSwitch) input "otherSwitchCmd", "enum", title: "What do you want to do with these other switches?", options: ["on":"Turn on","off":"Turn off","toggle":"Toggle"], multiple: false, required: false, submitOnChange: true
-                    }
+                    	}
                 section ("Dimmers", hideWhenEmpty: true){
                     input "dimmers", "capability.switchLevel", title: "Control These Dimmers...", multiple: true, required: false , submitOnChange:true
                         if (dimmers) input "dimmersCMD", "enum", title: "Command To Send To Dimmers", options:["on":"Turn on","off":"Turn off","set":"Set level"], multiple: false, required: false, submitOnChange:true
@@ -339,7 +341,16 @@ page name: "devicesControl"
                         if (otherDimmers) input "otherDimmersCMD", "enum", title: "Command To Send To Dimmers", options:["on":"Turn on","off":"Turn off","set":"Set level"], multiple: false, required: false, submitOnChange:true
                         if (otherDimmersCMD == "set" && otherDimmers) input "otherDimmersLVL", "number", title: "Dimmers Level", description: "Set dimmer level", required: false
                 }
-                section("Turn on these switches after a delay of..."){
+                section ("Flash These Switches") {
+					input "flashSwitches", "capability.switch", title: "These switches", multiple: true, required: false, submitOnChange:true
+					if (flashSwitches) {
+                    input "numFlashes", "number", title: "This number of times (default 3)", required: false, submitOnChange:true
+					input "onFor", "number", title: "On for (default 1 second)", required: false, submitOnChange:true
+					input "offFor", "number", title: "Off for (default 1 second)", required: false, submitOnChange:true
+						}
+                    }
+                    
+                section("Turn on these switches and dimmers after a delay of..."){
                     input "sSecondsOn", "number", title: "Seconds?", defaultValue: none, required: false
                 }
                 section("And then turn them off after a delay of..."){
@@ -540,7 +551,6 @@ def installed() {
     if (debug) log.trace "STappID = '${app.id}' , STtoken = '${state.accessToken}'"
     alertHandler(evt)
 	initialize()
-    
 }
 def updated() { 
 	if (debug) log.debug "Updated with settings: ${settings}"
@@ -571,7 +581,9 @@ def initialize() {
         state.lastMessage = null
     	state.lastTime  = null
      }
+
 }
+
 /************************************************************************************************************
 		Subscriptions
 ************************************************************************************************************/
@@ -748,7 +760,14 @@ def profileEvaluate(params) {
                         state.lastTime = new Date(now()).format("h:mm aa", location.timeZone)
            					if (parent.debug) log.debug "Only sending sms because disable voice message is ON"  
 				}
+                if (flashSwitches) {
+                flashLights()
+                }
                 deviceControl()
+                if (runRoutine) {
+                location.helloHome?.execute(settings.runRoutine)
+                }
+                
         }
 }
 
@@ -863,25 +882,12 @@ private timeIntervalLabel() {
 	else if (starting && endingX == "Sunset") result = hhmm(starting) + " to Sunset" + offset(endSunsetOffset)
 	else if (starting && ending) result = hhmm(starting) + " to " + hhmm(ending, "h:mm a z")
 }
-private getTimeLabel(start, end){
-	def timeLabel = "Tap to set"
-    if(start && end){
-    	timeLabel = "Between" + " " + parseDate(start, "", "h:mm a") + " "  + "and" + " " +  parseDate(end, "", "h:mm a")
-    }
-    else if (start) {
-		timeLabel = "Start at" + " " + parseDate(start, "",  "h:mm a")
-    }
-    else if(end){
-    timeLabel = "End at" + parseDate(end, "", "h:mm a")
-    }
-	timeLabel	
-}
 /***********************************************************************************************************************
     SMS HANDLER
 ***********************************************************************************************************************/
 private void sendText(number, message) {
     if (sms) {
-        def phones = sms.split("\\;")
+        def phones = sms.split("\\,")
         for (phone in phones) {
             sendSms(phone, message)
         }
@@ -895,15 +901,15 @@ private void sendtxt(message) {
     if (push) {
         sendPush message
     } 
-	if (notify) {
+    if (notify) {
         sendNotificationEvent(message)
     }
     if (sms) {
-        sendText(sms, message)		
-    }
+        sendText(sms, message)
+	}
 }
 /************************************************************************************************************
-   Switch/Dimmer Handlers
+   Switch/Dimmer/Toggle Handlers
 ************************************************************************************************************/
 
 def switchOnHandler(evt) {
@@ -934,7 +940,7 @@ def turnOffSwitch() {
 private deviceControl() {
         if (intent == childName){
             if (sSecondsOn) {
-            	if (parent.debug) log.debug "Turn switches on in '${sSecondsOn}' seconds"
+            if (parent.debug) log.debug "Turn switches on in '${sSecondsOn}' seconds"
             	runIn(sSecondsOn,turnOnSwitch)
                 runIn(sSecondsOn,turnOnOtherSwitch)
                 runIn(sSecondsOn,turnOnDimmers)
@@ -948,7 +954,7 @@ private deviceControl() {
 	           		switches?.off()
                     }
                 if (switchCmd == "toggle") {
-                	toggle()
+                  	toggle()
                     }
           	if (otherSwitchCmd == "on") {
             	otherSwitch?.on()
@@ -984,16 +990,62 @@ def toggle() {
 	if (switches?.currentValue('switch').contains('on')) {
 		switches?.off()
 	}
-	else if (switches?.currentValue('switch').contains('off')) {
+	else if  (switches?.currentValue('switch').contains('off')) {
 		switches?.on()
 	}
+	if (otherSwitch?.currentValue('switch').contains('on')) {
+		otherSwitch?.off()
+	}
+	else if (otherSwitch?.currentValue('switch').contains('off')) {
+		otherSwitch?.on()
+	}
+    
 	else if (lock?.currentValue('lock').contains('locked')) {
 		lock?.unlock()
 	}
 	else {
 		devices.on()
 	}
-} 
+}
+/************************************************************************************************************
+   Flashing Lights Handler
+************************************************************************************************************/
+private flashLights() {
+	def doFlash = true
+	def onFor = onFor ?: 60000/60
+	def offFor = offFor ?: 60000/60
+	def numFlashes = numFlashes ?: 3
+	if (state.lastActivated) {
+		def elapsed = now() - state.lastActivated
+		def sequenceTime = (numFlashes + 1) * (onFor + offFor)
+		doFlash = elapsed > sequenceTime
+	}
+	if (doFlash) {
+		state.lastActivated = now()
+		def initialActionOn = flashSwitches.collect{it.currentflashSwitch != "on"}
+		def delay = 0L
+		numFlashes.times {
+			flashSwitches.eachWithIndex {s, i ->
+				if (initialActionOn[i]) {
+					s.on(delay: delay)
+				}
+				else {
+					s.off(delay:delay)
+				}
+			}
+			delay += onFor
+			flashSwitches.eachWithIndex {s, i ->
+				if (initialActionOn[i]) {
+					s.off(delay: delay)
+				}
+				else {
+					s.on(delay:delay)
+				}
+			}
+			delay += offFor
+		}
+	}
+}
 /************************************************************************************************************
    Alerts Handler
 ************************************************************************************************************/
@@ -1221,24 +1273,16 @@ def MsgProDescr() {
 }
 def completeSMS(){
     def result = ""
-    if (sendContactText || sms || push || notify) {
+    if (sendContactText || sms || push) {
     	result = "complete"	
     }
     result
 }
 def SMSDescr() {
-    def text = "Tap here to select contact(s)"
+    def text = "Tap here to configure message(s)"
 	
-    if (sendContactText || sms || push || notify) {
-//        if (sendContactText && !sms) {   
+    if (sendContactText || sms || push) {
             text = "Configured" //"Using this contact(s): ${recipients}. Tap to change" 
-//        }
-//        if (!sendContactText && sms) {
-//            text = "Configured" //"Using these phone number(s): ${sms}. Tap to change" 
-//        }
-//        if (sendContactText && sms) {
-//            text = "Configured" //"Using these contacts: ${recipients} AND ${sms}. Tap to change" 
-//        }
      }
     text
 }
@@ -1256,7 +1300,6 @@ def completeDevCon() {
     }
     result
 }
-
 def completeAlertPro(){
     def result = ""
     if (TheSwitch || TheContact || TheLock || TheMotion || ThePresence || TheWater || TheGarage) {
@@ -1284,10 +1327,6 @@ def MsgConfigDescr() {
 	if (MsgOpt) {
     	text = "Configured with Message Options"
         }
-//    if (PreMsg || outputTxt) {
-//        if (PreMsg && outputTxt) {   
-//            text = "Current configuration includes custom Pre-Message and Alexa response. Tap to change" 
-//        }
         if (getDayOk()==false || getModeOk()==false || getTimeOk()==false) {
             text = "Configured with restrictions. Tap to change" 
         }
