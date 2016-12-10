@@ -1,8 +1,8 @@
 /*
  * EchoSistant - The Ultimate Voice and Text Messaging Assistant Using Your Alexa Enabled Device.
  *		
- *
- *		12/09/2016		Version 3.0.1	Major overhaul of UI and process (in progress!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!)
+ *		12/09/2016		Version 3.0.2	Major overhaul of UI and process (cotnt'd)
+ *		12/09/2016		Version 3.0.1	Major overhaul of UI and process (in progress)
  *		??/??/2016		Version 3.0.0	Additions: Msg to Notify Tab in Mobile App, Push Msg, Complete Reconfigure of Profile Build, More Control of Dimmers, and Switches,
  *										Control of Thermostats, Doors, and Locks. Common speech device/room commands. Status Feedback. Activity Alerts Page, Toggle control 
  *										of locks and switches, Flash option for switches.
@@ -69,9 +69,9 @@ preferences {
     page name: "pageMain"
     //Parent Pages    
     page name: "mainParentPage"
-    	page name: "Profiles"
+    	page name: "profiles"
     	page name: "about"
-    	page name: "Tokens"
+    	page name: "tokens"
     		page name: "pageConfirmation"
     		page name: "pageReset"
         page name: "devicesControlMain"
@@ -95,131 +95,130 @@ def pageMain() { if (!parent) mainParentPage() else mainProfilePage() }
 /***********************************************************************************************************************
     PARENT UI CONFIGURATION
 ***********************************************************************************************************************/
-def mainParentPage() {	
-	
-        def pageProperties = [
-        name:       "mainParentPage",
-        title:      "",
-        nextPage:   null,
-        install:    true,
-        uninstall:  false
-    ]
-   return dynamicPage(pageProperties) {
-        //go to Parent set up
-        section ("") {
-        	href "Profiles", title: "Profiles", description: profilesDescr(), state: completeProfiles(),
-            	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Config.png"    
-			href "about", title: "Settings and Security", description: settingsDescr(), state: completeSettings(),
-            	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_About.png"
-            href title: "EchoSistant Support", description: supportDescr() , state: completeProfiles(),
-            	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/app-Echosistant.png",
-            	url: "http://thingsthataresmart.wiki/index.php?title=EchoSistant"    
-            }
-       	section ("") {
-            //label title:"              Rename Echosistant", required:false, defaultValue: ""  
-			paragraph "${textCopyright()}"
-            }
-     }
-}
-def Profiles() {
-        dynamicPage (name: "Profiles", title: "", install: false, uninstall: false) {
-        if (childApps.size()) { 
-            	section(childApps.size()==1 ? "One Profile configured" : childApps.size() + " Profiles configured" )
-        }
-        section("Create New Profiles"){
-        		app(appName: "EchoSistant", namespace: "Echo", multiple: true, description: "Tap Here to Create a New Profile...")
-        } 
-    } 
-}
-def about(){
-	dynamicPage(name: "about", uninstall: true) {
-         	section ("Directions, How-to's, and Troubleshooting") { 
-			href url:"http://thingsthataresmart.wiki/index.php?title=EchoSistant", title: "EchoSistant Wiki", description: none
-        	}
-			section("Debugging") {
-            	input "debug", "bool", title: "Enable Debug Logging", default: false, submitOnChange: true 
-            	if (debug) log.info "${textAppName()}\n${textVersion()}"
-            	}
-			section ("Apache License"){
-				input "ShowLicense", "bool", title: "Show License", default: false, submitOnChange: true
-				def msg = textLicense()
-					if (ShowLicense) paragraph "${msg}"
-				}
-			section ("Security Tokens - FOR PARENT APP ONLY"){
-            	paragraph ("Log into the IDE on your computer and navigate to the Live Logs tab. Leave that window open, come back here, and open this section")
-                input "ShowTokens", "bool", title: "Show Security Tokens", default: false, submitOnChange: true
-                if (ShowTokens) paragraph "The Security Tokens are now displayed in the Live Logs section of the IDE"
-            	def msg = state.accessToken != null ? state.accessToken : "Could not create Access Token. OAuth may not be enabled. "+
-				"Go to the SmartApp IDE settings to enable OAuth."	
-                if (ShowTokens) log.info "STappID = '${app.id}' , STtoken = '${state.accessToken}'"
-                if (ShowTokens) paragraph "Access token:\n${msg}\n\nApplication ID:\n${app.id}"
-				}
-			section ("Revoke/Renew Access Token & Application ID"){
-				href "Tokens", title: "Revoke/Reset Security Access Token", description: none
-				}
-			section ("EchoSistant Integrations.... Apps and Devices"){
-                input "showIntegration", "bool", title: "Enable Integrations", default: false, submitOnChange: true
-					if(showIntegration) {
-                        href"CoRE", title: "Integrate CoRe...",
-            			image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_CoRE.png"
-                        href "devicesControlMain", title: "Control These Devices...", description: DevProDescr() , state: completeDevPro(),
-        				image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_devices.png"            			
-                    	input "cLevel", "number", title: "Lights (1-100%)...", defaultValue: none, required: false
-                        input "cLevelOther", "number", title: " (1-10)...", defaultValue: none, required: false
-                        input "cTemperature", "number", title: "Other (1-10)...", defaultValue: none, required: false
-                     }
+page name: "mainParentPage"
+    def mainParentPage() {	
+       dynamicPage(name: "mainParentPage", title:"", install: true, uninstall:false) {
+            //go to Parent set up
+            section ("") {
+                href "profiles", title: "Profiles", description: profilesDescr(), state: completeProfiles(),
+                    image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Config.png"    
+                href "about", title: "Settings and Security", description: settingsDescr(), state: completeSettings(),
+                    image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_About.png"
+                href title: "EchoSistant Support", description: supportDescr() , state: completeProfiles(),
+                    image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/app-Echosistant.png",
+                    url: "http://thingsthataresmart.wiki/index.php?title=EchoSistant"    
                 }
-                section("Tap below to remove the ${textAppName()} application.  This will remove ALL Profiles and the App from the SmartThings mobile App."){}
-			}
-		}      
-def Tokens(){
-		dynamicPage(name: "Tokens", title: "Security Tokens", uninstall: false){
-			section(""){
-				paragraph "Tap below to Reset/Renew the Security Token. You must log in to the IDE and open the Live Logs tab before tapping here. "+
-				"Copy and paste the displayed tokens into your Amazon Lambda Code."
-				if (!state.accessToken) {
-                	OAuthToken()
-					paragraph "You must enable OAuth via the IDE to setup this app"
-					}
-            	}
-					def msg = state.accessToken != null ? state.accessToken : "Could not create Access Token. "+
-    				"OAuth may not be enabled. Go to the SmartApp IDE settings to enable OAuth." 
-					log.trace "STappID = '${app.id}' , STtoken = '${state.accessToken}'"
-			section ("Reset Access Token / Application ID"){
-				href "pageConfirmation", title: "Reset Access Token and Application ID", description: none
-				}
-			}
-		} 
-def pageConfirmation(){
-		dynamicPage(name: "pageConfirmation", title: "Reset/Renew Access Token Confirmation", uninstall: false){
-			section {
-				href "pageReset", title: "Reset/Renew Access Token", description: "Tap here to confirm action - READ WARNING BELOW"
-				paragraph "PLEASE CONFIRM! By resetting the access token you will disable the ability to interface this SmartApp with your Amazon Echo."+
-            	"You will need to copy the new access token to your Amazon Lambda code to re-enable access." +
-				"Tap below to go back to the main menu with out resetting the token. You may also tap Done above."
-				}
-			section(" "){
-        		href "mainParentPage", title: "Cancel And Go Back To Main Menu", description: none 
-       			}
-			}
-		}
-def pageReset(){
-		dynamicPage(name: "pageReset", title: "Access Token Reset", uninstall: false){
-			section{
-				revokeAccessToken()
-				state.accessToken = null
-				OAuthToken()
-				def msg = state.accessToken != null ? "New access token:\n${state.accessToken}\n\n" : "Could not reset Access Token."+
-            	"OAuth may not be enabled. Go to the SmartApp IDE settings to enable OAuth."
-				paragraph "${msg}"
-                paragraph "The new access token and app ID are now displayed in the Live Logs tab of the IDE."
-                log.info "STappID = '${app.id}' , STtoken = '${state.accessToken}'"
-			}
-			section(" "){ 
-        		href "mainParentPage", title: "Tap Here To Go Back To Main Menu", description: none 
-        		}
-			}
-		} 
+            section ("") {
+                //label title:"              Rename Echosistant", required:false, defaultValue: ""  
+                paragraph "${textCopyright()}"
+                }
+         }
+    }
+page name: "profiles"
+    def profiles() {
+            dynamicPage (name: "profiles", title: "", install: false, uninstall: false) {
+            if (childApps.size()) { 
+                    section(childApps.size()==1 ? "One Profile configured" : childApps.size() + " Profiles configured" )
+            }
+            section("Create New Profiles"){
+                    app(appName: "EchoSistant", namespace: "Echo", multiple: true, description: "Tap Here to Create a New Profile...")
+            } 
+        } 
+    }
+
+    def about(){
+        dynamicPage(name: "about", uninstall: true) {
+                section ("Directions, How-to's, and Troubleshooting") { 
+                href url:"http://thingsthataresmart.wiki/index.php?title=EchoSistant", title: "EchoSistant Wiki", description: none
+                }
+                section("Debugging") {
+                    input "debug", "bool", title: "Enable Debug Logging", default: false, submitOnChange: true 
+                    if (debug) log.info "${textAppName()}\n${textVersion()}"
+                    }
+                section ("Apache License"){
+                    input "ShowLicense", "bool", title: "Show License", default: false, submitOnChange: true
+                    def msg = textLicense()
+                        if (ShowLicense) paragraph "${msg}"
+                    }
+                section ("Security Tokens"){
+                    paragraph ("Log into the IDE on your computer and navigate to the Live Logs tab. Leave that window open, come back here, and open this section")
+                    input "ShowTokens", "bool", title: "Show Security Tokens", default: false, submitOnChange: true
+                    if (ShowTokens) paragraph "The Security Tokens are now displayed in the Live Logs section of the IDE"
+                    def msg = state.accessToken != null ? state.accessToken : "Could not create Access Token. OAuth may not be enabled. "+
+                    "Go to the SmartApp IDE settings to enable OAuth."	
+                    if (ShowTokens) log.info "STappID = '${app.id}' , STtoken = '${state.accessToken}'"
+                    if (ShowTokens) paragraph "Access token:\n${msg}\n\nApplication ID:\n${app.id}"
+                    }
+                section ("Revoke/Renew Access Token & Application ID"){
+                    href "tokens", title: "Revoke/Reset Security Access Token", description: none
+                    }
+                section ("EchoSistant Integrations.... Apps and Devices"){
+                    input "showIntegration", "bool", title: "Enable Integrations", default: false, submitOnChange: true
+                        if(showIntegration) {
+                            href"CoRE", title: "Integrate CoRe...",
+                            	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_CoRE.png"
+                            href "devicesControlMain", title: "Control These Devices...", description: DevProDescr() , state: completeDevPro(),
+                            	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_devices.png"            			
+                    		paragraph ("Define increments for the devices that Alexa controls directly")
+                            input "cLevel", "number", title: "Alexa Adjusts Light Level by (1-100%)...", defaultValue: 30, required: false
+                            input "cLevelOther", "number", title: "Alexa adjusts other switches by (1-10)...", defaultValue: 2, required: false
+                            input "cTemperature", "number", title: "Alexa adjusts temperature by (1-10 degrees)...", defaultValue: 1, required: false
+                         }
+                    }
+                    section("Tap below to remove the ${textAppName()} application.  This will remove ALL Profiles and the App from the SmartThings mobile App."){}
+                }
+	}      
+page name: "tokens"
+    def tokens(){
+            dynamicPage(name: "tokens", title: "Security Tokens", uninstall: false){
+                section(""){
+                    paragraph "Tap below to Reset/Renew the Security Token. You must log in to the IDE and open the Live Logs tab before tapping here. "+
+                    "Copy and paste the displayed tokens into your Amazon Lambda Code."
+                    if (!state.accessToken) {
+                        OAuthToken()
+                        paragraph "You must enable OAuth via the IDE to setup this app"
+                        }
+                    }
+                        def msg = state.accessToken != null ? state.accessToken : "Could not create Access Token. "+
+                        "OAuth may not be enabled. Go to the SmartApp IDE settings to enable OAuth." 
+                        log.trace "STappID = '${app.id}' , STtoken = '${state.accessToken}'"
+                section ("Reset Access Token / Application ID"){
+                    href "pageConfirmation", title: "Reset Access Token and Application ID", description: none
+                    }
+                }
+            } 
+page name: "pageConfirmation"
+    def pageConfirmation(){
+            dynamicPage(name: "pageConfirmation", title: "Reset/Renew Access Token Confirmation", uninstall: false){
+                section {
+                    href "pageReset", title: "Reset/Renew Access Token", description: "Tap here to confirm action - READ WARNING BELOW"
+                    paragraph "PLEASE CONFIRM! By resetting the access token you will disable the ability to interface this SmartApp with your Amazon Echo."+
+                    "You will need to copy the new access token to your Amazon Lambda code to re-enable access." +
+                    "Tap below to go back to the main menu with out resetting the token. You may also tap Done above."
+                    }
+                section(" "){
+                    href "mainParentPage", title: "Cancel And Go Back To Main Menu", description: none 
+                    }
+                }
+            }
+page name: "pageReset"
+    def pageReset(){
+            dynamicPage(name: "pageReset", title: "Access Token Reset", uninstall: false){
+                section{
+                    revokeAccessToken()
+                    state.accessToken = null
+                    OAuthToken()
+                    def msg = state.accessToken != null ? "New access token:\n${state.accessToken}\n\n" : "Could not reset Access Token."+
+                    "OAuth may not be enabled. Go to the SmartApp IDE settings to enable OAuth."
+                    paragraph "${msg}"
+                    paragraph "The new access token and app ID are now displayed in the Live Logs tab of the IDE."
+                    log.info "STappID = '${app.id}' , STtoken = '${state.accessToken}'"
+                }
+                section(" "){ 
+                    href "mainParentPage", title: "Tap Here To Go Back To Main Menu", description: none 
+                    }
+                }
+            } 
 page name: "devicesControlMain"    
     def devicesControlMain(){
         dynamicPage(name: "devicesControlMain", title: "Select Devices That Alexa Can Control",install: false, uninstall: false) {
@@ -240,7 +239,6 @@ page name: "devicesControlMain"
             }
         }
     }    
-
 /***********************************************************************************************************************
     PROFILE UI CONFIGURATION
 ***********************************************************************************************************************/
@@ -252,9 +250,9 @@ def mainProfilePage() {
    				image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Media.png" 
             href "SMS", title: "Send Text & Push Messages...", description: SMSDescr() , state: completeSMS(),
             	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Text.png" 
-  			href "DevPro", title: "Run Routines and Control Devices...", description: DevProDescr(), state: completeDevPro(),
+  			href "DevPro", title: "Execute Actions when Profile runs...", description: DevProDescr(), state: completeDevPro(),
             	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_devices.png"            			
-            href "Alerts", title: "Create Event Alert Profiles...",description: AlertProDescr() , state: completeAlertPro(),
+            href "Alerts", title: "Create Event Alerts...",description: AlertProDescr() , state: completeAlertPro(),
             	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/echosistant_About.png"
            	href "MsgConfig", title: "With These Global Message Options...", description: MsgConfigDescr() , state: completeMsgConfig(),
             	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Extra.png" 
@@ -309,8 +307,8 @@ page name: "SMS"
 page name: "DevPro"
     def DevPro(){
         dynamicPage(name: "DevPro", uninstall: false) {
-            section ("Run Routines and Control Devices when Profile Executes") {
-                href "devicesControl", title: "Control Device actions when Profile executes...", description: DevConDescr() , state: completeDevCon(),
+            section ("Trigger these lights and/or execute these routines when the Profile runs...") {
+                href "devicesControl", title: "Select switches...", description: DevConDescr() , state: completeDevCon(),
                     image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_devices.png"
                 image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Routines.png"
                 def actions = location.helloHome?.getPhrases()*.label 
@@ -318,7 +316,7 @@ page name: "DevPro"
                     actions.sort()
                     if (parent.debug) log.info actions
             	}                
-                input "runRoutine", "enum", title: "Select a Routine(s) to execute", required: false, options: actions, multiple: true,
+                input "runRoutine", "enum", title: "Select Routine(s)...", required: false, options: actions, multiple: true, description: runRoutineDescr(),
                 image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Routines.png"
 
             }
@@ -328,13 +326,13 @@ page name: "devicesControl"
     def devicesControl(){
             dynamicPage(name: "devicesControl", title: "Select Devices to use with this profile",install: false, uninstall: false) {
                 section ("Switches", hideWhenEmpty: true){
-                    input "switches", "capability.switch", title: "Control These Switches...", multiple: true, required: false, submitOnChange: true
+                    input "switches", "capability.switch", title: "Select Switches...", multiple: true, required: false, submitOnChange: true
                         if (switches) input "switchCmd", "enum", title: "What do you want to do with these switches?", options:["on":"Turn on","off":"Turn off","toggle":"Toggle"], multiple: false, required: false, submitOnChange:true
                         if (switchCmd) input "otherSwitch", "capability.switch", title: "...and these other switches?", multiple: true, required: false, submitOnChange: true
                         if (otherSwitch) input "otherSwitchCmd", "enum", title: "What do you want to do with these other switches?", options: ["on":"Turn on","off":"Turn off","toggle":"Toggle"], multiple: false, required: false, submitOnChange: true
                     	}
                 section ("Dimmers", hideWhenEmpty: true){
-                    input "dimmers", "capability.switchLevel", title: "Control These Dimmers...", multiple: true, required: false , submitOnChange:true
+                    input "dimmers", "capability.switchLevel", title: "Select Dimmers...", multiple: true, required: false , submitOnChange:true
                         if (dimmers) input "dimmersCMD", "enum", title: "Command To Send To Dimmers", options:["on":"Turn on","off":"Turn off","set":"Set level"], multiple: false, required: false, submitOnChange:true
                         if (dimmersCMD == "set" && dimmers) input "dimmersLVL", "number", title: "Dimmers Level", description: "Set dimmer level", required: false
                         if (dimmersLVL) input "otherDimmers", "capability.switchLevel", title: "Control These Dimmers...", multiple: true, required: false , submitOnChange:true
@@ -1185,7 +1183,7 @@ def completeProfiles(){
     result
 }
 def profilesDescr() {
-    def text = "Tap here to configure settings"
+    def text = "No Profiles have been configured. Tap here to begin"
     def ch = childApps.size()     
 
     if (ch == 1) {
@@ -1230,16 +1228,17 @@ def supportDescr()  {
 	def text = "${textVersion()}\n Click to visit our Wiki Page"
 }
 def DevProDescr() {
-    def text = "Tap here to select action(s)"
+    def text = ""
 	
-    if (switches || dimmers || runRoutine
-      ) { 
+    if (switches || dimmers || runRoutine) { 
             text = "Configured" //"These devices will execute: ${switches}, ${dimmers}. Tap to change device(s)" 
     }
     text
 }
+
+
 def DevConDescr() {
-	def text = "Tap here to select device(s)"
+	def text = ""
      if (switches || dimmers)
      { 
             text = "Configured" //"These devices will execute: ${switches}, ${dimmers}. Tap to change device(s)"
@@ -1256,7 +1255,7 @@ def completeMsgPro(){
     result
 }
 def MsgProDescr() {
-    def text = "Tap here to select device(s)"
+    def text = ""
 	
     if (synthDevice || sonosDevice) {
         if (synthDevice && !sonosDevice) {   
@@ -1279,7 +1278,7 @@ def completeSMS(){
     result
 }
 def SMSDescr() {
-    def text = "Tap here to configure message(s)"
+    def text = ""
 	
     if (sendContactText || sms || push) {
             text = "Configured" //"Using this contact(s): ${recipients}. Tap to change" 
@@ -1308,7 +1307,7 @@ def completeAlertPro(){
     result
 }
 def AlertProDescr() {
-    def text = "Tap here to select device(s)"
+    def text = ""
 	
     if (TheSwitch || TheContact || TheLock || TheMotion || ThePresence || TheWater || TheGarage) {
 			text = "Configured" //"These devices give alerts: ${TheSwitch},  ${TheContact},  ${TheLock}. Tap to change." 
@@ -1330,5 +1329,14 @@ def MsgConfigDescr() {
         if (getDayOk()==false || getModeOk()==false || getTimeOk()==false) {
             text = "Configured with restrictions. Tap to change" 
         }
+    text
+}
+
+def runRoutineDescr() {
+    def text = ""
+	
+    if (runRoutine) { 
+            text = "Configured" //"These devices will execute: ${switches}, ${dimmers}. Tap to change device(s)" 
+    }
     text
 }
