@@ -882,19 +882,6 @@ private timeIntervalLabel() {
 	else if (starting && endingX == "Sunset") result = hhmm(starting) + " to Sunset" + offset(endSunsetOffset)
 	else if (starting && ending) result = hhmm(starting) + " to " + hhmm(ending, "h:mm a z")
 }
-private getTimeLabel(start, end){
-	def timeLabel = "Tap to set"
-    if(start && end){
-    	timeLabel = "Between" + " " + parseDate(start, "", "h:mm a") + " "  + "and" + " " +  parseDate(end, "", "h:mm a")
-    }
-    else if (start) {
-		timeLabel = "Start at" + " " + parseDate(start, "",  "h:mm a")
-    }
-    else if(end){
-    timeLabel = "End at" + parseDate(end, "", "h:mm a")
-    }
-	timeLabel	
-}
 /***********************************************************************************************************************
     SMS HANDLER
 ***********************************************************************************************************************/
@@ -914,12 +901,12 @@ private void sendtxt(message) {
     if (push) {
         sendPush message
     } 
-	if (notify) {
+    if (notify) {
         sendNotificationEvent(message)
     }
     if (sms) {
-        sendText(sms, message)		
-    }
+        sendText(sms, message)
+	}
 }
 /************************************************************************************************************
    Switch/Dimmer/Toggle Handlers
