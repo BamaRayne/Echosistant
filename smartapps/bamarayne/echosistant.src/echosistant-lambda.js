@@ -1,12 +1,14 @@
 /**
  *  EchoSistant - Lambda Code
  *
- *  Version 3.0.0 - 11/21/2016 Copyright © 2016 Jason Headley
+ *  Copyright © 2016 Jason Headley
  *  Special thanks for Michael Struck @MichaelS (Developer of AskAlexa) for allowing me
  *  to build off of his base code.  Special thanks to Keith DeLong  @N8XD for his 
  *  assistance in troubleshooting.... as I learned.....  Special thanks to Bobby
  *  @SBDOBRESCU for jumping on board and being a co-consipirator in this adventure.
- *  
+ *
+ *  Version 3.1.0 - 12/7/2016
+ *  Version 3.0.0 - 12/1/2016  Added new parent variables
  *  Version 2.0.0 - 11/20/2016  Continued Commands
  * 
  *  Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
@@ -21,95 +23,115 @@
  */
 'use strict';
 exports.handler = function( event, context ) {
+    var versionTxt = '3.1.0';
+    var versionDate= '12/7/2016';
     var https = require( 'https' );
     // Paste app code here between the breaks------------------------------------------------
-    var STappID = 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx';
-    var STtoken = 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx';
+    var STappID = '8c44d313-74d0-4f85-b4a1-97487ea74e0b';
+    var STtoken = '6ba53670-0e98-4855-87cb-0b154fa630f9';
     var url='https://graph.api.smartthings.com:443/api/smartapps/installations/' + STappID + '/' ;
-        //---------------------------------------------------------------------------------------
+    //---------------------------------------------------------------------------------------
         var cardName ="";
+        var endSession = true;
+        //var processedText;
         var stop;
         var areWeDone = false;
-        var endSession = true;
-        var processedText;
-        var process = false;
-        var intentName = event.request.intent.name;
-        var ttstext = event.request.intent.slots.ttstext.value;
-        var ttsintentname = event.request.intent.slots.ttstext.name.value;
-        var ttsTxt;
-        var speechText;
-        var outputTxt;
-        var pContCmds;
-        var cancel;
-        var no;
-     //   var repeat = "";
-console.log (event.request.type);
-if (ttstext=="stop") {
-areWeDone=true;
-output(" Stopping. Goodbye ", context, "Amazon Stop", areWeDone);
-} 
-else if (ttstext=="no") {
-areWeDone=true;
-output(" It has been my pleasure.  Goodbye ", context, "Amazon Stop", areWeDone);
-}
-else if (ttstext=="nope") {
-areWeDone=true;
-output(" It has been my pleasure.  Goodbye ", context, "Amazon Stop", areWeDone);
-}
-else if (ttstext=="no thank you") {
-areWeDone=true;
-output(" It has been my pleasure.  Goodbye ", context, "Amazon Stop", areWeDone);
-}
-else if (ttstext=="no we're done") {
-areWeDone=true;
-output(" It has been my pleasure.  Goodbye ", context, "Amazon Stop", areWeDone);
-}
-else if (ttstext=="no we're good") {
-areWeDone=true;
-output(" It has been my pleasure.  Goodbye ", context, "Amazon Stop", areWeDone);
-}
-else if (ttstext=="no I'm done") {
-areWeDone=true;
-output(" It has been my pleasure.  Goodbye ", context, "Amazon Stop", areWeDone);
-}
-else if (ttstext=="no thanks") {
-areWeDone=true;
-output(" It has been my pleasure.  Goodbye ", context, "Amazon Stop", areWeDone);
-}
-else if (ttstext=="cancel") {
-areWeDone=true;
-output(" Cancelling. Goodbye ", context, "Amazon Stop", areWeDone);
-}
-else if (ttstext=="yes") {
-        areWeDone=false;    
-    output("please continue...", context, areWeDone);
-}
-else if (ttstext=="okay") {
-        areWeDone=false;
-    output("please continue...", context, areWeDone);
-}
-else if (ttstext=="yeah") {
-        areWeDone=false;
-    output("please continue...", context, areWeDone);
-}
-else if (ttstext=="sure") {
-        areWeDone=false;
-    output("please continue...", context, areWeDone);
-}
-else if (ttstext === "repeat"+"last"+"message") {
-                url += 't?ttstext=' + ttstext + '&intentName=' + intentName;
-                process = true;
-                areWeDone = false;
-}
-else if (intentName) {
-                url += 't?ttstext=' + ttstext + '&intentName=' + intentName;
-                process = true;
-}
-if (!process) {
-areWeDone=true;
-output("I am not sure what you are asking. Please try again", context, areWeDone); 
-}
-else {
+    //Get SmartThings parameters
+        var beginURL = url + 'b?versionTxt=' + versionTxt + '&versionDate=' + versionDate;
+        https.get( beginURL, function( response ) {
+        response.on( 'data', function( data ) {
+            var startJSON = JSON.parse(data);
+            var contOptions = startJSON.pContinue;
+            var pName = startJSON.pMain;
+            
+            //if (startJSON.error) { output("There was an error. If this continues to happen, please reach out for help", context, "Lambda Error", endSession, pName); }
+            //console.log(startJSON.error); 
+
+            if (startJSON.error === "invalid_token" || startJSON.type === "AccessDenied") {
+                output("There was an error accessing the SmartThings cloud environment. Please check your security token and application ID and try again. ", context, "Lambda Error", endSession, pName); 
+            }
+            else if (event.request.type == "IntentRequest") {
+                var process = false;
+                var intentName = event.request.intent.name;
+                if (intentName === "main") {
+                    var pCommand = event.request.intent.slots.pCommand.value;
+                    var pProfile = event.request.intent.slots.pProfile.value;
+                    var pNum = event.request.intent.slots.pNum.value;
+                    var pDevice = event.request.intent.slots.pDevice.value;
+                    url += 'c?pDevice=' + pDevice + '&pCommand=' + pCommand + '&pNum=' + pNum + '&pProfile=' + pProfile; 
+                    process = true;
+                    cardName = "EchoSistant Control";
+                }
+                else if (intentName != "main") {
+                    var ttstext = event.request.intent.slots.ttstext.value;
+                    var ttsintentname = event.request.intent.slots.ttstext.name.value;
+                    url += 't?ttstext=' + ttstext + '&ttsintentname=' + ttsintentname + '&intentName=' + intentName;
+                    process = true;
+                    cardName = "EchoSistant Free Text";
+                    
+                    if (ttstext =="stop") {
+                        areWeDone=true;
+                        output(" Stopping. Goodbye ", context, "Amazon Stop", areWeDone);
+                    } 
+                    else if (ttstext=="no") {
+                    areWeDone=true;
+                    output(" It has been my pleasure.  Goodbye ", context, "Amazon Stop", areWeDone);
+                    }
+                    else if (ttstext=="nope") {
+                    areWeDone=true;
+                    output(" It has been my pleasure.  Goodbye ", context, "Amazon Stop", areWeDone);
+                    }
+                    else if (ttstext=="no thank you") {
+                    areWeDone=true;
+                    output(" It has been my pleasure.  Goodbye ", context, "Amazon Stop", areWeDone);
+                    }
+                    else if (ttstext=="no we're done") {
+                    areWeDone=true;
+                    output(" It has been my pleasure.  Goodbye ", context, "Amazon Stop", areWeDone);
+                    }
+                    else if (ttstext=="no we're good") {
+                    areWeDone=true;
+                    output(" It has been my pleasure.  Goodbye ", context, "Amazon Stop", areWeDone);
+                    }
+                    else if (ttstext=="no I'm done") {
+                    areWeDone=true;
+                    output(" It has been my pleasure.  Goodbye ", context, "Amazon Stop", areWeDone);
+                    }
+                    else if (ttstext=="no thanks") {
+                    areWeDone=true;
+                    output(" It has been my pleasure.  Goodbye ", context, "Amazon Stop", areWeDone);
+                    }
+                    else if (ttstext=="cancel") {
+                    areWeDone=true;
+                    output(" Cancelling. Goodbye ", context, "Amazon Stop", areWeDone);
+                    }
+                    else if (ttstext=="yes") {
+                            areWeDone=false;    
+                        output("please continue...", context, areWeDone);
+                    }
+                    else if (ttstext=="okay") {
+                            areWeDone=false;
+                        output("please continue...", context, areWeDone);
+                    }
+                    else if (ttstext=="yeah") {
+                            areWeDone=false;
+                        output("please continue...", context, areWeDone);
+                    }
+                    else if (ttstext=="sure") {
+                            areWeDone=false;
+                        output("please continue...", context, areWeDone);
+                    }
+                    else if (ttstext === "repeat"+"last"+"message") {
+                                    url += 't?ttstext=' + ttstext + '&intentName=' + intentName;
+                                    process = true;
+                                    areWeDone = false;
+                    }
+                }
+                if (!process) {
+                    areWeDone=true;
+                    output("I am not sure what you are asking. Please try again", context, areWeDone); 
+                }
+                else {
                     url += '&access_token=' + STtoken;
                     https.get( url, function( response ) {
                     response.on( 'data', function( data ) {
@@ -125,10 +147,15 @@ else {
                         areWeDone=true;
                     }
                     output(speechText, context, cardName, areWeDone);
-                } );
-            } );
-        }
-function output( text, context ) {
+                        } );
+                    } );
+                }
+            }
+        } );
+    } );
+};
+
+function output( text, context, cardName,areWeDone) {
             var response = {
              outputSpeech: {
              type: "PlainText",
@@ -143,4 +170,3 @@ function output( text, context ) {
                     };
                     context.succeed( { response: response } );
   }
-};
