@@ -317,9 +317,10 @@ page name: "DevPro"
                 if (actions) {
                     actions.sort()
                     if (parent.debug) log.info actions
-                    input "runRoutine", "enum", title: "Select a Routine(s) to execute", required: false, options: actions, multiple: true,
-                        image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Routines.png"
-            	}
+            	}                
+                input "runRoutine", "enum", title: "Select a Routine(s) to execute", required: false, options: actions, multiple: true,
+                image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Routines.png"
+
             }
         }
     }
@@ -763,6 +764,9 @@ def profileEvaluate(params) {
                 flashLights()
                 }
                 deviceControl()
+                if (runRoutine) {
+                location.helloHome?.execute(settings.runRoutine)
+                }
                 
         }
 }
@@ -918,7 +922,7 @@ private void sendtxt(message) {
     }
 }
 /************************************************************************************************************
-   Switch/Dimmer Handlers
+   Switch/Dimmer/Toggle Handlers
 ************************************************************************************************************/
 
 def switchOnHandler(evt) {
