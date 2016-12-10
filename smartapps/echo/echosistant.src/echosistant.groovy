@@ -71,15 +71,16 @@ preferences {
     	page name: "Profiles"
     	page name: "about"
     	page name: "Tokens"
-    	page name: "pageConfirmation"
-    	page name: "pageReset"
+    		page name: "pageConfirmation"
+    		page name: "pageReset"
+        page name: "devicesControlMain"
+
     //Profile Pages    
     page name: "mainProfilePage"
     	page name: "MsgPro"
     	page name: "SMS"
     page name: "DevPro"
     	page name: "devicesControl"
-    	page name: "devicesControlMain"
     	page name: "CoRE"    
     page name: "StaPro"
         page name: "FeedBack"
@@ -155,6 +156,16 @@ def about(){
 			section ("Revoke/Renew Access Token & Application ID"){
 				href "Tokens", title: "Revoke/Reset Security Access Token", description: none
 				}
+			section ("Allow Alexa to Control these Devices"){
+                input "showDeviceCtrl", "bool", title: "Enable Device Control", default: false, submitOnChange: true
+					if(showDeviceCtrl) {
+                		href "devicesControlMain", title: "Control These Devices...", description: DevProDescr() , state: completeDevPro(),
+            			image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_devices.png"            			
+                    	input "cLevel", "number", title: "Lights (1-100%)...", defaultValue: none, required: false
+                        input "cLevelOther", "number", title: " (1-10)...", defaultValue: none, required: false
+                        input "cTemperature", "number", title: "Other (1-10)...", defaultValue: none, required: false
+                    }            
+			}
             section("Tap below to remove the ${textAppName()} application.  This will remove ALL Profiles and the App from the SmartThings mobile App."){}
 			}
 		}      
@@ -205,7 +216,28 @@ def pageReset(){
         		href "mainParentPage", title: "Tap Here To Go Back To Main Menu", description: none 
         		}
 			}
-		} 	
+		} 
+page name: "devicesControlMain"    
+    def devicesControlMain(){
+        dynamicPage(name: "devicesControlMain", title: "Select Devices That Alexa Can Control",install: false, uninstall: false) {
+            section ("Switches", hideWhenEmpty: true){
+                input "cSwitches", "capability.switch", title: "Control These Switches...", multiple: true, required: false, submitOnChange: true
+                }
+            section ("Dimmers", hideWhenEmpty: true){
+                input "cDimmers", "capability.switchLevel", title: "Control These Dimmers...", multiple: true, required: false , submitOnChange:true
+            }
+            section ("Thermostats", hideWhenEmpty: true){
+                input "tstat", "capability.thermostat", title: "Control These Thermostat(s)...", multiple: true, required: false
+            }
+            section ("Locks", hideWhenEmpty: true){
+                input "lock", "capability.lock", title: "Control These Lock(s)...", multiple: true, required: false
+            }
+            section ("Doors", hideWhenEmpty: true){
+                input "doors", "capability.doorControl", title: "Control These Door(s)...)" , multiple: true, required: false, submitOnChange: true    
+            }
+        }
+    }    
+
 /***********************************************************************************************************************
     PROFILE UI CONFIGURATION
 ***********************************************************************************************************************/
@@ -279,8 +311,6 @@ page name: "DevPro"
             section ("Control these Devices") {
                 href "devicesControl", title: "Control Devices When Profile Executes...", description: "Tap here to configure",
                     image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_devices.png"
-                href "devicesControlMain", title: "Control Devices With Alexa Commands...", description: "Tap here to configure",
-                    image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_devices.png"
                 href "CoRE", title: "Integrate CoRe...",
                     image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_CoRE.png"
             }
@@ -311,26 +341,6 @@ page name: "devicesControl"
                 }
             }
        }        
-page name: "devicesControlMain"    
-    def devicesControlMain(){
-        dynamicPage(name: "devicesControlMain", title: "Select Devices That Alexa Can Control",install: false, uninstall: false) {
-            section ("Switches", hideWhenEmpty: true){
-                input "cSwitches", "capability.switch", title: "Control These Switches...", multiple: true, required: false, submitOnChange: true
-                }
-            section ("Dimmers", hideWhenEmpty: true){
-                input "cDimmers", "capability.switchLevel", title: "Control These Dimmers...", multiple: true, required: false , submitOnChange:true
-            }
-            section ("Thermostats", hideWhenEmpty: true){
-                input "tstat", "capability.thermostat", title: "Control These Thermostat(s)...", multiple: true, required: false
-            }
-            section ("Locks", hideWhenEmpty: true){
-                input "lock", "capability.lock", title: "Control These Lock(s)...", multiple: true, required: false
-            }
-            section ("Doors", hideWhenEmpty: true){
-                input "doors", "capability.doorControl", title: "Control These Door(s)...)" , multiple: true, required: false, submitOnChange: true    
-            }
-        }
-    }    
 page name: "CoRE"
     def CoRE(){
             dynamicPage(name: "CoRE", uninstall: false) {
@@ -1165,6 +1175,17 @@ def settingsDescr() {
 def supportDescr()  {
 	def text = "${textVersion()}\n Click to visit our Wiki Page"
 }
+def DevProDescr() {
+    def text = "Tap here to select device(s)"
+	
+    if (switches || dimmers) { 
+            text = "These devices will execute: ${switches}, ${dimmers}. Tap to change device(s)" 
+    }
+    else {
+    		text = "These other settings. Tap to change device(s)"
+    }
+    text
+}
 //go to Profile set up
 def completeMsgPro(){
     def result = ""
@@ -1218,17 +1239,6 @@ def completeDevPro(){
     	result = "complete"	
     }
     result
-}
-def DevProDescr() {
-    def text = "Tap here to select device(s)"
-	
-    if (switches || dimmers) { 
-            text = "These devices will execute: ${switches}, ${dimmers}. Tap to change device(s)" 
-    }
-    else {
-    		text = "These other settings. Tap to change device(s)"
-    }
-    text
 }
 def completeRouPro(){
     def result = ""
