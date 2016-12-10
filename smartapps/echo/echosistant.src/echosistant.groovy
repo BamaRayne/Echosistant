@@ -156,17 +156,19 @@ def about(){
 			section ("Revoke/Renew Access Token & Application ID"){
 				href "Tokens", title: "Revoke/Reset Security Access Token", description: none
 				}
-			section ("Allow Alexa to Control these Devices"){
-                input "showDeviceCtrl", "bool", title: "Enable Device Control", default: false, submitOnChange: true
-					if(showDeviceCtrl) {
-                		href "devicesControlMain", title: "Control These Devices...", description: DevProDescr() , state: completeDevPro(),
-            			image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_devices.png"            			
+			section ("EchoSistant Integrations.... Apps and Devices"){
+                input "showIntegration", "bool", title: "Enable Integrations", default: false, submitOnChange: true
+					if(showIntegration) {
+                        href"CoRE", title: "Integrate CoRe...",
+            			image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_CoRE.png"
+                        href "devicesControlMain", title: "Control These Devices...", description: DevProDescr() , state: completeDevPro(),
+        				image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_devices.png"            			
                     	input "cLevel", "number", title: "Lights (1-100%)...", defaultValue: none, required: false
                         input "cLevelOther", "number", title: " (1-10)...", defaultValue: none, required: false
                         input "cTemperature", "number", title: "Other (1-10)...", defaultValue: none, required: false
-                    }            
-			}
-            section("Tap below to remove the ${textAppName()} application.  This will remove ALL Profiles and the App from the SmartThings mobile App."){}
+                     }
+                }
+                section("Tap below to remove the ${textAppName()} application.  This will remove ALL Profiles and the App from the SmartThings mobile App."){}
 			}
 		}      
 def Tokens(){
@@ -249,11 +251,9 @@ def mainProfilePage() {
    				image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Media.png" 
             href "SMS", title: "Send Text & Push Messages...", description: SMSDescr() , state: completeSMS(),
             	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Text.png" 
-  			href "DevPro", title: "Control These Devices...", description: DevProDescr() , state: completeDevPro(),
+  			href "DevPro", title: "Run Routines and Control Devices...", description: DevProDescr(), state: completeDevPro(),
             	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_devices.png"            			
-            href "RouPro", title: "Execute These Routines...", description: RouProDescr() , state: completeRouPro(),
-            	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Routines.png"            			
-            href "StaPro", title: "Give status feedback And/Or Provide Event Alerts...",description: StaProDescr() , state: completeStaPro(),
+            href "Alerts", title: "Create Event Alert Profiles...",description: AlertProDescr() , state: completeAlertPro(),
             	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/echosistant_About.png"
            	href "MsgConfig", title: "With These Global Message Options...", description: MsgConfigDescr() , state: completeMsgConfig(),
             	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Extra.png" 
@@ -308,11 +308,17 @@ page name: "SMS"
 page name: "DevPro"
     def DevPro(){
         dynamicPage(name: "DevPro", uninstall: false) {
-            section ("Control these Devices") {
-                href "devicesControl", title: "Control Devices When Profile Executes...", description: "Tap here to configure",
+            section ("Run Routines and Control Devices when Profile Executes") {
+                href "devicesControl", title: "Control Device actions when Profile executes...", description: DevConDescr() , state: completeDevCon(),
                     image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_devices.png"
-                href "CoRE", title: "Integrate CoRe...",
-                    image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_CoRE.png"
+                image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Routines.png"
+                def actions = location.helloHome?.getPhrases()*.label 
+                if (actions) {
+                    actions.sort()
+                    if (parent.debug) log.info actions
+                    input "runRoutine", "enum", title: "Select a Routine(s) to execute", required: false, options: actions, multiple: true,
+                        image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Routines.png"
+            	}
             }
         }
     }
@@ -321,9 +327,9 @@ page name: "devicesControl"
             dynamicPage(name: "devicesControl", title: "Select Devices to use with this profile",install: false, uninstall: false) {
                 section ("Switches", hideWhenEmpty: true){
                     input "switches", "capability.switch", title: "Control These Switches...", multiple: true, required: false, submitOnChange: true
-                        if (switches) input "switchCmd", "enum", title: "What do you want to do with these switches?", options:["on":"Turn on","off":"Turn off"], multiple: false, required: false, submitOnChange:true
+                        if (switches) input "switchCmd", "enum", title: "What do you want to do with these switches?", options:["on":"Turn on","off":"Turn off","toggle":"Toggle"], multiple: false, required: false, submitOnChange:true
                         if (switchCmd) input "otherSwitch", "capability.switch", title: "...and these other switches?", multiple: true, required: false, submitOnChange: true
-                        if (otherSwitch) input "otherSwitchCmd", "enum", title: "What do you want to do with these other switches?", options: ["on":"Turn on", "off":"Turn off"], multiple: false, required: false, submitOnChange: true
+                        if (otherSwitch) input "otherSwitchCmd", "enum", title: "What do you want to do with these other switches?", options: ["on":"Turn on","off":"Turn off","toggle":"Toggle"], multiple: false, required: false, submitOnChange: true
                     }
                 section ("Dimmers", hideWhenEmpty: true){
                     input "dimmers", "capability.switchLevel", title: "Control These Dimmers...", multiple: true, required: false , submitOnChange:true
@@ -360,40 +366,6 @@ page name: "CoRE"
             }
         }
     }    
-page name: "RouPro"
-    def RouPro(){
-        dynamicPage(name: "RouPro", uninstall: false) {
-            section ("Execute These Routines") {
-                image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Routines.png"
-                def actions = location.helloHome?.getPhrases()*.label 
-                if (actions) {
-                    actions.sort()
-                    if (parent.debug) log.info actions
-                    input "runRoutine", "enum", title: "Select a Routine(s) to execute", required: false, options: actions, multiple: true,
-                        image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Routines.png"
-                }
-            }
-        }		
-    }
-page name: "StaPro"
-    def StaPro(){
-        dynamicPage(name: "StaPro", title: "Status Feedback and Alerts", uninstall: false) {
-            section ("") {
-            href "FeedBack", title: "Devices to get FeedBack from...", defaultValue: false, description: alertLabel ?: "Tap to set", state: alertLabel ? "complete" : null,
-                image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/echosistant_About.png"
-            href "Alerts", title: "Create Event Alerts...", defaultValue: false, submitOnChange: true, description: alertLabel ?: "Tap to set", state: alertLabel ? "complete" : null,
-                image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/echosistant_About.png"
-            }
-        }
-    }
-page name: "FeedBack"
-    def FeedBack(){
-        dynamicPage(name: "FeedBack", uninstall: false) {
-            section ("Placeholder for future development") {
-                input "ShowTime", "bool", title: "Switches and Dimmers", default: false, submitOnChange: true
-            }
-        }
-    }
 page name: "Alerts"
     def Alerts(){
         dynamicPage(name: "Alerts", uninstall: false) {
@@ -499,7 +471,7 @@ page name: "MsgConfig"
                     image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Extra.png"
                 }
             section ("Time - Audio only during these times"){
-                href "certainTime", title: "Only during a certain time", description: timeLabel ?: "Tap to set", state: timeLabel ? "complete" : null,
+                href "certainTime", title: "Only during a certain time", description: timeIntervalLabel ?: "Tap to set", state: timeIntervalLabel ? "complete" : null,
                 image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Extra.png"
                 }   
 
@@ -509,7 +481,7 @@ page name: "certainTime"
     def certainTime() {
         dynamicPage(name:"certainTime",title: "Only during a certain time", uninstall: false) {
             section() {
-                input "startingX", "enum", title: "Starting at", options: ["A specific time", "Sunrise", "Sunset"], defaultValue: "A specific time", submitOnChange: true
+                input "startingX", "enum", title: "Starting at", options: ["A specific time", "Sunrise", "Sunset"] 
                 if(startingX in [null, "A specific time"]) input "starting", "time", title: "Start time", required: false
                 else {
                     if(startingX == "Sunrise") input "startSunriseOffset", "number", range: "*..*", title: "Offset in minutes (+/-)", required: false
@@ -517,7 +489,7 @@ page name: "certainTime"
                 }
             }
             section() {
-                input "endingX", "enum", title: "Ending at", options: ["A specific time", "Sunrise", "Sunset"], defaultValue: "A specific time", submitOnChange: true
+                input "endingX", "enum", title: "Ending at", options: ["A specific time", "Sunrise", "Sunset"]
                 if(endingX in [null, "A specific time"]) input "ending", "time", title: "End time", required: false
                 else {
                     if(endingX == "Sunrise") input "endSunriseOffset", "number", range: "*..*", title: "Offset in minutes (+/-)", required: false
@@ -891,6 +863,19 @@ private timeIntervalLabel() {
 	else if (starting && endingX == "Sunset") result = hhmm(starting) + " to Sunset" + offset(endSunsetOffset)
 	else if (starting && ending) result = hhmm(starting) + " to " + hhmm(ending, "h:mm a z")
 }
+private getTimeLabel(start, end){
+	def timeLabel = "Tap to set"
+    if(start && end){
+    	timeLabel = "Between" + " " + parseDate(start, "", "h:mm a") + " "  + "and" + " " +  parseDate(end, "", "h:mm a")
+    }
+    else if (start) {
+		timeLabel = "Start at" + " " + parseDate(start, "",  "h:mm a")
+    }
+    else if(end){
+    timeLabel = "End at" + parseDate(end, "", "h:mm a")
+    }
+	timeLabel	
+}
 /***********************************************************************************************************************
     SMS HANDLER
 ***********************************************************************************************************************/
@@ -962,6 +947,9 @@ private deviceControl() {
            		else if (switchCmd == "off") {
 	           		switches?.off()
                     }
+                if (switchCmd == "toggle") {
+                	toggle()
+                    }
           	if (otherSwitchCmd == "on") {
             	otherSwitch?.on()
                 }
@@ -992,6 +980,20 @@ private deviceControl() {
 				}	
 			}
 		}
+def toggle() {
+	if (switches?.currentValue('switch').contains('on')) {
+		switches?.off()
+	}
+	else if (switches?.currentValue('switch').contains('off')) {
+		switches?.on()
+	}
+	else if (lock?.currentValue('lock').contains('locked')) {
+		lock?.unlock()
+	}
+	else {
+		devices.on()
+	}
+} 
 /************************************************************************************************************
    Alerts Handler
 ************************************************************************************************************/
@@ -1176,16 +1178,23 @@ def supportDescr()  {
 	def text = "${textVersion()}\n Click to visit our Wiki Page"
 }
 def DevProDescr() {
-    def text = "Tap here to select device(s)"
+    def text = "Tap here to select action(s)"
 	
-    if (switches || dimmers) { 
-            text = "These devices will execute: ${switches}, ${dimmers}. Tap to change device(s)" 
-    }
-    else {
-    		text = "These other settings. Tap to change device(s)"
+    if (switches || dimmers || runRoutine
+      ) { 
+            text = "Configured" //"These devices will execute: ${switches}, ${dimmers}. Tap to change device(s)" 
     }
     text
 }
+def DevConDescr() {
+	def text = "Tap here to select device(s)"
+     if (switches || dimmers)
+     { 
+            text = "Configured" //"These devices will execute: ${switches}, ${dimmers}. Tap to change device(s)"
+    text
+	}    
+}          
+     
 //go to Profile set up
 def completeMsgPro(){
     def result = ""
@@ -1199,20 +1208,20 @@ def MsgProDescr() {
 	
     if (synthDevice || sonosDevice) {
         if (synthDevice && !sonosDevice) {   
-            text = "Using: ${synthDevice}. Tap to change device(s)" 
+            text = "Configured"//"Using: ${synthDevice}. Tap to change device(s)" 
         }
         if (!synthDevice && sonosDevice) {
-            text = "Using: ${sonosDevice}. Tap to change device(s)" 
+            text = "Configured" //"Using: ${sonosDevice}. Tap to change device(s)" 
         }
         if (synthDevice && sonosDevice) {
-            text = "Using: ${synthDevice} AND ${synthDevice}. Tap to change device(s)" 
+            text = "Configured" //"Using: ${synthDevice} AND ${synthDevice}. Tap to change device(s)" 
         }
      }
     text
 }
 def completeSMS(){
     def result = ""
-    if (sendContactText || sms) {
+    if (sendContactText || sms || push || notify) {
     	result = "complete"	
     }
     result
@@ -1220,76 +1229,67 @@ def completeSMS(){
 def SMSDescr() {
     def text = "Tap here to select contact(s)"
 	
-    if (sendContactText || sms) {
-        if (sendContactText && !sms) {   
-            text = "Using this contact(s): ${recipients}. Tap to change" 
-        }
-        if (!sendContactText && sms) {
-            text = "Using these phone number(s): ${sms}. Tap to change" 
-        }
-        if (sendContactText && sms) {
-            text = "Using these contacts: ${recipients} AND ${sms}. Tap to change" 
-        }
+    if (sendContactText || sms || push || notify) {
+//        if (sendContactText && !sms) {   
+            text = "Configured" //"Using this contact(s): ${recipients}. Tap to change" 
+//        }
+//        if (!sendContactText && sms) {
+//            text = "Configured" //"Using these phone number(s): ${sms}. Tap to change" 
+//        }
+//        if (sendContactText && sms) {
+//            text = "Configured" //"Using these contacts: ${recipients} AND ${sms}. Tap to change" 
+//        }
      }
     text
 }
 def completeDevPro(){
     def result = ""
-    if (switches || dimmers) {
+    if (switches || dimmers || runRoutine) {
     	result = "complete"	
-    }
+    }    
     result
 }
-def completeRouPro(){
+def completeDevCon() {
     def result = ""
-    if (runRoutine) {
-    	result = "complete"	
+    if (switches || dimmers) { 
+       result = "complete"
     }
     result
-}
-def RouProDescr() {
-    def text = "Tap here to select"
-    if (runRoutine) { 
-            text = "This Routine(s) will execute when Profile is triggered: ${runRoutine}. Tap to change." 
-    }
-    text
 }
 
-def completeStaPro(){
+def completeAlertPro(){
     def result = ""
-    if (TheSwitch || TheContact || TheLock ) {
+    if (TheSwitch || TheContact || TheLock || TheMotion || ThePresence || TheWater || TheGarage) {
     	result = "complete"	
     }
     result
 }
-def StaProDescr() {
+def AlertProDescr() {
     def text = "Tap here to select device(s)"
 	
-    if (TheSwitch || TheContact || TheLock ) {
-			text = "These devices give alerts: ${TheSwitch},  ${TheContact},  ${TheLock}. Tap to change." 
+    if (TheSwitch || TheContact || TheLock || TheMotion || ThePresence || TheWater || TheGarage) {
+			text = "Configured" //"These devices give alerts: ${TheSwitch},  ${TheContact},  ${TheLock}. Tap to change." 
      }
     text
 }
 def completeMsgConfig(){
     def result = ""
-    if (PreMsg || outputTxt || modes || runDay) {
+    if (MsgOpt || modes || runDay || certainTime) {
     	result = "complete"	
     }
     result
 }
 def MsgConfigDescr() {
-    def text = "Tap to configure"
-	
-    if (PreMsg || outputTxt) {
-        if (PreMsg && outputTxt) {   
-            text = "Current configuration includes custom Pre-Message and Alexa response. Tap to change" 
+    def text = ""
+	if (MsgOpt) {
+    	text = "Configured with Message Options"
         }
-        if (modes || runDay) {
-            text = "Current configuration includes certain restrictions. Tap to change" 
+//    if (PreMsg || outputTxt) {
+//        if (PreMsg && outputTxt) {   
+//            text = "Current configuration includes custom Pre-Message and Alexa response. Tap to change" 
+//        }
+        if (getDayOk()==false || getModeOk()==false || getTimeOk()==false) {
+            text = "Configured with restrictions. Tap to change" 
         }
-        if (PreMsg || outputTxt || modes || runDay) {
-            text = "Some settings have been configured. Tap to change" 
-        }
-     }
     text
 }
