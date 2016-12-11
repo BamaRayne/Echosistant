@@ -1,0 +1,25 @@
+{
+  "intents": [
+    {
+      "intent": "main",
+      "slots": [
+        {
+          "name" : "pProfile",
+          "type" : "LIST_OF_PROFILES"
+        },
+        {
+          "name" : "pDevice",
+          "type" : "LIST_OF_DEVICES"
+        },
+        {
+        "name" : "pNum",
+          "type" : "AMAZON.NUMBER"
+        },
+        {
+          "name" : "pCommand",
+          "type" : "LIST_OF_COMMANDS"
+        }
+        ]
+    }
+    ]
+}
