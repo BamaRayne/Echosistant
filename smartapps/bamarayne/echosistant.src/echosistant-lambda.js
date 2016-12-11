@@ -7,6 +7,7 @@
  *  assistance in troubleshooting.... as I learned.....  Special thanks to Bobby
  *  @SBDOBRESCU for jumping on board and being a co-consipirator in this adventure.
  *
+ *  Version 3.1.1 - 12/11/2016  Bug Fix - Continued Commands
  *  Version 3.1.0 - 12/7/2016
  *  Version 3.0.0 - 12/1/2016  Added new parent variables
  *  Version 2.0.0 - 11/20/2016  Continued Commands
@@ -107,19 +108,19 @@ exports.handler = function( event, context ) {
                     }
                     else if (ttstext=="yes") {
                             areWeDone=false;    
-                        output("please continue...", context, areWeDone);
+                        output("please continue...", context, process, areWeDone);
                     }
                     else if (ttstext=="okay") {
                             areWeDone=false;
-                        output("please continue...", context, areWeDone);
+                        output("please continue...", context, process, areWeDone);
                     }
                     else if (ttstext=="yeah") {
                             areWeDone=false;
-                        output("please continue...", context, areWeDone);
+                        output("please continue...", context, process, areWeDone);
                     }
                     else if (ttstext=="sure") {
                             areWeDone=false;
-                        output("please continue...", context, areWeDone);
+                        output("please continue...", context,process, areWeDone);
                     }
                     else if (ttstext === "repeat"+"last"+"message") {
                                     url += 't?ttstext=' + ttstext + '&intentName=' + intentName;
