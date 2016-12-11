@@ -4,8 +4,8 @@
  *		12/09/2016		Version 3.0.2	Major overhaul of UI and process (cotnt'd)
  *		12/09/2016		Version 3.0.1	Major overhaul of UI and process (in progress)
  *		??/??/2016		Version 3.0.0	Additions: Msg to Notify Tab in Mobile App, Push Msg, Complete Reconfigure of Profile Build, More Control of Dimmers, and Switches,
- *										Control of Thermostats, Doors, and Locks. Common speech device/room commands. Status Feedback. Activity Alerts Page, Toggle control 
- *										of locks and switches, Flash option for switches.
+ *										Device Activity Alerts Page, Toggle control, Flash control for switches. 
+ *										Bug fixes: Time out error resolved.
  *		11/23/2016		Version 2.0.1	Bug fix: Pre-message not showing correctly.  Set to default false.
  *		11/22/2016		Version 2.0.0	CoRE integration, Cont Commands per profile, Repeat Message per profile, one app and many bug fixes.
  *		11/20/2016		Version 1.2.0	Fixes: SMS&Push not working, calling multiple profiles at initialize. Additions: Run Routines and Switch enhancements
@@ -165,7 +165,7 @@ page name: "profiles"
                             input "cTemperature", "number", title: "Alexa adjusts temperature by (1-10 degrees)...", defaultValue: 1, required: false
                          }
                     }
-                    section("Tap below to remove the ${textAppName()} application.  This will remove ALL Profiles and the App from the SmartThings mobile App."){}
+                section("Tap below to remove the ${textAppName()} application.  This will remove ALL Profiles and the App from the SmartThings mobile App."){}
                 }
 	}      
 page name: "tokens"
@@ -246,14 +246,14 @@ def mainProfilePage() {
     dynamicPage(name: "mainProfilePage", title:"I Want This Profile To...", install: true, uninstall: true) {
         //go to Profile set up
         section {
-           	href "MsgPro", title: "Send Audio Messages...", description: MsgProDescr() , state: completeMsgPro(),
+           	href "MsgPro", title: "Send Audio Messages...", description: MsgProDescr(), state: completeMsgPro(),
    				image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Media.png" 
             href "SMS", title: "Send Text & Push Messages...", description: SMSDescr() , state: completeSMS(),
             	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Text.png" 
   			href "DevPro", title: "Execute Actions when Profile runs...", description: DevProDescr(), state: completeDevPro(),
             	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_devices.png"            			
             href "Alerts", title: "Create Event Alerts...",description: AlertProDescr() , state: completeAlertPro(),
-            	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/echosistant_About.png"
+            	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Rest.png"
            	href "MsgConfig", title: "With These Global Message Options...", description: MsgConfigDescr() , state: completeMsgConfig(),
             	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Extra.png" 
             }
@@ -291,7 +291,7 @@ page name: "SMS"
                     input "sendText", "bool", title: "Enable Text Notifications to non-contact book phone(s)", required: true, submitOnChange: true ,          
                         image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Text.png" 
                 if (sendText){      
-                    paragraph "You may enter multiple phone numbers separated by semicolon to deliver the Alexa message as a text and a push notification. E.g. 8045551122;8046663344"
+                    paragraph "You may enter multiple phone numbers separated by comma to deliver the Alexa message as a text and a push notification. E.g. 8045551122;8046663344"
                     input name: "sms", title: "Send text notification to (optional):", type: "phone", required: false
                 }
             }    
@@ -316,17 +316,17 @@ page name: "DevPro"
                     actions.sort()
                     if (parent.debug) log.info actions
             	}                
-                input "runRoutine", "enum", title: "Select Routine(s)...", required: false, options: actions, multiple: true, description: runRoutineDescr(),
+                input "runRoutine", "enum", title: "Select a Routine(s) to execute", required: false, options: actions, multiple: true, 
                 image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Routines.png"
 
             }
         }
     }
 page name: "devicesControl"
-    def devicesControl(){
+    def devicesControl() {
             dynamicPage(name: "devicesControl", title: "Select Devices to use with this profile",install: false, uninstall: false) {
                 section ("Switches", hideWhenEmpty: true){
-                    input "switches", "capability.switch", title: "Select Switches...", multiple: true, required: false, submitOnChange: true
+                    input "switches", "capability.switch", title: "Select Switches...", multiple: true, required: false, submitOnChange: true, description: completeDevPro() , state: completeMsgPro()
                         if (switches) input "switchCmd", "enum", title: "What do you want to do with these switches?", options:["on":"Turn on","off":"Turn off","toggle":"Toggle"], multiple: false, required: false, submitOnChange:true
                         if (switchCmd) input "otherSwitch", "capability.switch", title: "...and these other switches?", multiple: true, required: false, submitOnChange: true
                         if (otherSwitch) input "otherSwitchCmd", "enum", title: "What do you want to do with these other switches?", options: ["on":"Turn on","off":"Turn off","toggle":"Toggle"], multiple: false, required: false, submitOnChange: true
@@ -380,67 +380,109 @@ page name: "Alerts"
         dynamicPage(name: "Alerts", uninstall: false) {
         section ("Switches and Dimmers") {
             input "ShowSwitches", "bool", title: "Switches and Dimmers", default: false, submitOnChange: true
+            if (TheSwitch || audioTextOn || audioTextOff || speech1 || push1 || notify1) paragraph "Configured with Settings"
             if (ShowSwitches) {        
                 input "TheSwitch", "capability.switch", title: "Choose Switches...", required: false, multiple: true, submitOnChange: true
                 input "audioTextOn", "audioTextOn", title: "Play this message", description: "Message to play when the switch turns on", required: false, capitalization: "sentences"
                 input "audioTextOff", "audioTextOff", title: "Play this message", description: "Message to play when the switch turns off", required: false, capitalization: "sentences"
-                input "speech1", "capability.speechSynthesis", title: "Message Player", required: false, multiple: true
-            }
+                input "speech1", "capability.speechSynthesis", title: "Message Player", required: false, multiple: true, submitOnChange: true
+                input "sendMsg1", "bool", title: "Send Push and/or Notifications", default: false, submitOnChange: true
+                	if (sendMsg1) {
+                	input "push1", "bool", title: "Send Push Notification (optional)", required: false, defaultValue: false, submitOnChange: true
+            		input "notify1", "bool", title: "Send message to Mobile App Notifications Tab (optional)", required: false, defaultValue: false, submitOnChange: true
+            	}
+            }             
         }
         section("Doors and Windows") {
             input "ShowContacts", "bool", title: "Doors and Windows", default: false, submitOnChange: true
+            if (TheContact || audioTextOpen || audioTextClosed || speech2 || push2 || notify2) paragraph "Configured with Settings"
             if (ShowContacts) {
                 input "TheContact", "capability.contactSensor", title: "Choose Doors and Windows..", required: false, multiple: true, submitOnChange: true
                 input "audioTextOpen", "textOpen", title: "Play this message", description: "Message to play when the door opens", required: false, capitalization: "sentences"
                 input "audioTextClosed", "textClosed", title: "Play this message", description: "Message to play when the door closes", required: false, capitalization: "sentences"
-                input "speech2", "capability.speechSynthesis", title: "Message Player", required: false, multiple: true
+                input "speech2", "capability.speechSynthesis", title: "Message Player", required: false, multiple: true, submitOnChange: true
+            	input "sendMsg2", "bool", title: "Send Push and/or Notifications", default: false, submitOnChange: true
+                	if (sendMsg2) {
+                	input "push2", "bool", title: "Send Push Notification (optional)", required: false, defaultValue: false, submitOnChange: true
+            		input "notify2", "bool", title: "Send message to Mobile App Notifications Tab (optional)", required: false, defaultValue: false, submitOnChange: true
+            	}
             }
         }
         section("Locks") {
             input "ShowLocks", "bool", title: "Locks", default: false, submitOnChange: true
+            if (TheLock || audioTextLocked || audioTextUnlocked || speech3 || push3 || notify3) paragraph "Configured with Settings"
             if (ShowLocks) {
-                input "TheLock", "capability.lock", title: "Choose Locks...", required: false, multiple: true
+                input "TheLock", "capability.lock", title: "Choose Locks...", required: false, multiple: true, submitOnChange: true
                 input "audioTextLocked", "textLocked", title: "Play this message", description: "Message to play when the lock locks", required: false, capitalization: "sentences"
                 input "audioTextUnlocked", "textUnlocked", title: "Play this message", description: "Message to play when the lock unlocks", required: false, capitalization: "sentences"
-                input "speech3", "capability.speechSynthesis", title: "Message Player", required: false, multiple: true
+                input "speech3", "capability.speechSynthesis", title: "Message Player", required: false, multiple: true, submitOnChange: true
+            	input "sendMsg3", "bool", title: "Send Push and/or Notifications", default: false, submitOnChange: true
+                	if (sendMsg3) {
+                	input "push3", "bool", title: "Send Push Notification (optional)", required: false, defaultValue: false, submitOnChange: true
+            		input "notify3", "bool", title: "Send message to Mobile App Notifications Tab (optional)", required: false, defaultValue: false, submitOnChange: true
+            	}
             }
         }
         section("Motion Sensors") {
             input "ShowMotion", "bool", title: "Motion Sensors", default: false, submitOnChange: true
+            if (TheMotion || audioTextActive || audioTextInactive || speech4 || push4 || notify4) paragraph "Configured with Settings"
             if (ShowMotion) {
-                input "TheMotion", "capability.motionSensor", title: "Choose Motion Sensors...", required: false, multiple: true
+                input "TheMotion", "capability.motionSensor", title: "Choose Motion Sensors...", required: false, multiple: true, submitOnChange: true
                 input "audioTextActive", "textActive", title: "Play this message", description: "Message to play when motion is detected", required: false, capitalization: "sentences"
                 input "audioTextInactive", "textInactive", title: "Play this message", description: "Message to play when motion stops", required: false, capitalization: "sentences"
-                input "speech4", "capability.speechSynthesis", title: "Message Player", required: false, multiple: true
+                input "speech4", "capability.speechSynthesis", title: "Message Player", required: false, multiple: true, submitOnChange: true
+            	input "sendMsg4", "bool", title: "Send Push and/or Notifications", default: false, submitOnChange: true
+                	if (sendMsg4) {
+                	input "push4", "bool", title: "Send Push Notification (optional)", required: false, defaultValue: false, submitOnChange: true
+            		input "notify4", "bool", title: "Send message to Mobile App Notifications Tab (optional)", required: false, defaultValue: false, submitOnChange: true
+            	}
             }
         }
         section("Presence Sensors") {
-        input "ShowPresence", "bool", title: "Presence Sensors", default: false, submitOnChange: true
-        if (ShowPresence) {
-                input "ThePresence", "capability.presenceSensor", title: "Choose Presence Sensors...", required: false, multiple: true
+        	input "ShowPresence", "bool", title: "Presence Sensors", default: false, submitOnChange: true
+        	if (ThePresence || audioTextPresent || audioTextNotPresent || speech5 || push5 || notify5) paragraph "Configured with Settings"
+            if (ShowPresence) {
+                input "ThePresence", "capability.presenceSensor", title: "Choose Presence Sensors...", required: false, multiple: true, submitOnChange: true
                 input "audioTextPresent", "textPresent", title: "Play this message", description: "Message to play when the Sensor arrives", required: false, capitalization: "sentences"
                 input "audioTextNotPresent", "textNotPresent", title: "Play this message", description: "Message to play when the Sensor Departs", required: false, capitalization: "sentences"
-                input "speech5", "capability.speechSynthesis", title: "Message Player", required: false, multiple: true
-                }
-            }
+                input "speech5", "capability.speechSynthesis", title: "Message Player", required: false, multiple: true, submitOnChange: true
+                input "sendMsg5", "bool", title: "Send Push and/or Notifications", default: false, submitOnChange: true
+                	if (sendMsg5) {
+                	input "push5", "bool", title: "Send Push Notification (optional)", required: false, defaultValue: false, submitOnChange: true
+            		input "notify5", "bool", title: "Send message to Mobile App Notifications Tab (optional)", required: false, defaultValue: false, submitOnChange: true
+            	}
+			}
+		}
         section("Water Sensors") {
-        input "ShowWater", "bool", title: "Water Detectors", default: false, submitOnChange: true
-        if (ShowWater) {
-                input "TheWater", "capability.waterSensor", title: "Choose Water Sensors...", required: false, multiple: true
+        	input "ShowWater", "bool", title: "Water Detectors", default: false, submitOnChange: true
+        	if (TheWater || audioTextWet || audioTextDry || speech6 || push6 || notify6) paragraph "Configured with Settings"
+            if (ShowWater) {
+                input "TheWater", "capability.waterSensor", title: "Choose Water Sensors...", required: false, multiple: true, submitOnChange: true
                 input "audioTextWet", "textWet", title: "Play this message", description: "Message to play when water is detected", required: false, capitalization: "sentences"
                 input "audioTextDry", "textDry", title: "Play this message", description: "Message to play when is no longer detected", required: false, capitalization: "sentences"
-                input "speech6", "capability.speechSynthesis", title: "Message Player", required: false, multiple: true
-                }
-            }
+                input "speech6", "capability.speechSynthesis", title: "Message Player", required: false, multiple: true, submitOnChange: true
+				input "sendMsg6", "bool", title: "Send Push and/or Notifications", default: false, submitOnChange: true
+                	if (sendMsg6) {
+                	input "push6", "bool", title: "Send Push Notification (optional)", required: false, defaultValue: false, submitOnChange: true
+            		input "notify6", "bool", title: "Send message to Mobile App Notifications Tab (optional)", required: false, defaultValue: false, submitOnChange: true
+            	}
+			}                
+        }        
         section("Garage Doors") {
-        input "ShowGarage", "bool", title: "Garage Doors", default: false, submitOnChange: true
-        if (ShowGarage) {
-                input "TheGarage", "capability.garageDoorControl", title: "Choose Garage Doors...", required: false, multiple: true
+        	input "ShowGarage", "bool", title: "Garage Doors", default: false, submitOnChange: true
+        	if (TheGarage || audioTextOpening || audioTextClosing || speech7 || push7 || notify7) paragraph "Configured with Settings"
+            if (ShowGarage) {
+                input "TheGarage", "capability.garageDoorControl", title: "Choose Garage Doors...", required: false, multiple: true, submitOnChange: true
                 input "audioTextOpening", "textOpening", title: "Play this message", description: "Message to play when the Garage Door Opens", required: false, capitalization: "sentences"
                 input "audioTextClosing", "textClosing", title: "Play this message", description: "Message to play when the Garage Door Closes", required: false, capitalization: "sentences" 
-                input "speech7", "capability.speechSynthesis", title: "Message Player", required: false, multiple: true
-                }
-            }
+                input "speech7", "capability.speechSynthesis", title: "Message Player", required: false, multiple: true, submitOnChange: true
+                input "sendMsg7", "bool", title: "Send Push and/or Notifications", default: false, submitOnChange: true
+                	if (sendMsg7) {
+                	input "push7", "bool", title: "Send Push Notification (optional)", required: false, defaultValue: false, submitOnChange: true
+            		input "notify7", "bool", title: "Send message to Mobile App Notifications Tab (optional)", required: false, defaultValue: false, submitOnChange: true
+            		}
+                }		
+            }   
         }
     }
 page name: "MsgConfig"
@@ -459,7 +501,7 @@ page name: "MsgConfig"
                         if (Arepeat && Acustom){
                             paragraph "NOTE: only one custom Alexa response can"+
                             " be delivered at once. Please only enable Custom Response OR Repeat Message"
-                            }
+                            }				
                         }
                     input "AfeedBack", "bool", title: "Turn on to disable Alexa Feedback Responses (silence Alexa) Overrides all other Alexa Options...", defaultValue: false, submitOnChange: true
                         if (AfeedBack) {
@@ -483,26 +525,25 @@ page name: "MsgConfig"
                 href "certainTime", title: "Only during a certain time", description: timeIntervalLabel ?: "Tap to set", state: timeIntervalLabel ? "complete" : null,
                 image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Extra.png"
                 }   
-
-        }
-    }
+	        }
+    	}
 page name: "certainTime"
     def certainTime() {
         dynamicPage(name:"certainTime",title: "Only during a certain time", uninstall: false) {
-            section() {
-                input "startingX", "enum", title: "Starting at", options: ["A specific time", "Sunrise", "Sunset"] 
-                if(startingX in [null, "A specific time"]) input "starting", "time", title: "Start time", required: false
+            section("Beginning at....") {
+                input "startingX", "enum", title: "Starting at...", options: ["A specific time", "Sunrise", "Sunset"], required: false , submitOnChange: true
+                if(startingX in [null, "A specific time"]) input "starting", "time", title: "Start time", required: false, submitOnChange: true
                 else {
-                    if(startingX == "Sunrise") input "startSunriseOffset", "number", range: "*..*", title: "Offset in minutes (+/-)", required: false
-                    else if(startingX == "Sunset") input "startSunsetOffset", "number", range: "*..*", title: "Offset in minutes (+/-)", required: false
+                    if(startingX == "Sunrise") input "startSunriseOffset", "number", range: "*..*", title: "Offset in minutes (+/-)", required: false, submitOnChange: true
+                    else if(startingX == "Sunset") input "startSunsetOffset", "number", range: "*..*", title: "Offset in minutes (+/-)", required: false, submitOnChange: true
                 }
             }
-            section() {
-                input "endingX", "enum", title: "Ending at", options: ["A specific time", "Sunrise", "Sunset"]
-                if(endingX in [null, "A specific time"]) input "ending", "time", title: "End time", required: false
+            section("Ending at....") {
+                input "endingX", "enum", title: "Ending at...", options: ["A specific time", "Sunrise", "Sunset"], required: false, submitOnChange: true
+                if(endingX in [null, "A specific time"]) input "ending", "time", title: "End time", required: false, submitOnChange: true
                 else {
-                    if(endingX == "Sunrise") input "endSunriseOffset", "number", range: "*..*", title: "Offset in minutes (+/-)", required: false
-                    else if(endingX == "Sunset") input "endSunsetOffset", "number", range: "*..*", title: "Offset in minutes (+/-)", required: false
+                    if(endingX == "Sunrise") input "endSunriseOffset", "number", range: "*..*", title: "Offset in minutes (+/-)", required: false, submitOnChange: true
+                    else if(endingX == "Sunset") input "endSunsetOffset", "number", range: "*..*", title: "Offset in minutes (+/-)", required: false, submitOnChange: true
                 }
             }
         }
@@ -896,10 +937,11 @@ private void sendtxt(message) {
     if (sendContactText) { 
         sendNotificationToContacts(message, recipients)
     } 
-    if (push) {
-        sendPush message
+    if (push || push1 || push2 || push3 || push4 || push5 || push6 || push7) { 
+    sendPush message 
     } 
-    if (notify) {
+
+    if (notify || notify1 || notify2 || notify3 || notify4 || notify5 || notify6 || notify7) {
         sendNotificationEvent(message)
     }
     if (sms) {
@@ -1228,7 +1270,7 @@ def supportDescr()  {
 	def text = "${textVersion()}\n Click to visit our Wiki Page"
 }
 def DevProDescr() {
-    def text = ""
+    def text = "Tap here to Configure"
 	
     if (switches || dimmers || runRoutine) { 
             text = "Configured" //"These devices will execute: ${switches}, ${dimmers}. Tap to change device(s)" 
@@ -1238,7 +1280,7 @@ def DevProDescr() {
 
 
 def DevConDescr() {
-	def text = ""
+	def text = "Tap here to Configure"
      if (switches || dimmers)
      { 
             text = "Configured" //"These devices will execute: ${switches}, ${dimmers}. Tap to change device(s)"
@@ -1255,7 +1297,7 @@ def completeMsgPro(){
     result
 }
 def MsgProDescr() {
-    def text = ""
+    def text = "Tap here to Configure"
 	
     if (synthDevice || sonosDevice) {
         if (synthDevice && !sonosDevice) {   
@@ -1278,7 +1320,7 @@ def completeSMS(){
     result
 }
 def SMSDescr() {
-    def text = ""
+    def text = "Tap here to Configure"
 	
     if (sendContactText || sms || push) {
             text = "Configured" //"Using this contact(s): ${recipients}. Tap to change" 
@@ -1299,31 +1341,33 @@ def completeDevCon() {
     }
     result
 }
+
 def completeAlertPro(){
-    def result = ""
-    if (TheSwitch || TheContact || TheLock || TheMotion || ThePresence || TheWater || TheGarage) {
-    	result = "complete"	
-    }
-    result
+	def result = ""
+	if (speech1 || push1 || notify1 || speech2 || push2 || notify2 || speech3 || push3 || notify3 || speech4 || push4 || notify4 || speech5 || push5 || notify5 || speech6 || push6 || notify6 || speech7 || push7 || notify7) 
+    {
+    result = "complete"
+    }    	
+    	result
 }
 def AlertProDescr() {
-    def text = ""
-	
-    if (TheSwitch || TheContact || TheLock || TheMotion || ThePresence || TheWater || TheGarage) {
-			text = "Configured" //"These devices give alerts: ${TheSwitch},  ${TheContact},  ${TheLock}. Tap to change." 
-     }
-    text
+    def text = "Tap here to Configure"
+	if (speech1 || push1 || notify1 || speech2 || push2 || notify2 || speech3 || push3 || notify3 || speech4 || push4 || notify4 || speech5 || push5 || notify5 || speech6 || push6 || notify6 || speech7 || push7 || notify7) 
+    {
+    text = "Configured"
+    }
+	    text
 }
 def completeMsgConfig(){
     def result = ""
-    if (MsgOpt || modes || runDay || certainTime) {
+    if (ShowPreMsg || Acustom || Arepeat || AfeedBack || disableTts || ContCmds || ContCmdsR || modes || runDay) {
     	result = "complete"	
     }
     result
 }
 def MsgConfigDescr() {
-    def text = ""
-	if (MsgOpt) {
+    def text = "Tap here to Configure"
+	if (ShowPreMsg || Acustom || Arepeat || AfeedBack || disableTts || ContCmds || ContCmdsR) {
     	text = "Configured with Message Options"
         }
         if (getDayOk()==false || getModeOk()==false || getTimeOk()==false) {
@@ -1333,7 +1377,7 @@ def MsgConfigDescr() {
 }
 
 def runRoutineDescr() {
-    def text = ""
+    def text = "Tap here to Configure"
 	
     if (runRoutine) { 
             text = "Configured" //"These devices will execute: ${switches}, ${dimmers}. Tap to change device(s)" 
