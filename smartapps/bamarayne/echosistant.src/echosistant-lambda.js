@@ -7,6 +7,7 @@
  *  assistance in troubleshooting.... as I learned.....  Special thanks to Bobby
  *  @SBDOBRESCU for jumping on board and being a co-consipirator in this adventure.
  *
+ *  Version 3.1.2 - 12/11/2016  Bug Fix - JSON Error 
  *  Version 3.1.1 - 12/11/2016  Bug Fix - Continued Commands
  *  Version 3.1.0 - 12/7/2016
  *  Version 3.0.0 - 12/1/2016  Added new parent variables
@@ -24,7 +25,7 @@
  */
 'use strict';
 exports.handler = function( event, context ) {
-    var versionTxt = '3.1.0';
+    var versionTxt = '3.1.2';
     var versionDate= '12/7/2016';
     var https = require( 'https' );
     // Paste app code here between the breaks------------------------------------------------
@@ -38,16 +39,14 @@ exports.handler = function( event, context ) {
         var stop;
         var areWeDone = false;
     //Get SmartThings parameters
-        var beginURL = url + 'b?versionTxt=' + versionTxt + '&versionDate=' + versionDate;
+        var beginURL = url + 'b?Ver=' + versionTxt + '&Date=' + versionDate + '&VerNum=' + versionNum + '&access_token=' + STtoken;
         https.get( beginURL, function( response ) {
         response.on( 'data', function( data ) {
             var startJSON = JSON.parse(data);
             var contOptions = startJSON.pContinue;
             var pName = startJSON.pMain;
-            
-            //if (startJSON.error) { output("There was an error. If this continues to happen, please reach out for help", context, "Lambda Error", endSession, pName); }
-            //console.log(startJSON.error); 
-
+            if (startJSON.error) { output("There was an error. If this continues to happen, please reach out for help", context, "Lambda Error", endSession, pName); }
+            console.log(startJSON.error); 
             if (startJSON.error === "invalid_token" || startJSON.type === "AccessDenied") {
                 output("There was an error accessing the SmartThings cloud environment. Please check your security token and application ID and try again. ", context, "Lambda Error", endSession, pName); 
             }
