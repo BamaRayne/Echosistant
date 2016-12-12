@@ -375,7 +375,7 @@ page name: "Alerts"
             input "ShowSwitches", "bool", title: "Switches and Dimmers", default: false, submitOnChange: true
             if (TheSwitch || audioTextOn || audioTextOff || speech1 || push1 || notify1 || music1) paragraph "Configured with Settings"
             if (ShowSwitches) {        
-                input "TheSwitch", "capability.switch", title: "Choose Switches...", required: false, multiple: true, submitOnChange: true
+                input "TheSwitch", "capability.switch", title: "Choose Switches...", required: false, multiple: false, submitOnChange: true
                 input "audioTextOn", "audioTextOn", title: "Play this message", description: "Message to play when the switch turns on", required: false, capitalization: "sentences"
                 input "audioTextOff", "audioTextOff", title: "Play this message", description: "Message to play when the switch turns off", required: false, capitalization: "sentences"
                 input "speech1", "capability.speechSynthesis", title: "Message Player", required: false, multiple: true, submitOnChange: true
@@ -392,7 +392,7 @@ page name: "Alerts"
             }             
         }
         section("Doors and Windows", hideWhenEmpty: true) {
-            input "ShowContacts", "bool", title: "Doors and Windows", default: false, submitOnChange: true
+            input "ShowContacts", "bool", title: "Doors and Windows", default: false, multiple: false, submitOnChange: true
             if (TheContact || audioTextOpen || audioTextClosed || speech2 || push2 || notify2 || music2) paragraph "Configured with Settings"
             if (ShowContacts) {
                 input "TheContact", "capability.contactSensor", title: "Choose Doors and Windows..", required: false, multiple: true, submitOnChange: true
@@ -510,7 +510,27 @@ page name: "Alerts"
             		input "notify7", "bool", title: "Send message to Mobile App Notifications Tab (optional)", required: false, defaultValue: false, submitOnChange: true
             		}
                 }		
-            }   
+            } 
+         section("Thermostats", hideWhenEmpty: true) {
+        	input "ShowTstat", "bool", title: "Thermostats", default: false, submitOnChange: true
+        	if (TheThermostat || audioTextHeating || audioTextCooling || speech8 || push8 || notify8 || music8) paragraph "Configured with Settings"
+            if (ShowTstat) {
+                input "TheThermostat", "capability.thermostat", title: "Choose Thermostats...", required: false, multiple: true, submitOnChange: true
+                input "audioTextHeating", "textHeating", title: "Play this message", description: "Message to play when the Heating Set Point Changes", required: false, capitalization: "sentences"
+                input "audioTextCooling", "textCooling", title: "Play this message", description: "Message to play when the Cooling Set Point Changes", required: false, capitalization: "sentences" 
+                input "speech8", "capability.speechSynthesis", title: "Message Player", required: false, multiple: true, submitOnChange: true
+                input "music8", "capability.musicPlayer", title: "On this Sonos Type Devices", required: false, multiple: true, submitOnChange: true
+                if (music8) {
+                    input "volume8", "number", title: "Temporarily change volume", description: "0-100%", required: false
+                    input "resumePlaying8", "bool", title: "Resume currently playing music after notification", required: false, defaultValue: false
+                	}
+                input "sendMsg8", "bool", title: "Send Push and/or Notifications", default: false, submitOnChange: true
+                	if (sendMsg8) {
+                	input "push8", "bool", title: "Send Push Notification (optional)", required: false, defaultValue: false, submitOnChange: true
+            		input "notify8", "bool", title: "Send message to Mobile App Notifications Tab (optional)", required: false, defaultValue: false, submitOnChange: true
+            		}
+                }		
+            } 
         }
     }
 page name: "MsgConfig"
@@ -603,7 +623,7 @@ def processBegin(){
     def pMain = app.label
 	def pContinue = "Yes"
     	if (debug){
-        log.debug "Message received from Lambda with: (ver) = '${Ver}', (date) = '${versionDate}', and sent to Lambda: pMain = '${pMain}', pContinue = '${pContinue}'"
+        log.debug "Message received from Lambda with: (ver) = '${versionTxt}', (date) = '${versionDate}', and sent to Lambda: pMain = '${pMain}', pContinue = '${pContinue}'"
         }
     return ["pContinue":pContinue, "pMain":pMain]
 }   
@@ -639,7 +659,7 @@ def initialize() {
 			}
 	}
     else{
-        if (debug) log.debug "Initialize Child app"
+        if (parent.debug) log.debug "Initialize Child app"
         state.lastMessage = null
     	state.lastTime  = null
         subscribeChildToEvents()
@@ -656,29 +676,35 @@ def subscribeChildToEvents() {
    		subscribe(runDay, location.day, location.currentDay)
 	} 
     if (TheSwitch) {
-        subscribe(TheSwitch, "switch", myHandler)
+        if (audioTextOn) {subscribe(TheSwitch, "switch.on", alertsHandler)}
+        else if (audioTextOff) {subscribe(TheSwitch, "switch.off", alertsHandler)}
         }
     if (TheContact) {
-        subscribe(TheContact, "contact.open", myHandler)
-        subscribe(TheContact, "contact.closed", myHandler)
+        if (audioTextOpen) {subscribe(TheContact, "contact.open", alertsHandler)}
+        else if (audioTextClosed) {subscribe(TheContact, "contact.closed", alertsHandler)}
         }
     if (TheLock) {
-        subscribe(TheLock, "lock.locked", myHandler)
-        subscribe(TheLock, "lock.unlocked", myHandler)
+        if (audioTextLocked) {subscribe(TheLock, "lock.locked", alertsHandler)}
+        else if (audioTextUnlocked) {subscribe(TheLock, "lock.unlocked", alertsHandler)}
         }
     if (TheMotion) {
-        subscribe(TheMotion, "motion.active", myHandler)
-        subscribe(TheMotion, "motion.inactive", myHandler)
+        if (audioTextActive) {subscribe(TheMotion, "motion.active", alertsHandler)}
+        else if (audioTextInactive) {subscribe(TheMotion, "motion.inactive", alertsHandler)}
         }
     if (ThePresence) {
-        subscribe(ThePresence, "presence.present", myHandler)
-        subscribe(ThePresence, "presence.notPresent", myHandler)
+        if (audioTextPresent || audioTextNotPresent ) {subscribe(ThePresence, "presenceSensor", alertsHandler)}
         }
     if (TheWater) {    
-        subscribe(TheWater, "waterSensor.dry", myHandler)
-        subscribe(TheWater, "waterSensor.wet", myHandler)
+       if (audioTextDry) {subscribe(TheWater, "water.dry", alertsHandler)}
+        else if (audioTextWet) {subscribe(TheWater, "water.wet", alertsHandler)}
         }
-}
+    if (TheThermostat) {    
+        if (audioTextHeating) {
+        	subscribe(TheThermostat, "heatingSetpoint", alertsHandler)}
+        else if (audioTextCooling) {subscribe(TheThermostat, "coolingSetpoint", alertsHandler)}
+        }
+} 
+
 /************************************************************************************************************
 		CoRE Integration
 ************************************************************************************************************/
@@ -696,25 +722,17 @@ def childUninstalled() {
 def processTts() {
 		def ptts = params.ttstext 
 		def pttx = params.ttstext 
-   		
         def pintentName = params.intentName
-            if (debug) log.debug "Message received from Lambda with: (ptts) = '${ptts}', (pintentName) = '${pintentName}', ttsintentname = '${ttsintentname}'"
+            if (debug) log.debug "Message received from Lambda with: (ptts) = '${ptts}', (pintentName) = '${pintentName}'"
         def outputTxt = ''
     	def pContCmds = "false"
         def pContCmdsR = "false"
         def dataSet = [ptts:ptts,pttx:pttx,pintentName:pintentName] 
-		def controlData = [pCommands:pCommands,pProfiles:pProfiles,pintentName:pintentName] 
-        def repeat = "repeat last message"
-        	if (debug) log.debug "Main intent being called = '${pMainIntent}'"  
-  
+        def repeat = "repeat last message" 
         if (ptts==repeat) {
-				if (pMainIntent == pintentName) {
-                outputTxt = "The last message sent was," + state.lastMessage + ", and it was sent to, " + state.lastIntent + ", at, " + state.lastTime 
-				}
-                else {
-                      	childApps.each { child ->
-    						def cLast = child.label
-            				if (cLast == pintentName) {
+						childApps.each { child ->
+    						def cLast = child.label.toLowerCase()
+            				if (cLast == pintentName.toLowerCase()) {
                         		if (debug) log.debug "Last Child was = '${cLast}'"  
                                 def cLastMessage 
                        			def cLastTime
@@ -726,8 +744,7 @@ def processTts() {
                                 outputTxt = child.getLastMessage()
                                 if (debug) log.debug "Profile matched is ${cLast}, last profile message was ${outputTxt}" 
                 			}
-               		}
-               }
+               			}
         }    
 		else {
     			if (ptts){
@@ -738,9 +755,10 @@ def processTts() {
                     childApps.each {child ->
 						child.profileEvaluate(dataSet)
                         }
-            			childApps.each { child ->
+            			//Preparing Alexa Response
+                        childApps.each { child ->
     						def cm = child.label
-            					if (cm == pintentName) {
+            					if (cm.toLowerCase() == pintentName.toLowerCase()) {
                               		def cAcustom = child.Acustom
 									def cArepeat = child.Arepeat
 									def cAfeedBack = child.AfeedBack
@@ -770,25 +788,28 @@ def processTts() {
    CONTROL PROCESS PROCESS (PARENT) 
 ************************************************************************************************************/
 def controlDevices() {
-        def pCommand = params.pCommand
-        def pProfile = params.pProfile
-        def pNum = params.pNum
-        def pDevice = params.pDevice
-		def controlData = [pCommand:pCommand,pProfile:pProfile,pNum:pNum,pDevice:pDevice] 
-        if (debug) log.debug "Message received from Lambda to control devices with settings: (pCommand)"+
-    						"= '${pCommand}', (pProfile) = '${pProfile}', pNum = '${pNum}', (pDevice) = '${pDevice}'"
+        def ctCommand = params.pCommand
+        def ctProfile = params.pProfile
+        def ctNum = params.pNum
+        def ctDevice = params.pDevice
+        def ctOutputTxt = " "
+        def ctContCmds = "false"
+        def ctContCmdsR = "false"
+        if (debug) log.debug "Message received from Lambda to control devices with settings: (ctCommand)"+
+    						"= '${ctCommand}', (ctProfile) = '${ctProfile}', ctNum = '${ctNum}', (ctDevice) = '${ctDevice}'"
         
-        if (pCommand==repeat) {
-                outputTxt = "The last message sent was," + state.lastMessage + ", and it was sent to, " + state.lastIntent + ", at, " + state.lastTime 
+        if (ctCommand=="repeat") {
+        	if (debug) log.debug "Processing repeat last message delivered to any of the Profiles"
+			ctOutputTxt = getLastMessageMain()		
 		}
-
-        if (pDevice.toLowerCase()  == cSwithes.toLowerCase()){
+/************************************************************************************************************
+        //if (pDevice.toLowerCase()  == cSwithes.toLowerCase()){
         	if (command == "dark" || command == "brighter" || command == "on") {
             	if (pNum) {
             		runIn(pNum*60,turnOncSwitch)
                 }
              	else {
-       	    		if (parent.debug) log.debug "Turning control switch on"
+       	    		if (debug) log.debug "Turning control switch on"
                 	switches?.on()
 				}
         	}
@@ -797,12 +818,14 @@ def controlDevices() {
           		runIn(pNum*60,turnOffcSwitch)
 			}	
         	else {
-        		if (parent.debug) log.debug "Turning control switch off"
+        		if (debug) log.debug "Turning control switch off"
                 switches?.off()
             }
         }
-	}
+************************************************************************************************************/        
+        return ["ctOutputTxt":ctOutputTxt, "ctContCmds":ctContCmds]
 }
+
 
 
 /******************************************************************************************************
@@ -814,25 +837,25 @@ def profileEvaluate(params) {
         def intent = params.pintentName        
         def childName = app.label       
         def data = [args: tts ]
-        if (intent == childName){
+        if (intent.toLowerCase() == childName.toLowerCase()){
         	sendLocationEvent(name: "echoSistantProfile", value: app.label, data: data, displayed: true, isStateChange: true, descriptionText: "EchoSistant activated '${app.label}' profile.")
       		if (parent.debug) log.debug "sendNotificationEvent sent to CoRE was '${app.label}' from the TTS process section"
             if (!disableTts){
         			if (PreMsg) 
         				tts = PreMsg + tts
-        				if (parent.debug) log.debug "#3 tts = '${tts}'"
+        				if (parent.debug) log.debug "tts with PreMsg = '${tts}'"
                     else {
             			tts = tts
-            			if (parent.debug) log.debug "#4 tts = '${tts}'"
+            			if (parent.debug) log.debug "tts without PreMsg = '${tts}'"
                     }
             			if (getDayOk()==true && getModeOk()==true && getTimeOk()==true) {
             					if (synthDevice) {
                                 synthDevice?.speak(tts) 
-        			    			if (parent.debug) log.debug "#5 Sending message to Synthesis Devices" 
+        			    			if (parent.debug) log.debug "Sending message to Synthesis Devices" 
                                     }
                 				if (mediaDevice) {
                                 	mediaDevice?.speak(tts) 
-                					if (parent.debug) log.debug "#6 Sending message to Media Devices"  
+                					if (parent.debug) log.debug "Sending message to Media Devices"  
                                     }
             						if (tts) {
 										state.sound = textToSpeech(tts instanceof List ? tts[0] : tts)
@@ -866,12 +889,20 @@ def profileEvaluate(params) {
         }
 }
 /***********************************************************************************************************************
-    LAST MESSAGE HANDLER
+    LAST MESSAGE HANDLER - PROFILE
 ***********************************************************************************************************************/
 def getLastMessage() {
 	def cOutputTxt = "The last message sent to " + app.label + " was," + state.lastMessage + ", and it was sent at, " + state.lastTime
 	return  cOutputTxt 
 	if (parent.debug) log.debug "Sending last message to parent '${cOutputTxt}' "
+}
+/***********************************************************************************************************************
+    LAST MESSAGE HANDLER - MAIN
+***********************************************************************************************************************/
+def getLastMessageMain() {
+	def ctOutputTxt = "The last message sent was," + state.lastMessage + ", and it was sent to, " + state.lastIntent + ", at, " + state.lastTime
+	return  ctOutputTxt 
+	if (parent.debug) log.debug "Sending last message to Lambda '${ctOutputTxt}' "
 }
 /***********************************************************************************************************************
     RESTRICTIONS HANDLER
@@ -938,27 +969,33 @@ private timeIntervalLabel() {
     SMS HANDLER
 ***********************************************************************************************************************/
 private void sendtxt(message) {
-    if (parent.debug) log.debug message
+    if (parent.debug) log.debug "Request to send sms received with message: '${message}'"
     if (sendContactText) { 
         sendNotificationToContacts(message, recipients)
+            if (parent.debug) log.debug "Sending sms to selected reipients"
     } 
     else {
     	if (push || push1 || push2 || push3 || push4 || push5 || push6 || push7) { 
     		sendPush message
+            	if (parent.debug) log.debug "Sending push message to selected reipients"
         }
     } 
     if (notify || notify1 || notify2 || notify3 || notify4 || notify5 || notify6 || notify7) {
         sendNotificationEvent(message)
+             	if (parent.debug) log.debug "Sending notification to mobile app"
+
     }
     if (sms) {
         sendText(sms, message)
+        if (parent.debug) log.debug "Processing message for selected phones"
 	}
 }
 private void sendText(number, message) {
     if (sms) {
-        def phones = sms.split("\\,")
+        def phones = sms.split("\\;")
         for (phone in phones) {
             sendSms(phone, message)
+            if (parent.debug) log.debug "Sending sms to selected phones"
         }
     }
 }
@@ -990,8 +1027,7 @@ def turnOffSwitch() {
     		otherDimmers?.off()
 		}   
 } 
-private deviceControl() {
-        if (intent == childName){
+def deviceControl() {
             if (sSecondsOn) {
             if (parent.debug) log.debug "Turn switches on in '${sSecondsOn}' seconds"
             	runIn(sSecondsOn,turnOnSwitch)
@@ -1035,10 +1071,10 @@ private deviceControl() {
                 runIn(sSecondsOff,turnOffDimmers)
                 runIn(sSecondsOff,turnOffOtherDimmers)
 			}
-		}
-	}        
+		}      
 def toggle() {
-	if (parent.debug) log.debug "The selected device is toggling now"
+
+    if (parent.debug) log.debug "The selected device is toggling now"
 	if (switches) {
 	if (switches?.currentValue('switch').contains('on')) {
 		switches?.off()
@@ -1062,11 +1098,12 @@ def toggle() {
     }
 if (parent.debug) log.debug "The selected device has toggled"
 }
+
 /************************************************************************************************************
    Flashing Lights Handler
 ************************************************************************************************************/
 private flashLights() {
-	if (parent.debug) log.debug "The Flash Switches Option has been activated"
+    if (parent.debug) log.debug "The Flash Switches Option has been activated"
 	def doFlash = true
 	def onFor = onFor ?: 60000/60
 	def offFor = offFor ?: 60000/60
@@ -1102,98 +1139,167 @@ private flashLights() {
 		}
 	}
 }
+
 /************************************************************************************************************
    Alerts Handler
 ************************************************************************************************************/
-def myHandler() {
-if (getDayOk()==true && getModeOk()==true && getTimeOk()==true) {
-     if (TheSwitch?.latestValue('switch').contains('on')) {
-     	if (audioTextOn1) {
-  		speech1?.speak(audioTextOn)
-        music1?.play(audioTextOn)        
+def alertsHandler(evt) {
+	def eVal = evt.value
+    def eName = evt.name
+    def eTxt = " "
+		if (parent.debug) log.debug "Received event name ${evt.name} with value:  ${evt.value}"
+
+	if (getDayOk()==true && getModeOk()==true && getTimeOk()==true) {
+     
+     if (eVal == "on") {
+     	if (audioTextOn) {
+        if (parent.debug) log.debug "Received event: on, playing message:  ${audioTextOn}"
+  				speech1?.speak(audioTextOn)
+				if (music1) {
+        			playAlert(audioTextOn, music1)
+         		}      
    			}
         }
-    	if (TheSwitch?.latestValue('switch').contains('off')) {
+    if (eVal == "off") {
         	if (audioTextOff) {
+            if (parent.debug) log.debug "Received event: off, playing message:  ${audioTextOn}"
         	speech1?.speak(audioTextOff)
-            music1?.play(audioTextOff)
-   				}
+				if (music1) {
+        			playAlert(audioTextOff, music1)
+         		}
             }
-    if (TheContact?.lastValue('contact').contains('open')) {
+    }
+    if (eVal == "open") {
     	if (audioTextOpen) {
+        if (parent.debug) log.debug "Received event:open, playing message:  ${audioTextOpen}"
   		speech2?.speak(audioTextOpen)
-        music2?.play(audioTextOpen)
-    		}
+        	if (music2) {
+        	playAlert(audioTextOpen, music2)
+         }
+    }
         }
-    	if (TheContact?.lastValue('contact').contains('closed')) {
+    	if (eVal == "closed") {
         	if (audioTextClosed) {
-        	speech2?.speak(audioTextClosed)
-            music2?.play(audioTextClosed)
-    			}
+        	if (parent.debug) log.debug "Received event closed, playing message:  ${audioTextClosed}"
+            speech2?.speak(audioTextClosed)
+        	if (music2) {
+        		playAlert(audioTextClosed, music2)
             }
-    if (TheLock?.lastValue('lock').contains('lock')) {
+         }
+            }
+    if 	(eVal == "locked") {
     	if (audioTextLocked) {
     	speech3?.speak(audioTextLocked)
-        music3?.play(audioTextLocked)
+				if (music3) {
+        			playAlert(audioTextLocked, music3)
+         		}  
     		}
         }
-    	if (TheLock?.lastValue('lock').contains('unlock')) {
+    	if (eVal == "unlocked") {
         	if (audioTextUnlocked) {
         	speech3?.speak(audioTextUnlocked)
-            music3?.play(audioTextUnlocked)
+				if (music3) {
+        			playAlert(audioTextUnlocked, music3)
+         		} 
         		}
             }
-    if ("active" == evt.value) {
+    if (eVal == "active") {
     	if (audioTextActive) {
     	speech4?.speak(audioTextActive)
-        music4?.play(audioTextActive)
+				if (music4) {
+        			playAlert(audioTextActive, music4)
+         		} 
     		}
         }
-    	if ("inActive" == evt.value)  {
+    	if (eVal == "inactive")  {
         	if (audioTextInactive) {
         	speech4?.speak(audioTextInactive)
-            music4?.play(audioTextInactive)
+				if (music4) {
+        			playAlert(audioTextInactive, music4)
+         		} 
         		}
             }
-    if ("present" == evt.value) {
+    if (eVal == "present") {
     	if (audioTextPresent) {
     	speech5?.speak(audioTextPresent)
-        music5?.play(audioTextPresent)
+				if (music5) {
+        			playAlert(audioTextPresent, music5)
+         		} 
     		}
         }
-    	if ("notPresent" == evt.value)  {
+    if (eVal == "not present")  {
         	if (audioTextNotPresent) {
         	speech5?.speak(audioTextNotPresent)
-            music5?.play(audioTextNotPresent)
+				if (music5) {
+        			playAlert(audioTextNotPresent, music5)
+         		} 
         		}
             }
-    if ("dry" == evt.value) {
+	if (eVal == "dry")  {
     	if (audioTextDry) {
     	speech6?.speak(audioTextDry)
-        music6?.play(audioTextDry)
+				if (music6) {
+        			playAlert(audioTextOn, music6)
+         		} 
     		}
         }
-    	if ("Wet" == evt.value) {
+    	if (eVal == "wet")  {
         	if (audioTextWet) {
         	speech6?.speak(audioTextWet)
-            music6?.play(audioTextWet)
+				if (music6) {
+        			playAlert(audioTextWet, music6)
+         		} 
         		}
             }
-    if ("opening" == evt.value) {
+    if (eVal == "opening")  {
     	if (audioTextOpening) {
     	speech7?.speak(audioTextOpening)
-        music7?.play(audioTextOpening)
+				if (music7) {
+        			playAlert(audioTextOn, music7)
+         		} 
     		}
         }
-    	if ("Closing" == evt.value) {
+    	if (eVal == "closing") {
         	if (audioTextClosing) {
         	speech7?.speak(audioTextClosing)
-            music7?.play(audioTextClosing)
+				if (music7) {
+        			playAlert(audioTextClosing, music7)
+         		} 
 	  		}
         }
-	}
+    if (eName == "heatingSetpoint")  {
+    	if (audioTextHeating) {
+        eTxt = audioTextHeating + " ${eVal},  degrees"
+    	if (parent.debug) log.debug "Received event heatingSetpoint, playing message:  ${eTxt}"
+        speech8?.speak(audioTextOpening)
+				if (music8) {
+                    playAlert(eTxt, music8)
+         		} 
+    		}
+        }
+    	if (eName == "coolingSetpoint") {
+        	if (audioTextCooling) {
+            eTxt = audioTextHeating + "'${eVal}',  degrees"
+        	if (parent.debug) log.debug "Received event coolingSetpoint, playing message:  ${eTxt}"
+            speech8?.speak(audioTextCooling)
+				if (music8) {
+        			playAlert(eTxt, music8)
+         		} 
+	  		}
+        }  
+    }
+   
 }
+/************************************************************************************************************
+   Play Sonos Alert
+************************************************************************************************************/
+def playAlert(message, speaker) {
 
+    state.sound = textToSpeech(message instanceof List ? message[0] : message)
+    speaker.playTrackAndResume(state.sound.uri, state.sound.duration, volume)
+    if (parent.debug) log.debug "Sending message: ${message} to speaker: ${speaker}"
+
+}
 /************************************************************************************************************
    Version/Copyright/Information/Help
 ************************************************************************************************************/
