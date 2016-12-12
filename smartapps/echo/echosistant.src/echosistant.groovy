@@ -597,8 +597,8 @@ mappings {
 		Begining Process
 ************************************************************************************************************/
 def processBegin(){
-    	log.debug "--Begin commands received--"
-    def Ver = params.versionTxt 		
+    	log.debug "-- Initial Commands Received from Lambda --"
+    def versionTxt  = params.versionTxt 		
     def versionDate = params.versionDate
     def pMain = app.label
 	def pContinue = "Yes"
@@ -614,17 +614,16 @@ def installed() {
 	if (debug) log.debug "Installed with settings: ${settings}"
     if (debug) log.trace "STappID = '${app.id}' , STtoken = '${state.accessToken}'"
 	initialize()
-    alertHandler()	
 }
 def updated() { 
 	if (debug) log.debug "Updated with settings: ${settings}"
+    unsubscribe()
     initialize()
-    alertHandler()	
-    if (debug) log.info getProfileList()
 }
+
 def initialize() {
 	if (!parent){
-    	if (debug) log.debug "Initialize !parent"
+    	if (debug) log.debug "Initialize Parent app"
         sendLocationEvent(name: "echoSistant", value: "refresh", data: [profiles: getProfileList()] , isStateChange: true, descriptionText: "echoSistant Profile list refresh")
     	state.lastMessage = null
 		state.lastIntent  = null
@@ -640,27 +639,46 @@ def initialize() {
 			}
 	}
     else{
-        if (debug) log.debug "Initialize else block"
+        if (debug) log.debug "Initialize Child app"
         state.lastMessage = null
     	state.lastTime  = null
+        subscribeChildToEvents()
      }
 }
 /************************************************************************************************************
 		Subscriptions
 ************************************************************************************************************/
-def subscribeToEvents() {
+def subscribeChildToEvents() {
 	if (runModes) {
 		subscribe(runMode, location.currentMode, modeChangeHandler)
 	}
     if (runDay) {
    		subscribe(runDay, location.day, location.currentDay)
 	} 
+    if (TheSwitch) {
+        subscribe(TheSwitch, "switch", myHandler)
+        }
+    if (TheContact) {
+        subscribe(TheContact, "contact.open", myHandler)
+        subscribe(TheContact, "contact.closed", myHandler)
+        }
+    if (TheLock) {
+        subscribe(TheLock, "lock.locked", myHandler)
+        subscribe(TheLock, "lock.unlocked", myHandler)
+        }
+    if (TheMotion) {
+        subscribe(TheMotion, "motion.active", myHandler)
+        subscribe(TheMotion, "motion.inactive", myHandler)
+        }
+    if (ThePresence) {
+        subscribe(ThePresence, "presence.present", myHandler)
+        subscribe(ThePresence, "presence.notPresent", myHandler)
+        }
+    if (TheWater) {    
+        subscribe(TheWater, "waterSensor.dry", myHandler)
+        subscribe(TheWater, "waterSensor.wet", myHandler)
+        }
 }
-def unsubscribeToEvents() {
-	if (triggerModes) {
-    	unsubscribe(location, modeChangeHandler)
-    }
-} 
 /************************************************************************************************************
 		CoRE Integration
 ************************************************************************************************************/
@@ -677,8 +695,9 @@ def childUninstalled() {
 ************************************************************************************************************/
 def processTts() {
 		def ptts = params.ttstext 
-   		def pintentName = params.intentName
-        def ttsintentname = params.ttsintentname
+		def pttx = params.ttstext 
+   		
+        def pintentName = params.intentName
             if (debug) log.debug "Message received from Lambda with: (ptts) = '${ptts}', (pintentName) = '${pintentName}', ttsintentname = '${ttsintentname}'"
         def outputTxt = ''
     	def pContCmds = "false"
@@ -686,11 +705,8 @@ def processTts() {
         def dataSet = [ptts:ptts,pttx:pttx,pintentName:pintentName] 
 		def controlData = [pCommands:pCommands,pProfiles:pProfiles,pintentName:pintentName] 
         def repeat = "repeat last message"
-       	def pMainIntent ="assistant"
-        	if (mainIntent){
-            		pMainIntent = mainIntent
-        	}
-        	if (debug) log.debug "#4 Main intent being called = '${pMainIntent}'"  
+        	if (debug) log.debug "Main intent being called = '${pMainIntent}'"  
+  
         if (ptts==repeat) {
 				if (pMainIntent == pintentName) {
                 outputTxt = "The last message sent was," + state.lastMessage + ", and it was sent to, " + state.lastIntent + ", at, " + state.lastTime 
@@ -721,7 +737,6 @@ def processTts() {
                     if (debug) log.debug "Running main loop with '${ptts}'"                      
                     childApps.each {child ->
 						child.profileEvaluate(dataSet)
-            			//child.profileControl(controlData)
                         }
             			childApps.each { child ->
     						def cm = child.label
@@ -748,7 +763,7 @@ def processTts() {
                   		}
 				}
       	}
-        if (debug) log.debug "#6 Alexa response sent to Lambda = '${outputTxt}', '${pContCmds}' "
+        if (debug) log.debug "Alexa response sent to Lambda = '${outputTxt}', '${pContCmds}' "
 		return ["outputTxt":outputTxt, "pContCmds":pContCmds]
 }
 /************************************************************************************************************
@@ -760,8 +775,36 @@ def controlDevices() {
         def pNum = params.pNum
         def pDevice = params.pDevice
 		def controlData = [pCommand:pCommand,pProfile:pProfile,pNum:pNum,pDevice:pDevice] 
-        	if (debug) log.debug "Message received from Lambda to control devices with settings: (pCommand) = '${pCommand}', (pProfile) = '${pProfile}', pNum = '${pNum}', (pDevice) = '${pDevice}'"
+        if (debug) log.debug "Message received from Lambda to control devices with settings: (pCommand)"+
+    						"= '${pCommand}', (pProfile) = '${pProfile}', pNum = '${pNum}', (pDevice) = '${pDevice}'"
+        
+        if (pCommand==repeat) {
+                outputTxt = "The last message sent was," + state.lastMessage + ", and it was sent to, " + state.lastIntent + ", at, " + state.lastTime 
+		}
+
+        if (pDevice.toLowerCase()  == cSwithes.toLowerCase()){
+        	if (command == "dark" || command == "brighter" || command == "on") {
+            	if (pNum) {
+            		runIn(pNum*60,turnOncSwitch)
+                }
+             	else {
+       	    		if (parent.debug) log.debug "Turning control switch on"
+                	switches?.on()
+				}
+        	}
+		if (command == "bright" || command == "darker" || command == "off") {     	
+        	if (pNum) {
+          		runIn(pNum*60,turnOffcSwitch)
+			}	
+        	else {
+        		if (parent.debug) log.debug "Turning control switch off"
+                switches?.off()
+            }
+        }
+	}
 }
+
+
 /******************************************************************************************************
    SPEECH AND TEXT PROCESSING (PROFILE)
 ******************************************************************************************************/
@@ -803,7 +846,7 @@ def profileEvaluate(params) {
                                             }
     								}
     					sendtxt(txt) 
-                        state.lastMessage = tts
+                        state.lastMessage = txt
                         state.lastTime = new Date(now()).format("h:mm aa", location.timeZone)
             	if (parent.debug) log.debug "Sending sms and voice message to selected phones and speakers"  
 				}
@@ -821,43 +864,6 @@ def profileEvaluate(params) {
                 location.helloHome?.execute(settings.runRoutine)
                 }
         }
-}
-/******************************************************************************************************
-   CONTROL PROCESSING (PROFILE)
-******************************************************************************************************/
-def profileControl(params) {
-        def intent = params.pintentName
-        def profile = params.pProfiles
-        def command = params.pCommands
-        def childName = app.label       
-        if (parent.debug) log.debug "Message received from Parent with: (profile) = '${profile}', (command) = '${command}', intent = '${intent}', childName = '${childName}' "
-            if (profile.toLowerCase()  == childName.toLowerCase()){
-			if (parent.debug) log.debug "Profile called is '${profile}' with command '${command}'"
-        if (command == "dark" || command == "brighter" || command == "on") {
-            if (sSecondsOn) {
-            	runIn(sSecondsOn,turnOnSwitch)
-                runIn(sSecondsOn,turnOnOtherSwitch)
-                runIn(sSecondsOn,turnOnDimmers)
-                runIn(sSecondsOn,turnOnOtherDimmers)
-                }
-             else {
-       	    	if (parent.debug) log.debug "Turning switches on"
-                switches?.on()
-			}
-        }
-		if (command == "bright" || command == "darker" || command == "off") {     	
-        	if (sSecondsOff) {
-          		runIn(sSecondsOff,turnOffSwitch)
-                runIn(sSecondsOff,turnOffOtherSwitch)
-                runIn(sSecondsOff,turnOffDimmers)
-                runIn(sSecondsOff,turnOffOtherDimmers)
-			}	
-        	else {
-        		if (parent.debug) log.debug "Turning switches off"
-                switches?.off()
-            }
-        }
-	}
 }
 /***********************************************************************************************************************
     LAST MESSAGE HANDLER
@@ -931,21 +937,15 @@ private timeIntervalLabel() {
 /***********************************************************************************************************************
     SMS HANDLER
 ***********************************************************************************************************************/
-private void sendText(number, message) {
-    if (sms) {
-        def phones = sms.split("\\,")
-        for (phone in phones) {
-            sendSms(phone, message)
-        }
-    }
-}
 private void sendtxt(message) {
     if (parent.debug) log.debug message
     if (sendContactText) { 
         sendNotificationToContacts(message, recipients)
     } 
-    if (push || push1 || push2 || push3 || push4 || push5 || push6 || push7) { 
-    sendPush message 
+    else {
+    	if (push || push1 || push2 || push3 || push4 || push5 || push6 || push7) { 
+    		sendPush message
+        }
     } 
     if (notify || notify1 || notify2 || notify3 || notify4 || notify5 || notify6 || notify7) {
         sendNotificationEvent(message)
@@ -954,6 +954,15 @@ private void sendtxt(message) {
         sendText(sms, message)
 	}
 }
+private void sendText(number, message) {
+    if (sms) {
+        def phones = sms.split("\\,")
+        for (phone in phones) {
+            sendSms(phone, message)
+        }
+    }
+}
+
 /************************************************************************************************************
    Switch/Dimmer/Toggle Handlers
 ************************************************************************************************************/
@@ -1096,39 +1105,39 @@ private flashLights() {
 /************************************************************************************************************
    Alerts Handler
 ************************************************************************************************************/
-def myHandler(evt) {
+def myHandler() {
 if (getDayOk()==true && getModeOk()==true && getTimeOk()==true) {
-     if ("on" == evt.value) {
+     if (TheSwitch?.latestValue('switch').contains('on')) {
      	if (audioTextOn1) {
   		speech1?.speak(audioTextOn)
         music1?.play(audioTextOn)        
    			}
         }
-    	if ("off" == evt.value) {
+    	if (TheSwitch?.latestValue('switch').contains('off')) {
         	if (audioTextOff) {
         	speech1?.speak(audioTextOff)
             music1?.play(audioTextOff)
    				}
             }
-    if ("open" == evt.value) {
+    if (TheContact?.lastValue('contact').contains('open')) {
     	if (audioTextOpen) {
   		speech2?.speak(audioTextOpen)
         music2?.play(audioTextOpen)
     		}
         }
-    	if ("closed" == evt.value) {
+    	if (TheContact?.lastValue('contact').contains('closed')) {
         	if (audioTextClosed) {
         	speech2?.speak(audioTextClosed)
             music2?.play(audioTextClosed)
     			}
             }
-    if ("locked" == evt.value) {
+    if (TheLock?.lastValue('lock').contains('lock')) {
     	if (audioTextLocked) {
     	speech3?.speak(audioTextLocked)
         music3?.play(audioTextLocked)
     		}
         }
-    	if ("unlocked" == evt.value) {
+    	if (TheLock?.lastValue('lock').contains('unlock')) {
         	if (audioTextUnlocked) {
         	speech3?.speak(audioTextUnlocked)
             music3?.play(audioTextUnlocked)
@@ -1184,31 +1193,7 @@ if (getDayOk()==true && getModeOk()==true && getTimeOk()==true) {
         }
 	}
 }
-def alertHandler() {
-if (TheSwitch) {
-	subscribe(TheSwitch, "switch", myHandler)
-    }
-if (TheContact) {
-	subscribe(TheContact, "contact.open", myHandler)
-    subscribe(TheContact, "contact.closed", myHandler)
-    }
-if (TheLock) {
-    subscribe(TheLock, "lock.locked", myHandler)
-    subscribe(TheLock, "lock.unlocked", myHandler)
-	}
-if (TheMotion) {
-    subscribe(TheMotion, "motion.active", myHandler)
-    subscribe(TheMotion, "motion.inactive", myHandler)
-    }
-if (ThePresence) {
-    subscribe(ThePresence, "presence.present", myHandler)
-    subscribe(ThePresence, "presence.notPresent", myHandler)
-    }
-if (TheWater) {    
-    subscribe(TheWater, "waterSensor.dry", myHandler)
-    subscribe(TheWater, "waterSensor.wet", myHandler)
-    }
-}
+
 /************************************************************************************************************
    Version/Copyright/Information/Help
 ************************************************************************************************************/
