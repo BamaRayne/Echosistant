@@ -347,7 +347,6 @@ page name: "devicesControl"
 					input "offFor", "number", title: "Off for (default 1 second)", required: false, submitOnChange:true
 						}
                     }
-                    
                 section("Turn on these switches and dimmers after a delay of..."){
                     input "sSecondsOn", "number", title: "Seconds?", defaultValue: none, required: false
                 }
@@ -380,12 +379,17 @@ page name: "Alerts"
         dynamicPage(name: "Alerts", uninstall: false) {
         section ("Switches and Dimmers", hideWhenEmpty: true) {
             input "ShowSwitches", "bool", title: "Switches and Dimmers", default: false, submitOnChange: true
-            if (TheSwitch || audioTextOn || audioTextOff || speech1 || push1 || notify1) paragraph "Configured with Settings"
+            if (TheSwitch || audioTextOn || audioTextOff || speech1 || push1 || notify1 || music1) paragraph "Configured with Settings"
             if (ShowSwitches) {        
                 input "TheSwitch", "capability.switch", title: "Choose Switches...", required: false, multiple: true, submitOnChange: true
                 input "audioTextOn", "audioTextOn", title: "Play this message", description: "Message to play when the switch turns on", required: false, capitalization: "sentences"
                 input "audioTextOff", "audioTextOff", title: "Play this message", description: "Message to play when the switch turns off", required: false, capitalization: "sentences"
                 input "speech1", "capability.speechSynthesis", title: "Message Player", required: false, multiple: true, submitOnChange: true
+                input "music1", "capability.musicPlayer", title: "On this Sonos Type Devices", required: false, multiple: true, submitOnChange: true
+                if (music1) {
+                    input "volume1", "number", title: "Temporarily change volume", description: "0-100%", required: false
+                    input "resumePlaying1", "bool", title: "Resume currently playing music after notification", required: false, defaultValue: false
+                	}
                 input "sendMsg1", "bool", title: "Send Push and/or Notifications", default: false, submitOnChange: true
                 	if (sendMsg1) {
                 	input "push1", "bool", title: "Send Push Notification (optional)", required: false, defaultValue: false, submitOnChange: true
@@ -395,13 +399,18 @@ page name: "Alerts"
         }
         section("Doors and Windows", hideWhenEmpty: true) {
             input "ShowContacts", "bool", title: "Doors and Windows", default: false, submitOnChange: true
-            if (TheContact || audioTextOpen || audioTextClosed || speech2 || push2 || notify2) paragraph "Configured with Settings"
+            if (TheContact || audioTextOpen || audioTextClosed || speech2 || push2 || notify2 || music2) paragraph "Configured with Settings"
             if (ShowContacts) {
                 input "TheContact", "capability.contactSensor", title: "Choose Doors and Windows..", required: false, multiple: true, submitOnChange: true
                 input "audioTextOpen", "textOpen", title: "Play this message", description: "Message to play when the door opens", required: false, capitalization: "sentences"
                 input "audioTextClosed", "textClosed", title: "Play this message", description: "Message to play when the door closes", required: false, capitalization: "sentences"
                 input "speech2", "capability.speechSynthesis", title: "Message Player", required: false, multiple: true, submitOnChange: true
-            	input "sendMsg2", "bool", title: "Send Push and/or Notifications", default: false, submitOnChange: true
+            	input "music2", "capability.musicPlayer", title: "On this Sonos Type Devices", required: false, multiple: true, submitOnChange: true
+                if (music2) {
+                    input "volume2", "number", title: "Temporarily change volume", description: "0-100%", required: false
+                    input "resumePlaying2", "bool", title: "Resume currently playing music after notification", required: false, defaultValue: false
+                	}
+                input "sendMsg2", "bool", title: "Send Push and/or Notifications", default: false, submitOnChange: true
                 	if (sendMsg2) {
                 	input "push2", "bool", title: "Send Push Notification (optional)", required: false, defaultValue: false, submitOnChange: true
             		input "notify2", "bool", title: "Send message to Mobile App Notifications Tab (optional)", required: false, defaultValue: false, submitOnChange: true
@@ -410,13 +419,18 @@ page name: "Alerts"
         }
         section("Locks", hideWhenEmpty: true) {
             input "ShowLocks", "bool", title: "Locks", default: false, submitOnChange: true
-            if (TheLock || audioTextLocked || audioTextUnlocked || speech3 || push3 || notify3) paragraph "Configured with Settings"
+            if (TheLock || audioTextLocked || audioTextUnlocked || speech3 || push3 || notify3 || music3) paragraph "Configured with Settings"
             if (ShowLocks) {
                 input "TheLock", "capability.lock", title: "Choose Locks...", required: false, multiple: true, submitOnChange: true
                 input "audioTextLocked", "textLocked", title: "Play this message", description: "Message to play when the lock locks", required: false, capitalization: "sentences"
                 input "audioTextUnlocked", "textUnlocked", title: "Play this message", description: "Message to play when the lock unlocks", required: false, capitalization: "sentences"
                 input "speech3", "capability.speechSynthesis", title: "Message Player", required: false, multiple: true, submitOnChange: true
-            	input "sendMsg3", "bool", title: "Send Push and/or Notifications", default: false, submitOnChange: true
+            	input "music3", "capability.musicPlayer", title: "On this Sonos Type Devices", required: false, multiple: true, submitOnChange: true
+                if (music3) {
+                    input "volume3", "number", title: "Temporarily change volume", description: "0-100%", required: false
+                    input "resumePlaying3", "bool", title: "Resume currently playing music after notification", required: false, defaultValue: false
+                	}
+                input "sendMsg3", "bool", title: "Send Push and/or Notifications", default: false, submitOnChange: true
                 	if (sendMsg3) {
                 	input "push3", "bool", title: "Send Push Notification (optional)", required: false, defaultValue: false, submitOnChange: true
             		input "notify3", "bool", title: "Send message to Mobile App Notifications Tab (optional)", required: false, defaultValue: false, submitOnChange: true
@@ -425,13 +439,18 @@ page name: "Alerts"
         }
         section("Motion Sensors", hideWhenEmpty: true) {
             input "ShowMotion", "bool", title: "Motion Sensors", default: false, submitOnChange: true
-            if (TheMotion || audioTextActive || audioTextInactive || speech4 || push4 || notify4) paragraph "Configured with Settings"
+            if (TheMotion || audioTextActive || audioTextInactive || speech4 || push4 || notify4 || music4) paragraph "Configured with Settings"
             if (ShowMotion) {
                 input "TheMotion", "capability.motionSensor", title: "Choose Motion Sensors...", required: false, multiple: true, submitOnChange: true
                 input "audioTextActive", "textActive", title: "Play this message", description: "Message to play when motion is detected", required: false, capitalization: "sentences"
                 input "audioTextInactive", "textInactive", title: "Play this message", description: "Message to play when motion stops", required: false, capitalization: "sentences"
                 input "speech4", "capability.speechSynthesis", title: "Message Player", required: false, multiple: true, submitOnChange: true
-            	input "sendMsg4", "bool", title: "Send Push and/or Notifications", default: false, submitOnChange: true
+            	input "music4", "capability.musicPlayer", title: "On this Sonos Type Devices", required: false, multiple: true, submitOnChange: true
+                if (music4) {
+                    input "volume4", "number", title: "Temporarily change volume", description: "0-100%", required: false
+                    input "resumePlaying4", "bool", title: "Resume currently playing music after notification", required: false, defaultValue: false
+                	}
+                input "sendMsg4", "bool", title: "Send Push and/or Notifications", default: false, submitOnChange: true
                 	if (sendMsg4) {
                 	input "push4", "bool", title: "Send Push Notification (optional)", required: false, defaultValue: false, submitOnChange: true
             		input "notify4", "bool", title: "Send message to Mobile App Notifications Tab (optional)", required: false, defaultValue: false, submitOnChange: true
@@ -441,12 +460,17 @@ page name: "Alerts"
         }
         section("Presence Sensors", hideWhenEmpty: true) {
         	input "ShowPresence", "bool", title: "Presence Sensors", default: false, submitOnChange: true
-        	if (ThePresence || audioTextPresent || audioTextNotPresent || speech5 || push5 || notify5) paragraph "Configured with Settings"
+        	if (ThePresence || audioTextPresent || audioTextNotPresent || speech5 || push5 || notify5 || music5) paragraph "Configured with Settings"
             if (ShowPresence) {
                 input "ThePresence", "capability.presenceSensor", title: "Choose Presence Sensors...", required: false, multiple: true, submitOnChange: true
                 input "audioTextPresent", "textPresent", title: "Play this message", description: "Message to play when the Sensor arrives", required: false, capitalization: "sentences"
                 input "audioTextNotPresent", "textNotPresent", title: "Play this message", description: "Message to play when the Sensor Departs", required: false, capitalization: "sentences"
                 input "speech5", "capability.speechSynthesis", title: "Message Player", required: false, multiple: true, submitOnChange: true
+                input "music5", "capability.musicPlayer", title: "On this Sonos Type Devices", required: false, multiple: true, submitOnChange: true
+                if (music5) {
+                    input "volume5", "number", title: "Temporarily change volume", description: "0-100%", required: false
+                    input "resumePlaying5", "bool", title: "Resume currently playing music after notification", required: false, defaultValue: false
+                	}
                 input "sendMsg5", "bool", title: "Send Push and/or Notifications", default: false, submitOnChange: true
                 	if (sendMsg5) {
                 	input "push5", "bool", title: "Send Push Notification (optional)", required: false, defaultValue: false, submitOnChange: true
@@ -456,13 +480,18 @@ page name: "Alerts"
 		}
         section("Water Sensors", hideWhenEmpty: true) {
         	input "ShowWater", "bool", title: "Water Detectors", default: false, submitOnChange: true
-        	if (TheWater || audioTextWet || audioTextDry || speech6 || push6 || notify6) paragraph "Configured with Settings"
+        	if (TheWater || audioTextWet || audioTextDry || speech6 || push6 || notify6 || music6) paragraph "Configured with Settings"
             if (ShowWater) {
                 input "TheWater", "capability.waterSensor", title: "Choose Water Sensors...", required: false, multiple: true, submitOnChange: true
                 input "audioTextWet", "textWet", title: "Play this message", description: "Message to play when water is detected", required: false, capitalization: "sentences"
                 input "audioTextDry", "textDry", title: "Play this message", description: "Message to play when is no longer detected", required: false, capitalization: "sentences"
                 input "speech6", "capability.speechSynthesis", title: "Message Player", required: false, multiple: true, submitOnChange: true
-				input "sendMsg6", "bool", title: "Send Push and/or Notifications", default: false, submitOnChange: true
+				input "music6", "capability.musicPlayer", title: "On this Sonos Type Devices", required: false, multiple: true, submitOnChange: true
+                if (music6) {
+                    input "volume6", "number", title: "Temporarily change volume", description: "0-100%", required: false
+                    input "resumePlaying6", "bool", title: "Resume currently playing music after notification", required: false, defaultValue: false
+                	}
+                input "sendMsg6", "bool", title: "Send Push and/or Notifications", default: false, submitOnChange: true
                 	if (sendMsg6) {
                 	input "push6", "bool", title: "Send Push Notification (optional)", required: false, defaultValue: false, submitOnChange: true
             		input "notify6", "bool", title: "Send message to Mobile App Notifications Tab (optional)", required: false, defaultValue: false, submitOnChange: true
@@ -471,12 +500,17 @@ page name: "Alerts"
         }        
         section("Garage Doors", hideWhenEmpty: true) {
         	input "ShowGarage", "bool", title: "Garage Doors", default: false, submitOnChange: true
-        	if (TheGarage || audioTextOpening || audioTextClosing || speech7 || push7 || notify7) paragraph "Configured with Settings"
+        	if (TheGarage || audioTextOpening || audioTextClosing || speech7 || push7 || notify7 || music7) paragraph "Configured with Settings"
             if (ShowGarage) {
                 input "TheGarage", "capability.garageDoorControl", title: "Choose Garage Doors...", required: false, multiple: true, submitOnChange: true
                 input "audioTextOpening", "textOpening", title: "Play this message", description: "Message to play when the Garage Door Opens", required: false, capitalization: "sentences"
                 input "audioTextClosing", "textClosing", title: "Play this message", description: "Message to play when the Garage Door Closes", required: false, capitalization: "sentences" 
                 input "speech7", "capability.speechSynthesis", title: "Message Player", required: false, multiple: true, submitOnChange: true
+                input "music7", "capability.musicPlayer", title: "On this Sonos Type Devices", required: false, multiple: true, submitOnChange: true
+                if (music7) {
+                    input "volume7", "number", title: "Temporarily change volume", description: "0-100%", required: false
+                    input "resumePlaying7", "bool", title: "Resume currently playing music after notification", required: false, defaultValue: false
+                	}
                 input "sendMsg7", "bool", title: "Send Push and/or Notifications", default: false, submitOnChange: true
                 	if (sendMsg7) {
                 	input "push7", "bool", title: "Send Push Notification (optional)", required: false, defaultValue: false, submitOnChange: true
@@ -1099,71 +1133,85 @@ if (getDayOk()==true && getModeOk()==true && getTimeOk()==true) {
      if ("on" == evt.value) {
      	if (audioTextOn) {
   		speech1?.speak(audioTextOn)
+        music1?.play(audioTextOn)        
    			}
         }
     	if ("off" == evt.value) {
         	if (audioTextOff) {
         	speech1?.speak(audioTextOff)
+            music1?.play(audioTextOff)
    				}
             }
     if ("open" == evt.value) {
     	if (audioTextOpen) {
   		speech2?.speak(audioTextOpen)
+        music2?.play(audioTextOpen)
     		}
         }
     	if ("closed" == evt.value) {
         	if (audioTextClosed) {
         	speech2?.speak(audioTextClosed)
+            music2?.play(audioTextClosed)
     			}
             }
     if ("locked" == evt.value) {
     	if (audioTextLocked) {
     	speech3?.speak(audioTextLocked)
+        music3?.play(audioTextLocked)
     		}
         }
     	if ("unlocked" == evt.value) {
         	if (audioTextUnlocked) {
         	speech3?.speak(audioTextUnlocked)
+            music3?.play(audioTextUnlocked)
         		}
             }
     if ("active" == evt.value) {
     	if (audioTextActive) {
     	speech4?.speak(audioTextActive)
+        music4?.play(audioTextActive)
     		}
         }
     	if ("inActive" == evt.value)  {
         	if (audioTextInactive) {
         	speech4?.speak(audioTextInactive)
+            music4?.play(audioTextInactive)
         		}
             }
     if ("present" == evt.value) {
     	if (audioTextPresent) {
     	speech5?.speak(audioTextPresent)
+        music5?.play(audioTextPresent)
     		}
         }
     	if ("notPresent" == evt.value)  {
         	if (audioTextNotPresent) {
         	speech5?.speak(audioTextNotPresent)
+            music5?.play(audioTextNotPresent)
         		}
             }
     if ("dry" == evt.value) {
     	if (audioTextDry) {
     	speech6?.speak(audioTextDry)
+        music6?.play(audioTextDry)
     		}
         }
     	if ("Wet" == evt.value) {
         	if (audioTextWet) {
         	speech6?.speak(audioTextWet)
+            music6?.play(audioTextWet)
         		}
             }
     if ("opening" == evt.value) {
     	if (audioTextOpening) {
     	speech7?.speak(audioTextOpening)
+        music7?.play(audioTextOpening)
     		}
         }
     	if ("Closing" == evt.value) {
         	if (audioTextClosing) {
         	speech7?.speak(audioTextClosing)
+            music7?.play(audioTextClosing)
 	  		}
         }
 	}
@@ -1364,7 +1412,7 @@ def completeDevCon() {
 
 def completeAlertPro(){
 	def result = ""
-	if (speech1 || push1 || notify1 || speech2 || push2 || notify2 || speech3 || push3 || notify3 || speech4 || push4 || notify4 || speech5 || push5 || notify5 || speech6 || push6 || notify6 || speech7 || push7 || notify7) 
+	if (speech1 || push1 || notify1 || music1 || speech2 || push2 || notify2 || music2 || speech3 || push3 || notify3 || music3 || speech4 || push4 || notify4 || music4 || speech5 || push5 || notify5 || music5 || speech6 || push6 || notify6 || music6 || speech7 || push7 || notify7 || music7) 
     {
     result = "complete"
     }    	
@@ -1372,7 +1420,7 @@ def completeAlertPro(){
 }
 def AlertProDescr() {
     def text = "Tap here to Configure"
-	if (speech1 || push1 || notify1 || speech2 || push2 || notify2 || speech3 || push3 || notify3 || speech4 || push4 || notify4 || speech5 || push5 || notify5 || speech6 || push6 || notify6 || speech7 || push7 || notify7) 
+	if (speech1 || push1 || notify1 || music1 || speech2 || push2 || notify2 || music2 || speech3 || push3 || notify3 || music3 || speech4 || push4 || notify4 || music4 || speech5 || push5 || notify5 || music5 || speech6 || push6 || notify6 || music6 || speech7 || push7 || notify7 || music7) 
     {
     text = "Configured"
     }
