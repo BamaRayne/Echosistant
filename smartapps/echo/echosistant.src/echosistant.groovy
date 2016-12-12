@@ -157,7 +157,7 @@ page name: "profiles"
                         if(showIntegration) {
                             href"CoRE", title: "Integrate CoRe...",
                             	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_CoRE.png"
-                            href "devicesControlMain", title: "Control These Devices...", description: DevProDescr() , state: completeDevPro(),
+                            href "devicesControlMain", title: "Control These Devices...", description: ParConDescr() , state: completeParCon(),
                             	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_devices.png"            			
                     		paragraph ("Define increments for the devices that Alexa controls directly")
                             input "cLevel", "number", title: "Alexa Adjusts Light Level by (1-100%)...", defaultValue: 30, required: false
@@ -333,10 +333,10 @@ page name: "devicesControl"
                     	}
                 section ("Dimmers", hideWhenEmpty: true){
                     input "dimmers", "capability.switchLevel", title: "Select Dimmers...", multiple: true, required: false , submitOnChange:true
-                        if (dimmers) input "dimmersCMD", "enum", title: "Command To Send To Dimmers", options:["on":"Turn on","off":"Turn off","set":"Set level"], multiple: false, required: false, submitOnChange:true
+                        if (dimmers) input "dimmersCmd", "enum", title: "Command To Send To Dimmers", options:["on":"Turn on","off":"Turn off","set":"Set level"], multiple: false, required: false, submitOnChange:true
                         if (dimmersCMD == "set" && dimmers) input "dimmersLVL", "number", title: "Dimmers Level", description: "Set dimmer level", required: false
                         if (dimmersLVL) input "otherDimmers", "capability.switchLevel", title: "Control These Dimmers...", multiple: true, required: false , submitOnChange:true
-                        if (otherDimmers) input "otherDimmersCMD", "enum", title: "Command To Send To Dimmers", options:["on":"Turn on","off":"Turn off","set":"Set level"], multiple: false, required: false, submitOnChange:true
+                        if (otherDimmers) input "otherDimmersCmd", "enum", title: "Command To Send To Dimmers", options:["on":"Turn on","off":"Turn off","set":"Set level"], multiple: false, required: false, submitOnChange:true
                         if (otherDimmersCMD == "set" && otherDimmers) input "otherDimmersLVL", "number", title: "Dimmers Level", description: "Set dimmer level", required: false
                 }
                 section ("Flash These Switches") {
@@ -378,7 +378,7 @@ page name: "CoRE"
 page name: "Alerts"
     def Alerts(){
         dynamicPage(name: "Alerts", uninstall: false) {
-        section ("Switches and Dimmers") {
+        section ("Switches and Dimmers", hideWhenEmpty: true) {
             input "ShowSwitches", "bool", title: "Switches and Dimmers", default: false, submitOnChange: true
             if (TheSwitch || audioTextOn || audioTextOff || speech1 || push1 || notify1) paragraph "Configured with Settings"
             if (ShowSwitches) {        
@@ -393,7 +393,7 @@ page name: "Alerts"
             	}
             }             
         }
-        section("Doors and Windows") {
+        section("Doors and Windows", hideWhenEmpty: true) {
             input "ShowContacts", "bool", title: "Doors and Windows", default: false, submitOnChange: true
             if (TheContact || audioTextOpen || audioTextClosed || speech2 || push2 || notify2) paragraph "Configured with Settings"
             if (ShowContacts) {
@@ -408,7 +408,7 @@ page name: "Alerts"
             	}
             }
         }
-        section("Locks") {
+        section("Locks", hideWhenEmpty: true) {
             input "ShowLocks", "bool", title: "Locks", default: false, submitOnChange: true
             if (TheLock || audioTextLocked || audioTextUnlocked || speech3 || push3 || notify3) paragraph "Configured with Settings"
             if (ShowLocks) {
@@ -420,10 +420,10 @@ page name: "Alerts"
                 	if (sendMsg3) {
                 	input "push3", "bool", title: "Send Push Notification (optional)", required: false, defaultValue: false, submitOnChange: true
             		input "notify3", "bool", title: "Send message to Mobile App Notifications Tab (optional)", required: false, defaultValue: false, submitOnChange: true
-            	}
+                }
             }
         }
-        section("Motion Sensors") {
+        section("Motion Sensors", hideWhenEmpty: true) {
             input "ShowMotion", "bool", title: "Motion Sensors", default: false, submitOnChange: true
             if (TheMotion || audioTextActive || audioTextInactive || speech4 || push4 || notify4) paragraph "Configured with Settings"
             if (ShowMotion) {
@@ -435,10 +435,11 @@ page name: "Alerts"
                 	if (sendMsg4) {
                 	input "push4", "bool", title: "Send Push Notification (optional)", required: false, defaultValue: false, submitOnChange: true
             		input "notify4", "bool", title: "Send message to Mobile App Notifications Tab (optional)", required: false, defaultValue: false, submitOnChange: true
-            	}
+            		
+                }
             }
         }
-        section("Presence Sensors") {
+        section("Presence Sensors", hideWhenEmpty: true) {
         	input "ShowPresence", "bool", title: "Presence Sensors", default: false, submitOnChange: true
         	if (ThePresence || audioTextPresent || audioTextNotPresent || speech5 || push5 || notify5) paragraph "Configured with Settings"
             if (ShowPresence) {
@@ -453,7 +454,7 @@ page name: "Alerts"
             	}
 			}
 		}
-        section("Water Sensors") {
+        section("Water Sensors", hideWhenEmpty: true) {
         	input "ShowWater", "bool", title: "Water Detectors", default: false, submitOnChange: true
         	if (TheWater || audioTextWet || audioTextDry || speech6 || push6 || notify6) paragraph "Configured with Settings"
             if (ShowWater) {
@@ -468,7 +469,7 @@ page name: "Alerts"
             	}
 			}                
         }        
-        section("Garage Doors") {
+        section("Garage Doors", hideWhenEmpty: true) {
         	input "ShowGarage", "bool", title: "Garage Doors", default: false, submitOnChange: true
         	if (TheGarage || audioTextOpening || audioTextClosing || speech7 || push7 || notify7) paragraph "Configured with Settings"
             if (ShowGarage) {
@@ -954,10 +955,11 @@ private void sendtxt(message) {
 
 def switchOnHandler(evt) {
     log.debug "switchOnHandler called: $evt"
-    theswitch.on()
+    switches?.on()
 }
 def switchOffHandler(evt) {
     log.debug "switchOffHandler called: $evt"
+	switches?.off()
 }
 
 def turnOnSwitch() {
@@ -1002,55 +1004,58 @@ private deviceControl() {
             	else if (otherSwitchCmd == "off") {
                 	otherSwitch?.off()
                 	}
-          	if (dimmersCMD == "set" && dimmers){
-				if (dimmersCMD == "set"){
+          	if (dimmersCmd == "set" && dimmers){
+				if (dimmersCmd == "set"){
         			def level = dimmersLVL < 0 || !dimmersLVL ?  0 : dimmersLVL >100 ? 100 : dimmersLVL as int
         			dimmers?.setLevel(level)
             		}
 				}                    
-            if (otherDimmersCMD == "set" && otherDimmers){
-				if (otherDimmersCMD == "set"){
+            if (otherDimmersCmd == "set" && otherDimmers){
+				if (otherDimmersCmd == "set"){
         		def otherlevel = otherDimmersLVL < 0 || !otherDimmersLVL ?  0 : otherDimmersLVL >100 ? 100 : otherDimmersLVL as int
         		otherDimmers?.setLevel(otherlevel)
 				}
         	}            
 		}
-    }
-            	if (switchCMD == !off) {
                 if (sSecondsOff) {
             	if (parent.debug) log.debug "Turn switches off in '${sSecondsOff}' seconds"            
           		runIn(sSecondsOff,turnOffSwitch)
                 runIn(sSecondsOff,turnOffOtherSwitch)
                 runIn(sSecondsOff,turnOffDimmers)
                 runIn(sSecondsOff,turnOffOtherDimmers)
-				}	
 			}
 		}
+	}        
 def toggle() {
+	if (parent.debug) log.debug "The selected device is toggling now"
+	if (switches) {
 	if (switches?.currentValue('switch').contains('on')) {
 		switches?.off()
-	}
-	else if  (switches?.currentValue('switch').contains('off')) {
+		}
+    else if (switches?.currentValue('switch').contains('off')) {
 		switches?.on()
-	}
+		}
+    }
+    if (otherSwitch) {
 	if (otherSwitch?.currentValue('switch').contains('on')) {
 		otherSwitch?.off()
 	}
 	else if (otherSwitch?.currentValue('switch').contains('off')) {
 		otherSwitch?.on()
+		}
 	}
-    
-	else if (lock?.currentValue('lock').contains('locked')) {
+	if (lock) {
+	if (lock?.currentValue('lock').contains('locked')) {
 		lock?.unlock()
-	}
-	else {
-		devices.on()
-	}
+		}
+    }
+if (parent.debug) log.debug "The selected device has toggled"
 }
 /************************************************************************************************************
    Flashing Lights Handler
 ************************************************************************************************************/
 private flashLights() {
+	if (parent.debug) log.debug "The Flash Switches Option has been activated"
 	def doFlash = true
 	def onFor = onFor ?: 60000/60
 	def offFor = offFor ?: 60000/60
@@ -1280,13 +1285,28 @@ def DevProDescr() {
 
 
 def DevConDescr() {
-	def text = "Tap here to Configure"
+	def text = "Tap to set"
      if (switches || dimmers)
      { 
             text = "Configured" //"These devices will execute: ${switches}, ${dimmers}. Tap to change device(s)"
-    text
-	}    
-}          
+            }
+    text   
+}
+def ParConDescr() {
+	def text = "Tap to set"
+     if (cSwitches || cDimmers || tstat || lock || doors)
+     { 
+            text = "Configured" //"These devices will execute: ${switches}, ${dimmers}. Tap to change device(s)"
+            }
+    text   
+}       
+def completeParCon() {
+    def result = ""
+    if (cSwitches || cDimmers || tstat || lock || doors) { 
+       result = "complete"
+    }
+    result
+}
      
 //go to Profile set up
 def completeMsgPro(){
@@ -1384,3 +1404,6 @@ def runRoutineDescr() {
     }
     text
 }
+
+
+
