@@ -1217,17 +1217,29 @@ if (getDayOk()==true && getModeOk()==true && getTimeOk()==true) {
 	}
 }
 def alertHandler(evt) {
+if (TheSwitch) {
 	subscribe(TheSwitch, "switch", myHandler)
+    }
+if (TheContact) {
 	subscribe(TheContact, "contact.open", myHandler)
     subscribe(TheContact, "contact.closed", myHandler)
+    }
+if (TheLock) {
     subscribe(TheLock, "lock.locked", myHandler)
     subscribe(TheLock, "lock.unlocked", myHandler)
+	}
+if (TheMotion) {
     subscribe(TheMotion, "motion.active", myHandler)
     subscribe(TheMotion, "motion.inactive", myHandler)
+    }
+if (ThePresence) {
     subscribe(ThePresence, "presence.present", myHandler)
     subscribe(ThePresence, "presence.notPresent", myHandler)
+    }
+if (TheWater) {    
     subscribe(TheWater, "waterSensor.dry", myHandler)
     subscribe(TheWater, "waterSensor.wet", myHandler)
+    }
 }
 /************************************************************************************************************
    Version/Copyright/Information/Help
