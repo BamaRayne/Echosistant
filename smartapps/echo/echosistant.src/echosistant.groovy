@@ -48,7 +48,6 @@
  *  for the specific language governing permissions and limitations under the License.
  *
 /**********************************************************************************************************************************************/
-
 definition(
 	name			: "EchoSistant${parent ? " - Profile" : ""}",
     namespace		: "Echo",
@@ -61,7 +60,6 @@ definition(
 	iconX2Url		: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/app-Echosistant@2x.png",
 	iconX3Url		: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/app-Echosistant@2x.png")
 /**********************************************************************************************************************************************/
-
 /************************************************************************************************************
    PARENT PAGES
 ************************************************************************************************************/
@@ -75,7 +73,6 @@ preferences {
     		page name: "pageConfirmation"
     		page name: "pageReset"
         page name: "devicesControlMain"
-
     //Profile Pages    
     page name: "mainProfilePage"
     	page name: "MsgPro"
@@ -89,9 +86,7 @@ preferences {
 	page name: "MsgConfig"
     	page name: "certainTime"   
 }
-
 def pageMain() { if (!parent) mainParentPage() else mainProfilePage() }
-
 /***********************************************************************************************************************
     PARENT UI CONFIGURATION
 ***********************************************************************************************************************/
@@ -125,7 +120,6 @@ page name: "profiles"
             } 
         } 
     }
-
     def about(){
         dynamicPage(name: "about", uninstall: true) {
                 section ("Directions, How-to's, and Troubleshooting") { 
@@ -224,7 +218,7 @@ page name: "devicesControlMain"
         dynamicPage(name: "devicesControlMain", title: "Select Devices That Alexa Can Control",install: false, uninstall: false) {
             section ("Switches", hideWhenEmpty: true){
                 input "cSwitches", "capability.switch", title: "Control These Switches...", multiple: true, required: false, submitOnChange: true
-                }
+            }
             section ("Dimmers", hideWhenEmpty: true){
                 input "cDimmers", "capability.switchLevel", title: "Control These Dimmers...", multiple: true, required: false , submitOnChange:true
             }
@@ -454,7 +448,6 @@ page name: "Alerts"
                 	if (sendMsg4) {
                 	input "push4", "bool", title: "Send Push Notification (optional)", required: false, defaultValue: false, submitOnChange: true
             		input "notify4", "bool", title: "Send message to Mobile App Notifications Tab (optional)", required: false, defaultValue: false, submitOnChange: true
-            		
                 }
             }
         }
@@ -600,16 +593,13 @@ mappings {
 	path("/c") { action: [GET: "controlDevices"] }
     path("/t") {action: [GET: "processTts"]}
 }
-
 /************************************************************************************************************
 		Begining Process
 ************************************************************************************************************/
 def processBegin(){
     	log.debug "--Begin commands received--"
-    
     def Ver = params.versionTxt 		
     def versionDate = params.versionDate
-    
     def pMain = app.label
 	def pContinue = "Yes"
     	if (debug){
@@ -623,17 +613,16 @@ def processBegin(){
 def installed() {
 	if (debug) log.debug "Installed with settings: ${settings}"
     if (debug) log.trace "STappID = '${app.id}' , STtoken = '${state.accessToken}'"
-    alertHandler(evt)
 	initialize()
+    alertHandler()	
 }
 def updated() { 
 	if (debug) log.debug "Updated with settings: ${settings}"
     initialize()
-    alertHandler(evt)
+    alertHandler()	
     if (debug) log.info getProfileList()
 }
 def initialize() {
-    alertHandler(evt)	
 	if (!parent){
     	if (debug) log.debug "Initialize !parent"
         sendLocationEvent(name: "echoSistant", value: "refresh", data: [profiles: getProfileList()] , isStateChange: true, descriptionText: "echoSistant Profile list refresh")
@@ -655,14 +644,11 @@ def initialize() {
         state.lastMessage = null
     	state.lastTime  = null
      }
-
 }
-
 /************************************************************************************************************
 		Subscriptions
 ************************************************************************************************************/
 def subscribeToEvents() {
-    alertHandler(evt)
 	if (runModes) {
 		subscribe(runMode, location.currentMode, modeChangeHandler)
 	}
@@ -675,8 +661,6 @@ def unsubscribeToEvents() {
     	unsubscribe(location, modeChangeHandler)
     }
 } 
-
-
 /************************************************************************************************************
 		CoRE Integration
 ************************************************************************************************************/
@@ -684,12 +668,10 @@ def getProfileList(){
 		return getChildApps()*.label
 		if (debug) log.debug "Refreshing Profiles for CoRE, ${getChildApps()*.label}"
 }
-
 def childUninstalled() {
 	if (debug) log.debug "Profile has been deleted, refreshing Profiles for CoRE, ${getChildApps()*.label}"
     sendLocationEvent(name: "echoSistant", value: "refresh", data: [profiles: getProfileList()] , isStateChange: true, descriptionText: "echoSistant Profile list refresh")
 }
-
 /************************************************************************************************************
    TEXT TO SPEECH PROCESS (PARENT) 
 ************************************************************************************************************/
@@ -769,7 +751,6 @@ def processTts() {
         if (debug) log.debug "#6 Alexa response sent to Lambda = '${outputTxt}', '${pContCmds}' "
 		return ["outputTxt":outputTxt, "pContCmds":pContCmds]
 }
-
 /************************************************************************************************************
    CONTROL PROCESS PROCESS (PARENT) 
 ************************************************************************************************************/
@@ -779,10 +760,8 @@ def controlDevices() {
         def pNum = params.pNum
         def pDevice = params.pDevice
 		def controlData = [pCommand:pCommand,pProfile:pProfile,pNum:pNum,pDevice:pDevice] 
-        
-	if (debug) log.debug "Message received from Lambda to control devices with settings: (pCommand) = '${pCommand}', (pProfile) = '${pProfile}', pNum = '${pNum}', (pDevice) = '${pDevice}'"
+        	if (debug) log.debug "Message received from Lambda to control devices with settings: (pCommand) = '${pCommand}', (pProfile) = '${pProfile}', pNum = '${pNum}', (pDevice) = '${pDevice}'"
 }
-
 /******************************************************************************************************
    SPEECH AND TEXT PROCESSING (PROFILE)
 ******************************************************************************************************/
@@ -841,25 +820,19 @@ def profileEvaluate(params) {
                 if (runRoutine) {
                 location.helloHome?.execute(settings.runRoutine)
                 }
-                
         }
 }
-
 /******************************************************************************************************
    CONTROL PROCESSING (PROFILE)
 ******************************************************************************************************/
 def profileControl(params) {
-
         def intent = params.pintentName
         def profile = params.pProfiles
         def command = params.pCommands
         def childName = app.label       
         if (parent.debug) log.debug "Message received from Parent with: (profile) = '${profile}', (command) = '${command}', intent = '${intent}', childName = '${childName}' "
-        
-        if (profile.toLowerCase()  == childName.toLowerCase()){
+            if (profile.toLowerCase()  == childName.toLowerCase()){
 			if (parent.debug) log.debug "Profile called is '${profile}' with command '${command}'"
- 		
-
         if (command == "dark" || command == "brighter" || command == "on") {
             if (sSecondsOn) {
             	runIn(sSecondsOn,turnOnSwitch)
@@ -886,7 +859,6 @@ def profileControl(params) {
         }
 	}
 }
-
 /***********************************************************************************************************************
     LAST MESSAGE HANDLER
 ***********************************************************************************************************************/
@@ -975,7 +947,6 @@ private void sendtxt(message) {
     if (push || push1 || push2 || push3 || push4 || push5 || push6 || push7) { 
     sendPush message 
     } 
-
     if (notify || notify1 || notify2 || notify3 || notify4 || notify5 || notify6 || notify7) {
         sendNotificationEvent(message)
     }
@@ -986,7 +957,6 @@ private void sendtxt(message) {
 /************************************************************************************************************
    Switch/Dimmer/Toggle Handlers
 ************************************************************************************************************/
-
 def switchOnHandler(evt) {
     log.debug "switchOnHandler called: $evt"
     switches?.on()
@@ -995,7 +965,6 @@ def switchOffHandler(evt) {
     log.debug "switchOffHandler called: $evt"
 	switches?.off()
 }
-
 def turnOnSwitch() {
 		if (intent == childName){
 			switches?.on()
@@ -1004,7 +973,6 @@ def turnOnSwitch() {
     		otherDimmers?.on()
 		}   
 }
-
 def turnOffSwitch() {
 		if (intent == childName){
 			switches?.off()
@@ -1131,7 +1099,7 @@ private flashLights() {
 def myHandler(evt) {
 if (getDayOk()==true && getModeOk()==true && getTimeOk()==true) {
      if ("on" == evt.value) {
-     	if (audioTextOn) {
+     	if (audioTextOn1) {
   		speech1?.speak(audioTextOn)
         music1?.play(audioTextOn)        
    			}
@@ -1216,7 +1184,7 @@ if (getDayOk()==true && getModeOk()==true && getTimeOk()==true) {
         }
 	}
 }
-def alertHandler(evt) {
+def alertHandler() {
 if (TheSwitch) {
 	subscribe(TheSwitch, "switch", myHandler)
     }
@@ -1267,17 +1235,14 @@ private def textLicense() {
 	"See the License for the specific language governing permissions and "+
 	"limitations under the License."
 }
-
 private textProfiles() {
 def text = childApps.size()     
 }
-
 private def textHelp() {
 	def text =
 		"This smartapp allows you to use an Alexa device to generate a voice or text message on on a different device"
         "See our Wikilinks page for user information!"
 		}
-        
 /************************************************************************************************************
    Page status and descriptions 
 ************************************************************************************************************/       
@@ -1292,7 +1257,6 @@ def completeProfiles(){
 def profilesDescr() {
     def text = "No Profiles have been configured. Tap here to begin"
     def ch = childApps.size()     
-
     if (ch == 1) {
         text = "One profile has been configured. Tap here to change its settings or add more Profiles"
     }
@@ -1301,7 +1265,6 @@ def profilesDescr() {
         text = "${ch} Profiles have been configured. Tap here to change their settings or add more Profiles"
      	}
     }
-    
     text
 }
 def completeSettings(){
@@ -1336,14 +1299,11 @@ def supportDescr()  {
 }
 def DevProDescr() {
     def text = "Tap here to Configure"
-	
     if (switches || dimmers || runRoutine) { 
             text = "Configured" //"These devices will execute: ${switches}, ${dimmers}. Tap to change device(s)" 
     }
     text
 }
-
-
 def DevConDescr() {
 	def text = "Tap to set"
      if (switches || dimmers)
@@ -1367,7 +1327,6 @@ def completeParCon() {
     }
     result
 }
-     
 //go to Profile set up
 def completeMsgPro(){
     def result = ""
@@ -1378,7 +1337,6 @@ def completeMsgPro(){
 }
 def MsgProDescr() {
     def text = "Tap here to Configure"
-	
     if (synthDevice || sonosDevice) {
         if (synthDevice && !sonosDevice) {   
             text = "Configured"//"Using: ${synthDevice}. Tap to change device(s)" 
@@ -1401,7 +1359,6 @@ def completeSMS(){
 }
 def SMSDescr() {
     def text = "Tap here to Configure"
-	
     if (sendContactText || sms || push) {
             text = "Configured" //"Using this contact(s): ${recipients}. Tap to change" 
      }
@@ -1421,7 +1378,6 @@ def completeDevCon() {
     }
     result
 }
-
 def completeAlertPro(){
 	def result = ""
 	if (speech1 || push1 || notify1 || music1 || speech2 || push2 || notify2 || music2 || speech3 || push3 || notify3 || music3 || speech4 || push4 || notify4 || music4 || speech5 || push5 || notify5 || music5 || speech6 || push6 || notify6 || music6 || speech7 || push7 || notify7 || music7) 
@@ -1455,15 +1411,10 @@ def MsgConfigDescr() {
         }
     text
 }
-
 def runRoutineDescr() {
     def text = "Tap here to Configure"
-	
     if (runRoutine) { 
             text = "Configured" //"These devices will execute: ${switches}, ${dimmers}. Tap to change device(s)" 
     }
     text
 }
-
-
-
