@@ -1,4 +1,3 @@
-/**
  *  EchoSistant - Lambda Code
  *
  *  Copyright © 2016 Jason Headley
@@ -7,8 +6,7 @@
  *  assistance in troubleshooting.... as I learned.....  Special thanks to Bobby
  *  @SBDOBRESCU for jumping on board and being a co-consipirator in this adventure.
  *
- *  Version 3.1.2 - 12/11/2016  Bug Fix - JSON Error 
- *  Version 3.1.1 - 12/11/2016  Bug Fix - Continued Commands
+ *  Version 3.1.1 - 12/12/2016
  *  Version 3.1.0 - 12/7/2016
  *  Version 3.0.0 - 12/1/2016  Added new parent variables
  *  Version 2.0.0 - 11/20/2016  Continued Commands
@@ -25,13 +23,12 @@
  */
 'use strict';
 exports.handler = function( event, context ) {
-    var versionTxt = '3.1.2';
-    var versionDate= '12/7/2016';
     var https = require( 'https' );
     // Paste app code here between the breaks------------------------------------------------
-    var STappID = '8c44d313-74d0-4f85-b4a1-97487ea74e0b';
-    var STtoken = '6ba53670-0e98-4855-87cb-0b154fa630f9';
+    var STappID = '4515cd7e-b04b-44f9-b076-62e2d72ba607';
+    var STtoken = '4da26c84-89dd-4660-92d1-61de80d10824';
     var url='https://graph.api.smartthings.com:443/api/smartapps/installations/' + STappID + '/' ;
+    //---------------------------------------------------------------------------------------
     //---------------------------------------------------------------------------------------
         var cardName ="";
         var endSession = true;
@@ -39,17 +36,22 @@ exports.handler = function( event, context ) {
         var stop;
         var areWeDone = false;
     //Get SmartThings parameters
-        var beginURL = url + 'b?Ver=' + versionTxt + '&Date=' + versionDate + '&VerNum=' + versionNum + '&access_token=' + STtoken;
+        var versionTxt = '3.1.1';
+        var versionDate= '12/12/2016';
+        var beginURL = url + 'b?&versionTxt=' + versionTxt + '&versionDate=' + versionDate + '&access_token=' + STtoken;
         https.get( beginURL, function( response ) {
         response.on( 'data', function( data ) {
             var startJSON = JSON.parse(data);
             var contOptions = startJSON.pContinue;
-            var pName = startJSON.pMain;
+            var verST = startJSON.versionSTtxt;
+            var pName = startJSON.pName;
+            
             if (startJSON.error) { output("There was an error. If this continues to happen, please reach out for help", context, "Lambda Error", endSession, pName); }
             console.log(startJSON.error); 
             if (startJSON.error === "invalid_token" || startJSON.type === "AccessDenied") {
                 output("There was an error accessing the SmartThings cloud environment. Please check your security token and application ID and try again. ", context, "Lambda Error", endSession, pName); 
             }
+            if (verST != versionTxt) { output("Please make sure to update both the Lambda code and SmartThings up to most recent version, and try again. If this continues to happen, please reach out for help", context, "Lambda Error", endSession, pName); }
             else if (event.request.type == "IntentRequest") {
                 var process = false;
                 var intentName = event.request.intent.name;
@@ -61,11 +63,29 @@ exports.handler = function( event, context ) {
                     url += 'c?pDevice=' + pDevice + '&pCommand=' + pCommand + '&pNum=' + pNum + '&pProfile=' + pProfile; 
                     process = true;
                     cardName = "EchoSistant Control";
+                    if (pCommand =="repeat"){
+                        url += '&access_token=' + STtoken;
+                        https.get( url, function( response ) {
+                            response.on( 'data', function( data ) {
+                                var resJSON = JSON.parse(data);
+                                var ctContCmds = resJSON.ctContCmds;
+                                var ctSpeechText = resJSON.ctOutputTxt;
+                                console.log(ctSpeechText);
+                                if (ctContCmds === true) { 
+                                    areWeDone=false;
+                                    ctSpeechText = ctSpeechText + ', send another message?'; 
+                                }
+                                else {
+                                    areWeDone=true;
+                                }
+                            output(ctSpeechText, context, cardName, areWeDone);
+                            } );
+                        } );
+                    }
                 }
                 else if (intentName != "main") {
                     var ttstext = event.request.intent.slots.ttstext.value;
-                    var ttsintentname = event.request.intent.slots.ttstext.name.value;
-                    url += 't?ttstext=' + ttstext + '&ttsintentname=' + ttsintentname + '&intentName=' + intentName;
+                    url += 't?ttstext=' + ttstext + '&intentName=' + intentName;
                     process = true;
                     cardName = "EchoSistant Free Text";
                     
