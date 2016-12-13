@@ -327,10 +327,10 @@ page name: "devicesControl"
                 section ("Dimmers", hideWhenEmpty: true){
                     input "dimmers", "capability.switchLevel", title: "Select Dimmers...", multiple: true, required: false , submitOnChange:true
                         if (dimmers) input "dimmersCmd", "enum", title: "Command To Send To Dimmers", options:["on":"Turn on","off":"Turn off","set":"Set level"], multiple: false, required: false, submitOnChange:true
-                        if (dimmersCMD == "set" && dimmers) input "dimmersLVL", "number", title: "Dimmers Level", description: "Set dimmer level", required: false
+                        if (dimmersCmd == "set" && dimmers) input "dimmersLVL", "number", title: "Dimmers Level", description: "Set dimmer level", required: false
                         if (dimmersLVL) input "otherDimmers", "capability.switchLevel", title: "Control These Dimmers...", multiple: true, required: false , submitOnChange:true
                         if (otherDimmers) input "otherDimmersCmd", "enum", title: "Command To Send To Dimmers", options:["on":"Turn on","off":"Turn off","set":"Set level"], multiple: false, required: false, submitOnChange:true
-                        if (otherDimmersCMD == "set" && otherDimmers) input "otherDimmersLVL", "number", title: "Dimmers Level", description: "Set dimmer level", required: false
+                        if (otherDimmersCmd == "set" && otherDimmers) input "otherDimmersLVL", "number", title: "Dimmers Level", description: "Set dimmer level", required: false
                 }
                 section ("Flash These Switches") {
 					input "flashSwitches", "capability.switch", title: "These switches", multiple: true, required: false, submitOnChange:true
