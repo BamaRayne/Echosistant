@@ -1,4 +1,4 @@
- *  EchoSistant - Lambda Code
+ /*  EchoSistant - Lambda Code
  *
  *  Copyright © 2016 Jason Headley
  *  Special thanks for Michael Struck @MichaelS (Developer of AskAlexa) for allowing me
