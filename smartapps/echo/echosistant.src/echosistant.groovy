@@ -104,7 +104,6 @@ page name: "mainParentPage"
                     url: "http://thingsthataresmart.wiki/index.php?title=EchoSistant"    
                 }
             section ("") {
-                //label title:"              Rename Echosistant", required:false, defaultValue: ""  
                 paragraph "${textCopyright()}"
                 }
          }
@@ -620,12 +619,14 @@ def processBegin(){
     	log.debug "-- Initial Commands Received from Lambda --"
     def versionTxt  = params.versionTxt 		
     def versionDate = params.versionDate
-    def pMain = app.label
-	def pContinue = "Yes"
+    def versionSTtxt = textVersion()
+    def versionSTdate = dateVersion()
+	def pContinue = false
+    def pName = app.label
     	if (debug){
         log.debug "Message received from Lambda with: (ver) = '${versionTxt}', (date) = '${versionDate}', and sent to Lambda: pMain = '${pMain}', pContinue = '${pContinue}'"
         }
-    return ["pContinue":pContinue, "pMain":pMain]
+    return ["pName":pName, "pContinue":pContinue, "versionSTtxt":versionSTtxt, "versionSTdate":versionSTdate]
 }   
 /************************************************************************************************************
 		Base Process
@@ -717,7 +718,7 @@ def childUninstalled() {
     sendLocationEvent(name: "echoSistant", value: "refresh", data: [profiles: getProfileList()] , isStateChange: true, descriptionText: "echoSistant Profile list refresh")
 }
 /************************************************************************************************************
-   TEXT TO SPEECH PROCESS (PARENT) 
+   TEXT TO SPEECH PROCESS (PARENT) - Lambda via page t
 ************************************************************************************************************/
 def processTts() {
 		def ptts = params.ttstext 
@@ -785,7 +786,7 @@ def processTts() {
 		return ["outputTxt":outputTxt, "pContCmds":pContCmds]
 }
 /************************************************************************************************************
-   CONTROL PROCESS PROCESS (PARENT) 
+   CONTROL PROCESS PROCESS (PARENT) - from Lambda via 
 ************************************************************************************************************/
 def controlDevices() {
         def ctCommand = params.pCommand
@@ -795,22 +796,21 @@ def controlDevices() {
         def ctOutputTxt = " "
         def ctContCmds = "false"
         def ctContCmdsR = "false"
+        def command = ctCommand
         if (debug) log.debug "Message received from Lambda to control devices with settings: (ctCommand)"+
     						"= '${ctCommand}', (ctProfile) = '${ctProfile}', ctNum = '${ctNum}', (ctDevice) = '${ctDevice}'"
         
         if (ctCommand=="repeat") {
         	if (debug) log.debug "Processing repeat last message delivered to any of the Profiles"
-			ctOutputTxt = getLastMessageMain()		
+			ctOutputTxt = getLastMessageMain()
 		}
-/************************************************************************************************************
-        //if (pDevice.toLowerCase()  == cSwithes.toLowerCase()){
-        	if (command == "dark" || command == "brighter" || command == "on") {
+        if (command == "dark" || command == "brighter" || command == "on") {
             	if (pNum) {
             		runIn(pNum*60,turnOncSwitch)
                 }
              	else {
        	    		if (debug) log.debug "Turning control switch on"
-                	switches?.on()
+                	cSwitches?.on()
 				}
         	}
 		if (command == "bright" || command == "darker" || command == "off") {     	
@@ -819,10 +819,10 @@ def controlDevices() {
 			}	
         	else {
         		if (debug) log.debug "Turning control switch off"
-                switches?.off()
+                cSwitches?.off()
             }
         }
-************************************************************************************************************/        
+        
         return ["ctOutputTxt":ctOutputTxt, "ctContCmds":ctContCmds]
 }
 
@@ -1307,7 +1307,10 @@ private def textAppName() {
 	def text = app.label
 }	
 private def textVersion() {
-	def text = "Version 3.0.0 Alpha (11/30/2016)"
+	def text = "3.1.1"
+}
+private def dateVersion() {
+	def text = "12/12/16"
 }
 private def textCopyright() {
 	def text = "       Copyright © 2016 Jason Headley"
