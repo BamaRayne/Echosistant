@@ -1,6 +1,7 @@
 /*
  * EchoSistant - The Ultimate Voice and Text Messaging Assistant Using Your Alexa Enabled Device.
  *		
+ *		12/14/2016		Bug Fixes and Changes by Jason - Garage alert not playing.
  *		12/09/2016		Version 3.0.2	Major overhaul of UI and process (cotnt'd)
  *		12/09/2016		Version 3.0.1	Major overhaul of UI and process (in progress)
  *		??/??/2016		Version 3.0.0	Additions: Msg to Notify Tab in Mobile App, Push Msg, Complete Reconfigure of Profile Build, More Control of Dimmers, and Switches,
@@ -146,7 +147,7 @@ page name: "profiles"
                     href "tokens", title: "Revoke/Reset Security Access Token", description: none
                     }
                 section ("Control Devices and 3rd Party Integrations"){
-                    input "showIntegration", "bool", title: "Enable Integrations", default: false, submitOnChange: true
+                    input "showIntegration", "bool", title: "Configure Integrations", default: false, submitOnChange: true
                         if(showIntegration) {
                             href "devicesControlMain", title: "Control These Devices with Voice by speaking commands to Alexa (via the Main Skill)", description: ParConDescr() , state: completeParCon(),
                             	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_devices.png"            			
@@ -221,7 +222,7 @@ page name: "devicesControlMain"
                 input "cSwitches", "capability.switch", title: "Control These Lights...", multiple: true, required: false, submitOnChange: true
             }
             section ("Volume (assign a single device controlled using a 1-10 scale)", hideWhenEmpty: true){
-                input "cVolume", "capability.switch", title: "Control These Lights...", multiple: false, required: false, submitOnChange: true
+                input "cVolume", "capability.switch", title: "Control These Switches...", multiple: false, required: false, submitOnChange: true
             }
             section ("Other Switches (devices controlled using a 1-10 scale) ", hideWhenEmpty: true){
                 input "cDimmers", "capability.switchLevel", title: "Control These Device(s)...", multiple: true, required: false , submitOnChange:true
@@ -233,7 +234,7 @@ page name: "devicesControlMain"
                 input "cLock", "capability.lock", title: "Control These Lock(s)...", multiple: true, required: false
             }
             section ("Doors", hideWhenEmpty: true){
-                input "cDoors", "capability.doorControl", title: "Control These Door(s)...)" , multiple: true, required: false, submitOnChange: true    
+                input "cDoors", "capability.doorControl", title: "Control These Door(s)...", multiple: true, required: false, submitOnChange: true    
             }
         }
     }    
@@ -323,41 +324,60 @@ page name: "DevPro"
 page name: "devicesControl"
     def devicesControl() {
             dynamicPage(name: "devicesControl", title: "Select Devices to use with this profile",install: false, uninstall: false) {
-                section ("Switches", hideWhenEmpty: true){
+                section ("Light Switches", hideWhenEmpty: true){
                     input "switches", "capability.switch", title: "Select Lights and Switches...", multiple: true, required: false, submitOnChange: true
-                        if (switches) input "switchCmd", "enum", title: "What do you want to do with these switches?", options:["on":"Turn on","off":"Turn off","toggle":"Toggle"], multiple: false, required: false, submitOnChange:true
-                        if (switchCmd) input "otherSwitch", "capability.switch", title: "...and these other switches?", multiple: true, required: false, submitOnChange: true
-                        if (otherSwitch) input "otherSwitchCmd", "enum", title: "What do you want to do with these other switches?", options: ["on":"Turn on","off":"Turn off","toggle":"Toggle"], multiple: false, required: false, submitOnChange: true
-                	}
+                        if (switches) input "switchCmd", "enum", title: "What do you want to do with these switches?", options:["on":"Turn on","off":"Turn off","toggle":"Toggle","delay":"Delay"], multiple: false, required: false, submitOnChange:true
+                        if (switchCmd == "delay") {
+                        input "sSecondsOn", "number", title: "Turn on in Seconds?", defaultValue: none, required: false
+                        input "sSecondsOff", "number", title: "Turn off in Seconds?", defaultValue: none, required: false
+                        }
+                		if (switchCmd) input "otherSwitch", "capability.switch", title: "...and these other switches?", multiple: true, required: false, submitOnChange: true
+                        if (otherSwitch) input "otherSwitchCmd", "enum", title: "What do you want to do with these other switches?", options: ["on1":"Turn on","off1":"Turn off","toggle1":"Toggle","delay1":"Delay"], multiple: false, required: false, submitOnChange: true
+                        if (otherSwitchCmd == "delay1") {
+                        input "sSecondsOn1", "number", title: "Turn on in Seconds?", defaultValue: none, required: false
+                        input "sSecondsOff1", "number", title: "Turn off in Seconds?", defaultValue: none, required: false
+                    	}
+                    }
         		section ("Colored lights", hideWhenEmpty: true){
             		input "hues", "capability.colorControl", title: "Select These Colored Lights...", multiple: true, required: false, submitOnChange:true
             			if (hues) {
-							input "color", "enum", title: "Hue Color?", required: false, multiple:false, options: ["Red","Green","Blue","Yellow","Orange","Purple","Pink"]
-							input "lightLevel", "enum", title: "Light Level?", required: false, options: [[10:"10%"],[20:"20%"],[30:"30%"],[40:"40%"],[50:"50%"],[60:"60%"],[70:"70%"],[80:"80%"],[90:"90%"],[100:"100%"]]                        
-        				}
-                }
+                        	input "hueCmd", "enum", title: "What do you want to do with these color bulbs?", options:["on":"Turn on","off":"Turn off","setColor":"Set Color"], multiple: false, required: false, submitOnChange:true
+							if ("setColor") input "color", "enum", title: "Hue Color?", required: false, multiple:false, options: ["Red","Green","Blue","Yellow","Orange","Purple","Pink"]
+							input "lightLevel", "enum", title: "Light Level?", required: false, options: [[10:"10%"],[20:"20%"],[30:"30%"],[40:"40%"],[50:"50%"],[60:"60%"],[70:"70%"],[80:"80%"],[90:"90%"],[100:"100%"]]                       
+        					}
+                		}
                 section ("Dimmers", hideWhenEmpty: true){
                     input "dimmers", "capability.switchLevel", title: "Select Dimmers...", multiple: true, required: false , submitOnChange:true
-                        if (dimmers) input "dimmersCmd", "enum", title: "Command To Send To Dimmers", options:["on":"Turn on","off":"Turn off","set":"Set level"], multiple: false, required: false, submitOnChange:true
-                        if (dimmersCmd == "set" && dimmers) input "dimmersLVL", "number", title: "Dimmers Level", description: "Set dimmer level", required: false
-                        if (dimmersLVL) input "otherDimmers", "capability.switchLevel", title: "Control These Dimmers...", multiple: true, required: false , submitOnChange:true
-                        if (otherDimmers) input "otherDimmersCmd", "enum", title: "Command To Send To Dimmers", options:["on":"Turn on","off":"Turn off","set":"Set level"], multiple: false, required: false, submitOnChange:true
-                        if (otherDimmersCmd == "set" && otherDimmers) input "otherDimmersLVL", "number", title: "Dimmers Level", description: "Set dimmer level", required: false
-                	}
+                        if (dimmers) input "dimmersCmd", "enum", title: "Command To Send To Dimmers", options:["set":"Set level","delay2":"Delay","off":"Turn off"], multiple: false, required: false, submitOnChange:true
+                        if (dimmersCmd) input "dimmersLVL", "number", title: "Dimmers Level", description: "Set dimmer level", required: false
+                            if (dimmersCmd == "delay2") {
+                        		input "sSecondsOn2", "number", title: "Turn on in Seconds?", defaultValue: none, required: false
+                        		input "sSecondsOff2", "number", title: "Turn off in Seconds?", defaultValue: none, required: false
+                        		}	
+                        if (dimmersLVL) input "otherDimmers", "capability.switchLevel", title: "Control These Other Dimmers...", multiple: true, required: false , submitOnChange:true
+                        if (otherDimmers) input "otherDimmersCmd", "enum", title: "Command To Send To Other Dimmers", options:["set":"Set level","delay3":"Delay","off":"Turn off"], multiple: false, required: false, submitOnChange:true
+                        if (otherDimmersCmd) input "otherDimmersLVL", "number", title: "Dimmers Level", description: "Set dimmer level", required: false
+                			if (otherDimmersCmd == "delay3") {
+                        		input "sSecondsOn3", "number", title: "Turn on in Seconds?", defaultValue: none, required: false
+                        		input "sSecondsOff3", "number", title: "Turn off in Seconds?", defaultValue: none, required: false
+                        		}
+                    		}
                 section ("Flash These Switches") {
 					input "flashSwitches", "capability.switch", title: "Select Flashers", multiple: true, required: false, submitOnChange:true
 					if (flashSwitches) {
+					input "Fcolor", "enum", title: "Flasher Color?", required: false, multiple:false, options: ["Red","Green","Blue","Yellow","Orange","Purple","Pink"]
+ 					input "FlashLevel", "enum", title: "Light Flash Level?", required: false, options: [[10:"10%"],[20:"20%"],[30:"30%"],[40:"40%"],[50:"50%"],[60:"60%"],[70:"70%"],[80:"80%"],[90:"90%"],[100:"100%"]]                       
                     input "numFlashes", "number", title: "This number of times (default 3)", required: false, submitOnChange:true
-					input "onFor", "number", title: "On for (default 1 second)", required: false, submitOnChange:true
+                    input "onFor", "number", title: "On for (default 1 second)", required: false, submitOnChange:true
 					input "offFor", "number", title: "Off for (default 1 second)", required: false, submitOnChange:true
 					}
                 }
-                section("Turn on these devices after a delay of..."){
-                    input "sSecondsOn", "number", title: "Turn on in Seconds?", defaultValue: none, required: false
-                }
-                section("And then turn them off after a delay of..."){
-                    input "sSecondsOff", "number", title: "Turn off in Seconds?", defaultValue: none, required: false
-                }
+//                section("Turn on these devices after a delay of..."){
+//                    input "sSecondsOn", "number", title: "Turn on in Seconds?", defaultValue: none, required: false
+//                }
+//                section("And then turn them off after a delay of..."){
+//                    input "sSecondsOff", "number", title: "Turn off in Seconds?", defaultValue: none, required: false
+//                }
             }
        }        
 page name: "CoRE"
@@ -896,10 +916,13 @@ def profileEvaluate(params) {
                         state.lastTime = new Date(now()).format("h:mm aa", location.timeZone)
            					if (parent.debug) log.debug "Only sending sms because disable voice message is ON"  
 				}
+				if (hues) {               
+                colorB() 
+               	}
                 if (flashSwitches) {
                 flashLights()
                 }
-                deviceControl()
+                profileDeviceControl()
                 if (runRoutine) {
                 location.helloHome?.execute(settings.runRoutine)
                 }
@@ -1017,117 +1040,77 @@ private void sendText(number, message) {
         }
     }
 }
-/************************************************************************************************************
-DOESNT LOOK LIKE THESE ARE BEING USED
-
-def switchOnHandler(evt) {
-    log.debug "switchOnHandler called: $evt"
-    switches?.on()
-}
-def switchOffHandler(evt) {
-    log.debug "switchOffHandler called: $evt"
-	switches?.off()
-}
-
-                runIn(sSecondsOn,turnOnOtherSwitch)
-                runIn(sSecondsOn,turnOnDimmers)
-                runIn(sSecondsOn,turnOnOtherDimmers)
-                runIn(sSecondsOn,turnOncLights)
-
-************************************************************************************************************/
 
 /************************************************************************************************************
    Switch/Color/Dimmer/Toggle Handlers
 ************************************************************************************************************/
+// Used for delayed devices
+def turnOnSwitch() { switches?.on() }  
+def turnOffSwitch() { switches?.off() }
+def turnOnOtherSwitch() { otherSwitch?.on() }
+def turnOffOtherSwitch() { otherSwitch?.off() }  
+def turnOnDimmers() { def level = dimmersLVL < 0 || !dimmersLVL ?  0 : dimmersLVL >100 ? 100 : dimmersLVL as int
+			dimmers?.setLevel(dimmersLVL) }
+def turnOffDimmers() { dimmers?.off() }
+def turnOnOtherDimmers() { def otherlevel = otherDimmersLVL < 0 || !otherDimmersLVL ?  0 : otherDimmersLVL >100 ? 100 : otherDimmersLVL as int
+			otherDimmers?.setLevel(otherDimmersLVL) }
+def turnOffOtherDimmers() { otherDimmers?.off() }            
 
-def turnOnSwitch() {
-		//if (intent == childName) - no need for this, you are coming from the correct child
-			switches?.on()
-    		otherSwitch?.on()
-    		dimmers?.on()
-    		otherDimmers?.on()
-			colorB()   
-}
+// Primary control of profile triggered lights/switches when delayed
+def profileDeviceControl() {
+	if (sSecondsOn) { runIn(sSecondsOn,turnOnSwitch)
+    		if (parent.debug) log.debug "Turn switches on in '${sSecondsOn}' seconds"  }
+    if (sSecondsOff) { runIn(sSecondsOff,turnOffSwitch)
+			if (parent.debug) log.debug "Turn switches off in '${sSecondsOff}' seconds"  }
+    if (sSecondsOn1)  { runIn(sSecondsOn1,turnOnOtherSwitch)
+    		if (parent.debug) log.debug "Turn other Switches on in '${sSecondsOn1}' seconds"  }
+    if (sSecondsOff1) { runIn(sSecondsOff1,turnOffOtherSwitch)
+			if (parent.debug) log.debug "Turn other Switches off in '${sSecondsOff1}' seconds" }
+	if (sSecondsOn2) { runIn(sSecondsOn2,turnOnDimmers)
+    		if (parent.debug) log.debug "Turn Dimmers on in '${sSecondsOn2}' seconds" }
+	if (sSecondsOff2) { runIn(sSecondsOff2,turnOffDimmers)
+    		if (parent.debug) log.debug "Turn Dimmers off in '${sSecondsOff2}' seconds" }
+    if (sSecondsOn3) { runIn(sSecondsOn3,turnOnOtherDimmers)
+    		if (parent.debug) log.debug "Turn other Dimmers on in '${sSecondsOn3}' seconds" }
+	if (sSecondsOff3) { runIn(sSecondsOff3,turnOffOtherDimmers)
+    		if (parent.debug) log.debug "Turn other Dimmers off in '${sSecondsOff3}' seconds" }
 
-def turnOffSwitch() {
-		//if (intent == childName) - no need for this, you are coming from the correct child
-			switches?.off()
-    		otherSwitch?.off()
-    		dimmers?.off()
-    		otherDimmers?.off()
-            hues?.off()
-} 
-def deviceControl() {
-	if (sSecondsOn) {
-    		if (parent.debug) log.debug "Turn switches on in '${sSecondsOn}' seconds"
-            	runIn(sSecondsOn,turnOnSwitch)
-         	}
+// Control of Lights and Switches when not delayed            
     if (!sSecondsOn) {
-            	if  (switchCmd == "on") {
-	            	switches?.on()
-                    }
-           			else if (switchCmd == "off") {
-	           		switches?.off()
-                    }
-                if (switchCmd == "toggle") {
-                  	toggle()
-                    }
-          		if (switchCmd == "toggle") {
-                  	colorB()
-                    }            	
-                if (otherSwitchCmd == "on") {
-            		otherSwitch?.on()
+            	if  (switchCmd == "on") { switches?.on() }
+	            	else if (switchCmd == "off") { switches?.off() }
+	           		if (switchCmd == "toggle") { toggle() }
+                if (otherSwitchCmd == "on") { otherSwitch?.on() }
+            		else if (otherSwitchCmd == "off") { otherSwitch?.off() }
+                    if (otherSwitchCmd == "toggle") { toggle() }
+                if (dimmersCmd == "set" && dimmers) { def level = dimmersLVL < 0 || !dimmersLVL ?  0 : dimmersLVL >100 ? 100 : dimmersLVL as int
+        				dimmers?.setLevel(level) }
+            	if (otherDimmersCmd == "set" && otherDimmers) { def otherlevel = otherDimmersLVL < 0 || !otherDimmersLVL ?  0 : otherDimmersLVL >100 ? 100 : otherDimmersLVL as int
+        				otherDimmers?.setLevel(otherlevel) }
                 }
-            		else if (otherSwitchCmd == "off") {
-                	otherSwitch?.off()
-                	}
-          		if (dimmersCmd == "set" && dimmers){
-					if (dimmersCmd == "set"){
-        				def level = dimmersLVL < 0 || !dimmersLVL ?  0 : dimmersLVL >100 ? 100 : dimmersLVL as int
-        				dimmers?.setLevel(level)
-            		}
-				}                    
-            	if (otherDimmersCmd == "set" && otherDimmers){
-					if (otherDimmersCmd == "set"){
-        			def otherlevel = otherDimmersLVL < 0 || !otherDimmersLVL ?  0 : otherDimmersLVL >100 ? 100 : otherDimmersLVL as int
-        			otherDimmers?.setLevel(otherlevel)
-					}
-        		}
-        }
-        if (sSecondsOff) {
-            	if (parent.debug) log.debug "Turn switches off in '${sSecondsOff}' seconds"            
-          		runIn(sSecondsOff,turnOffSwitch)
-		}
-        if (!sSecondsOff) {
-            	if (parent.debug) log.debug "Turn switches off in '${sSecondsOff}' seconds"            
-          		turnOffSwitch()
-		}
-}
+			}
 
-def colorB() {
-	if (hues) {
+private colorB() { 
+	if (hueCmd == "off") { hues?.off() }
+	if (parent.debug) log.debug "color bulbs initiated"
 		def hueColor = 0
         if(color == "Blue")
             hueColor = 70//60
-        else if(color == "Green")
+        if(color == "Green")
             hueColor = 39//30
-        else if(color == "Yellow")
+        if(color == "Yellow")
             hueColor = 25//16
-        else if(color == "Orange")
+        if(color == "Orange")
             hueColor = 10
-        else if(color == "Purple")
+        if(color == "Purple")
             hueColor = 75
-        else if(color == "Pink")
+        if(color == "Pink")
             hueColor = 83
-	
-    def colorB = [hue: hueColor, saturation: 100, level: (lightLevel as Integer) ?: 100]
-	
+	def colorB = [hue: hueColor, saturation: 100, level: (lightLevel as Integer) ?: 100]
     hues*.setColor(colorB)
 	}
-}      
-
-def toggle() {
-
+     
+private toggle() {
     if (parent.debug) log.debug "The selected device is toggling now"
 	if (switches) {
 	if (switches?.currentValue('switch').contains('on')) {
@@ -1156,7 +1139,7 @@ def toggle() {
    Flashing Lights Handler
 ************************************************************************************************************/
 private flashLights() {
-    if (parent.debug) log.debug "The Flash Switches Option has been activated"
+ 	if (parent.debug) log.debug "The Flash Switches Option has been activated"
 	def doFlash = true
 	def onFor = onFor ?: 60000/60
 	def offFor = offFor ?: 60000/60
@@ -1192,10 +1175,6 @@ private flashLights() {
 		}
 	}
 }
-/************************************************************************************************************
-   Colored Bulbs Handler
-************************************************************************************************************/
-  
 
 /************************************************************************************************************
    Alerts Handler
@@ -1308,7 +1287,7 @@ def alertsHandler(evt) {
          		} 
         		}
             }
-    if (eVal == "opening")  {
+    if (eVal == "open")  {
     	if (audioTextOpening) {
     	speech7?.speak(audioTextOpening)
 				if (music7) {
@@ -1316,7 +1295,7 @@ def alertsHandler(evt) {
          		} 
     		}
         }
-    	if (eVal == "closing") {
+    	if (eVal == "close") {
         	if (audioTextClosing) {
         	speech7?.speak(audioTextClosing)
 				if (music7) {
@@ -1456,14 +1435,14 @@ def supportDescr()  {
 }
 def DevProDescr() {
     def text = "Tap here to Configure"
-    if (switches || dimmers || cLights ||runRoutine) { 
+    if (switches || dimmers || hues ||runRoutine || flashSwitches) { 
             text = "Configured" //"These devices will execute: ${switches}, ${dimmers}. Tap to change device(s)" 
     }
     text
 }
 def DevConDescr() {
 	def text = "Tap to set"
-     if (switches || dimmers || cLights)
+     if (switches || dimmers || hues || flashSwitches)
      { 
             text = "Configured" //"These devices will execute: ${switches}, ${dimmers}. Tap to change device(s)"
             }
@@ -1509,28 +1488,28 @@ def MsgProDescr() {
 }
 def completeSMS(){
     def result = ""
-    if (sendContactText || sms || push) {
+    if (sendContactText || sms || push || notify) {
     	result = "complete"	
     }
     result
 }
 def SMSDescr() {
     def text = "Tap here to Configure"
-    if (sendContactText || sms || push) {
+    if (sendContactText || sms || push || notify) {
             text = "Configured" //"Using this contact(s): ${recipients}. Tap to change" 
      }
     text
 }
 def completeDevPro(){
     def result = ""
-    if (switches || dimmers || runRoutine || cLights) {
+    if (switches || dimmers || runRoutine || hues || flashSwitches) {
     	result = "complete"	
     }    
     result
 }
 def completeDevCon() {
     def result = ""
-    if (switches || dimmers || cLights) { 
+    if (switches || dimmers || hues || flashSwitches) { 
        result = "complete"
     }
     result
@@ -1560,7 +1539,7 @@ def completeMsgConfig(){
 }
 def MsgConfigDescr() {
     def text = "Tap here to Configure"
-	if (ShowPreMsg || Acustom || Arepeat || AfeedBack || disableTts || ContCmds || ContCmdsR) {
+	if (ShowPreMsg || Acustom || Arepeat || AfeedBack || disableTts || ContCmds || ContCmdsR || modes || runDay) {
     	text = "Configured with Message Options"
         }
         if (getDayOk()==false || getModeOk()==false || getTimeOk()==false) {
