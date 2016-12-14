@@ -319,11 +319,11 @@ page name: "devicesControl"
     def devicesControl() {
             dynamicPage(name: "devicesControl", title: "Select Devices to use with this profile",install: false, uninstall: false) {
                 section ("Switches", hideWhenEmpty: true){
-                    input "switches", "capability.switch", title: "Select Switches...", multiple: true, required: false, submitOnChange: true
+                    input "switches", "capability.switch", title: "Select Lights and Switches...", multiple: true, required: false, submitOnChange: true
                         if (switches) input "switchCmd", "enum", title: "What do you want to do with these switches?", options:["on":"Turn on","off":"Turn off","toggle":"Toggle"], multiple: false, required: false, submitOnChange:true
                         if (switchCmd) input "otherSwitch", "capability.switch", title: "...and these other switches?", multiple: true, required: false, submitOnChange: true
                         if (otherSwitch) input "otherSwitchCmd", "enum", title: "What do you want to do with these other switches?", options: ["on":"Turn on","off":"Turn off","toggle":"Toggle"], multiple: false, required: false, submitOnChange: true
-                    	}
+                	}
         		section ("Colored lights", hideWhenEmpty: true){
             		input "cLights", "capability.colorControl", title: "Control These Colored Lights...", multiple: true, required: false, submitOnChange:true
             			if (cLights) input "cLightsCMD", "enum", title: "Command To Send To Colored Lights", options:["on":"Turn on","off":"Turn off","set":"Set color and level", "toggle":"Toggle the lights' on/off state"], multiple: false, required: false, submitOnChange:true
@@ -332,10 +332,10 @@ page name: "devicesControl"
                 		if (cLightsCLR == "Custom-User Defined"){
                     input "hueUserDefined", "number", title: "Colored Lights Hue", description: "Set colored light hue (0 to 100)", required: false, defaultValue: 0
                     input "satUserDefined", "number", title: "Colored Lights Saturation", description: "Set colored lights saturation (0 to 100)", required: false, defaultValue: 0
-                }
+                	}
                 input "cLightsLVL", "number", title: "Colored Light Level", description: "Set colored lights level", required: false, defaultValue: 0
-            }
-        }
+		            }
+        		}
                 section ("Dimmers", hideWhenEmpty: true){
                     input "dimmers", "capability.switchLevel", title: "Select Dimmers...", multiple: true, required: false , submitOnChange:true
                         if (dimmers) input "dimmersCmd", "enum", title: "Command To Send To Dimmers", options:["on":"Turn on","off":"Turn off","set":"Set level"], multiple: false, required: false, submitOnChange:true
@@ -343,16 +343,16 @@ page name: "devicesControl"
                         if (dimmersLVL) input "otherDimmers", "capability.switchLevel", title: "Control These Dimmers...", multiple: true, required: false , submitOnChange:true
                         if (otherDimmers) input "otherDimmersCmd", "enum", title: "Command To Send To Dimmers", options:["on":"Turn on","off":"Turn off","set":"Set level"], multiple: false, required: false, submitOnChange:true
                         if (otherDimmersCmd == "set" && otherDimmers) input "otherDimmersLVL", "number", title: "Dimmers Level", description: "Set dimmer level", required: false
-                }
+                	}
                 section ("Flash These Switches") {
 					input "flashSwitches", "capability.switch", title: "Select Flashers", multiple: true, required: false, submitOnChange:true
 					if (flashSwitches) {
                     input "numFlashes", "number", title: "This number of times (default 3)", required: false, submitOnChange:true
 					input "onFor", "number", title: "On for (default 1 second)", required: false, submitOnChange:true
 					input "offFor", "number", title: "Off for (default 1 second)", required: false, submitOnChange:true
-						}
-                    }
-                section("Turn on these switches and dimmers after a delay of..."){
+					}
+                }
+                section("Turn on these devices after a delay of..."){
                     input "sSecondsOn", "number", title: "Turn on in Seconds?", defaultValue: none, required: false
                 }
                 section("And then turn them off after a delay of..."){
@@ -638,7 +638,7 @@ def processBegin(){
 	def pContinue = false
     def pName = app.label
     	if (debug){
-        log.debug "Message received from Lambda with: (ver) = '${versionTxt}', (date) = '${versionDate}', and sent to Lambda: pMain = '${pMain}', pContinue = '${pContinue}', Lambda Ver = '${LVersionTxt}' and the Lambda date = '${LVersionDate}'"
+        log.debug "Message received from Lambda with: (ver) = '${versionTxt}', (date) = '${versionDate}', and sent to Lambda: pMain = '${pMain}', pContinue = '${pContinue}'"
 }
     return ["pName":pName, "pContinue":pContinue, "versionSTtxt":versionSTtxt, "versionSTdate":versionSTdate]
 }   
@@ -1317,8 +1317,7 @@ def alertsHandler(evt) {
          		} 
 	  		}
         }  
-    }
-   
+    }   
 }
 /************************************************************************************************************
    Play Sonos Alert
@@ -1430,14 +1429,14 @@ def supportDescr()  {
 }
 def DevProDescr() {
     def text = "Tap here to Configure"
-    if (switches || dimmers || runRoutine) { 
+    if (switches || dimmers || cLights ||runRoutine) { 
             text = "Configured" //"These devices will execute: ${switches}, ${dimmers}. Tap to change device(s)" 
     }
     text
 }
 def DevConDescr() {
 	def text = "Tap to set"
-     if (switches || dimmers)
+     if (switches || dimmers || cLights)
      { 
             text = "Configured" //"These devices will execute: ${switches}, ${dimmers}. Tap to change device(s)"
             }
@@ -1497,14 +1496,14 @@ def SMSDescr() {
 }
 def completeDevPro(){
     def result = ""
-    if (switches || dimmers || runRoutine) {
+    if (switches || dimmers || runRoutine || cLights) {
     	result = "complete"	
     }    
     result
 }
 def completeDevCon() {
     def result = ""
-    if (switches || dimmers) { 
+    if (switches || dimmers || cLights) { 
        result = "complete"
     }
     result
