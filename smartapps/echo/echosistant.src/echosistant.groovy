@@ -319,11 +319,23 @@ page name: "devicesControl"
     def devicesControl() {
             dynamicPage(name: "devicesControl", title: "Select Devices to use with this profile",install: false, uninstall: false) {
                 section ("Switches", hideWhenEmpty: true){
-                    input "switches", "capability.switch", title: "Select Switches...", multiple: true, required: false, submitOnChange: true, description: completeDevPro() , state: completeMsgPro()
+                    input "switches", "capability.switch", title: "Select Switches...", multiple: true, required: false, submitOnChange: true
                         if (switches) input "switchCmd", "enum", title: "What do you want to do with these switches?", options:["on":"Turn on","off":"Turn off","toggle":"Toggle"], multiple: false, required: false, submitOnChange:true
                         if (switchCmd) input "otherSwitch", "capability.switch", title: "...and these other switches?", multiple: true, required: false, submitOnChange: true
                         if (otherSwitch) input "otherSwitchCmd", "enum", title: "What do you want to do with these other switches?", options: ["on":"Turn on","off":"Turn off","toggle":"Toggle"], multiple: false, required: false, submitOnChange: true
                     	}
+        		section ("Colored lights", hideWhenEmpty: true){
+            		input "cLights", "capability.colorControl", title: "Control These Colored Lights...", multiple: true, required: false, submitOnChange:true
+            			if (cLights) input "cLightsCMD", "enum", title: "Command To Send To Colored Lights", options:["on":"Turn on","off":"Turn off","set":"Set color and level", "toggle":"Toggle the lights' on/off state"], multiple: false, required: false, submitOnChange:true
+            			if (cLightsCMD == "set" && cLights){
+                	input "cLightsCLR", "enum", title: "Choose A Color...", required: false, multiple:false, options: parent.fillColorSettings().name, submitOnChange:true
+                		if (cLightsCLR == "Custom-User Defined"){
+                    input "hueUserDefined", "number", title: "Colored Lights Hue", description: "Set colored light hue (0 to 100)", required: false, defaultValue: 0
+                    input "satUserDefined", "number", title: "Colored Lights Saturation", description: "Set colored lights saturation (0 to 100)", required: false, defaultValue: 0
+                }
+                input "cLightsLVL", "number", title: "Colored Light Level", description: "Set colored lights level", required: false, defaultValue: 0
+            }
+        }
                 section ("Dimmers", hideWhenEmpty: true){
                     input "dimmers", "capability.switchLevel", title: "Select Dimmers...", multiple: true, required: false , submitOnChange:true
                         if (dimmers) input "dimmersCmd", "enum", title: "Command To Send To Dimmers", options:["on":"Turn on","off":"Turn off","set":"Set level"], multiple: false, required: false, submitOnChange:true
@@ -333,7 +345,7 @@ page name: "devicesControl"
                         if (otherDimmersCmd == "set" && otherDimmers) input "otherDimmersLVL", "number", title: "Dimmers Level", description: "Set dimmer level", required: false
                 }
                 section ("Flash These Switches") {
-					input "flashSwitches", "capability.switch", title: "These switches", multiple: true, required: false, submitOnChange:true
+					input "flashSwitches", "capability.switch", title: "Select Flashers", multiple: true, required: false, submitOnChange:true
 					if (flashSwitches) {
                     input "numFlashes", "number", title: "This number of times (default 3)", required: false, submitOnChange:true
 					input "onFor", "number", title: "On for (default 1 second)", required: false, submitOnChange:true
@@ -341,10 +353,10 @@ page name: "devicesControl"
 						}
                     }
                 section("Turn on these switches and dimmers after a delay of..."){
-                    input "sSecondsOn", "number", title: "Seconds?", defaultValue: none, required: false
+                    input "sSecondsOn", "number", title: "Turn on in Seconds?", defaultValue: none, required: false
                 }
                 section("And then turn them off after a delay of..."){
-                    input "sSecondsOff", "number", title: "Seconds?", defaultValue: none, required: false
+                    input "sSecondsOff", "number", title: "Turn off in Seconds?", defaultValue: none, required: false
                 }
             }
        }        
@@ -375,7 +387,7 @@ page name: "Alerts"
             if (TheSwitch || audioTextOn || audioTextOff || speech1 || push1 || notify1 || music1) paragraph "Configured with Settings"
             if (ShowSwitches) {        
                 input "TheSwitch", "capability.switch", title: "Choose Switches...", required: false, multiple: false, submitOnChange: true
-                input "audioTextOn", "audioTextOn", title: "Play this message", description: "Message to play when the switch turns on", required: false, capitalization: "sentences"
+				input "audioTextOn", "audioTextOn", title: "Play this message", description: "Message to play when the switch turns on", required: false, capitalization: "sentences"
                 input "audioTextOff", "audioTextOff", title: "Play this message", description: "Message to play when the switch turns off", required: false, capitalization: "sentences"
                 input "speech1", "capability.speechSynthesis", title: "Message Player", required: false, multiple: true, submitOnChange: true
                 input "music1", "capability.musicPlayer", title: "On this Sonos Type Devices", required: false, multiple: true, submitOnChange: true
@@ -621,11 +633,13 @@ def processBegin(){
     def versionDate = params.versionDate
     def versionSTtxt = textVersion()
     def versionSTdate = dateVersion()
+    def LVersionTxt = params.LVersionTxt
+    def LVersionDate = params.LVersionDate
 	def pContinue = false
     def pName = app.label
     	if (debug){
-        log.debug "Message received from Lambda with: (ver) = '${versionTxt}', (date) = '${versionDate}', and sent to Lambda: pMain = '${pMain}', pContinue = '${pContinue}'"
-        }
+        log.debug "Message received from Lambda with: (ver) = '${versionTxt}', (date) = '${versionDate}', and sent to Lambda: pMain = '${pMain}', pContinue = '${pContinue}', Lambda Ver = '${LVersionTxt}' and the Lambda date = '${LVersionDate}'"
+}
     return ["pName":pName, "pContinue":pContinue, "versionSTtxt":versionSTtxt, "versionSTdate":versionSTdate]
 }   
 /************************************************************************************************************
@@ -886,8 +900,9 @@ def profileEvaluate(params) {
                 if (runRoutine) {
                 location.helloHome?.execute(settings.runRoutine)
                 }
+    		}
         }
-}
+
 /***********************************************************************************************************************
     LAST MESSAGE HANDLER - PROFILE
 ***********************************************************************************************************************/
@@ -1034,6 +1049,7 @@ def deviceControl() {
                 runIn(sSecondsOn,turnOnOtherSwitch)
                 runIn(sSecondsOn,turnOnDimmers)
                 runIn(sSecondsOn,turnOnOtherDimmers)
+                runIn(sSecondsOn,turnOncLights)
                 }
         	if (!sSecondsOn) {
             	if  (switchCmd == "on") {
@@ -1062,8 +1078,8 @@ def deviceControl() {
         		def otherlevel = otherDimmersLVL < 0 || !otherDimmersLVL ?  0 : otherDimmersLVL >100 ? 100 : otherDimmersLVL as int
         		otherDimmers?.setLevel(otherlevel)
 				}
-        	}            
-		}
+        	}
+        }
                 if (sSecondsOff) {
             	if (parent.debug) log.debug "Turn switches off in '${sSecondsOff}' seconds"            
           		runIn(sSecondsOff,turnOffSwitch)
@@ -1139,7 +1155,21 @@ private flashLights() {
 		}
 	}
 }
-
+/************************************************************************************************************
+   Colored Bulbs Handler
+************************************************************************************************************/
+  
+def fillColorSettings(){
+	def colorData = []
+    colorData << [name: "White", hue: 0, sat: 0] << [name: "Orange", hue: 11, sat: 100] << [name: "Red", hue: 100, sat: 100] << [name: "Purple", hue: 77, sat: 100]
+    colorData << [name: "Green", hue: 30, sat: 100] << [name: "Blue", hue: 66, sat: 100] << [name: "Yellow", hue: 16, sat: 100] << [name: "Pink", hue: 95, sat: 100]
+    colorData << [name: "Cyan", hue: 50, sat: 100] << [name: "Chartreuse", hue: 25, sat: 100] << [name: "Teal", hue: 44, sat: 100] << [name: "Magenta", hue: 92, sat: 100]
+	colorData << [name: "Violet", hue: 83, sat: 100] << [name: "Indigo", hue: 70, sat: 100]<< [name: "Marigold", hue: 16, sat: 75]<< [name: "Raspberry", hue: 99, sat: 75]
+    colorData << [name: "Fuchsia", hue: 92, sat: 75] << [name: "Lavender", hue: 83, sat: 75]<< [name: "Aqua", hue: 44, sat: 75]<< [name: "Amber", hue: 11, sat: 75]
+    colorData << [name: "Carnation", hue: 99, sat: 50] << [name: "Periwinkle", hue: 70, sat: 50]<< [name: "Pistachio", hue: 30, sat: 50]<< [name: "Vanilla", hue: 16, sat: 50]
+    if (customName && (customHue > -1 && customerHue < 101) && (customSat > -1 && customerSat < 101)) colorData << [name: customName, hue: customHue as int, sat: customSat as int]
+    return colorData
+}
 /************************************************************************************************************
    Alerts Handler
 ************************************************************************************************************/
@@ -1310,7 +1340,13 @@ private def textVersion() {
 	def text = "3.1.1"
 }
 private def dateVersion() {
-	def text = "12/12/16"
+	def text = "12/12/2016"
+}
+private def LVersionText() {
+	def text = "3.1.2"
+}
+private def LVersionDate() {
+	def text = "12/13/2016"
 }
 private def textCopyright() {
 	def text = "       Copyright © 2016 Jason Headley"
@@ -1389,7 +1425,8 @@ def settingsDescr() {
    text
 }
 def supportDescr()  {
-	def text = "${textVersion()}\n Click to visit our Wiki Page"
+	def text = " App Version = ${textVersion()} \n App Date = ${dateVersion()} \n Lambda Version = ${LVersionText()} \n Lambda Date = ${LVersionDate()} \n Click to visit our Wiki Page" 
+     
 }
 def DevProDescr() {
     def text = "Tap here to Configure"
