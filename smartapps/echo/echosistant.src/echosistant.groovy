@@ -645,24 +645,6 @@ mappings {
     path("/t") {action: [GET: "processTts"]}
 }
 /************************************************************************************************************
-		Begining Process
-************************************************************************************************************/
-def processBegin(){
-    	log.debug "-- Initial Commands Received from Lambda --"
-    def versionTxt  = params.versionTxt 		
-    def versionDate = params.versionDate
-    def versionSTtxt = textVersion()
-//    def versionSTdate = dateVersion()
-    def LVersionTxt = params.LVersionTxt
-    def LVersionDate = params.LVersionDate
-	def pContinue = false
-    def pName = app.label
-    	if (debug){
-        log.debug "Message received from Lambda with: (ver) = '${versionTxt}', (date) = '${versionDate}', and sent to Lambda: pMain = '${pMain}', pContinue = '${pContinue}'"
-}
-    return ["pName":pName, "pContinue":pContinue, "versionSTtxt":versionSTtxt, "versionSTdate":versionSTdate]
-}   
-/************************************************************************************************************
 		Base Process
 ************************************************************************************************************/
 def installed() {
@@ -683,6 +665,8 @@ def initialize() {
     	state.lastMessage = null
 		state.lastIntent  = null
     	state.lastTime  = null
+        state.lambdaReleaseTxt = null
+        state.lambdaReleaseDt = null 
 		def children = getChildApps()
     		if (debug) log.debug "$children.size Profiles installed"
 			children.each { child ->
@@ -752,6 +736,120 @@ def childUninstalled() {
     sendLocationEvent(name: "echoSistant", value: "refresh", data: [profiles: getProfileList()] , isStateChange: true, descriptionText: "echoSistant Profile list refresh")
 }
 /************************************************************************************************************
+		Begining Process - Lambda via page b
+************************************************************************************************************/
+def processBegin(){
+    if (debug) log.debug "-- Initial Commands Received from Lambda --"
+    
+    def versionTxt  = params.versionTxt 		
+    def versionDate = params.versionDate
+    def releaseTxt = params.releaseTxt
+        state.lambdaReleaseTxt = releaseTxt
+        state.lambdaReleaseDt = versionDate              
+    def versionSTtxt = textVersion()
+	def pContinue = true
+
+    if (debug){
+        log.debug "Message received from Lambda with: (ver) = '${versionTxt}', (date) = '${versionDate}', (release) = '${releaseTxt}'"+ 
+        ". And sent to Lambda: pName = '${pName}', pContinue = '${pContinue}', versionSTtxt = '${versionSTtxt}'"
+	}
+    	return ["pContinue":pContinue, "versionSTtxt":versionSTtxt]
+}   
+/************************************************************************************************************
+   CONTROL PROCESS PROCESS (PARENT) - from Lambda via page c
+************************************************************************************************************/
+def controlDevices() {
+        def ctCommand = params.pCommand
+        def ctProfile = params.pProfile
+        def ctNum = params.pNum
+        def ctDevice = params.pDevice
+        def ctIntent = params.intentName
+        def ctOutputTxt = " "
+        def ctContCmds = "true"
+        def ctContCmdsR = "true"
+        def command = ctCommand
+        def result = " "
+        if (debug) log.debug "Message received from Lambda to control devices with settings: (ctCommand)"+
+    						"= '${ctCommand}', (ctProfile) = '${ctProfile}', ctNum = '${ctNum}', (ctDevice) = '${ctDevice}', (ctIntent) = '${ctIntent}'"
+        
+       
+       if (ctCommand == "repeat") {
+        	if (debug) log.debug "Processing repeat last message delivered to any of the Profiles"
+				ctOutputTxt = getLastMessageMain()
+         	if (debug) log.debug "Received message: '${ctOutputTxt}' sending to Lambda"           
+		}
+        else { 
+        	if (command == "dark" || command == "brighter" || command == "on") {
+                if (cSwitches) {
+                    	if (debug) log.debug "Fetching  device type: Switches, name: '${ctDevice}' "
+                    def deviceMatch = getDevice(cSwitches, ctDevice)
+                        if (deviceMatch != "unknown") {
+                            if (pNum) {
+                                if (debug) log.debug "Turning '${deviceMatch}' on in '${pNum}'" 
+                                    ctOutputTxt = "Ok, turning '${deviceMatch}' on in '${pNum}' minutes "
+                                runIn(pNum*60,turnOnCswitch)
+                            }
+                            else {
+                                if (debug) log.debug "Turning '${deviceMatch}' on"
+                                deviceMatch.on()
+                                    ctOutputTxt = "Ok, turning '${deviceMatch}' on"
+                            }
+                        }
+                        else {
+                                ctOutputTxt = "Sorry, the device you are trying to control is missing"
+                                if (debug) log.debug "Sending response to Alexa: '${ctOutputTxt}'" 
+                        }
+                }
+            }
+            if (command == "bright" || command == "darker" || command == "off") {     	
+                if (cSwitches) {
+                    if (debug) log.debug "Fetching  device type: Switches, name: '${ctDevice}' "
+                    def deviceMatch = getDevice(cSwitches, ctDevice)
+                        if (deviceMatch != "unknown") {
+                            if (pNum) {
+                                if (debug) log.debug "Turning '${deviceMatch}' off in '${pNum}'" 
+                                    ctOutputTxt = "Ok, turning '${deviceMatch}' off in '${pNum}' minutes "
+                                runIn(pNum*60,turnOffCswitch)
+                            }
+                            else {
+                                if (debug) log.debug "Turning '${deviceMatch}' off"
+                                deviceMatch?.on()
+                                    ctOutputTxt = "Ok, turning '${deviceMatch}' off"
+                            }
+                        }
+                        else {
+
+                                ctOutputTxt = "Sorry, the device you are trying to control is missing"
+                                if (debug) log.debug "Sending response to Alexa: '${ctOutputTxt}'" 
+                        }
+                }
+            	else ctOutputTxt = "Sorry, the command you have given is missing"
+            }
+            	else ctOutputTxt = "Sorry, the command you have given is missing"
+         }
+        if (debug) log.debug "Sending response to Alexa with settings: '${ctContCmds}' and the message:'${ctOutputTxt}'"         
+        return ["ctContCmds":ctContCmds, "ctOutputTxt":ctOutputTxt]
+
+}
+
+def private getDevice(cList, device) {
+    def result = " " 
+    	if (debug) log.debug "Searching '${cList}' for device name: '${device}' "
+    	cList.each { sName ->
+               def currentDevice = sName.label.toLowerCase()
+                        if (currentDevice == device) {
+                            result = currentDevice
+                            if (debug) log.debug "Found a match: '${currentDevice}' "
+                        }
+                        else {
+                        if (debug) log.debug "No device found to match"
+                        	result = "unknown"
+                        }
+       }
+        if (debug) log.debug "Returning result: '${result}' "
+        return result
+}    
+/************************************************************************************************************
    TEXT TO SPEECH PROCESS (PARENT) - Lambda via page t
 ************************************************************************************************************/
 def processTts() {
@@ -819,51 +917,6 @@ def processTts() {
         if (debug) log.debug "Alexa response sent to Lambda = '${outputTxt}', '${pContCmds}' "
 		return ["outputTxt":outputTxt, "pContCmds":pContCmds]
 }
-/************************************************************************************************************
-   CONTROL PROCESS PROCESS (PARENT) - from Lambda via 
-************************************************************************************************************/
-def controlDevices() {
-        def ctCommand = params.pCommand
-        def ctProfile = params.pProfile
-        def ctNum = params.pNum
-        def ctDevice = params.pDevice
-        def ctOutputTxt = " "
-        def ctContCmds = "false"
-        def ctContCmdsR = "false"
-        def command = ctCommand
-        if (debug) log.debug "Message received from Lambda to control devices with settings: (ctCommand)"+
-    						"= '${ctCommand}', (ctProfile) = '${ctProfile}', ctNum = '${ctNum}', (ctDevice) = '${ctDevice}'"
-        
-
-        if (ctCommand=="repeat") {
-        	if (debug) log.debug "Processing repeat last message delivered to any of the Profiles"
-			ctOutputTxt = getLastMessageMain()
-		}
-        if (command == "dark" || command == "brighter" || command == "on") {
-            
-            //if (pDevice == 
-                if (pNum) {
-            		runIn(pNum*60,turnOncSwitch)
-                }
-             	else {
-       	    		if (debug) log.debug "Turning control switch on"
-                	cSwitches?.on()
-				}
-        	}
-		if (command == "bright" || command == "darker" || command == "off") {     	
-        	if (pNum) {
-          		runIn(pNum*60,turnOffcSwitch)
-			}	
-        	else {
-        		if (debug) log.debug "Turning control switch off"
-                cSwitches?.off()
-            }
-        }
-        
-        return ["ctOutputTxt":ctOutputTxt, "ctContCmds":ctContCmds]
-}
-
-
 
 /******************************************************************************************************
    SPEECH AND TEXT PROCESSING (PROFILE)
@@ -942,8 +995,8 @@ def getLastMessage() {
 ***********************************************************************************************************************/
 def getLastMessageMain() {
 	def ctOutputTxt = "The last message sent was," + state.lastMessage + ", and it was sent to, " + state.lastIntent + ", at, " + state.lastTime
-	return  ctOutputTxt 
-	if (parent.debug) log.debug "Sending last message to Lambda '${ctOutputTxt}' "
+    return  ctOutputTxt 
+  	if (debug) log.debug "Sending last message to Lambda ${ctOutputTxt} "
 }
 /***********************************************************************************************************************
     RESTRICTIONS HANDLER
@@ -1354,16 +1407,13 @@ private def textAppName() {
 	def text = app.label
 }	
 private def textVersion() {
-	def text = "3.1.1"
+	def text = "3.0"
 }
-private def dateVersion() {
+private def textRelease() {
+	def text = "3.0.1"
+}
+private def dateRelease() {
 	def text = "12/12/2016"
-}
-private def LVersionText() {
-	def text = "3.1.2"
-}
-private def LVersionDate() {
-	def text = "12/13/2016"
 }
 private def textCopyright() {
 	def text = "       Copyright © 2016 Jason Headley"
@@ -1441,10 +1491,13 @@ def settingsDescr() {
     }
    text
 }
-
 def supportDescr()  {
-	def text = " App Version = ${textVersion()} \n App Date = ${dateVersion()} \n Lambda Version = ${LVersionText()} \n Lambda Date = ${LVersionDate()} \n Click to visit our Wiki Page" 
-     
+	def text = 	" Apps Version = ${textVersion()} \n" +
+        		" Smart App Release = ${textRelease()} \n"+
+    			" Smart App Release Date = ${dateRelease()} \n"+
+                " Lambda Release = ${state.lambdaReleaseTxt} \n"+
+                " Lambda Release Date = ${state.lambdaReleaseDt} \n"+
+                " Click to visit our Wiki Page" 
 }
 def DevProDescr() {
     def text = "Tap here to Configure"
