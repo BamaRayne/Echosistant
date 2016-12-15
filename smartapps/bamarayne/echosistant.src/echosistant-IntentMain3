@@ -20,6 +20,15 @@
           "type" : "LIST_OF_COMMANDS"
         }
         ]
+    },
+	{
+ 		"intent": "AMAZON.StopIntent"
+	},
+	{
+ 		"intent": "AMAZON.NoIntent"
+	},	
+    {
+    	"intent": "AMAZON.YesIntent"
     }
-    ]
+        ]
 }
