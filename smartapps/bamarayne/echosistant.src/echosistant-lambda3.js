@@ -63,7 +63,7 @@ exports.handler = function( event, context ) {
                 if (intentName.startsWith("AMAZON") && intentName.endsWith("Intent")) { 
                     alexaResp (intentName, context, "Amazon Intent", areWeDone); 
                 }
-
+//-------- Control Type Request------------------------------------------------------------------
                 else if (intentName == "main"){           
                     var pCommand = event.request.intent.slots.pCommand.value;
                     var pProfile = event.request.intent.slots.pProfile.value;
@@ -73,14 +73,14 @@ exports.handler = function( event, context ) {
                     process = true;
                     cardName = "EchoSistant Control";
                 }
-//-------- Control Type Request------------------------------------------------------------------
+//-------- TTS Type Request------------------------------------------------------------------
                 else if (intentName != "main") {
                     var ttstext = event.request.intent.slots.ttstext.value;
                     url += 't?ttstext=' + ttstext + '&intentName=' + intentName;
                     process = true;
                     cardName = "EchoSistant Free Text";
                 }
-//-------- TTS Type Request------------------------------------------------------------------
+//-------- General Process------------------------------------------------------------------
                 if (!process) {
                     output("I am not sure what you are asking. Please try again", context, areWeDone); 
                 }                                        
