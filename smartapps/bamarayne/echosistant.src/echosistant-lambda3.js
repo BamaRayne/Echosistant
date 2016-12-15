@@ -120,10 +120,6 @@ function alexaResp(type, context, cardName, areWeDone){
         areWeDone=true;
         output(" Cancelling. Goodbye ", context, "EchoSistant Cancel", areWeDone);
     }
-    else if (type == "AMAZON.CancelIntent") { 
-        areWeDone=true;
-        output(" Cancelling. Goodbye ", context, "EchoSistant Cancel", areWeDone);
-    }
 }
 function output( text, context, cardName, areWeDone) {
         var response = {
