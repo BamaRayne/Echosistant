@@ -764,9 +764,9 @@ def controlDevices() {
         def ctNum = params.pNum
         def ctDevice = params.pDevice
         def ctIntent = params.intentName
-        def ctOutputTxt = " "
-        def ctContCmds = "true"
-        def ctContCmdsR = "true"
+        def outputTxt = " "
+        def pContCmds = "false"
+        def pContCmdsR = "false"
         def command = ctCommand
         def result = " "
         if (debug) log.debug "Message received from Lambda to control devices with settings: (ctCommand)"+
@@ -775,8 +775,8 @@ def controlDevices() {
        
        if (ctCommand == "repeat") {
         	if (debug) log.debug "Processing repeat last message delivered to any of the Profiles"
-				ctOutputTxt = getLastMessageMain()
-         	if (debug) log.debug "Received message: '${ctOutputTxt}' sending to Lambda"           
+				outputTxt = getLastMessageMain()
+         	if (debug) log.debug "Received message: '${outputTxt}' sending to Lambda"           
 		}
         else { 
         	if (command == "dark" || command == "brighter" || command == "on") {
@@ -786,18 +786,18 @@ def controlDevices() {
                         if (deviceMatch != "unknown") {
                             if (pNum) {
                                 if (debug) log.debug "Turning '${deviceMatch}' on in '${pNum}'" 
-                                    ctOutputTxt = "Ok, turning '${deviceMatch}' on in '${pNum}' minutes "
+                                    outputTxt = "Ok, turning '${deviceMatch}' on in '${pNum}' minutes "
                                 runIn(pNum*60,turnOnCswitch)
                             }
                             else {
                                 if (debug) log.debug "Turning '${deviceMatch}' on"
                                 deviceMatch.on()
-                                    ctOutputTxt = "Ok, turning '${deviceMatch}' on"
+                                    outputTxt = "Ok, turning '${deviceMatch}' on"
                             }
                         }
                         else {
-                                ctOutputTxt = "Sorry, the device you are trying to control is missing"
-                                if (debug) log.debug "Sending response to Alexa: '${ctOutputTxt}'" 
+                                outputTxt = "Sorry, the device you are trying to control is missing"
+                                if (debug) log.debug "Sending response to Alexa: '${outputTxt}'" 
                         }
                 }
             }
@@ -808,27 +808,27 @@ def controlDevices() {
                         if (deviceMatch != "unknown") {
                             if (pNum) {
                                 if (debug) log.debug "Turning '${deviceMatch}' off in '${pNum}'" 
-                                    ctOutputTxt = "Ok, turning '${deviceMatch}' off in '${pNum}' minutes "
+                                    outputTxt = "Ok, turning '${deviceMatch}' off in '${pNum}' minutes "
                                 runIn(pNum*60,turnOffCswitch)
                             }
                             else {
                                 if (debug) log.debug "Turning '${deviceMatch}' off"
-                                deviceMatch?.on()
-                                    ctOutputTxt = "Ok, turning '${deviceMatch}' off"
+                                deviceMatch?.off()
+                                    outputTxt = "Ok, turning '${deviceMatch}' off"
                             }
                         }
                         else {
 
-                                ctOutputTxt = "Sorry, the device you are trying to control is missing"
-                                if (debug) log.debug "Sending response to Alexa: '${ctOutputTxt}'" 
+                                outputTxt = "Sorry, the device you are trying to control is missing"
+                                if (debug) log.debug "Sending response to Alexa: '${outputTxt}'" 
                         }
                 }
-            	else ctOutputTxt = "Sorry, the command you have given is missing"
+            	else outputTxt = "Sorry, the command you have given is missing"
             }
-            	else ctOutputTxt = "Sorry, the command you have given is missing"
+            	else outputTxt = "Sorry, the command you have given is missing"
          }
-        if (debug) log.debug "Sending response to Alexa with settings: '${ctContCmds}' and the message:'${ctOutputTxt}'"         
-        return ["ctContCmds":ctContCmds, "ctOutputTxt":ctOutputTxt]
+        if (debug) log.debug "Sending response to Alexa with settings: '${ctContCmds}' and the message:'${outputTxt}'"         
+        return ["outputTxt":outputTxt, "pContCmds":pContCmds]
 
 }
 
@@ -838,8 +838,9 @@ def private getDevice(cList, device) {
     	cList.each { sName ->
                def currentDevice = sName.label.toLowerCase()
                         if (currentDevice == device) {
-                            result = currentDevice
-                            if (debug) log.debug "Found a match: '${currentDevice}' "
+                            //result = currentDevice
+                            result = sName
+                            if (debug) log.debug "Found a match: '${sName}' "
                         }
                         else {
                         if (debug) log.debug "No device found to match"
@@ -994,9 +995,9 @@ def getLastMessage() {
     LAST MESSAGE HANDLER - MAIN
 ***********************************************************************************************************************/
 def getLastMessageMain() {
-	def ctOutputTxt = "The last message sent was," + state.lastMessage + ", and it was sent to, " + state.lastIntent + ", at, " + state.lastTime
-    return  ctOutputTxt 
-  	if (debug) log.debug "Sending last message to Lambda ${ctOutputTxt} "
+	def outputTxt = "The last message sent was," + state.lastMessage + ", and it was sent to, " + state.lastIntent + ", at, " + state.lastTime
+    return  outputTxt 
+  	if (debug) log.debug "Sending last message to Lambda ${outputTxt} "
 }
 /***********************************************************************************************************************
     RESTRICTIONS HANDLER
