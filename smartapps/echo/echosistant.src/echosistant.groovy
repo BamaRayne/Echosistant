@@ -157,7 +157,7 @@ page name: "profiles"
                             input "cTemperature", "number", title: "Alexa adjusts temperature by (1-10 degrees - defaults to 1)", defaultValue: 1, required: false
                             input "cPIN", "number", title: "Set a PIN number to prevent unathorized use of Voice Control", default: false, required: false
                             
-                            href "CoRE", title: "CoRe Integration Details...",
+                            href "CoRE", title: "About CoRe Integration...",
                             	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_CoRE.png"
                          }
                     }
@@ -222,7 +222,7 @@ page name: "devicesControlMain"
                 input "cSwitches", "capability.switch", title: "Control These Lights...", multiple: true, required: false, submitOnChange: true
             }
             section ("Volume (assign a single device controlled using a 1-10 scale)", hideWhenEmpty: true){
-                input "cVolume", "capability.switch", title: "Control These Lights...", multiple: false, required: false, submitOnChange: true
+                input "cVolume", "capability.switch", title: "Control This Device...", multiple: false, required: false, submitOnChange: true
             }
             section ("Other Switches (devices controlled using a 1-10 scale) ", hideWhenEmpty: true){
                 input "cDimmers", "capability.switchLevel", title: "Control These Device(s)...", multiple: true, required: false , submitOnChange:true
@@ -649,7 +649,6 @@ mappings {
 ************************************************************************************************************/
 def installed() {
 	if (debug) log.debug "Installed with settings: ${settings}"
-    if (debug) log.trace "STappID = '${app.id}' , STtoken = '${state.accessToken}'"
 	initialize()
 }
 def updated() { 
@@ -660,13 +659,14 @@ def updated() {
 
 def initialize() {
 	if (!parent){
-    	if (debug) log.debug "Initialize Parent app"
+    	if (debug) log.debug "Initializing Parent app"
         sendLocationEvent(name: "echoSistant", value: "refresh", data: [profiles: getProfileList()] , isStateChange: true, descriptionText: "echoSistant Profile list refresh")
     	state.lastMessage = null
 		state.lastIntent  = null
     	state.lastTime  = null
         state.lambdaReleaseTxt = null
-        state.lambdaReleaseDt = null 
+        state.lambdaReleaseDt = null
+        state.currentDevice = null
 		def children = getChildApps()
     		if (debug) log.debug "$children.size Profiles installed"
 			children.each { child ->
@@ -678,7 +678,7 @@ def initialize() {
 			}
 	}
     else{
-        if (parent.debug) log.debug "Initialize Child app"
+        if (parent.debug) log.debug "Initializing Child app"
         state.lastMessage = null
     	state.lastTime  = null
         subscribeChildToEvents()
@@ -769,6 +769,14 @@ def controlDevices() {
         def pContCmdsR = "false"
         def command = ctCommand
         def result = " "
+		
+        if (ctNum == "undefined" || ctNum =="?") {
+				ctNum = 0
+		}
+        else {
+				ctNum = ctNum as int
+        }
+        
         if (debug) log.debug "Message received from Lambda to control devices with settings: (ctCommand)"+
     						"= '${ctCommand}', (ctProfile) = '${ctProfile}', ctNum = '${ctNum}', (ctDevice) = '${ctDevice}', (ctIntent) = '${ctIntent}'"
         
@@ -776,23 +784,25 @@ def controlDevices() {
        if (ctCommand == "repeat") {
         	if (debug) log.debug "Processing repeat last message delivered to any of the Profiles"
 				outputTxt = getLastMessageMain()
-         	if (debug) log.debug "Received message: '${outputTxt}' sending to Lambda"           
+         	if (debug) log.debug "Received message: '${outputTxt}' ; sending to Lambda"           
 		}
         else { 
         	if (command == "dark" || command == "brighter" || command == "on") {
                 if (cSwitches) {
-                    	if (debug) log.debug "Fetching  device type: Switches, name: '${ctDevice}' "
+                    if (debug) log.debug "Fetching  device type: Switches, name: '${ctDevice}' "
                     def deviceMatch = getDevice(cSwitches, ctDevice)
-                        if (deviceMatch != "unknown") {
-                            if (pNum) {
-                                if (debug) log.debug "Turning '${deviceMatch}' on in '${pNum}'" 
-                                    outputTxt = "Ok, turning '${deviceMatch}' on in '${pNum}' minutes "
-                                runIn(pNum*60,turnOnCswitch)
+						if (deviceMatch != "unknown") {
+                            if (ctNum) {
+                            	state.currentDevice = deviceMatch
+                                if (debug) log.debug "Turning '${deviceMatch}' on in '${ctNum}'" 
+                                    outputTxt = "Ok, turning '${deviceMatch}' on in '${ctNum}' minutes "
+                                	runIn(ctNum*60, delayHandler, [data: [type: "switch", command: command]])
                             }
                             else {
                                 if (debug) log.debug "Turning '${deviceMatch}' on"
-                                deviceMatch.on()
-                                    outputTxt = "Ok, turning '${deviceMatch}' on"
+                                	//deviceMatch.on()
+                                    deviceMatch."${command}"()   
+                                  	outputTxt = "Ok, turning '${deviceMatch}' on"
                             }
                         }
                         else {
@@ -800,56 +810,87 @@ def controlDevices() {
                                 if (debug) log.debug "Sending response to Alexa: '${outputTxt}'" 
                         }
                 }
+                else outputTxt = "Sorry, the assistant didn't learn to do that yet, but is learning new tricks every day"       
             }
             if (command == "bright" || command == "darker" || command == "off") {     	
                 if (cSwitches) {
                     if (debug) log.debug "Fetching  device type: Switches, name: '${ctDevice}' "
                     def deviceMatch = getDevice(cSwitches, ctDevice)
                         if (deviceMatch != "unknown") {
-                            if (pNum) {
-                                if (debug) log.debug "Turning '${deviceMatch}' off in '${pNum}'" 
-                                    outputTxt = "Ok, turning '${deviceMatch}' off in '${pNum}' minutes "
-                                runIn(pNum*60,turnOffCswitch)
+                            if (ctNum) {
+                                state.currentDevice = deviceMatch
+                                if (debug) log.debug "Turning '${deviceMatch}' off in '${ctNum}'" 
+                                    outputTxt = "Ok, turning '${deviceMatch}' off in '${ctNum}' minutes "
+                                	runIn(ctNum*60, delayHandler, [data: [type: "switch", command: command]])
                             }
                             else {
                                 if (debug) log.debug "Turning '${deviceMatch}' off"
-                                deviceMatch?.off()
-                                    outputTxt = "Ok, turning '${deviceMatch}' off"
+                                deviceMatch?."${command}"()   
+                                outputTxt = "Ok, turning '${deviceMatch}' off"
                             }
                         }
                         else {
-
                                 outputTxt = "Sorry, the device you are trying to control is missing"
                                 if (debug) log.debug "Sending response to Alexa: '${outputTxt}'" 
                         }
                 }
-            	else outputTxt = "Sorry, the command you have given is missing"
+            	else outputTxt = "Sorry, the assistant didn't learn to do that yet, but is learning new tricks every day"
             }
-            	else outputTxt = "Sorry, the command you have given is missing"
-         }
-        if (debug) log.debug "Sending response to Alexa with settings: '${ctContCmds}' and the message:'${outputTxt}'"         
-        return ["outputTxt":outputTxt, "pContCmds":pContCmds]
+        	if (command == "hot" || command == "cold") {
+                if (cTstat) {
+                	command = heatingSetpoint // or cooling depending on mode and temperature reading 
+                    if (debug) log.debug "Fetching  device type: Tstat, name: '${ctDevice}' "
+                    def deviceMatch = getDevice(cTstat, ctDevice)
+						if (deviceMatch != "unknown") {
+                            if (ctNum) {
+                            	state.currentDevice = deviceMatch
+                                if (debug) log.debug "Adjusting temperature by '${cTemperature}' degrees '${deviceMatch}', in '${ctNum}' minutes " 
+                                    outputTxt = "Ok, adjusting temperature by '${cTemperature}' degrees '${deviceMatch}', in '${ctNum}' minutes "
+                                	runIn(ctNum*60, delayHandler, [data: [type: "switch", command: command]])
+                            }
+                            else {
+                                if (debug) log.debug "adjusting temperature by '${cTemperature}' degrees '${deviceMatch}'"
+                                    deviceMatch."${command}"()   
+                                  	outputTxt = "Ok, turning '${deviceMatch}' on"
+                            }
+                        }
+                        else {
+                                outputTxt = "Sorry, the device you are trying to control is missing"
+                                if (debug) log.debug "Sending response to Alexa: '${outputTxt}'" 
+                        }
+                }
+                else outputTxt = "Sorry, the assistant didn't learn to do that yet, but is learning new tricks every day"       
+            }
 
+         }
+        if (debug) log.debug "Sending response to Alexa with settings: '${pContCmds}' and the message:'${outputTxt}'"         
+        return ["outputTxt":outputTxt, "pContCmds":pContCmds]
 }
 
 def private getDevice(cList, device) {
-    def result = " " 
+    def result = "unknown" 
     	if (debug) log.debug "Searching '${cList}' for device name: '${device}' "
     	cList.each { sName ->
                def currentDevice = sName.label.toLowerCase()
                         if (currentDevice == device) {
-                            //result = currentDevice
                             result = sName
                             if (debug) log.debug "Found a match: '${sName}' "
                         }
-                        else {
-                        if (debug) log.debug "No device found to match"
-                        	result = "unknown"
-                        }
        }
-        if (debug) log.debug "Returning result: '${result}' "
         return result
-}    
+}   
+
+def delayHandler(data) { 
+    def deviceType = data.type
+    def deviceCommand = data.command
+        if (debug) log.debug "Received request after delay with settings: type= '${deviceType}', command= '${deviceCommand}' "
+        if (deviceType == "switch") {
+            state.currentSwitch."${deviceCommand}"()   
+            }
+        if (deviceType == "dimmer") {
+            state.currentSwitch."${deviceCommand}"()   
+            }
+}
 /************************************************************************************************************
    TEXT TO SPEECH PROCESS (PARENT) - Lambda via page t
 ************************************************************************************************************/
