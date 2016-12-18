@@ -330,23 +330,23 @@ page name: "devicesControl"
                 section ("Light Switches", hideWhenEmpty: true){
                     input "switches", "capability.switch", title: "Select Lights and Switches...", multiple: true, required: false, submitOnChange: true
                         if (switches) input "switchCmd", "enum", title: "What do you want to do with these switches?", options:["on":"Turn on","off":"Turn off","toggle":"Toggle","delay":"Delay"], multiple: false, required: false, submitOnChange:true
-                        if (switchCmd == "delay") {
-                        input "sSecondsOn", "number", title: "Turn on in Seconds?", defaultValue: none, required: false
-                        input "sSecondsOff", "number", title: "Turn off in Seconds?", defaultValue: none, required: false
+                        if (switchCmd == "on" || switchCmd == "off" || switchCmd == "delay") {
+                        input "sSecondsOn", "number", title: "Turn on in Seconds?", defaultValue: 0, required: false
+                        input "sSecondsOff", "number", title: "Turn off in Seconds?", required: false
                         }
                 		if (switchCmd) input "otherSwitch", "capability.switch", title: "...and these other switches?", multiple: true, required: false, submitOnChange: true
                         if (otherSwitch) input "otherSwitchCmd", "enum", title: "What do you want to do with these other switches?", options: ["on1":"Turn on","off1":"Turn off","toggle1":"Toggle","delay1":"Delay"], multiple: false, required: false, submitOnChange: true
-                        if (otherSwitchCmd == "delay1") {
-                        input "sSecondsOn1", "number", title: "Turn on in Seconds?", defaultValue: none, required: false
-                        input "sSecondsOff1", "number", title: "Turn off in Seconds?", defaultValue: none, required: false
+                        if (otherSwitchCmd == "on1" || otherSwitchCmd == "off1" || otherSwitchCmd == "delay1") {
+                        input "sSecondsOn1", "number", title: "Turn on in Seconds?", defaultValue: 0, required: false
+                        input "sSecondsOff1", "number", title: "Turn off in Seconds?", required: false
                     	}
                     }
         		section ("Colored lights", hideWhenEmpty: true){
             		input "hues", "capability.colorControl", title: "Select These Colored Lights...", multiple: true, required: false, submitOnChange:true
             			if (hues) {
                         	input "hueCmd", "enum", title: "What do you want to do with these color bulbs?", options:["on":"Turn on","off":"Turn off","setColor":"Set Color"], multiple: false, required: false, submitOnChange:true
-							if ("setColor") input "color", "enum", title: "Hue Color?", required: false, multiple:false, options: parent.fillColorSettings().name
-							input "lightLevel", "enum", title: "Light Level?", required: false, options: [[10:"10%"],[20:"20%"],[30:"30%"],[40:"40%"],[50:"50%"],[60:"60%"],[70:"70%"],[80:"80%"],[90:"90%"],[100:"100%"]]                       
+							if (hueCmd == "setColor") input "color", "enum", title: "Hue Color?", required: false, multiple:false, options: parent.fillColorSettings().name
+							if (hueCmd == "setColor" || hueCmd == "on") input "lightLevel", "enum", title: "Light Level?", required: false, options: [[10:"10%"],[20:"20%"],[30:"30%"],[40:"40%"],[50:"50%"],[60:"60%"],[70:"70%"],[80:"80%"],[90:"90%"],[100:"100%"]]                       
         					}
                 		}
                 section ("Dimmers", hideWhenEmpty: true){
@@ -354,15 +354,15 @@ page name: "devicesControl"
                         if (dimmers) input "dimmersCmd", "enum", title: "Command To Send To Dimmers", options:["set":"Set level","delay2":"Delay","off":"Turn off"], multiple: false, required: false, submitOnChange:true
                         if (dimmersCmd) input "dimmersLVL", "number", title: "Dimmers Level", description: "Set dimmer level", required: false
                             if (dimmersCmd == "delay2") {
-                        		input "sSecondsOn2", "number", title: "Turn on in Seconds?", defaultValue: none, required: false
-                        		input "sSecondsOff2", "number", title: "Turn off in Seconds?", defaultValue: none, required: false
+                        		input "sSecondsOn2", "number", title: "Turn on in Seconds?", defaultValue: 0, required: false , submitOnChange:true
+                        		input "sSecondsOff2", "number", title: "Turn off in Seconds?", required: false , submitOnChange:true
                         		}	
-                        if (dimmersLVL) input "otherDimmers", "capability.switchLevel", title: "Control These Other Dimmers...", multiple: true, required: false , submitOnChange:true
+                        if (dimmersCmd) input "otherDimmers", "capability.switchLevel", title: "Control These Other Dimmers...", multiple: true, required: false , submitOnChange:true
                         if (otherDimmers) input "otherDimmersCmd", "enum", title: "Command To Send To Other Dimmers", options:["set":"Set level","delay3":"Delay","off":"Turn off"], multiple: false, required: false, submitOnChange:true
                         if (otherDimmersCmd) input "otherDimmersLVL", "number", title: "Dimmers Level", description: "Set dimmer level", required: false
                 			if (otherDimmersCmd == "delay3") {
-                        		input "sSecondsOn3", "number", title: "Turn on in Seconds?", defaultValue: none, required: false
-                        		input "sSecondsOff3", "number", title: "Turn off in Seconds?", defaultValue: none, required: false
+                        		input "sSecondsOn3", "number", title: "Turn on in Seconds?", defaultValue: 0, required: false, submitOnChange:true
+                        		input "sSecondsOff3", "number", title: "Turn off in Seconds?", required: false, submitOnChange:true
                         		}
                     		}
                 section ("Flash These Switches") {
