@@ -123,9 +123,16 @@ page name: "profiles"
     }
     def about(){
         dynamicPage(name: "about", uninstall: true) {
-                section ("Directions, How-to's, and Troubleshooting") { 
-                href url:"http://thingsthataresmart.wiki/index.php?title=EchoSistant", title: "EchoSistant Wiki", description: none
+                section ("Directions, How-to's, and Troubleshooting") {
+                	href url:"http://thingsthataresmart.wiki/index.php?title=EchoSistant", title: "EchoSistant Wiki", description: none,
+                	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/app-Echosistant.png"
+                	
                 }
+                section("Configure Device and Event Notifications") {
+                    href "Alerts", title: "Device and Event Notifications...",description: AlertProDescr() , state: completeAlertPro(),
+                    image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_devices.png"            			
+            		
+					}
                 section("Debugging") {
                     input "debug", "bool", title: "Enable Debug Logging", default: false, submitOnChange: true 
                     if (debug) log.info "${textAppName()}\n${textVersion()}"
@@ -254,8 +261,6 @@ def mainProfilePage() {
             href "SMS", title: "Send Text & Push Messages...", description: SMSDescr() , state: completeSMS(),
             	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Text.png" 
   			href "DevPro", title: "Execute Actions when Profile runs...", description: DevProDescr(), state: completeDevPro(),
-            	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_devices.png"            			
-            href "Alerts", title: "Create Event Alerts...",description: AlertProDescr() , state: completeAlertPro(),
             	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Rest.png"
            	href "MsgConfig", title: "With These Global Message Options...", description: MsgConfigDescr() , state: completeMsgConfig(),
             	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Extra.png" 
@@ -526,26 +531,6 @@ page name: "Alerts"
             	}
 			}                
         }        
-        section("Garage Doors", hideWhenEmpty: true) {
-        	input "ShowGarage", "bool", title: "Garage Doors", default: false, submitOnChange: true
-        	if (TheGarage || audioTextOpening || audioTextClosing || speech7 || push7 || notify7 || music7) paragraph "Configured with Settings"
-            if (ShowGarage) {
-                input "TheGarage", "capability.garageDoorControl", title: "Choose Garage Doors...", required: false, multiple: true, submitOnChange: true
-                input "audioTextOpening", "textOpening", title: "Play this message", description: "Message to play when the Garage Door Opens", required: false, capitalization: "sentences"
-                input "audioTextClosing", "textClosing", title: "Play this message", description: "Message to play when the Garage Door Closes", required: false, capitalization: "sentences" 
-                input "speech7", "capability.speechSynthesis", title: "Message Player", required: false, multiple: true, submitOnChange: true
-                input "music7", "capability.musicPlayer", title: "On this Sonos Type Devices", required: false, multiple: true, submitOnChange: true
-                if (music7) {
-                    input "volume7", "number", title: "Temporarily change volume", description: "0-100%", required: false
-                    input "resumePlaying7", "bool", title: "Resume currently playing music after notification", required: false, defaultValue: false
-                	}
-                input "sendMsg7", "bool", title: "Send Push and/or Notifications", default: false, submitOnChange: true
-                	if (sendMsg7) {
-                	input "push7", "bool", title: "Send Push Notification (optional)", required: false, defaultValue: false, submitOnChange: true
-            		input "notify7", "bool", title: "Send message to Mobile App Notifications Tab (optional)", required: false, defaultValue: false, submitOnChange: true
-            		}
-                }		
-            } 
          section("Thermostats", hideWhenEmpty: true) {
         	input "ShowTstat", "bool", title: "Thermostats", default: false, submitOnChange: true
         	if (TheThermostat || audioTextHeating || audioTextCooling || speech8 || push8 || notify8 || music8) paragraph "Configured with Settings"
@@ -662,6 +647,7 @@ def updated() {
 }
 
 def initialize() {
+subscribeChildToEvents()
 	if (!parent){
     	if (debug) log.debug "Initializing Parent app"
         sendLocationEvent(name: "echoSistant", value: "refresh", data: [profiles: getProfileList()] , isStateChange: true, descriptionText: "echoSistant Profile list refresh")
@@ -685,8 +671,8 @@ def initialize() {
         if (parent.debug) log.debug "Initializing Child app"
         state.lastMessage = null
     	state.lastTime  = null
-        subscribeChildToEvents()
      }
+     
 }
 /************************************************************************************************************
 		Subscriptions
@@ -1110,8 +1096,8 @@ private getDayOk() {
 		def day = df.format(new Date())
 	    def result = !runDay || runDay?.contains(day)
         def mode = location.mode
-        if (parent.debug) log.trace "modeOk = $result; Location Mode is: $mode"
-        if (parent.debug) log.trace "getDayOk = $result. Location time zone is: $timeZone"
+        if (debug) log.trace "modeOk = $result; Location Mode is: $mode"
+        if (debug) log.trace "getDayOk = $result. Location time zone is: $timeZone"
         return result
 }
 private getTimeOk() {
@@ -1346,13 +1332,13 @@ def alertsHandler(evt) {
 	def eVal = evt.value
     def eName = evt.name
     def eTxt = " "
-		if (parent.debug) log.debug "Received event name ${evt.name} with value:  ${evt.value}"
+		if (debug) log.debug "Received event name ${evt.name} with value:  ${evt.value}"
 
 	if (getDayOk()==true && getModeOk()==true && getTimeOk()==true) {
      
      if (eVal == "on") {
      	if (audioTextOn) {
-        if (parent.debug) log.debug "Received event: on, playing message:  ${audioTextOn}"
+        if (debug) log.debug "Received event: on, playing message:  ${audioTextOn}"
   				speech1?.speak(audioTextOn)
 				if (music1) {
         			playAlert(audioTextOn, music1)
@@ -1361,7 +1347,7 @@ def alertsHandler(evt) {
         }
     if (eVal == "off") {
         	if (audioTextOff) {
-            if (parent.debug) log.debug "Received event: off, playing message:  ${audioTextOn}"
+            if (debug) log.debug "Received event: off, playing message:  ${audioTextOn}"
         	speech1?.speak(audioTextOff)
 				if (music1) {
         			playAlert(audioTextOff, music1)
@@ -1370,16 +1356,16 @@ def alertsHandler(evt) {
     }
     if (eVal == "open") {
     	if (audioTextOpen) {
-        if (parent.debug) log.debug "Received event:open, playing message:  ${audioTextOpen}"
+        if (debug) log.debug "Received event:open, playing message:  ${audioTextOpen}"
   		speech2?.speak(audioTextOpen)
         	if (music2) {
         	playAlert(audioTextOpen, music2)
          }
     }
         }
-    	if (eVal == "closed") {
+    	if (eVal == "close") {
         	if (audioTextClosed) {
-        	if (parent.debug) log.debug "Received event closed, playing message:  ${audioTextClosed}"
+        	if (debug) log.debug "Received event closed, playing message:  ${audioTextClosed}"
             speech2?.speak(audioTextClosed)
         	if (music2) {
         		playAlert(audioTextClosed, music2)
@@ -1450,26 +1436,11 @@ def alertsHandler(evt) {
          		} 
         		}
             }
-    if (eVal == "open")  {
-    	if (audioTextOpening) {
-    	speech7?.speak(audioTextOpening)
-				if (music7) {
-        			playAlert(audioTextOn, music7)
-         		} 
-    		}
-        }
-    	if (eVal == "close") {
-        	if (audioTextClosing) {
-        	speech7?.speak(audioTextClosing)
-				if (music7) {
-        			playAlert(audioTextClosing, music7)
-         		} 
-	  		}
-        }
+
     if (eName == "heatingSetpoint")  {
     	if (audioTextHeating) {
         eTxt = audioTextHeating + " ${eVal},  degrees"
-    	if (parent.debug) log.debug "Received event heatingSetpoint, playing message:  ${eTxt}"
+    	if (debug) log.debug "Received event heatingSetpoint, playing message:  ${eTxt}"
         speech8?.speak(audioTextOpening)
 				if (music8) {
                     playAlert(eTxt, music8)
@@ -1479,7 +1450,7 @@ def alertsHandler(evt) {
     	if (eName == "coolingSetpoint") {
         	if (audioTextCooling) {
             eTxt = audioTextHeating + "'${eVal}',  degrees"
-        	if (parent.debug) log.debug "Received event coolingSetpoint, playing message:  ${eTxt}"
+        	if (debug) log.debug "Received event coolingSetpoint, playing message:  ${eTxt}"
             speech8?.speak(audioTextCooling)
 				if (music8) {
         			playAlert(eTxt, music8)
