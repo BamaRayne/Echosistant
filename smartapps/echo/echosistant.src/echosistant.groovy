@@ -1,7 +1,8 @@
 /*
  * EchoSistant - The Ultimate Voice and Text Messaging Assistant Using Your Alexa Enabled Device.
- *		
- *		12/14/2016		Bug Fixes and Changes by Jason - Garage alert not playing.
+ *
+ *		12/18/2016		Release 3.0.4 	Control Engine deployed
+ *		12/14/2016		Release 3.0.3	Bug Fixes and Changes by Jason - Garage alert not playing.
  *		12/09/2016		Version 3.0.2	Major overhaul of UI and process (cotnt'd)
  *		12/09/2016		Version 3.0.1	Major overhaul of UI and process (in progress)
  *		??/??/2016		Version 3.0.0	Additions: Msg to Notify Tab in Mobile App, Push Msg, Complete Reconfigure of Profile Build, More Control of Dimmers, and Switches,
