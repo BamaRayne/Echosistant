@@ -74,6 +74,7 @@ preferences {
     		page name: "pageConfirmation"
     		page name: "pageReset"
         page name: "devicesControlMain"
+        page name: "Integrations"
     //Profile Pages    
     page name: "mainProfilePage"
     	page name: "MsgPro"
@@ -98,7 +99,7 @@ page name: "mainParentPage"
             section ("") {
                 href "profiles", title: "Profiles", description: profilesDescr(), state: completeProfiles(),
                     image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Config.png"    
-                href "about", title: "Settings and Security", description: settingsDescr(), state: completeSettings(),
+                href "about", title: "Control, Integrations, and Security", description: settingsDescr(), state: completeSettings(),
                     image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_About.png"
                 href title: "EchoSistant Support", description: supportDescr() , state: completeProfiles(),
                     image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/app-Echosistant.png",
@@ -123,8 +124,17 @@ page name: "profiles"
     def about(){
         dynamicPage(name: "about", uninstall: true) {
                 section ("Directions, How-to's, and Troubleshooting") { 
-                href url:"http://thingsthataresmart.wiki/index.php?title=EchoSistant", title: "EchoSistant Wiki", description: none
+                	href url:"http://thingsthataresmart.wiki/index.php?title=EchoSistant", title: "EchoSistant Wiki", description: none,
+                	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/app-Echosistant.png"
                 }
+                section("Device and Action Notifications") {
+	                href "Alerts", title: "Create Notifications...",description: AlertProDescr() , state: completeAlertPro(),
+    	        	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Rest.png"
+				}
+                section ("Device Control and 3rd Party Integrations"){
+                	href "Integrations", title: "Device Control and 3rd Party Integrations...", description: ParConDescr() , state: completeParCon(), 
+                    image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Config.png" 
+                         }
                 section("Debugging") {
                     input "debug", "bool", title: "Enable Debug Logging", default: false, submitOnChange: true 
                     if (debug) log.info "${textAppName()}\n${textVersion()}"
@@ -146,24 +156,25 @@ page name: "profiles"
                 section ("Revoke/Renew Access Token & Application ID"){
                     href "tokens", title: "Revoke/Reset Security Access Token", description: none
                     }
-                section ("Control Devices and 3rd Party Integrations"){
-                    input "showIntegration", "bool", title: "Configure Integrations", default: false, submitOnChange: true
-                        if(showIntegration) {
-                            href "devicesControlMain", title: "Control These Devices with Voice by speaking commands to Alexa (via the Main Skill)", description: ParConDescr() , state: completeParCon(),
-                            	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_devices.png"            			
-                    		paragraph ("Define Variables for Voice Controlled (for increase/decrease commands)")
-                            input "cLevel", "number", title: "Alexa Automatically Adjusts Light Levels by (1-100% - defaults to +/-30%)", defaultValue: 30, required: false
-                            //input "cLevelOther", "number", title: "Alexa Automatically Adjusts Other Switches by (1-10 - defaults to +/-2)", defaultValue: 2, required: false
-                            input "cTemperature", "number", title: "Alexa adjusts temperature by (1-10 degrees - defaults to 1)", defaultValue: 1, required: false
-                            input "cPIN", "number", title: "Set a PIN number to prevent unathorized use of Voice Control", default: false, required: false
-                            
-                            href "CoRE", title: "About CoRe Integration...",
-                            	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_CoRE.png"
-                         }
-                    }
                 section("Tap below to remove the ${textAppName()} application.  This will remove ALL Profiles and the App from the SmartThings mobile App."){}
                 }
-	}      
+	} 
+page name: "Integrations"
+	def Integrations(){
+    		dynamicPage(name: "Integrations", title: "3rd Party Integrations and Device Control", uninstall: false){
+            	section(""){
+                    href "CoRE", title: "About CoRe Integration...",
+                    image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_CoRE.png"
+					href "devicesControlMain", title: "Control These Devices with Voice by speaking commands to Alexa (via the Main Skill)", description: ParConDescr() , state: completeParCon(),
+                    image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_devices.png"            			
+                    paragraph ("Define Variables for Voice Controlled (for increase/decrease commands)")
+                    input "cLevel", "number", title: "Alexa Automatically Adjusts Light Levels by (1-100% - defaults to +/-30%)", defaultValue: 30, required: false
+                     //input "cLevelOther", "number", title: "Alexa Automatically Adjusts Other Switches by (1-10 - defaults to +/-2)", defaultValue: 2, required: false
+                    input "cTemperature", "number", title: "Alexa adjusts temperature by (1-10 degrees - defaults to 1)", defaultValue: 1, required: false
+                    input "cPIN", "number", title: "Set a PIN number to prevent unathorized use of Voice Control", default: false, required: false
+					}
+                }
+			}                
 page name: "tokens"
     def tokens(){
             dynamicPage(name: "tokens", title: "Security Tokens", uninstall: false){
@@ -248,8 +259,6 @@ def mainProfilePage() {
             	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Text.png" 
   			href "DevPro", title: "Execute Actions when Profile runs...", description: DevProDescr(), state: completeDevPro(),
             	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_devices.png"            			
-            href "Alerts", title: "Create Event Alerts...",description: AlertProDescr() , state: completeAlertPro(),
-            	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Rest.png"
            	href "MsgConfig", title: "With These Global Message Options...", description: MsgConfigDescr() , state: completeMsgConfig(),
             	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Extra.png" 
             }
@@ -519,7 +528,7 @@ page name: "Alerts"
             	}
 			}                
         }        
-        section("Garage Doors", hideWhenEmpty: true) {
+/*        section("Garage Doors", hideWhenEmpty: true) {
         	input "ShowGarage", "bool", title: "Garage Doors", default: false, submitOnChange: true
         	if (TheGarage || audioTextOpening || audioTextClosing || speech7 || push7 || notify7 || music7) paragraph "Configured with Settings"
             if (ShowGarage) {
@@ -539,6 +548,7 @@ page name: "Alerts"
             		}
                 }		
             } 
+*/            
          section("Thermostats", hideWhenEmpty: true) {
         	input "ShowTstat", "bool", title: "Thermostats", default: false, submitOnChange: true
         	if (TheThermostat || audioTextHeating || audioTextCooling || speech8 || push8 || notify8 || music8) paragraph "Configured with Settings"
@@ -664,7 +674,8 @@ def initialize() {
         state.lambdaReleaseTxt = null
         state.lambdaReleaseDt = null
         state.currentDevice = null
-		def children = getChildApps()
+		subscribeToEvents()
+    	def children = getChildApps()
     		if (debug) log.debug "$children.size Profiles installed"
 			children.each { child ->
 			}
@@ -690,34 +701,35 @@ def subscribeChildToEvents() {
 	}
     if (runDay) {
    		subscribe(runDay, location.day, location.currentDay)
-	} 
+		} 
+    }
+def subscribeToEvents() {    
     if (TheSwitch) {
         if (audioTextOn) {subscribe(TheSwitch, "switch.on", alertsHandler)}
-        else if (audioTextOff) {subscribe(TheSwitch, "switch.off", alertsHandler)}
+        if (audioTextOff) {subscribe(TheSwitch, "switch.off", alertsHandler)}
         }
     if (TheContact) {
         if (audioTextOpen) {subscribe(TheContact, "contact.open", alertsHandler)}
-        else if (audioTextClosed) {subscribe(TheContact, "contact.closed", alertsHandler)}
+        if (audioTextClosed) {subscribe(TheContact, "contact.closed", alertsHandler)}
         }
     if (TheLock) {
         if (audioTextLocked) {subscribe(TheLock, "lock.locked", alertsHandler)}
-        else if (audioTextUnlocked) {subscribe(TheLock, "lock.unlocked", alertsHandler)}
+        if (audioTextUnlocked) {subscribe(TheLock, "lock.unlocked", alertsHandler)}
         }
     if (TheMotion) {
         if (audioTextActive) {subscribe(TheMotion, "motion.active", alertsHandler)}
-        else if (audioTextInactive) {subscribe(TheMotion, "motion.inactive", alertsHandler)}
+        if (audioTextInactive) {subscribe(TheMotion, "motion.inactive", alertsHandler)}
         }
     if (ThePresence) {
-        if (audioTextPresent || audioTextNotPresent ) {subscribe(ThePresence, "presenceSensor", alertsHandler)}
+        if (audioTextPresent || audioTextNotPresent ) {subscribe(ThePresence, "presence", alertsHandler)}
         }
     if (TheWater) {    
-       if (audioTextDry) {subscribe(TheWater, "water.dry", alertsHandler)}
-        else if (audioTextWet) {subscribe(TheWater, "water.wet", alertsHandler)}
+       	if (audioTextDry) {subscribe(TheWater, "water.dry", alertsHandler)}
+        if (audioTextWet) {subscribe(TheWater, "water.wet", alertsHandler)}
         }
     if (TheThermostat) {    
-        if (audioTextHeating) {
-        	subscribe(TheThermostat, "heatingSetpoint", alertsHandler)}
-        else if (audioTextCooling) {subscribe(TheThermostat, "coolingSetpoint", alertsHandler)}
+        if (audioTextHeating) {subscribe(TheThermostat, "heatingSetpoint", alertsHandler)}
+        if (audioTextCooling) {subscribe(TheThermostat, "coolingSetpoint", alertsHandler)}
         }
 } 
 
@@ -1152,8 +1164,8 @@ private getDayOk() {
 		def day = df.format(new Date())
 	    def result = !runDay || runDay?.contains(day)
         def mode = location.mode
-        if (parent.debug) log.trace "modeOk = $result; Location Mode is: $mode"
-        if (parent.debug) log.trace "getDayOk = $result. Location time zone is: $timeZone"
+        if (debug) log.trace "modeOk = $result; Location Mode is: $mode"
+        if (debug) log.trace "getDayOk = $result. Location time zone is: $timeZone"
         return result
 }
 private getTimeOk() {
@@ -1387,15 +1399,16 @@ private flashLights() {
 def alertsHandler(evt) {
 	def eVal = evt.value
     def eName = evt.name
+    def eDev = evt.device
     def eTxt = " "
-		if (parent.debug) log.debug "Received event name ${evt.name} with value:  ${evt.value}"
+		if (debug) log.debug "Received event name ${evt.name} with value:  ${evt.value}"
 
 	if (getDayOk()==true && getModeOk()==true && getTimeOk()==true) {
      
      if (eVal == "on") {
      	if (audioTextOn) {
-        if (parent.debug) log.debug "Received event: on, playing message:  ${audioTextOn}"
-  				speech1?.speak(audioTextOn)
+        if (debug) log.debug "Received event: on, playing message:  ${audioTextOn}"
+  				speech1?.speak (audioTextOn)
 				if (music1) {
         			playAlert(audioTextOn, music1)
          		}      
@@ -1403,7 +1416,7 @@ def alertsHandler(evt) {
         }
     if (eVal == "off") {
         	if (audioTextOff) {
-            if (parent.debug) log.debug "Received event: off, playing message:  ${audioTextOn}"
+            if (debug) log.debug "Received event: off, playing message:  ${audioTextOff}"
         	speech1?.speak(audioTextOff)
 				if (music1) {
         			playAlert(audioTextOff, music1)
@@ -1412,7 +1425,7 @@ def alertsHandler(evt) {
     }
     if (eVal == "open") {
     	if (audioTextOpen) {
-        if (parent.debug) log.debug "Received event:open, playing message:  ${audioTextOpen}"
+        if (debug) log.debug "Received event:open, playing message:  ${audioTextOpen}"
   		speech2?.speak(audioTextOpen)
         	if (music2) {
         	playAlert(audioTextOpen, music2)
@@ -1421,7 +1434,7 @@ def alertsHandler(evt) {
         }
     	if (eVal == "closed") {
         	if (audioTextClosed) {
-        	if (parent.debug) log.debug "Received event closed, playing message:  ${audioTextClosed}"
+        	if (debug) log.debug "Received event closed, playing message:  ${audioTextClosed}"
             speech2?.speak(audioTextClosed)
         	if (music2) {
         		playAlert(audioTextClosed, music2)
@@ -1446,6 +1459,7 @@ def alertsHandler(evt) {
             }
     if (eVal == "active") {
     	if (audioTextActive) {
+        if (debug) log.debug "Received event Active, playing message:  ${audioTextActive}"
     	speech4?.speak(audioTextActive)
 				if (music4) {
         			playAlert(audioTextActive, music4)
@@ -1454,6 +1468,7 @@ def alertsHandler(evt) {
         }
     	if (eVal == "inactive")  {
         	if (audioTextInactive) {
+            if (debug) log.debug "Received event Inactive, playing message:  ${audioTextInactive}"
         	speech4?.speak(audioTextInactive)
 				if (music4) {
         			playAlert(audioTextInactive, music4)
@@ -1462,6 +1477,7 @@ def alertsHandler(evt) {
             }
     if (eVal == "present") {
     	if (audioTextPresent) {
+        if (debug) log.debug "Received event Present, playing message:  ${audioTextPresent}"
     	speech5?.speak(audioTextPresent)
 				if (music5) {
         			playAlert(audioTextPresent, music5)
@@ -1470,6 +1486,7 @@ def alertsHandler(evt) {
         }
     if (eVal == "not present")  {
         	if (audioTextNotPresent) {
+            if (debug) log.debug "Received event Not Present, playing message:  ${audioTextNotPresent}"
         	speech5?.speak(audioTextNotPresent)
 				if (music5) {
         			playAlert(audioTextNotPresent, music5)
@@ -1494,6 +1511,7 @@ def alertsHandler(evt) {
             }
     if (eVal == "open")  {
     	if (audioTextOpening) {
+        if (debug) log.debug "Received event Open, playing message:  ${audioTextOpening}"
     	speech7?.speak(audioTextOpening)
 				if (music7) {
         			playAlert(audioTextOn, music7)
@@ -1502,6 +1520,7 @@ def alertsHandler(evt) {
         }
     	if (eVal == "close") {
         	if (audioTextClosing) {
+            if (debug) log.debug "Received event Closing, playing message:  ${audioTextClosing}"
         	speech7?.speak(audioTextClosing)
 				if (music7) {
         			playAlert(audioTextClosing, music7)
@@ -1511,8 +1530,8 @@ def alertsHandler(evt) {
     if (eName == "heatingSetpoint")  {
     	if (audioTextHeating) {
         eTxt = audioTextHeating + " ${eVal},  degrees"
-    	if (parent.debug) log.debug "Received event heatingSetpoint, playing message:  ${eTxt}"
-        speech8?.speak(audioTextOpening)
+    	if (debug) log.debug "Received event heatingSetpoint, playing message:  ${eTxt}"
+        speech8?.speak(audioTextHeating + "${eVal}, degrees")
 				if (music8) {
                     playAlert(eTxt, music8)
          		} 
@@ -1520,9 +1539,9 @@ def alertsHandler(evt) {
         }
     	if (eName == "coolingSetpoint") {
         	if (audioTextCooling) {
-            eTxt = audioTextHeating + "'${eVal}',  degrees"
-        	if (parent.debug) log.debug "Received event coolingSetpoint, playing message:  ${eTxt}"
-            speech8?.speak(audioTextCooling)
+            eTxt = audioTextCooling + '${eVal}' + "  degrees"
+        	if (debug) log.debug "Received event coolingSetpoint, playing message:  ${eTxt} "
+            speech8?.speak(audioTextCooling + "${eVal}, degrees")
 				if (music8) {
         			playAlert(eTxt, music8)
          		} 
