@@ -16,6 +16,10 @@
           "type" : "AMAZON.NUMBER"
         },
         {
+        "name" : "pUnit",
+          "type" : "LIST_OF_UNITS"
+        },
+        {
           "name" : "pCommand",
           "type" : "LIST_OF_COMMANDS"
         }
