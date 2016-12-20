@@ -1,14 +1,40 @@
-main is too {pCommand} in {pProfile}
-main is too {pCommand} in the {pProfile}
-main is too {pCommand} in {pProfile} room
-main is too {pCommand} in the {pProfile} room
-main is too {pCommand} {pProfile}
+main is {pCommand} {pDevice}
+main the {pDevice} is {pCommand} 
 
-main the {pProfile} is {pCommand} and {pDevice}
-main turn the {pProfile} {pDevice} {pCommand} for {pNum} minutes
-main make {pProfile} light {pCommand}
-main make it {pProfile} in {pCommand}
+main turn the {pDevice} {pCommand}
+main turn {pCommand} the {pDevice}
+main turn the {pDevice} {pCommand} in {pNum} {pUnit}
+main turn the {pDevice} {pCommand} in {pNum} {pUnit}
+main turn {pDevice} {pCommand} in {pNum} {pUnit}
+main turn {pDevice} {pCommand} in {pNum} {pUnit}
+main turn {pCommand} the {pDevice} in {pNum} {pUnit}
+main turn {pCommand} the {pDevice} in {pNum} {pUnit}
+main turn {pCommand} {pDevice} in {pNum} {pUnit}
+main turn {pCommand} {pDevice} in {pNum} {pUnit}
 
-main turn {pCommand} the {pProfile} light
+main make the {pDevice} {pCommand}
+main make it {pCommand} {pDevice}
+main make the {pDevice} {pCommand} in {pNum} {pUnit}
+main make the {pDevice} {pCommand} in {pNum} {pUnit}
+main make {pDevice} {pCommand} in {pNum} {pUnit}
+main make {pDevice} {pCommand} in {pNum} {pUnit}
+main make it {pCommand} the {pDevice} in {pNum} {pUnit}
+main make it {pCommand} the {pDevice} in {pNum} {pUnit}
+main make it {pCommand} {pDevice} in {pNum} {pUnit}
+main make it {pCommand} {pDevice} in {pNum} {pUnit}
+
 main {pCommand} last message
-main is {pCommand} {pProfile}
+main {pCommand} temperature {pDevice}
+main {pCommand} temperature {pDevice} to {pNum} {pUnit}
+main {pCommand} {pDevice} to {pNum} {pUnit}
+main {pCommand} {pDevice} level to {pNum} {pUnit}
+main {pCommand} {pDevice} to {pNum} {pUnit}
+main {pCommand} {pDevice} {pUnit} to {pNum} 
+main {pCommand} the {pDevice} in {pNum} {pUnit}
+main {pCommand} the {pDevice} in {pNum} {pUnit}
+
+main {pProfile}
+main is {pCommand} in the {pProfile}
+main make the {pProfile} lights {pCommand}
+main turn the {pProfile} lights {pCommand} in {pNum} {pUnit}
+main {pCommand} the {pProfile} lights to {pNum}
