@@ -348,7 +348,7 @@ page name: "Integrations"
                     image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_CoRE.png"
 					href "devicesControlMain", title: "Control These Devices with Voice by speaking commands to Alexa (via the Main Skill)", description: ParConDescr() , state: completeParCon(),
                     image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_devices.png"            			
-                    paragraph ("Define Variables for Voice Controlled (for increase/decrease commands)")
+                    paragraph ("Define Variables for Voice Controlled Devices (for increase/decrease commands)")
                     input "cLevel", "number", title: "Alexa Automatically Adjusts Light Levels by using a scale of 1-10 (default is +/-3)", defaultValue: 3, required: false
                     input "cTemperature", "number", title: "Alexa Automatically Adjusts temperature by using a scale of 1-10 (default is +/-1)", defaultValue: 1, required: false
                     input "cPIN", "number", title: "Set a PIN number to prevent unathorized use of Voice Control", default: false, required: false
@@ -387,11 +387,80 @@ page name: "devicesControlMain"
             section ("Thermostats", hideWhenEmpty: true){
                 input "cTstat", "capability.thermostat", title: "Control These Thermostat(s)...", multiple: true, required: false
             }
-            //section ("Locks", hideWhenEmpty: true){
-            //    input "cLock", "capability.lock", title: "Control These Lock(s)...", multiple: true, required: false
-            //}
+            section ("", hideWhenEmpty: true){
+                input "showAdvanced", "bool", title: "Advanced Options", default: false, submitOnChange: true
+				if (showAdvanced) {	
+                    href "devicesControlCustom", title: "Create custom devices and commands", description: devicesControlCustomDescr() , state: completeDevicesControlCustom(),
+                    image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Plus.png"                    
+            	}
+            }
         }
-    }             
+    }
+    
+page name: "devicesControlCustom"    
+    def devicesControlCustom(){
+        dynamicPage(name: "devicesControlCustom", title: "Create Devices That Alexa Can Control Directly",install: false, uninstall: false) {
+            section ("Create a Device", hideWhenEmpty: true){
+                input "custSwitch1", "capability.switch", title: "Select Device...", multiple: false, required: false, submitOnChange: true
+                input "custName1", "text", title: "Name Device...", multiple: false, required: false
+				if(custSwitch1) {
+						def availableCommands = custSwitch1.supportedCommands                       
+                    	availableCommands.sort()
+                        log.debug "availableCommands = $availableCommands"
+                        paragraph "Add any of these commands to your LIST_OF_COMMANDS custom slot: $availableCommands"
+    			}
+            }
+            if (custSwitch1) {
+                section ("+ Create another Device", hideWhenEmpty: true){
+                    input "custSwitch2", "capability.switch", title: "Select Device...", multiple: false, required: false, submitOnChange: true
+                    input "custName2", "text", title: "Name Device...", multiple: false, required: false
+                    if(custSwitch2) {
+						def availableCommands = custSwitch2.supportedCommands                       
+                    	availableCommands.sort()
+                        log.debug "availableCommands = $availableCommands"
+                        paragraph "Add any of these commands to your LIST_OF_COMMANDS custom slot: $availableCommands"
+    				} 
+                }
+            }
+            if (custSwitch2) {
+                section ("+ Create another Device", hideWhenEmpty: true){
+                    input "custSwitch3", "capability.switch", title: "Select Device...", multiple: false, required: false, submitOnChange: true
+                    input "custName3", "text", title: "Name Device...", multiple: false, required: false
+                    if(custSwitch3) {
+						def availableCommands = custSwitch2.supportedCommands                       
+                    	availableCommands.sort()
+                        log.debug "availableCommands = $availableCommands"
+                        paragraph "Add any of these commands to your LIST_OF_COMMANDS custom slot: $availableCommands"
+    				}
+                }
+            }
+            if (custSwitch3) {
+                section ("+ Create another Device", hideWhenEmpty: true){
+                    input "custSwitch4", "capability.switch", title: "Select Device...", multiple: false, required: false, submitOnChange: true
+                    input "custName4", "text", title: "Name Device...", multiple: false, required: false
+                    if(custSwitch4) {
+						def availableCommands = custSwitch2.supportedCommands                       
+                    	availableCommands.sort()
+                        log.debug "availableCommands = $availableCommands"
+                        paragraph "Add any of these commands to your LIST_OF_COMMANDS custom slot: $availableCommands"
+    				}
+                }
+            }
+            if (custSwitch4) {            
+                section ("+ Create another Device", hideWhenEmpty: true){
+                    input "custSwitch5", "capability.switch", title: "Select Device...", multiple: false, required: false, submitOnChange: true
+                    input "custName5", "text", title: "Name Device...", multiple: false, required: false
+                    if(custSwitch5) {
+						def availableCommands = custSwitch2.supportedCommands                       
+                    	availableCommands.sort()
+                        log.debug "availableCommands = $availableCommands"
+                        paragraph "Add any of these commands to your LIST_OF_COMMANDS custom slot: $availableCommands"
+    				}
+                }
+            }
+        }
+    }    
+
 page name: "tokens"
     def tokens(){
             dynamicPage(name: "tokens", title: "Security Tokens", uninstall: false){
@@ -598,7 +667,7 @@ page name: "MsgConfig"
                 image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Media.png"
                 if (MsgOpt) {
                     input "ShowPreMsg", "bool", title: "Pre-Message (plays on Audio Playback Device before message)", defaultValue: false, submitOnChange: true
-                        if (ShowPreMsg) input "PreMsg", "Text", title: "Pre-Message...", defaultValue: none, submitOnChange: true, required: false 
+                        if (ShowPreMsg) input "PreMsg", "text", title: "Pre-Message...", defaultValue: none, submitOnChange: true, required: false 
                     input "Acustom", "bool", title: "Custom Response from Alexa...", defaultValue: false, submitOnChange: true
                         if (Acustom) input "outputTxt", "text", title: "Input custom phrase...", required: false, defaultValue: "Message sent,   ", submitOnChange: true
                     input "Arepeat", "bool", title: "Alexa repeats message to sender when sent...", defaultValue: false, submitOnChange: true
@@ -691,8 +760,9 @@ def initialize() {
 		state.lastIntent  = null
     	state.lastTime  = null
         state.lambdaReleaseTxt = "Not Set"
-        state.lambdaReleaseDt = "Not Set"
-		subscribeToEvents()
+        state.lambdaReleaseDt = "Not Set" 
+		state.lambdatextVersion = "Not Set"
+
     	def children = getChildApps()
     		if (debug) log.debug "$children.size Profiles installed"
 			children.each { child ->
@@ -702,13 +772,20 @@ def initialize() {
                 OAuthToken()
         		if (debug) log.debug "STappID = '${app.id}' , STtoken = '${state.accessToken}'" 
 			}
+        subscribeToEvents()
 	}
-    else{
+	else{
+        unschedule()
+    }
+    if (parent) {
         if (parent.debug) log.debug "Initializing Child app"
         state.lastMessage = null
     	state.lastTime  = null
         subscribeChildToEvents()
      }
+     else{
+        unschedule()
+	}
 }
 /************************************************************************************************************
 		Subscriptions
@@ -777,7 +854,7 @@ def processBegin(){
     def releaseTxt = params.releaseTxt
         state.lambdaReleaseTxt = releaseTxt
         state.lambdaReleaseDt = versionDate
-        state.lambdaReleaseDt = versionTxt
+        state.lambdatextVersion = versionTxt
     def versionSTtxt = textVersion()
 	def pContinue = true
 
@@ -863,11 +940,6 @@ def controlDevices() {
                     deviceType = "cGlob"
                     if (debug) log.debug "Global command = '${command}'"
                 }
-	//Profile Commands
-    			 if (ctProfile != "undefined"){
-                 	def profileMatch = childApps.find {c -> c.label.toLowerCase() == ctProfile}             
-					 if (debug) log.debug "Found a Profile match = '${profileMatch.label}'"
-        		}
         if (ctNum == "undefined" || ctNum =="?") {ctNum = 0}
 			ctNum = ctNum as int 
       	
@@ -877,22 +949,19 @@ def controlDevices() {
       		ctUnit = "MIN"
       		numText = ctNum == 1 ? ctNum + " minute" : ctNum + " minutes"                
       	}
-		if (ctUnit == "level") {ctUnit = "LVL"}      
-
-        if (ctUnit == "degrees") {
+		 else if (ctUnit == "level") {ctUnit = "LVL"}      
+        else if (ctUnit == "degrees") {
             	ctUnit = "TEMP"
                 numText = ctNum + " degrees"
         }
-        if (ctUnit == "percent") {
+        else if (ctUnit == "percent") {
         		ctUnit = "PERC"
                 numText = ctNum + " percent"    
         }
-        else if (ctUnit != "TEMP") {numText = "by " + cLevel*10 + " percent"}       
+		else if (ctUnit != "TEMP" || ctUnit != "MIN") {numText = "by " + cLevel*10 + " percent"}       
         
-                if (deviceType == "cTstat") {
-        		def numTxtTMP = cTemperature == 1 ? cTemperature + " degree" : cTemperature + " degrees"  
-        }  
-        
+        if (deviceType == "cTstat") {def numTxtTMP = cTemperature == 1 ? cTemperature + " degree" : cTemperature + " degrees" }
+
        if (ctCommand == "repeat") {
         	if (debug) log.debug "Processing repeat last message delivered to any of the Profiles"
 				outputTxt = getLastMessageMain()
@@ -909,7 +978,7 @@ def controlDevices() {
 							outputTxt = "Ok, turning " + deviceMatch + " " + command + ", in " + numText
                     	}
                 		else {
-							def data = [type: "cSwitches", command: command, device: ctDevice]
+							def data = [type: "cSwitches", command: command, device: ctDevice, unit: ctUnit, num: ctNum]
                     		controlHandler(data)
 							outputTxt = "Ok, turning " + ctDevice + " " + command
                     	}
@@ -972,8 +1041,40 @@ def controlDevices() {
                 }
                     else {outputTxt = "Sorry, I couldn't find a device named " + ctDevice + " in your list of selected thermostats"}                
             }
-        }        
-        
+        }
+        if (ctProfile != "undefined"){
+        	def profile = childApps.find {c -> c.label.toLowerCase() == ctProfile}             
+			def profileMatch = profile.label
+            if (debug) log.debug "Found a Profile match = '${profileMatch}'"
+           	if (debug) log.debug "Old commands = '${commandLVL}', '${command}' "
+            if (profileMatch) {
+            	command = commandLVL != " " ?  commandLVL : command //== "on" || command == "off" ? command : command=  
+                if (debug) log.debug "New command = '${command}'"
+                if (ctNum > 0 && ctUnit == "MIN") {
+                runIn(ctNum*60, controlHandler, [data: [type: "cProfiles", command: command, device: profileMatch, unit: ctUnit, num: ctNum]])
+				if (command == "decrease") {outputTxt = "Ok, decreasing the " + profileMatch + " lights level in " + numText}
+                else if (command == "increase") {outputTxt = "Ok, increasing the " + profileMatch + " lights level in " + numText}
+                else if (command == "on" || command == "off" ) {outputTxt = "Ok, turning " + profileMatch + " lights " + command + ", in " + numText}
+                }
+                else {
+					def data = [type: "cProfiles", command: command, device: profileMatch, unit: ctUnit, num: ctNum]
+                    controlHandler(data)
+                    if (debug) log.debug "Sending data to control handler with settings: (cProfiles)"+
+    						"= cProfiles , (command) = '${command}', device = '${profileMatch}', (unit) = '${ctUnit}', (num) = '${ctNum}' "
+					if (command == "on" || command == "on" ) {outputTxt = "Ok, turning " + profileMatch + " lights " + command}
+					if (ctUnit == "PERC"){outputTxt = "Ok, setting " + profileMatch + " lights to " + numText}
+                    else{
+                    	if (commandLVL == "setLevel" && ctUnit == "unknown") {
+                        	def num = ctNum > 10 ? ctNum : ctNum*10 as int
+                            outputTxt = "Ok, setting the " + profileMatch + " to " + num + " percent"
+                        }
+                        if (commandLVL == "decrease") {outputTxt = "Ok, decreasing the " + profileMatch + " level " + numText}
+                        if (commandLVL == "increase") {outputTxt = "Ok, increasing the " + profileMatch + " level " + numText}
+                        }
+               }
+       		}
+			else {outputTxt = "Sorry, I couldn't find a profile named " + ctProfile + " in your list of selected profiles"}                        
+     	}                    
         if (debug) log.debug "Sending response to Alexa with settings: '${pContCmds}' and the message:'${outputTxt}'"               
         return ["outputTxt":outputTxt, "pContCmds":pContCmds]
 }
@@ -985,11 +1086,68 @@ def controlHandler(data) {
    	def deviceD = data.device
     def unitU = data.unit
     def numN = data.num    
-    if (deviceType == "cSwitches") {
+
+    if (deviceType == "cProfiles") {	
+		childApps.each { child ->
+        	def cMatch = child.label
+            if (cMatch == deviceD) {
+            	if (deviceCommand == "on" || deviceCommand == "off")
+            		child.gSwitches."${deviceCommand}"()
+        			if (debug) log.debug "cProfile with command '${deviceCommand}'" 
+			}
+			else if (deviceCommand == "increase" || deviceCommand == "decrease" || deviceCommand == "setLevel") {
+            		if (debug) log.debug "cProfile received deviceCommand '${deviceCommand}'"
+                    def switchLVL
+                    child.gSwitches.eachWithIndex {s, i -> 
+                    def	currLevel = s.latestValue("level")
+                    def currState = s.latestValue("switch") 
+                    	def newLevel = cLevel*10 //30%
+                                if (debug) log.debug "cProfile with newLevel '${newLevel}'"     
+                                if (unitU == "PERC") newLevel = numN 
+                                    if (deviceCommand == "increase") {
+                                if (unitU == "PERC") {
+                                    newLevel = numN
+                                }   
+                                else {
+                                    newLevel =  currLevel + newLevel
+                                    newLevel = newLevel < 0 ? 0 : newLevel >100 ? 100 : newLevel
+                                }
+                            }
+                            if (deviceCommand == "decrease") {
+                                if (unitU == "PERC") {
+                                    newLevel = numN
+                                }   
+                                else {
+                                    newLevel =  currLevel - newLevel
+                                    newLevel = newLevel < 0 ? 0 : newLevel >100 ? 100 : newLevel
+                                }            
+                            }
+                            if (deviceCommand == "setLevel") {
+                                if (unitU == "PERC") {
+                                    newLevel = numN
+                                }   
+                                else {
+                                    newLevel =  numN*10
+                                    newLevel = newLevel < 0 ? 0 : newLevel >100 ? 100 : newLevel
+                                }            
+                            }
+                            if (newLevel > 0 && currState == "off") {
+                                s.on()
+                                s.setLevel(newLevel)
+                            }
+                            else {                                    
+                                if (newLevel == 0 && currState == "on") {s.off()}
+                                else {s.setLevel(newLevel)}
+                            }                             
+            		}
+        	}
+    	}
+    }
+	if (deviceType == "cSwitches") {
 			def deviceMatch = cSwitches.find {s -> s.label.toLowerCase() == deviceD}
         if (deviceMatch) {
         	deviceMatch."${deviceCommand}"()
-        	if (debug) log.debug "switch '${deviceCommand}'" 
+        	if (debug) log.debug "cSwitches with command '${deviceCommand}'" 
         } 
     } 
 	if (deviceType == "cDimmers") {
@@ -1647,7 +1805,7 @@ def playAlert(message, speaker) {
 
     state.sound = textToSpeech(message instanceof List ? message[0] : message)
     speaker.playTrackAndResume(state.sound.uri, state.sound.duration, volume)
-    if (parent.debug) log.debug "Sending message: ${message} to speaker: ${speaker}"
+    if (debug) log.debug "Sending message: ${message} to speaker: ${speaker}"
 
 }
 /************************************************************************************************************
@@ -1710,7 +1868,7 @@ def supportDescrST()  {
                 " Click to visit our Wiki Page" 
 }
 def supportDescrL() {
-	def text = 	" Version = ${textVersion()} \n" +
+	def text = 	" Version = ${state.lambdatextVersion} \n" +
                 " Release Number = ${state.lambdaReleaseTxt} \n"+
     			" Release Date = ${state.lambdaReleaseDt} \n"+
                 " Click here to access AWS" 
@@ -1848,6 +2006,21 @@ def MsgConfigDescr() {
 def runRoutineDescr() {
     def text = "Tap here to Configure"
     if (runRoutine) { 
+            text = "Configured" //"These devices will execute: ${switches}, ${dimmers}. Tap to change device(s)" 
+    }
+    text
+}
+def completeDevicesControlCustom() {
+    def result = ""
+    if (custSwitch1) {
+    	result = "complete"	
+    }
+    result
+}
+
+def devicesControlCustomDescr(deviceName) {
+    def text = "Tap here to Configure"
+    if (custSwitch1) { 
             text = "Configured" //"These devices will execute: ${switches}, ${dimmers}. Tap to change device(s)" 
     }
     text
