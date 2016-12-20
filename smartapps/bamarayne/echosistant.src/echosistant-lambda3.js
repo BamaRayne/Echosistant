@@ -7,6 +7,7 @@
  *  assistance in troubleshooting.... as I learned.....  Special thanks to Bobby
  *  @SBDOBRESCU for jumping on board and being a co-consipirator in this adventure.
  *
+ *  Version 3.1.3 - 12/19/2016 
  *  Version 3.1.2 - 12/12/2016
  *  Version 3.1.0 - 12/7/2016
  *  Version 3.0.0 - 12/1/2016  Added new parent variables
@@ -26,8 +27,8 @@
 exports.handler = function( event, context ) {
     var https = require( 'https' );
 //-------- Paste app code here between the breaks------------------------------------------------
-    var STappID = '4515cd7e-b04b-44f9-b076-62e2d72ba607';
-    var STtoken = '4da26c84-89dd-4660-92d1-61de80d10824';
+    var STappID = '99b2b9e7-2199-43cf-aa13-f734b885f660';
+    var STtoken = '3b4aaca9-aa5b-46fb-b342-7d5380e19813';
     var url='https://graph.api.smartthings.com:443/api/smartapps/installations/' + STappID + '/' ;
 //-----------------------------------------------------------------------------------------------
         var cardName ="";
@@ -69,7 +70,8 @@ exports.handler = function( event, context ) {
                     var pProfile = event.request.intent.slots.pProfile.value;
                     var pNum = event.request.intent.slots.pNum.value;
                     var pDevice = event.request.intent.slots.pDevice.value;
-                    url += 'c?pDevice=' + pDevice + '&pCommand=' + pCommand + '&pNum=' + pNum + '&pProfile=' + pProfile;    
+                    var pUnit = event.request.intent.slots.pUnit.value;
+                    url += 'c?pDevice=' + pDevice + '&pCommand=' + pCommand + '&pNum=' + pNum + '&pUnit=' + pUnit + '&pProfile=' + pProfile + '&intentName=' + intentName;    
                     process = true;
                     cardName = "EchoSistant Control";
                 }
@@ -80,7 +82,7 @@ exports.handler = function( event, context ) {
                     process = true;
                     cardName = "EchoSistant Free Text";
                 }
-//-------- General Process------------------------------------------------------------------
+//-------- General Response------------------------------------------------------------------
                 if (!process) {
                     output("I am not sure what you are asking. Please try again", context, areWeDone); 
                 }                                        
@@ -117,6 +119,10 @@ function alexaResp(type, context, cardName, areWeDone){
         output(" It has been my pleasure.  Goodbye ", context, "EchoSistant Stop", areWeDone);
     }
     else if (type == "AMAZON.StopIntent") { 
+        areWeDone=true;
+        output(" Cancelling. Goodbye ", context, "EchoSistant Cancel", areWeDone);
+    }
+    else if (type == "AMAZON.CancelIntent") { 
         areWeDone=true;
         output(" Cancelling. Goodbye ", context, "EchoSistant Cancel", areWeDone);
     }
