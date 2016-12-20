@@ -1,16 +1,17 @@
 /*
  * EchoSistant - The Ultimate Voice and Text Messaging Assistant Using Your Alexa Enabled Device.
  *		
- *		12/14/2016		Bug Fixes and Changes by Jason - Garage alert not playing.
- *		12/09/2016		Version 3.0.2	Major overhaul of UI and process (cotnt'd)
- *		12/09/2016		Version 3.0.1	Major overhaul of UI and process (in progress)
- *		??/??/2016		Version 3.0.0	Additions: Msg to Notify Tab in Mobile App, Push Msg, Complete Reconfigure of Profile Build, More Control of Dimmers, and Switches,
+ *		12/19/2016		Release 3.0.4 	Final Review of 3.0 version (Bobby)
+ *		12/14/2016		Release 3.0.4 	Bug Fixes and Changes by Jason - Garage alert not playing.
+ *		12/09/2016		Release 3.0.2	Major overhaul of UI and process (cotnt'd)
+ *		12/09/2016		Release 3.0.1	Major overhaul of UI and process (in progress)
+ *		??/??/2016		Release 3.0.0	Additions: Msg to Notify Tab in Mobile App, Push Msg, Complete Reconfigure of Profile Build, More Control of Dimmers, and Switches,
  *										Device Activity Alerts Page, Toggle control, Flash control for switches. 
  *										Bug fixes: Time out error resolved.
- *		11/23/2016		Version 2.0.1	Bug fix: Pre-message not showing correctly.  Set to default false.
- *		11/22/2016		Version 2.0.0	CoRE integration, Cont Commands per profile, Repeat Message per profile, one app and many bug fixes.
- *		11/20/2016		Version 1.2.0	Fixes: SMS&Push not working, calling multiple profiles at initialize. Additions: Run Routines and Switch enhancements
- *		11/13/2016		Version 1.1.1a	Roadmap update and spelling errors
+ *		11/23/2016		Release 2.0.1	Bug fix: Pre-message not showing correctly.  Set to default false.
+ *		11/22/2016		Release 2.0.0	CoRE integration, Cont Commands per profile, Repeat Message per profile, one app and many bug fixes.
+ *		11/20/2016		Release 1.2.0	Fixes: SMS&Push not working, calling multiple profiles at initialize. Additions: Run Routines and Switch enhancements
+ *		11/13/2016		Release 1.1.1a	Roadmap update and spelling errors
  *		11/13/2016		Version 1.1.1	Addition - Repeat last message
  *		11/12/2016		Version 1.1.0	OAuth bug fix, additional debug actions, Alexa feedback options, Intent and Utterance file updates
  *										Control Switches on/off with delay off, pre-message "null" bug
@@ -53,7 +54,7 @@ definition(
 	name			: "EchoSistant${parent ? " - Profile" : ""}",
     namespace		: "Echo",
     author			: "JH",
-	description		: "The Ultimate Voice and Text Messaging Assistant Using Your Alexa Enabled Device.",
+	description		: "The Ultimate Voice Controlled Assistant Using Alexa Enabled Devices.",
 	singleInstance	: true,
     parent: parent ? "Echo.EchoSistant" : null,
     category		: "My Apps",
@@ -61,6 +62,7 @@ definition(
 	iconX2Url		: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/app-Echosistant@2x.png",
 	iconX3Url		: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/app-Echosistant@2x.png")
 /**********************************************************************************************************************************************/
+
 /************************************************************************************************************
    PARENT PAGES
 ************************************************************************************************************/
@@ -70,21 +72,24 @@ preferences {
     page name: "mainParentPage"
     	page name: "profiles"
     	page name: "about"
-    	page name: "tokens"
+        page name: "Alerts"
+        page name: "Integrations"
+    		page name: "CoRE"
+			page name: "devicesControlMain"
+		page name: "tokens"
     		page name: "pageConfirmation"
     		page name: "pageReset"
-        page name: "devicesControlMain"
-        page name: "Integrations"
+
+
     //Profile Pages    
     page name: "mainProfilePage"
     	page name: "MsgPro"
     	page name: "SMS"
-    page name: "DevPro"
-    	page name: "devicesControl"
-    	page name: "CoRE"    
+    	page name: "DevPro"
+    	page name: "devicesControl"    
     page name: "StaPro"
         page name: "FeedBack"
-        page name: "Alerts"
+
 	page name: "MsgConfig"
     	page name: "certainTime"   
 }
@@ -99,11 +104,17 @@ page name: "mainParentPage"
             section ("") {
                 href "profiles", title: "Profiles", description: profilesDescr(), state: completeProfiles(),
                     image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Config.png"    
+                
                 href "about", title: "Control, Integrations, and Security", description: settingsDescr(), state: completeSettings(),
                     image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_About.png"
-                href title: "EchoSistant Support", description: supportDescr() , state: completeProfiles(),
+                
+                href title: "EchoSistant Support", description: supportDescrST() , state: completeProfiles(),
                     image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/app-Echosistant.png",
                     url: "http://thingsthataresmart.wiki/index.php?title=EchoSistant"    
+                
+                href title: "EchoSistant Alexa Skill", description: supportDescrL() , state: completeProfiles(),
+                    image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Amazon_alexa.png",
+                    url: "https://aws.amazon.com/lambda/?nc2=h_m1"    
                 }
             section ("") {
                 paragraph "${textCopyright()}"
@@ -159,6 +170,176 @@ page name: "profiles"
                 section("Tap below to remove the ${textAppName()} application.  This will remove ALL Profiles and the App from the SmartThings mobile App."){}
                 }
 	} 
+
+
+page name: "Alerts"
+    def Alerts(){
+        dynamicPage(name: "Alerts", uninstall: false) {
+        section ("Switches and Dimmers", hideWhenEmpty: true) {
+            input "ShowSwitches", "bool", title: "Switches and Dimmers", default: false, submitOnChange: true
+            if (TheSwitch || audioTextOn || audioTextOff || speech1 || push1 || notify1 || music1) paragraph "Configured with Settings"
+            if (ShowSwitches) {        
+                input "TheSwitch", "capability.switch", title: "Choose Switches...", required: false, multiple: true, submitOnChange: true
+				input "audioTextOn", "audioTextOn", title: "Play this message", description: "Message to play when the switch turns on", required: false, capitalization: "sentences"
+                input "audioTextOff", "audioTextOff", title: "Play this message", description: "Message to play when the switch turns off", required: false, capitalization: "sentences"
+                input "speech1", "capability.speechSynthesis", title: "Message Player", required: false, multiple: true, submitOnChange: true
+                input "music1", "capability.musicPlayer", title: "On this Sonos Type Devices", required: false, multiple: true, submitOnChange: true
+                if (music1) {
+                    input "volume1", "number", title: "Temporarily change volume", description: "0-100%", required: false
+                    input "resumePlaying1", "bool", title: "Resume currently playing music after notification", required: false, defaultValue: false
+                	}
+                input "sendMsg1", "bool", title: "Send Push and/or Notifications", default: false, submitOnChange: true
+                	if (sendMsg1) {
+                	input "push1", "bool", title: "Send Push Notification (optional)", required: false, defaultValue: false, submitOnChange: true
+            		input "notify1", "bool", title: "Send message to Mobile App Notifications Tab (optional)", required: false, defaultValue: false, submitOnChange: true
+            	}
+            }             
+        }
+        section("Doors and Windows", hideWhenEmpty: true) {
+            input "ShowContacts", "bool", title: "Doors and Windows", default: false, multiple: false, submitOnChange: true
+            if (TheContact || audioTextOpen || audioTextClosed || speech2 || push2 || notify2 || music2) paragraph "Configured with Settings"
+            if (ShowContacts) {
+                input "TheContact", "capability.contactSensor", title: "Choose Doors and Windows..", required: false, multiple: true, submitOnChange: true
+                input "audioTextOpen", "textOpen", title: "Play this message", description: "Message to play when the door opens", required: false, capitalization: "sentences"
+                input "audioTextClosed", "textClosed", title: "Play this message", description: "Message to play when the door closes", required: false, capitalization: "sentences"
+                input "speech2", "capability.speechSynthesis", title: "Message Player", required: false, multiple: true, submitOnChange: true
+            	input "music2", "capability.musicPlayer", title: "On this Sonos Type Devices", required: false, multiple: true, submitOnChange: true
+                if (music2) {
+                    input "volume2", "number", title: "Temporarily change volume", description: "0-100%", required: false
+                    input "resumePlaying2", "bool", title: "Resume currently playing music after notification", required: false, defaultValue: false
+                	}
+                input "sendMsg2", "bool", title: "Send Push and/or Notifications", default: false, submitOnChange: true
+                	if (sendMsg2) {
+                	input "push2", "bool", title: "Send Push Notification (optional)", required: false, defaultValue: false, submitOnChange: true
+            		input "notify2", "bool", title: "Send message to Mobile App Notifications Tab (optional)", required: false, defaultValue: false, submitOnChange: true
+            	}
+            }
+        }
+        section("Locks", hideWhenEmpty: true) {
+            input "ShowLocks", "bool", title: "Locks", default: false, submitOnChange: true
+            if (TheLock || audioTextLocked || audioTextUnlocked || speech3 || push3 || notify3 || music3) paragraph "Configured with Settings"
+            if (ShowLocks) {
+                input "TheLock", "capability.lock", title: "Choose Locks...", required: false, multiple: true, submitOnChange: true
+                input "audioTextLocked", "textLocked", title: "Play this message", description: "Message to play when the lock locks", required: false, capitalization: "sentences"
+                input "audioTextUnlocked", "textUnlocked", title: "Play this message", description: "Message to play when the lock unlocks", required: false, capitalization: "sentences"
+                input "speech3", "capability.speechSynthesis", title: "Message Player", required: false, multiple: true, submitOnChange: true
+            	input "music3", "capability.musicPlayer", title: "On this Sonos Type Devices", required: false, multiple: true, submitOnChange: true
+                if (music3) {
+                    input "volume3", "number", title: "Temporarily change volume", description: "0-100%", required: false
+                    input "resumePlaying3", "bool", title: "Resume currently playing music after notification", required: false, defaultValue: false
+                	}
+                input "sendMsg3", "bool", title: "Send Push and/or Notifications", default: false, submitOnChange: true
+                	if (sendMsg3) {
+                	input "push3", "bool", title: "Send Push Notification (optional)", required: false, defaultValue: false, submitOnChange: true
+            		input "notify3", "bool", title: "Send message to Mobile App Notifications Tab (optional)", required: false, defaultValue: false, submitOnChange: true
+                }
+            }
+        }
+        section("Motion Sensors", hideWhenEmpty: true) {
+            input "ShowMotion", "bool", title: "Motion Sensors", default: false,  multiple: true, submitOnChange: true
+            if (TheMotion || audioTextActive || audioTextInactive || speech4 || push4 || notify4 || music4) paragraph "Configured with Settings"
+            if (ShowMotion) {
+                input "TheMotion", "capability.motionSensor", title: "Choose Motion Sensors...", required: false, multiple: true, submitOnChange: true
+                input "audioTextActive", "textActive", title: "Play this message", description: "Message to play when motion is detected", required: false, capitalization: "sentences"
+                input "audioTextInactive", "textInactive", title: "Play this message", description: "Message to play when motion stops", required: false, capitalization: "sentences"
+                input "speech4", "capability.speechSynthesis", title: "Message Player", required: false, multiple: true, submitOnChange: true
+            	input "music4", "capability.musicPlayer", title: "On this Sonos Type Devices", required: false, multiple: true, submitOnChange: true
+                if (music4) {
+                    input "volume4", "number", title: "Temporarily change volume", description: "0-100%", required: false
+                    input "resumePlaying4", "bool", title: "Resume currently playing music after notification", required: false, defaultValue: false
+                	}
+                input "sendMsg4", "bool", title: "Send Push and/or Notifications", default: false, submitOnChange: true
+                	if (sendMsg4) {
+                	input "push4", "bool", title: "Send Push Notification (optional)", required: false, defaultValue: false, submitOnChange: true
+            		input "notify4", "bool", title: "Send message to Mobile App Notifications Tab (optional)", required: false, defaultValue: false, submitOnChange: true
+                }
+            }
+        }
+        section("Presence Sensors", hideWhenEmpty: true) {
+        	input "ShowPresence", "bool", title: "Presence Sensors", default: false,  multiple: true, submitOnChange: true
+        	if (ThePresence || audioTextPresent || audioTextNotPresent || speech5 || push5 || notify5 || music5) paragraph "Configured with Settings"
+            if (ShowPresence) {
+                input "ThePresence", "capability.presenceSensor", title: "Choose Presence Sensors...", required: false, multiple: true, submitOnChange: true
+                input "audioTextPresent", "textPresent", title: "Play this message", description: "Message to play when the Sensor arrives", required: false, capitalization: "sentences"
+                input "audioTextNotPresent", "textNotPresent", title: "Play this message", description: "Message to play when the Sensor Departs", required: false, capitalization: "sentences"
+                input "speech5", "capability.speechSynthesis", title: "Message Player", required: false, multiple: true, submitOnChange: true
+                input "music5", "capability.musicPlayer", title: "On this Sonos Type Devices", required: false, multiple: true, submitOnChange: true
+                if (music5) {
+                    input "volume5", "number", title: "Temporarily change volume", description: "0-100%", required: false
+                    input "resumePlaying5", "bool", title: "Resume currently playing music after notification", required: false, defaultValue: false
+                	}
+                input "sendMsg5", "bool", title: "Send Push and/or Notifications", default: false, submitOnChange: true
+                	if (sendMsg5) {
+                	input "push5", "bool", title: "Send Push Notification (optional)", required: false, defaultValue: false, submitOnChange: true
+            		input "notify5", "bool", title: "Send message to Mobile App Notifications Tab (optional)", required: false, defaultValue: false, submitOnChange: true
+            	}
+			}
+		}
+         section("Thermostats", hideWhenEmpty: true) {
+        	input "ShowTstat", "bool", title: "Thermostats", default: false, submitOnChange: true
+        	if (TheThermostat || audioTextHeating || audioTextCooling || speech8 || push8 || notify8 || music8) paragraph "Configured with Settings"
+            if (ShowTstat) {
+                input "TheThermostat", "capability.thermostat", title: "Choose Thermostats...", required: false, multiple: true, submitOnChange: true
+                input "audioTextHeating", "textHeating", title: "Play this message", description: "Message to play when the Heating Set Point Changes", required: false, capitalization: "sentences"
+                input "audioTextCooling", "textCooling", title: "Play this message", description: "Message to play when the Cooling Set Point Changes", required: false, capitalization: "sentences" 
+                input "speech8", "capability.speechSynthesis", title: "Message Player", required: false, multiple: true, submitOnChange: true
+                input "music8", "capability.musicPlayer", title: "On this Sonos Type Devices", required: false, multiple: true, submitOnChange: true
+                if (music8) {
+                    input "volume8", "number", title: "Temporarily change volume", description: "0-100%", required: false
+                    input "resumePlaying8", "bool", title: "Resume currently playing music after notification", required: false, defaultValue: false
+                	}
+                input "sendMsg8", "bool", title: "Send Push and/or Notifications", default: false, submitOnChange: true
+                	if (sendMsg8) {
+                	input "push8", "bool", title: "Send Push Notification (optional)", required: false, defaultValue: false, submitOnChange: true
+            		input "notify8", "bool", title: "Send message to Mobile App Notifications Tab (optional)", required: false, defaultValue: false, submitOnChange: true
+            		}
+                }		
+            } 
+        }
+    }
+
+/*
+		section("Water Sensors", hideWhenEmpty: true) {
+        	input "ShowWater", "bool", title: "Water Detectors", default: false, submitOnChange: true
+        	if (TheWater || audioTextWet || audioTextDry || speech6 || push6 || notify6 || music6) paragraph "Configured with Settings"
+            if (ShowWater) {
+                input "TheWater", "capability.waterSensor", title: "Choose Water Sensors...", required: false, multiple: true, submitOnChange: true
+                input "audioTextWet", "textWet", title: "Play this message", description: "Message to play when water is detected", required: false, capitalization: "sentences"
+                input "audioTextDry", "textDry", title: "Play this message", description: "Message to play when is no longer detected", required: false, capitalization: "sentences"
+                input "speech6", "capability.speechSynthesis", title: "Message Player", required: false, multiple: true, submitOnChange: true
+				input "music6", "capability.musicPlayer", title: "On this Sonos Type Devices", required: false, multiple: true, submitOnChange: true
+                if (music6) {
+                    input "volume6", "number", title: "Temporarily change volume", description: "0-100%", required: false
+                    input "resumePlaying6", "bool", title: "Resume currently playing music after notification", required: false, defaultValue: false
+                	}
+                input "sendMsg6", "bool", title: "Send Push and/or Notifications", default: false, submitOnChange: true
+                	if (sendMsg6) {
+                	input "push6", "bool", title: "Send Push Notification (optional)", required: false, defaultValue: false, submitOnChange: true
+            		input "notify6", "bool", title: "Send message to Mobile App Notifications Tab (optional)", required: false, defaultValue: false, submitOnChange: true
+            	}
+			}                
+        }        
+        section("Garage Doors", hideWhenEmpty: true) {
+        	input "ShowGarage", "bool", title: "Garage Doors", default: false, submitOnChange: true
+        	if (TheGarage || audioTextOpening || audioTextClosing || speech7 || push7 || notify7 || music7) paragraph "Configured with Settings"
+            if (ShowGarage) {
+                input "TheGarage", "capability.garageDoorControl", title: "Choose Garage Doors...", required: false, multiple: true, submitOnChange: true
+                input "audioTextOpening", "textOpening", title: "Play this message", description: "Message to play when the Garage Door Opens", required: false, capitalization: "sentences"
+                input "audioTextClosing", "textClosing", title: "Play this message", description: "Message to play when the Garage Door Closes", required: false, capitalization: "sentences" 
+                input "speech7", "capability.speechSynthesis", title: "Message Player", required: false, multiple: true, submitOnChange: true
+                input "music7", "capability.musicPlayer", title: "On this Sonos Type Devices", required: false, multiple: true, submitOnChange: true
+                if (music7) {
+                    input "volume7", "number", title: "Temporarily change volume", description: "0-100%", required: false
+                    input "resumePlaying7", "bool", title: "Resume currently playing music after notification", required: false, defaultValue: false
+                	}
+                input "sendMsg7", "bool", title: "Send Push and/or Notifications", default: false, submitOnChange: true
+                	if (sendMsg7) {
+                	input "push7", "bool", title: "Send Push Notification (optional)", required: false, defaultValue: false, submitOnChange: true
+            		input "notify7", "bool", title: "Send message to Mobile App Notifications Tab (optional)", required: false, defaultValue: false, submitOnChange: true
+            		}
+                }		
+            } 
+*/            
 page name: "Integrations"
 	def Integrations(){
     		dynamicPage(name: "Integrations", title: "3rd Party Integrations and Device Control", uninstall: false){
@@ -168,13 +349,49 @@ page name: "Integrations"
 					href "devicesControlMain", title: "Control These Devices with Voice by speaking commands to Alexa (via the Main Skill)", description: ParConDescr() , state: completeParCon(),
                     image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_devices.png"            			
                     paragraph ("Define Variables for Voice Controlled (for increase/decrease commands)")
-                    input "cLevel", "number", title: "Alexa Automatically Adjusts Light Levels by (1-100% - defaults to +/-30%)", defaultValue: 30, required: false
-                     //input "cLevelOther", "number", title: "Alexa Automatically Adjusts Other Switches by (1-10 - defaults to +/-2)", defaultValue: 2, required: false
-                    input "cTemperature", "number", title: "Alexa adjusts temperature by (1-10 degrees - defaults to 1)", defaultValue: 1, required: false
+                    input "cLevel", "number", title: "Alexa Automatically Adjusts Light Levels by using a scale of 1-10 (default is +/-3)", defaultValue: 3, required: false
+                    input "cTemperature", "number", title: "Alexa Automatically Adjusts temperature by using a scale of 1-10 (default is +/-1)", defaultValue: 1, required: false
                     input "cPIN", "number", title: "Set a PIN number to prevent unathorized use of Voice Control", default: false, required: false
 					}
                 }
-			}                
+			}    
+
+page name: "CoRE"
+    def CoRE(){
+            dynamicPage(name: "CoRE", uninstall: false) {
+                section ("Welcome to the CoRE integration page"){
+                    paragraph ("--- This integration is in place to enhance the"+
+                    " communication abilities of EchoSistant and your SmartThings"+
+                    " Home Automation Project. It is not intended"+
+                    " for the control of HA devices."+
+                    " --- CoRE integration is currently one way only. You can NOT "+
+                    " trigger profiles from within CoRE. CoRE listens for a "+
+                    " profile execution and then performs the programmed tasks."+
+                    " --- Configuration is simple. In EchoSistant create your profile."+
+                    " Then open CoRE and create a new piston. In the condition section"+
+                    " choose 'EchoSistant Profile' as the trigger. Choose the appropriate"+
+                    " profile and then finish configuring the piston."+
+                    " --- When the profile is executed the CoRE piston will also execute.")
+            }
+        }
+    }    
+page name: "devicesControlMain"    
+    def devicesControlMain(){
+        dynamicPage(name: "devicesControlMain", title: "Select Devices That Alexa Can Control Directly",install: false, uninstall: false) {
+            section ("Switches", hideWhenEmpty: true){
+                input "cSwitches", "capability.switch", title: "Control These Switches...", multiple: true, required: false, submitOnChange: true
+            }
+            section ("Dimmers", hideWhenEmpty: true){
+                input "cDimmers", "capability.switchLevel", title: "Control These Dimmers...", multiple: true, required: false, submitOnChange: true
+            }
+            section ("Thermostats", hideWhenEmpty: true){
+                input "cTstat", "capability.thermostat", title: "Control These Thermostat(s)...", multiple: true, required: false
+            }
+            //section ("Locks", hideWhenEmpty: true){
+            //    input "cLock", "capability.lock", title: "Control These Lock(s)...", multiple: true, required: false
+            //}
+        }
+    }             
 page name: "tokens"
     def tokens(){
             dynamicPage(name: "tokens", title: "Security Tokens", uninstall: false){
@@ -226,26 +443,6 @@ page name: "pageReset"
                     }
                 }
             } 
-page name: "devicesControlMain"    
-    def devicesControlMain(){
-        dynamicPage(name: "devicesControlMain", title: "Select Devices That Alexa Can Control Directly",install: false, uninstall: false) {
-            section ("Switches", hideWhenEmpty: true){
-                input "cSwitches", "capability.switch", title: "Control These Switches...", multiple: true, required: false, submitOnChange: true
-            }
-            section ("Dimmers", hideWhenEmpty: true){
-                input "cDimmers", "capability.switchLevel", title: "Control These Dimmers...", multiple: true, required: false, submitOnChange: true
-            }
-            section ("Thermostats", hideWhenEmpty: true){
-                input "cTstat", "capability.thermostat", title: "Control These Thermostat(s)...", multiple: true, required: false
-            }
-            //section ("Locks", hideWhenEmpty: true){
-            //    input "cLock", "capability.lock", title: "Control These Lock(s)...", multiple: true, required: false
-            //}
-            //section ("Doors", hideWhenEmpty: true){
-            //    input "cDoors", "capability.doorControl", title: "Control These Door(s)...", multiple: true, required: false, submitOnChange: true    
-            //}
-        }
-    }    
 /***********************************************************************************************************************
     PROFILE UI CONFIGURATION
 ***********************************************************************************************************************/
@@ -259,7 +456,9 @@ def mainProfilePage() {
             	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Text.png" 
   			href "DevPro", title: "Execute Actions when Profile runs...", description: DevProDescr(), state: completeDevPro(),
             	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_devices.png"            			
-           	href "MsgConfig", title: "With These Global Message Options...", description: MsgConfigDescr() , state: completeMsgConfig(),
+  			href "groups", title: "Create Device Groups...", description: groupsDescr(), state: completeGroups(),
+            	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Plus.png" 
+			href "MsgConfig", title: "With These Global Message Options...", description: MsgConfigDescr() , state: completeMsgConfig(),
             	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Extra.png" 
             }
         section ("Name and/or Remove this Profile") {
@@ -290,10 +489,10 @@ page name: "SMS"
     def SMS(){
         dynamicPage(name: "SMS", title: "Send SMS and/or Push Messages...", uninstall: false) {
             section ("Text Messages" ) {
-            input "sendContactText", "bool", title: "Enable Text Notifications to Contact Book (if available)", required: true, submitOnChange: true,
+            input "sendContactText", "bool", title: "Enable Text Notifications to Contact Book (if available)", required: false, submitOnChange: true,
                 image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Text.png" 
                 if (sendContactText) input "recipients", "contact", title: "Send text notifications to (optional)", multiple: true, required: false
-                    input "sendText", "bool", title: "Enable Text Notifications to non-contact book phone(s)", required: true, submitOnChange: true ,          
+           	input "sendText", "bool", title: "Enable Text Notifications to non-contact book phone(s)", required: false, submitOnChange: true,          
                         image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Text.png" 
                 if (sendText){      
                     paragraph "You may enter multiple phone numbers separated by comma to deliver the Alexa message as a text and a push notification. E.g. 8045551122;8046663344"
@@ -303,7 +502,6 @@ page name: "SMS"
             section ("Push Messages") {
             input "push", "bool", title: "Send Push Notification (optional)", required: false, defaultValue: false,
                 image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Text.png" 
-                if (parent.debug) log.debug "disable TTS='${disableTts}" 
             input "notify", "bool", title: "Send message to Mobile App Notifications Tab (optional)", required: false, defaultValue: false, submitOnChange: true,
                 image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Text.png"
             }        
@@ -378,199 +576,20 @@ page name: "devicesControl"
 					input "offFor", "number", title: "Off for (default 1 second)", required: false, submitOnChange:true
 					}
                 }
-//                section("Turn on these devices after a delay of..."){
-//                    input "sSecondsOn", "number", title: "Turn on in Seconds?", defaultValue: none, required: false
-//                }
-//                section("And then turn them off after a delay of..."){
-//                    input "sSecondsOff", "number", title: "Turn off in Seconds?", defaultValue: none, required: false
-//                }
             }
-       }        
-page name: "CoRE"
-    def CoRE(){
-            dynamicPage(name: "CoRE", uninstall: false) {
-                section ("Welcome to the CoRE integration page"){
-                    paragraph ("--- This integration is in place to enhance the"+
-                    " communication abilities of EchoSistant and your SmartThings"+
-                    " Home Automation Project. It is not intended"+
-                    " for the control of HA devices."+
-                    " --- CoRE integration is currently one way only. You can NOT "+
-                    " trigger profiles from within CoRE. CoRE listens for a "+
-                    " profile execution and then performs the programmed tasks."+
-                    " --- Configuration is simple. In EchoSistant create your profile."+
-                    " Then open CoRE and create a new piston. In the condition section"+
-                    " choose 'EchoSistant Profile' as the trigger. Choose the appropriate"+
-                    " profile and then finish configuring the piston."+
-                    " --- When the profile is executed the CoRE piston will also execute.")
+       }
+page name: "groups"
+    def groups() {
+    	dynamicPage(name: "groups", title: "Select Devices to create groups that can be controlled by Alexa",install: false, uninstall: false) {
+        	section ("Group of Lights ", hideWhenEmpty: true){
+                    input "gSwitches", "capability.switch", title: "Select Lights and Switches...", multiple: true, required: false, submitOnChange: true
+                    if (gSwitches) {
+                    	paragraph "You can now control this group by speaking commands to Alexa:  \n" +
+                        " E.G: Alexa tell Main Skill, to turn on/off the lights in the Profile Name"
+                    }
             }
-        }
-    }    
-page name: "Alerts"
-    def Alerts(){
-        dynamicPage(name: "Alerts", uninstall: false) {
-        section ("Switches and Dimmers", hideWhenEmpty: true) {
-            input "ShowSwitches", "bool", title: "Switches and Dimmers", default: false, submitOnChange: true
-            if (TheSwitch || audioTextOn || audioTextOff || speech1 || push1 || notify1 || music1) paragraph "Configured with Settings"
-            if (ShowSwitches) {        
-                input "TheSwitch", "capability.switch", title: "Choose Switches...", required: false, multiple: false, submitOnChange: true
-				input "audioTextOn", "audioTextOn", title: "Play this message", description: "Message to play when the switch turns on", required: false, capitalization: "sentences"
-                input "audioTextOff", "audioTextOff", title: "Play this message", description: "Message to play when the switch turns off", required: false, capitalization: "sentences"
-                input "speech1", "capability.speechSynthesis", title: "Message Player", required: false, multiple: true, submitOnChange: true
-                input "music1", "capability.musicPlayer", title: "On this Sonos Type Devices", required: false, multiple: true, submitOnChange: true
-                if (music1) {
-                    input "volume1", "number", title: "Temporarily change volume", description: "0-100%", required: false
-                    input "resumePlaying1", "bool", title: "Resume currently playing music after notification", required: false, defaultValue: false
-                	}
-                input "sendMsg1", "bool", title: "Send Push and/or Notifications", default: false, submitOnChange: true
-                	if (sendMsg1) {
-                	input "push1", "bool", title: "Send Push Notification (optional)", required: false, defaultValue: false, submitOnChange: true
-            		input "notify1", "bool", title: "Send message to Mobile App Notifications Tab (optional)", required: false, defaultValue: false, submitOnChange: true
-            	}
-            }             
-        }
-        section("Doors and Windows", hideWhenEmpty: true) {
-            input "ShowContacts", "bool", title: "Doors and Windows", default: false, multiple: false, submitOnChange: true
-            if (TheContact || audioTextOpen || audioTextClosed || speech2 || push2 || notify2 || music2) paragraph "Configured with Settings"
-            if (ShowContacts) {
-                input "TheContact", "capability.contactSensor", title: "Choose Doors and Windows..", required: false, multiple: true, submitOnChange: true
-                input "audioTextOpen", "textOpen", title: "Play this message", description: "Message to play when the door opens", required: false, capitalization: "sentences"
-                input "audioTextClosed", "textClosed", title: "Play this message", description: "Message to play when the door closes", required: false, capitalization: "sentences"
-                input "speech2", "capability.speechSynthesis", title: "Message Player", required: false, multiple: true, submitOnChange: true
-            	input "music2", "capability.musicPlayer", title: "On this Sonos Type Devices", required: false, multiple: true, submitOnChange: true
-                if (music2) {
-                    input "volume2", "number", title: "Temporarily change volume", description: "0-100%", required: false
-                    input "resumePlaying2", "bool", title: "Resume currently playing music after notification", required: false, defaultValue: false
-                	}
-                input "sendMsg2", "bool", title: "Send Push and/or Notifications", default: false, submitOnChange: true
-                	if (sendMsg2) {
-                	input "push2", "bool", title: "Send Push Notification (optional)", required: false, defaultValue: false, submitOnChange: true
-            		input "notify2", "bool", title: "Send message to Mobile App Notifications Tab (optional)", required: false, defaultValue: false, submitOnChange: true
-            	}
-            }
-        }
-        section("Locks", hideWhenEmpty: true) {
-            input "ShowLocks", "bool", title: "Locks", default: false, submitOnChange: true
-            if (TheLock || audioTextLocked || audioTextUnlocked || speech3 || push3 || notify3 || music3) paragraph "Configured with Settings"
-            if (ShowLocks) {
-                input "TheLock", "capability.lock", title: "Choose Locks...", required: false, multiple: true, submitOnChange: true
-                input "audioTextLocked", "textLocked", title: "Play this message", description: "Message to play when the lock locks", required: false, capitalization: "sentences"
-                input "audioTextUnlocked", "textUnlocked", title: "Play this message", description: "Message to play when the lock unlocks", required: false, capitalization: "sentences"
-                input "speech3", "capability.speechSynthesis", title: "Message Player", required: false, multiple: true, submitOnChange: true
-            	input "music3", "capability.musicPlayer", title: "On this Sonos Type Devices", required: false, multiple: true, submitOnChange: true
-                if (music3) {
-                    input "volume3", "number", title: "Temporarily change volume", description: "0-100%", required: false
-                    input "resumePlaying3", "bool", title: "Resume currently playing music after notification", required: false, defaultValue: false
-                	}
-                input "sendMsg3", "bool", title: "Send Push and/or Notifications", default: false, submitOnChange: true
-                	if (sendMsg3) {
-                	input "push3", "bool", title: "Send Push Notification (optional)", required: false, defaultValue: false, submitOnChange: true
-            		input "notify3", "bool", title: "Send message to Mobile App Notifications Tab (optional)", required: false, defaultValue: false, submitOnChange: true
-                }
-            }
-        }
-        section("Motion Sensors", hideWhenEmpty: true) {
-            input "ShowMotion", "bool", title: "Motion Sensors", default: false, submitOnChange: true
-            if (TheMotion || audioTextActive || audioTextInactive || speech4 || push4 || notify4 || music4) paragraph "Configured with Settings"
-            if (ShowMotion) {
-                input "TheMotion", "capability.motionSensor", title: "Choose Motion Sensors...", required: false, multiple: true, submitOnChange: true
-                input "audioTextActive", "textActive", title: "Play this message", description: "Message to play when motion is detected", required: false, capitalization: "sentences"
-                input "audioTextInactive", "textInactive", title: "Play this message", description: "Message to play when motion stops", required: false, capitalization: "sentences"
-                input "speech4", "capability.speechSynthesis", title: "Message Player", required: false, multiple: true, submitOnChange: true
-            	input "music4", "capability.musicPlayer", title: "On this Sonos Type Devices", required: false, multiple: true, submitOnChange: true
-                if (music4) {
-                    input "volume4", "number", title: "Temporarily change volume", description: "0-100%", required: false
-                    input "resumePlaying4", "bool", title: "Resume currently playing music after notification", required: false, defaultValue: false
-                	}
-                input "sendMsg4", "bool", title: "Send Push and/or Notifications", default: false, submitOnChange: true
-                	if (sendMsg4) {
-                	input "push4", "bool", title: "Send Push Notification (optional)", required: false, defaultValue: false, submitOnChange: true
-            		input "notify4", "bool", title: "Send message to Mobile App Notifications Tab (optional)", required: false, defaultValue: false, submitOnChange: true
-                }
-            }
-        }
-        section("Presence Sensors", hideWhenEmpty: true) {
-        	input "ShowPresence", "bool", title: "Presence Sensors", default: false, submitOnChange: true
-        	if (ThePresence || audioTextPresent || audioTextNotPresent || speech5 || push5 || notify5 || music5) paragraph "Configured with Settings"
-            if (ShowPresence) {
-                input "ThePresence", "capability.presenceSensor", title: "Choose Presence Sensors...", required: false, multiple: true, submitOnChange: true
-                input "audioTextPresent", "textPresent", title: "Play this message", description: "Message to play when the Sensor arrives", required: false, capitalization: "sentences"
-                input "audioTextNotPresent", "textNotPresent", title: "Play this message", description: "Message to play when the Sensor Departs", required: false, capitalization: "sentences"
-                input "speech5", "capability.speechSynthesis", title: "Message Player", required: false, multiple: true, submitOnChange: true
-                input "music5", "capability.musicPlayer", title: "On this Sonos Type Devices", required: false, multiple: true, submitOnChange: true
-                if (music5) {
-                    input "volume5", "number", title: "Temporarily change volume", description: "0-100%", required: false
-                    input "resumePlaying5", "bool", title: "Resume currently playing music after notification", required: false, defaultValue: false
-                	}
-                input "sendMsg5", "bool", title: "Send Push and/or Notifications", default: false, submitOnChange: true
-                	if (sendMsg5) {
-                	input "push5", "bool", title: "Send Push Notification (optional)", required: false, defaultValue: false, submitOnChange: true
-            		input "notify5", "bool", title: "Send message to Mobile App Notifications Tab (optional)", required: false, defaultValue: false, submitOnChange: true
-            	}
-			}
-		}
-        section("Water Sensors", hideWhenEmpty: true) {
-        	input "ShowWater", "bool", title: "Water Detectors", default: false, submitOnChange: true
-        	if (TheWater || audioTextWet || audioTextDry || speech6 || push6 || notify6 || music6) paragraph "Configured with Settings"
-            if (ShowWater) {
-                input "TheWater", "capability.waterSensor", title: "Choose Water Sensors...", required: false, multiple: true, submitOnChange: true
-                input "audioTextWet", "textWet", title: "Play this message", description: "Message to play when water is detected", required: false, capitalization: "sentences"
-                input "audioTextDry", "textDry", title: "Play this message", description: "Message to play when is no longer detected", required: false, capitalization: "sentences"
-                input "speech6", "capability.speechSynthesis", title: "Message Player", required: false, multiple: true, submitOnChange: true
-				input "music6", "capability.musicPlayer", title: "On this Sonos Type Devices", required: false, multiple: true, submitOnChange: true
-                if (music6) {
-                    input "volume6", "number", title: "Temporarily change volume", description: "0-100%", required: false
-                    input "resumePlaying6", "bool", title: "Resume currently playing music after notification", required: false, defaultValue: false
-                	}
-                input "sendMsg6", "bool", title: "Send Push and/or Notifications", default: false, submitOnChange: true
-                	if (sendMsg6) {
-                	input "push6", "bool", title: "Send Push Notification (optional)", required: false, defaultValue: false, submitOnChange: true
-            		input "notify6", "bool", title: "Send message to Mobile App Notifications Tab (optional)", required: false, defaultValue: false, submitOnChange: true
-            	}
-			}                
-        }        
-/*        section("Garage Doors", hideWhenEmpty: true) {
-        	input "ShowGarage", "bool", title: "Garage Doors", default: false, submitOnChange: true
-        	if (TheGarage || audioTextOpening || audioTextClosing || speech7 || push7 || notify7 || music7) paragraph "Configured with Settings"
-            if (ShowGarage) {
-                input "TheGarage", "capability.garageDoorControl", title: "Choose Garage Doors...", required: false, multiple: true, submitOnChange: true
-                input "audioTextOpening", "textOpening", title: "Play this message", description: "Message to play when the Garage Door Opens", required: false, capitalization: "sentences"
-                input "audioTextClosing", "textClosing", title: "Play this message", description: "Message to play when the Garage Door Closes", required: false, capitalization: "sentences" 
-                input "speech7", "capability.speechSynthesis", title: "Message Player", required: false, multiple: true, submitOnChange: true
-                input "music7", "capability.musicPlayer", title: "On this Sonos Type Devices", required: false, multiple: true, submitOnChange: true
-                if (music7) {
-                    input "volume7", "number", title: "Temporarily change volume", description: "0-100%", required: false
-                    input "resumePlaying7", "bool", title: "Resume currently playing music after notification", required: false, defaultValue: false
-                	}
-                input "sendMsg7", "bool", title: "Send Push and/or Notifications", default: false, submitOnChange: true
-                	if (sendMsg7) {
-                	input "push7", "bool", title: "Send Push Notification (optional)", required: false, defaultValue: false, submitOnChange: true
-            		input "notify7", "bool", title: "Send message to Mobile App Notifications Tab (optional)", required: false, defaultValue: false, submitOnChange: true
-            		}
-                }		
-            } 
-*/            
-         section("Thermostats", hideWhenEmpty: true) {
-        	input "ShowTstat", "bool", title: "Thermostats", default: false, submitOnChange: true
-        	if (TheThermostat || audioTextHeating || audioTextCooling || speech8 || push8 || notify8 || music8) paragraph "Configured with Settings"
-            if (ShowTstat) {
-                input "TheThermostat", "capability.thermostat", title: "Choose Thermostats...", required: false, multiple: true, submitOnChange: true
-                input "audioTextHeating", "textHeating", title: "Play this message", description: "Message to play when the Heating Set Point Changes", required: false, capitalization: "sentences"
-                input "audioTextCooling", "textCooling", title: "Play this message", description: "Message to play when the Cooling Set Point Changes", required: false, capitalization: "sentences" 
-                input "speech8", "capability.speechSynthesis", title: "Message Player", required: false, multiple: true, submitOnChange: true
-                input "music8", "capability.musicPlayer", title: "On this Sonos Type Devices", required: false, multiple: true, submitOnChange: true
-                if (music8) {
-                    input "volume8", "number", title: "Temporarily change volume", description: "0-100%", required: false
-                    input "resumePlaying8", "bool", title: "Resume currently playing music after notification", required: false, defaultValue: false
-                	}
-                input "sendMsg8", "bool", title: "Send Push and/or Notifications", default: false, submitOnChange: true
-                	if (sendMsg8) {
-                	input "push8", "bool", title: "Send Push Notification (optional)", required: false, defaultValue: false, submitOnChange: true
-            		input "notify8", "bool", title: "Send message to Mobile App Notifications Tab (optional)", required: false, defaultValue: false, submitOnChange: true
-            		}
-                }		
-            } 
-        }
-    }
+      	}
+	}
 page name: "MsgConfig"
     def MsgConfig(){
         dynamicPage(name: "MsgConfig", title: "Configure Global Profile Options...", uninstall: false) {
@@ -671,9 +690,8 @@ def initialize() {
     	state.lastMessage = null
 		state.lastIntent  = null
     	state.lastTime  = null
-        state.lambdaReleaseTxt = null
-        state.lambdaReleaseDt = null
-        state.currentDevice = null
+        state.lambdaReleaseTxt = "Not Set"
+        state.lambdaReleaseDt = "Not Set"
 		subscribeToEvents()
     	def children = getChildApps()
     		if (debug) log.debug "$children.size Profiles installed"
@@ -696,6 +714,7 @@ def initialize() {
 		Subscriptions
 ************************************************************************************************************/
 def subscribeChildToEvents() {
+    	if (debug) log.debug "Subscribing Child apps to events"
 	if (runModes) {
 		subscribe(runMode, location.currentMode, modeChangeHandler)
 	}
@@ -703,7 +722,8 @@ def subscribeChildToEvents() {
    		subscribe(runDay, location.day, location.currentDay)
 		} 
     }
-def subscribeToEvents() {    
+def subscribeToEvents() { 
+    	if (debug) log.debug "Subscribing Parent app to events"
     if (TheSwitch) {
         if (audioTextOn) {subscribe(TheSwitch, "switch.on", alertsHandler)}
         if (audioTextOff) {subscribe(TheSwitch, "switch.off", alertsHandler)}
@@ -723,15 +743,17 @@ def subscribeToEvents() {
     if (ThePresence) {
         if (audioTextPresent || audioTextNotPresent ) {subscribe(ThePresence, "presence", alertsHandler)}
         }
-    if (TheWater) {    
-       	if (audioTextDry) {subscribe(TheWater, "water.dry", alertsHandler)}
-        if (audioTextWet) {subscribe(TheWater, "water.wet", alertsHandler)}
-        }
     if (TheThermostat) {    
         if (audioTextHeating) {subscribe(TheThermostat, "heatingSetpoint", alertsHandler)}
         if (audioTextCooling) {subscribe(TheThermostat, "coolingSetpoint", alertsHandler)}
         }
 } 
+
+//    if (TheWater) {    
+//       	if (audioTextDry) {subscribe(TheWater, "water.dry", alertsHandler)}
+//        if (audioTextWet) {subscribe(TheWater, "water.wet", alertsHandler)}
+//        }
+
 
 /************************************************************************************************************
 		CoRE Integration
@@ -754,7 +776,8 @@ def processBegin(){
     def versionDate = params.versionDate
     def releaseTxt = params.releaseTxt
         state.lambdaReleaseTxt = releaseTxt
-        state.lambdaReleaseDt = versionDate              
+        state.lambdaReleaseDt = versionDate
+        state.lambdaReleaseDt = versionTxt
     def versionSTtxt = textVersion()
 	def pContinue = true
 
@@ -772,64 +795,104 @@ def controlDevices() {
         def ctProfile = params.pProfile
         def ctNum = params.pNum
         def ctDevice = params.pDevice
-        def pintentName = params.intentName
+        def ctUnit = params.pUnit
+		def pintentName = params.intentName
 
         def outputTxt = " "
         def pContCmds = "false"
         def pContCmdsR = "false"
         def command = ctCommand
 		def commandLVL = " "
+        def deviceType = " "
         def numText = " "
-        def result = " "
+        def result = " "        
         if (debug) log.debug "Message received from Lambda to control devices with settings: (ctCommand)"+
-    						"= '${ctCommand}', (ctProfile) = '${ctProfile}', ctNum = '${ctNum}', (ctDevice) = '${ctDevice}', (pintentName) = '${pintentName}'"			
-
-	
+    						"= '${ctCommand}', (ctProfile) = '${ctProfile}', ctNum = '${ctNum}', (ctDevice) = '${ctDevice}', (pintentName) = '${pintentName}', , (ctUnit) = '${ctUnit}'"
+        
     //Temperature Commands
                 if (command == "colder" || command =="not cold enough" || command =="too hot" || command == "too warm") {
                     commandLVL = "decrease"
-                	if (debug) log.debug "Temperature command = '${commandLVL}'"
+                	deviceType = "cTstat"
+                    if (debug) log.debug "Temperature command = '${commandLVL}'"
                 }
         		if (command == "freezing" || command =="not hot enough" || command == "too chilly" || command == "too cold" || command == "warmer") {
                     commandLVL = "increase"
+                    deviceType = "cTstat"
                     if (debug) log.debug "Temperature command = '${commandLVL}'"
                 }
 	//Dimmer Commands
                 if (command == "darker" || command == "too bright") {
                     commandLVL = "decrease" 
+                    deviceType = "cDimmers"
                     if (debug) log.debug "Light command = '${commandLVL}'"
                 }
         		if (command == "not bright enough" || command == "brighter" || command == "too dark") {
                     commandLVL = "increase" 
-                     if (debug) log.debug "Light command = '${commandLVL}'"                   
+                    deviceType = "cDimmers"
+                    if (debug) log.debug "Light command = '${commandLVL}'"                   
                 }
 	//Volume Commands
                 if (command == "too loud") {
                     commandLVL = "decrease"
+                    deviceType = "cVol"
                     if (debug) log.debug "Volume command = '${commandLVL}'"
                 }
         		if (command == "not loud enough") {
                     commandLVL = "increase"
+                    deviceType = "cVol"
                     if (debug) log.debug "Volume command = '${commandLVL}'"
                 }
 	//Global Commands
                 if (command == "decrease" || command == "down") {
                     commandLVL = "decrease" 
+                    deviceType = "cGlobal"
                     if (debug) log.debug "Global command = '${commandLVL}'"
                 }
        			if (command == "increase" || command == "up") {
-                	def cmdIncreaseG = "true" 
                     commandLVL = "increase"
+                    deviceType = "cGlobal"
                     if (debug) log.debug "Global command = '${commandLVL}'"
                 }
                 if (command == "set" || command == "set level") {
                     commandLVL = "setLevel"
+                    deviceType = "cGlobal"
                     if (debug) log.debug "Global command = '${commandLVL}'"
                 }
 
-       if (ctNum == "undefined" || ctNum =="?") {ctNum = 0}
+                if (command == "on" || command == "off") {
+                    deviceType = "cGlob"
+                    if (debug) log.debug "Global command = '${command}'"
+                }
+	//Profile Commands
+    			 if (ctProfile != "undefined"){
+                 	def profileMatch = childApps.find {c -> c.label.toLowerCase() == ctProfile}             
+					 if (debug) log.debug "Found a Profile match = '${profileMatch.label}'"
+        		}
+        if (ctNum == "undefined" || ctNum =="?") {ctNum = 0}
 			ctNum = ctNum as int 
-            numText = ctNum == 1 ? ctNum + " minute" : ctNum + " minutes"                
+      	
+        if (ctUnit == "undefined" || ctUnit =="?") {ctUnit = "unknown"}
+        
+      	if (ctUnit == "minute" || ctUnit == "minutes") {
+      		ctUnit = "MIN"
+      		numText = ctNum == 1 ? ctNum + " minute" : ctNum + " minutes"                
+      	}
+		if (ctUnit == "level") {ctUnit = "LVL"}      
+
+        if (ctUnit == "degrees") {
+            	ctUnit = "TEMP"
+                numText = ctNum + " degrees"
+        }
+        if (ctUnit == "percent") {
+        		ctUnit = "PERC"
+                numText = ctNum + " percent"    
+        }
+        else if (ctUnit != "TEMP") {numText = "by " + cLevel*10 + " percent"}       
+        
+                if (deviceType == "cTstat") {
+        		def numTxtTMP = cTemperature == 1 ? cTemperature + " degree" : cTemperature + " degrees"  
+        }  
+        
        if (ctCommand == "repeat") {
         	if (debug) log.debug "Processing repeat last message delivered to any of the Profiles"
 				outputTxt = getLastMessageMain()
@@ -837,159 +900,196 @@ def controlDevices() {
        }
        if (command == "on" || command == "off") {
              if (cSwitches) {
-             	if (ctNum) {
-                	runIn(ctNum*60, delayHandler, [data: [type: "cSwitches", command: command, device: ctDevice]])
-                    outputTxt = "Ok, turning " + ctDevice + " " + command + ", in " + numText
-                }
-                else {
-                   	if (debug) log.debug "Searching for device type= cSwitches, device='${ctDevice}'"
-					def deviceMatch = cSwitches.find {s -> s.label.toLowerCase() == ctDevice}
-                    if (deviceMatch) {
-						if (debug) log.debug "Found a device: '${deviceMatch}'"
-                       	deviceMatch."${command}"()
-						outputTxt = "Ok, turning " + ctDevice + " " + command
-                    }
-                 }  
+                    if (debug) log.debug "Searching for device type = switch, device name ='${ctDevice}'"
+					def deviceMatch = cSwitches.find {s -> s.label.toLowerCase() == ctDevice}             
+             		if (deviceMatch) {
+                    	if (debug) log.debug "Found a device: '${deviceMatch}'"
+                		if (ctNum > 0 && ctUnit == "MIN") {
+                            runIn(ctNum*60, controlHandler, [data: [type: "cSwitches", command: command, device: ctDevice, unit: ctUnit, num: ctNum]])
+							outputTxt = "Ok, turning " + deviceMatch + " " + command + ", in " + numText
+                    	}
+                		else {
+							def data = [type: "cSwitches", command: command, device: ctDevice]
+                    		controlHandler(data)
+							outputTxt = "Ok, turning " + ctDevice + " " + command
+                    	}
+                 	}
+                    else {outputTxt = "Sorry, I couldn't find a device named " + ctDevice + " in your list of selected switches"}
               }
         }
-		if (commandLVL == "decrease" || commandLVL == "increase") { 
-        	if (cDimmers) {           
-            	def deviceDMatch = cDimmers.find {s -> s.label.toLowerCase() == ctDevice}
-                if (ctNum) {
-                	if (deviceDMatch) {
-                    	runIn(ctNum*60, delayHandler, [data: [type: "cDimmers", command: commandLVL, device: ctDevice]])
-                        outputTxt = "Ok" //decreasing  " + ctDevice + " " + command + ", in " + numText
-                    }
-                }
-                else {
+		if (deviceType == "cDimmers" || deviceType == "cGlobal") {
+            if (commandLVL == "decrease" || commandLVL == "increase" || commandLVL == "setLevel" ) { 
+                if (cDimmers) {           
+                    if (debug) log.debug "Searching for device type = dimmer, device name='${ctDevice}'"
+                        def deviceDMatch = cDimmers.find {s -> s.label.toLowerCase() == ctDevice}
                     if (deviceDMatch) {
-                        def currLevel = deviceDMatch.latestValue("level")
-                        def currState = deviceDMatch.latestValue("switch")
-                        def newLevel = currLevel 
-                        	if (commandLVL == "increase") {
-                            	newLevel = currLevel + cLevel
-                                newLevel = newLevel < 0 ? 0 : newLevel >100 ? 100 : newLevel
-                                if (debug) log.debug "Dimmer Level increase settings: current level '${currLevel}', new level '${newLevel}', cLevel '${cLevel}'"
-                            }
-                            if (commandLVL == "decrease") {
-                                newLevel = currLevel - cLevel
-                                newLevel = newLevel < 0 ? 0 : newLevel >100 ? 100 : newLevel
-                                 if (debug) log.debug "Dimmer Level decrease settings: current level '${currLevel}', new level '${newLevel}', cLevel '${cLevel}'"
-                            }
-							if (newLevel > 0 && currState == "off") {
-                                deviceDMatch.on()
-                                deviceDMatch.setLevel(newLevel)
-                            }
-                            else {                                    
-                                 deviceDMatch.setLevel(newLevel)
-                            }
-							outputTxt = "Ok"//, turning " + ctDevice + " " + command
+                        if (debug) log.debug "Found a device: '${deviceDMatch}'"
+                        if (ctNum && ctUnit == "MIN") {
+                            runIn(ctNum*60, delayHandler, [data: [type: "cDimmers", command: commandLVL, device: ctDevice, unit: ctUnit, num: ctNum]])
+                            if (commandLVL == "decrease") {outputTxt = "Ok, decreasing the " + ctDevice + " level in " + numText}
+                            else if (commandLVL == "increase") {outputTxt = "Ok, increasing the " + ctDevice + " level in " + numText}
+                        }
+                        else {
+                            def data = [type: "cDimmers", command: commandLVL, device: ctDevice, unit: ctUnit, num: ctNum]
+                            controlHandler(data)
+                            if (ctUnit == "PERC"){outputTxt = "Ok, setting " + ctDevice + " to " + numText}
+                            else{
+                                if (commandLVL == "setLevel" && ctUnit == "unknown") {
+                                	def num = ctNum > 10 ? ctNum : ctNum*10 as int
+                                	outputTxt = "Ok, setting the " + ctDevice + " to " + num + " percent"
+                                }
+                                if (commandLVL == "decrease") {outputTxt = "Ok, decreasing the " + ctDevice + " level " + numText}
+                                if (commandLVL == "increase") {outputTxt = "Ok, increasing the " + ctDevice + " level " + numText}
                             }
                         }
                     }
-                 }                 
-		if (commandLVL == "decrease" || commandLVL == "increase") { 
-        	if (cTstat) {           
-            	def deviceTMatch = cTstat.find {s -> s.label.toLowerCase() == ctDevice}
-                if (ctNum) {
-                	if (deviceTMatch) {
-                    	runIn(ctNum*60, delayHandler, [data: [type: "cTstat", command: commandLVL, device: ctDevice]])
-                        outputTxt = "Ok" //decreasing  " + ctDevice + " " + command + ", in " + numText
+                    else {outputTxt = "Sorry, I couldn't find a device named " + ctDevice + " in your list of selected dimmers"}
+                }
+            }
+        }
+		if (deviceType == "cTstat" || deviceType == "cGlobal") {
+            if (commandLVL == "decrease" || commandLVL == "increase" || commandLVL == "setLevel" ) { 
+                if (cTstat) {           
+                    if (debug) log.debug "Searching for device type= thermostat, device='${ctDevice}'"
+                        def deviceDMatch = cTstat.find {s -> s.label.toLowerCase() == ctDevice}
+                    if (deviceDMatch) {
+                        if (ctNum && ctUnit == "MIN") {
+                            runIn(ctNum*60, delayHandler, [data: [type: "cTstat", command: commandLVL, device: ctDevice, unit: ctUnit, num: ctNum]])
+                            if (commandLVL == "decrease") {outputTxt = "Ok, decreasing the " + ctDevice + " temperature in " + numText}
+                            else if (commandLVL == "increase") {outputTxt = "Ok, increasing the " + ctDevice + " temperature in " + numText}
+                        }
+                        else {
+                            def data = [type: "cTstat", command: commandLVL, device: ctDevice, unit: ctUnit, num: ctNum]
+                            controlHandler(data)
+                            if (ctUnit == "TEMP"){outputTxt = "Ok, adjusting " + ctDevice + " to " + numText}
+                            else{        
+        						def numTxtTMP = cTemperature == 1 ? cTemperature + " degree" : cTemperature + " degrees"  
+                                if (commandLVL == "decrease") {outputTxt = "Ok, decreasing the temperature " + ctDevice + " by " + numTxtTMP}
+                                if (commandLVL == "increase") {outputTxt = "Ok, increasing the temperature " + ctDevice + " by " + numTxtTMP}
+                            }
+                        }
                     }
                 }
-                else {
-                    if (deviceTMatch) {
-           				def currentMode = deviceTMatch.latestValue("thermostatMode")
-                		def currentHSP = deviceTMatch.latestValue("heatingSetpoint") 
-                		def currentCSP = deviceTMatch.latestValue("coolingSetpoint") 
-                        def currentTMP = deviceTMatch.latestValue("temperature") 
-                        def newSetPoint = currentCSP 
-                        	if (commandLVL == "increase" ) {
-                                newSetPoint = currentHSP + cTemperature
-                                if (debug) log.debug "newSetPoint = '${newSetPoint}'"
-                                newSetPoint = newSetPoint < 60 ? 60 : newSetPoint >85 ? 85 : newSetPoint
-                                if (debug) log.debug "Thermostat increase settings: currentT '${currentTMP}', newSP '${newSetPoint}', cLevel '${cTemperature}'"
-                            
-                            	if (currentMode == "cool" || currentMode == "off") {
-                     				def msg = "Adjusting ${deviceTMatch} operating mode and setpoints to temperature ${newSetPoint}"
-                           			deviceTMatch?."heat"()
-                           			deviceTMatch?.setHeatingSetpoint(newSetPoint)
-                           			deviceTMatch?.poll()
-                               }
-                               else if  (currentHSP < newSetPoint) {
-                            		def msg = "Adjusting ${newSetPoint} setpoints because temperature is below ${currentHSP}"
-                     				deviceTMatch?.setHeatingSetpoint(newSetPoint)
-                            		thermostat?.poll()
-                              }  
-                            }
-                            if (commandLVL == "decrease") {
-                                newSetPoint = currentHSP - cTemperature
-                                if (debug) log.debug "newSetPoint = '${newSetPoint}'"
-                                newSetPoint = newSetPoint < 60 ? 60 : newSetPoint >85 ? 85 : newSetPoint
-                                if (debug) log.debug "Thermostat increase settings: currentT '${currentTMP}', newSP '${newSetPoint}', cLevel '${cTemperature}'"
-                  								
-                                if (currentMode == "heat" || currentMode == "off") {
-                            	def msg = "Adjusting ${deviceTMatch} operating mode and setpoints because temperature is above ${newSetPoint}"
-                        			deviceTMatch?."cool"()
-                        			deviceTMatch?.setCoolingSetpoint(newSetPoint)
-                        			deviceTMatch?.poll()
-                        }
-                        else if (currentCSP > newSetPoint) {
-                            def msg = "Adjusting ${deviceTMatch} setpoints because temperature is above ${newSetPoint}"
-                    		deviceTMatch?.setCoolingSetpoint(SetCoolingHigh)
-                            deviceTMatch?.poll()
-                       	}
-							outputTxt = "Ok"//, turning " + ctDevice + " " + command
-                            }
-                        }
-                    }
-                 }
-               }
-
-
-
-if (debug) log.debug "Sending response to Alexa with settings: '${pContCmds}' and the message:'${outputTxt}'"               
+                    else {outputTxt = "Sorry, I couldn't find a device named " + ctDevice + " in your list of selected thermostats"}                
+            }
+        }        
+        
+        if (debug) log.debug "Sending response to Alexa with settings: '${pContCmds}' and the message:'${outputTxt}'"               
         return ["outputTxt":outputTxt, "pContCmds":pContCmds]
-}      
-def delayHandler(data) { 
+}
+      
+
+def controlHandler(data) {   
     def deviceType = data.type
     def deviceCommand = data.command
-   	def deviceD = data.device 
-	if (debug) log.debug "Processing after delay: device type= '${data.type}', command= '${data.command}', for current device= '${state.currentDevice}'"+
-         					" and device match= '${deviceMatch}', deviceId= '${deviceD}'"
+   	def deviceD = data.device
+    def unitU = data.unit
+    def numN = data.num    
     if (deviceType == "cSwitches") {
-    	if (debug) log.debug "Searching for device after delay: type =cSwitches, device name='${ctDevice}'"
-		def deviceMatch = cSwitches.find {s -> s.label.toLowerCase() == ctDevice}
+			def deviceMatch = cSwitches.find {s -> s.label.toLowerCase() == deviceD}
         if (deviceMatch) {
-		if (debug) log.debug "Found a device: '${deviceMatch}'"
-        deviceMatch."${deviceCommand}"()
-            }        
-    }
-    if (deviceType == "cDimmers") {
-    	if (debug) log.debug "Searching for device after delay: type= cSwitches, device='${deviceD}'"
-		def deviceMatch = cSwitches.find {s -> s.label.toLowerCase() == ctDevice}
-			if (deviceDMatch) {
+        	deviceMatch."${deviceCommand}"()
+        	if (debug) log.debug "switch '${deviceCommand}'" 
+        } 
+    } 
+	if (deviceType == "cDimmers") {
+			def deviceDMatch = cDimmers.find {s -> s.label.toLowerCase() == deviceD}
+		if (deviceDMatch) {
             def currLevel = deviceDMatch.latestValue("level")
             def currState = deviceDMatch.latestValue("switch")
-            def newLevel = currLevel 
-            if (commandLVL == "increase") {
-            newLevel = currLevel + cLevel
-            newLevel = newLevel < 0 ? 0 : newLevel >100 ? 100 : newLevel
-            if (debug) log.debug "Dimmer Level increase settings: current level '${currLevel}', new level '${newLevel}', cLevel '${cLevel}'"
+            def newLevel = cLevel*10 //30%
+			if (unitU == "PERC") newLevel = numN      
+            if (deviceCommand == "increase") {
+            	if (unitU == "PERC") {
+                	newLevel = numN
+                }   
+                else {
+                	newLevel =  currLevel + newLevel
+            		newLevel = newLevel < 0 ? 0 : newLevel >100 ? 100 : newLevel
+            	}
             }
-            if (commandLVL == "decrease") {
-            newLevel = currLevel - cLevel
-            newLevel = newLevel < 0 ? 0 : newLevel >100 ? 100 : newLevel
-            if (debug) log.debug "Dimmer Level decrease settings: current level '${currLevel}', new level '${newLevel}', cLevel '${cLevel}'"
+            if (deviceCommand == "decrease") {
+            	if (unitU == "PERC") {
+                	newLevel = numN
+                }   
+                else {
+                	newLevel =  currLevel - newLevel
+            		newLevel = newLevel < 0 ? 0 : newLevel >100 ? 100 : newLevel
+                }            
+            }
+            if (deviceCommand == "setLevel") {
+            	if (unitU == "PERC") {
+                	newLevel = numN
+                }   
+                else {
+                	newLevel =  numN*10
+            		newLevel = newLevel < 0 ? 0 : newLevel >100 ? 100 : newLevel
+                }            
             }
 			if (newLevel > 0 && currState == "off") {
-            deviceDMatch.on()
-            deviceDMatch.setLevel(newLevel)
+            	deviceDMatch.on()
+            	deviceDMatch.setLevel(newLevel)
             }
             else {                                    
-            deviceDMatch.setLevel(newLevel)
+            	if (newLevel == 0 && currState == "on") {deviceDMatch.off()}
+                else {deviceDMatch.setLevel(newLevel)}
             }      
-    		}
+    	}
+	}
+	if (deviceType == "cTstat") {
+			def deviceTMatch = cTstat.find {s -> s.label.toLowerCase() == deviceD}
+		if (deviceTMatch) {
+           	def currentMode = deviceTMatch.latestValue("thermostatMode")
+          	def currentHSP = deviceTMatch.latestValue("heatingSetpoint") 
+           	def currentCSP = deviceTMatch.latestValue("coolingSetpoint") 
+           	def currentTMP = deviceTMatch.latestValue("temperature") 
+           	def newSetPoint = currentTMP             
+				numN = numN < 60 ? 60 : numN >85 ? 85 : numN
+            
+            if (unitU == "TEMP") {
+            		newSetPoint = numN      
+            	if (currentMode == "off") {
+                 	if (newSetPoint > currentTMP) {
+                 		deviceTMatch?."heat"()
+                 		deviceTMatch?.setHeatingSetpoint(newSetPoint)
+            		}
+                    else if (newSetPoint < currentTMP) {
+                    	deviceTMatch?."cool"()
+                        deviceTMatch?.setCoolingSetpoint(newSetPoint)
+                    }
+                 }
+            	else {
+                	if  (newSetPoint > currentTMP) {deviceTMatch?.setHeatingSetpoint(newSetPoint)}
+                    if  (newSetPoint < currentTMP) {deviceTMatch?.setCoolingSetpoint(newSetPoint)}
+                }
+            }
+            if (deviceCommand == "increase") {
+            	newSetPoint = currentTMP + cTemperature
+                newSetPoint = newSetPoint < 60 ? 60 : newSetPoint >85 ? 85 : newSetPoint        
+                if (currentMode == "cool" || currentMode == "off") {
+                	deviceTMatch?."heat"()
+                    deviceTMatch?.setHeatingSetpoint(newSetPoint)
+                    deviceTMatch?.poll()
+                }
+                else if  (currentHSP < newSetPoint) {
+                	deviceTMatch?.setHeatingSetpoint(newSetPoint)
+                  	thermostat?.poll()
+                }  
+            }
+            if (deviceCommand == "decrease") {
+                newSetPoint = currentTMP - cTemperature
+                newSetPoint = newSetPoint < 60 ? 60 : newSetPoint >85 ? 85 : newSetPoint     
+                if (currentMode == "heat" || currentMode == "off") {
+                   	deviceTMatch?."cool"()
+                   	deviceTMatch?.setCoolingSetpoint(newSetPoint)
+                   	deviceTMatch?.poll()
+                }
+                else if  (currentCSP < newSetPoint) {
+                	deviceTMatch?.setCoolingSetpoint(newSetPoint)
+                	thermostat?.poll()
+                }  
+              }
+         }
 	}
 }
 /************************************************************************************************************
@@ -1141,15 +1241,6 @@ def getLastMessageMain() {
     return  outputTxt 
   	if (debug) log.debug "Sending last message to Lambda ${outputTxt} "
 }
-/***********************************************************************************************************************
-    MESSAGE HANDLER
-***********************************************************************************************************************/
-def getMessage(type, command) {
-    def outputTxt = "The last message sent was,"// + data.type + ", and it was sent to, " + state.lastIntent + ", at, " + state.lastTime
-    return  outputTxt 
-  	if (debug) log.debug "Sending last message to Lambda ${outputTxt} "
-}
-
 /***********************************************************************************************************************
     RESTRICTIONS HANDLER
 ***********************************************************************************************************************/
@@ -1560,46 +1651,6 @@ def playAlert(message, speaker) {
 
 }
 /************************************************************************************************************
-   Version/Copyright/Information/Help
-************************************************************************************************************/
-private def textAppName() {
-	def text = app.label
-}	
-private def textVersion() {
-	def text = "3.0"
-}
-private def textRelease() {
-	def text = "3.0.1"
-}
-private def dateRelease() {
-	def text = "12/12/2016"
-}
-private def textCopyright() {
-	def text = "       Copyright © 2016 Jason Headley"
-}
-private def textLicense() {
-	def text =
-	"Licensed under the Apache License, Version 2.0 (the 'License'); "+
-	"you may not use this file except in compliance with the License. "+
-	"You may obtain a copy of the License at"+
-	"\n\n"+
-	" http://www.apache.org/licenses/LICENSE-2.0"+
-	"\n\n"+
-	"Unless required by applicable law or agreed to in writing, software "+
-	"distributed under the License is distributed on an 'AS IS' BASIS, "+
-	"WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. "+
-	"See the License for the specific language governing permissions and "+
-	"limitations under the License."
-}
-private textProfiles() {
-def text = childApps.size()     
-}
-private def textHelp() {
-	def text =
-		"This smartapp allows you to use an Alexa device to generate a voice or text message on on a different device"
-        "See our Wikilinks page for user information!"
-		}
-/************************************************************************************************************
    Page status and descriptions 
 ************************************************************************************************************/       
 //go to Parent set up 
@@ -1650,13 +1701,19 @@ def settingsDescr() {
     }
    text
 }
-def supportDescr()  {
+def supportDescrST()  {
 	def text = 	" Apps Version = ${textVersion()} \n" +
-        		" Smart App Release = ${textRelease()} \n"+
-    			" Smart App Release Date = ${dateRelease()} \n"+
-                " Lambda Release = ${state.lambdaReleaseTxt} \n"+
-                " Lambda Release Date = ${state.lambdaReleaseDt} \n"+
+        		" Release Number = ${textRelease()} \n"+
+    			" Release Date = ${dateRelease()} \n"+
+                " Release Notes: \n"+ 
+                " ${textReleaseNotes()} \n"+
                 " Click to visit our Wiki Page" 
+}
+def supportDescrL() {
+	def text = 	" Version = ${textVersion()} \n" +
+                " Release Number = ${state.lambdaReleaseTxt} \n"+
+    			" Release Date = ${state.lambdaReleaseDt} \n"+
+                " Click here to access AWS" 
 }
 def DevProDescr() {
     def text = "Tap here to Configure"
@@ -1713,18 +1770,34 @@ def MsgProDescr() {
 }
 def completeSMS(){
     def result = ""
-    if (sendContactText || sms || push || notify) {
+    if (sendText || sms  || push == "true" || notify == "true") {
     	result = "complete"	
     }
     result
 }
 def SMSDescr() {
     def text = "Tap here to Configure"
-    if (sendContactText || sms || push || notify) {
+    if (sendText || sms  || push == "true" || notify == "true") {
             text = "Configured" //"Using this contact(s): ${recipients}. Tap to change" 
      }
     text
 }
+
+def completeGroups(){
+    def result = ""
+    if (gSwitches) {
+    	result = "complete"	
+    }
+    result
+}
+def groupsDescr() {
+    def text = "Tap here to Configure"
+    if (gSwitches) {
+            text = "Configured" //"Using this contact(s): ${recipients}. Tap to change" 
+     }
+    text
+}
+
 def completeDevPro(){
     def result = ""
     if (switches || dimmers || runRoutine || hues || flashSwitches) {
@@ -1778,4 +1851,51 @@ def runRoutineDescr() {
             text = "Configured" //"These devices will execute: ${switches}, ${dimmers}. Tap to change device(s)" 
     }
     text
+}
+/************************************************************************************************************
+   Misc. Text fields
+************************************************************************************************************/
+private def textLicense() {
+	def text =
+	"Licensed under the Apache License, Version 2.0 (the 'License'); "+
+	"you may not use this file except in compliance with the License. "+
+	"You may obtain a copy of the License at"+
+	"\n\n"+
+	" http://www.apache.org/licenses/LICENSE-2.0"+
+	"\n\n"+
+	"Unless required by applicable law or agreed to in writing, software "+
+	"distributed under the License is distributed on an 'AS IS' BASIS, "+
+	"WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. "+
+	"See the License for the specific language governing permissions and "+
+	"limitations under the License."
+}
+private textProfiles() {
+def text = childApps.size()     
+}
+private def textHelp() {
+	def text =
+		"This smartapp allows you to use an Alexa device to generate a voice or text message on on a different device"
+        "See our Wikilinks page for user information!"
+		}
+
+/************************************************************************************************************
+   Version/Copyright/Information/Help
+************************************************************************************************************/
+private def textAppName() {
+	def text = app.label // Parent Name
+}	
+private def textVersion() {
+	def text = "3.0"
+}
+private def textRelease() {
+	def text = "3.0.4"
+}
+private def textReleaseNotes() {
+	def text = "New control and alert features; general bug fixes"
+}
+private def dateRelease() {
+	def text = "12/19/2016"
+}
+private def textCopyright() {
+	def text = "       Copyright © 2016 Jason Headley"
 }
