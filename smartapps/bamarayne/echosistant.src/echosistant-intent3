@@ -1,11 +1,27 @@
 {
   "intents": [
     {
-      "intent": "bedroom",
+      "intent": "main",
       "slots": [
-         {
-			"name": "ttstext",
-			"type": "LIST_OF_WORDS"
+        {
+          "name" : "pProfile",
+          "type" : "LIST_OF_PROFILES"
+        },
+        {
+          "name" : "pDevice",
+          "type" : "LIST_OF_DEVICES"
+        },
+        {
+        "name" : "pNum",
+          "type" : "AMAZON.NUMBER"
+        },
+        {
+        "name" : "pUnit",
+          "type" : "LIST_OF_UNITS"
+        },
+        {
+          "name" : "pCommand",
+          "type" : "LIST_OF_COMMANDS"
         }
         ]
     },
