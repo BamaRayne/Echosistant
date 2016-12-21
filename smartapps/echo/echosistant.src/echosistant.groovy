@@ -70,15 +70,17 @@ preferences {
     page name: "pageMain"
     //Parent Pages    
     page name: "mainParentPage"
+    	page name: "support"
     	page name: "profiles"
     	page name: "about"
         page name: "Alerts"
+        page name: "Choices"
         page name: "Integrations"
-    		page name: "CoRE"
-			page name: "devicesControlMain"
+    	page name: "CoRE"
+		page name: "devicesControlMain"
 		page name: "tokens"
-    		page name: "pageConfirmation"
-    		page name: "pageReset"
+    	page name: "pageConfirmation"
+    	page name: "pageReset"
 
 
     //Profile Pages    
@@ -87,10 +89,9 @@ preferences {
     	page name: "SMS"
     	page name: "DevPro"
     	page name: "devicesControl"    
-    page name: "StaPro"
+   		page name: "StaPro"
         page name: "FeedBack"
-
-	page name: "MsgConfig"
+		page name: "MsgConfig"
     	page name: "certainTime"   
 }
 def pageMain() { if (!parent) mainParentPage() else mainProfilePage() }
@@ -104,17 +105,10 @@ page name: "mainParentPage"
             section ("") {
                 href "profiles", title: "Profiles", description: profilesDescr(), state: completeProfiles(),
                     image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Config.png"    
-                
                 href "about", title: "Control, Integrations, and Security", description: settingsDescr(), state: completeSettings(),
                     image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_About.png"
-                
-                href title: "EchoSistant Support", description: supportDescrST() , state: completeProfiles(),
-                    image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/app-Echosistant.png",
-                    url: "http://thingsthataresmart.wiki/index.php?title=EchoSistant"    
-                
-                href title: "EchoSistant Alexa Skill", description: supportDescrL() , state: completeProfiles(),
-                    image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Amazon_alexa.png",
-                    url: "https://aws.amazon.com/lambda/?nc2=h_m1"    
+                href "support", title: "EchoSistant Support", description: supportDescrL() , state: completeProfiles(),
+                    image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Amazon_alexa.png"                
                 }
             section ("") {
                 paragraph "${textCopyright()}"
@@ -132,14 +126,33 @@ page name: "profiles"
             } 
         } 
     }
-    def about(){
-        dynamicPage(name: "about", uninstall: true) {
-                section ("Directions, How-to's, and Troubleshooting") { 
-                	href url:"http://thingsthataresmart.wiki/index.php?title=EchoSistant", title: "EchoSistant Wiki", description: none,
-                	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/app-Echosistant.png"
+page name: "support"    
+    def support(){
+        dynamicPage(name: "support", title: "View Support Information",install: false, uninstall: false) {
+            section ("Developers", hideWhenEmpty: true){  
+            	paragraph ("You can reach out to the Echosistant Developers with the following information: \n\n" + 
+                "Jason Headley \nForum user name @bamarayne \n" +
+                "Bobby Dobrescu \nForum user name @SBDobrescu")
                 }
+            section ("Directions, How-to's, and Troubleshooting") { 
+ 				href url:"http://thingsthataresmart.wiki/index.php?title=EchoSistant", title: "Tap here to go to the EchoSistant Wiki", description: none,
+                image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/app-Echosistant.png"
+                }
+            section ("AWS Lambda website") {
+            	href url:"https://aws.amazon.com/lambda/", title: "Tap here to go to the AWS Lambda Website", description: none,
+                image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/app-Echosistant.png"
+                }
+            section ("Amazon Developer website") {    
+   				href url:"https://developer.amazon.com/", title: "Tap here to go to Amazon Developer website", description: none,
+                image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/app-Echosistant.png"
+                }
+   			}             
+		}
+page name: "about"
+ def about(){
+        dynamicPage(name: "about", uninstall: true) {
                 section("Device and Action Notifications") {
-	                href "Alerts", title: "Create Notifications...",description: AlertProDescr() , state: completeAlertPro(),
+	                href "Alerts", title: "Create and View Notifications...",description: AlertProDescr() , state: completeAlertPro(),
     	        	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Rest.png"
 				}
                 section ("Device Control and 3rd Party Integrations"){
@@ -170,14 +183,39 @@ page name: "profiles"
                 section("Tap below to remove the ${textAppName()} application.  This will remove ALL Profiles and the App from the SmartThings mobile App."){}
                 }
 	} 
-
+page name: "Choices"    
+    def Choices(){
+        dynamicPage(name: "Choices", title: "Choose from the available Notifications",install: false, uninstall: false) {
+            section ("Activate/DeActivate Notifications", hideWhenEmpty: true){
+            input "allNotifications", "bool", title: "Turn on to Activate the Notifications Section", default: false, submitOnChange: true
+            input "switchesAndDimmers", "bool", title: "Switches and Dimmers", default: false, submitOnChange: true
+            input "doorsAndWindows", "bool", title: "Doors and Windows", default: false, submitOnChange: true
+            input "Locks", "bool", title: "Locks", default: false, submitOnChange: true
+            input "Motion", "bool", title: "Motion Sensors", default: false, submitOnChange: true
+            input "Presence", "bool", title: "Presence Sensors", default: false, submitOnChange: true
+            input "TStats", "bool", title: "Thermostats", default: false, submitOnChange: true
+            //input "Water", "bool", title: "Water Sensors", default: false, submitOnChange: true
+		}
+    }
+}            
 
 page name: "Alerts"
     def Alerts(){
         dynamicPage(name: "Alerts", uninstall: false) {
+        section ("Activate and Deactivate Notifications"){
+            href "Choices", title: "Activate and Deactivate Notifications", description: none,
+            image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Rest.png"
+        	}
+        if (!allNotifications) {
+        section("") {
+        paragraph ("All Notifications have been disabled.  Activate 'All Notifications' to configure this section")
+        	}
+        }
+        if (allNotifications) {
         section ("Switches and Dimmers", hideWhenEmpty: true) {
-            input "ShowSwitches", "bool", title: "Switches and Dimmers", default: false, submitOnChange: true
             if (TheSwitch || audioTextOn || audioTextOff || speech1 || push1 || notify1 || music1) paragraph "Configured with Settings"
+            if (switchesAndDimmers) {
+            input "ShowSwitches", "bool", title: "Switches and Dimmers", default: false, submitOnChange: true
             if (ShowSwitches) {        
                 input "TheSwitch", "capability.switch", title: "Choose Switches...", required: false, multiple: true, submitOnChange: true
 				input "audioTextOn", "audioTextOn", title: "Play this message", description: "Message to play when the switch turns on", required: false, capitalization: "sentences"
@@ -195,9 +233,11 @@ page name: "Alerts"
             	}
             }             
         }
+	}        
         section("Doors and Windows", hideWhenEmpty: true) {
-            input "ShowContacts", "bool", title: "Doors and Windows", default: false, multiple: false, submitOnChange: true
             if (TheContact || audioTextOpen || audioTextClosed || speech2 || push2 || notify2 || music2) paragraph "Configured with Settings"
+            if (doorsAndWindows) {
+            input "ShowContacts", "bool", title: "Doors and Windows", default: false, multiple: false, submitOnChange: true
             if (ShowContacts) {
                 input "TheContact", "capability.contactSensor", title: "Choose Doors and Windows..", required: false, multiple: true, submitOnChange: true
                 input "audioTextOpen", "textOpen", title: "Play this message", description: "Message to play when the door opens", required: false, capitalization: "sentences"
@@ -215,9 +255,11 @@ page name: "Alerts"
             	}
             }
         }
+	}        
         section("Locks", hideWhenEmpty: true) {
-            input "ShowLocks", "bool", title: "Locks", default: false, submitOnChange: true
             if (TheLock || audioTextLocked || audioTextUnlocked || speech3 || push3 || notify3 || music3) paragraph "Configured with Settings"
+            if (Locks) {
+            input "ShowLocks", "bool", title: "Locks", default: false, submitOnChange: true
             if (ShowLocks) {
                 input "TheLock", "capability.lock", title: "Choose Locks...", required: false, multiple: true, submitOnChange: true
                 input "audioTextLocked", "textLocked", title: "Play this message", description: "Message to play when the lock locks", required: false, capitalization: "sentences"
@@ -235,9 +277,11 @@ page name: "Alerts"
                 }
             }
         }
+	}        
         section("Motion Sensors", hideWhenEmpty: true) {
-            input "ShowMotion", "bool", title: "Motion Sensors", default: false,  multiple: true, submitOnChange: true
             if (TheMotion || audioTextActive || audioTextInactive || speech4 || push4 || notify4 || music4) paragraph "Configured with Settings"
+            if (Motion) {
+            input "ShowMotion", "bool", title: "Motion Sensors", default: false,  submitOnChange: true
             if (ShowMotion) {
                 input "TheMotion", "capability.motionSensor", title: "Choose Motion Sensors...", required: false, multiple: true, submitOnChange: true
                 input "audioTextActive", "textActive", title: "Play this message", description: "Message to play when motion is detected", required: false, capitalization: "sentences"
@@ -255,9 +299,11 @@ page name: "Alerts"
                 }
             }
         }
+	}        
         section("Presence Sensors", hideWhenEmpty: true) {
-        	input "ShowPresence", "bool", title: "Presence Sensors", default: false,  multiple: true, submitOnChange: true
         	if (ThePresence || audioTextPresent || audioTextNotPresent || speech5 || push5 || notify5 || music5) paragraph "Configured with Settings"
+            if (Presence) {
+            input "ShowPresence", "bool", title: "Presence Sensors", default: false, submitOnChange: true
             if (ShowPresence) {
                 input "ThePresence", "capability.presenceSensor", title: "Choose Presence Sensors...", required: false, multiple: true, submitOnChange: true
                 input "audioTextPresent", "textPresent", title: "Play this message", description: "Message to play when the Sensor arrives", required: false, capitalization: "sentences"
@@ -275,9 +321,11 @@ page name: "Alerts"
             	}
 			}
 		}
+	}         
          section("Thermostats", hideWhenEmpty: true) {
-        	input "ShowTstat", "bool", title: "Thermostats", default: false, submitOnChange: true
         	if (TheThermostat || audioTextHeating || audioTextCooling || speech8 || push8 || notify8 || music8) paragraph "Configured with Settings"
+            if (TStats) {
+            input "ShowTstat", "bool", title: "Thermostats", default: false, submitOnChange: true
             if (ShowTstat) {
                 input "TheThermostat", "capability.thermostat", title: "Choose Thermostats...", required: false, multiple: true, submitOnChange: true
                 input "audioTextHeating", "textHeating", title: "Play this message", description: "Message to play when the Heating Set Point Changes", required: false, capitalization: "sentences"
@@ -292,16 +340,17 @@ page name: "Alerts"
                 	if (sendMsg8) {
                 	input "push8", "bool", title: "Send Push Notification (optional)", required: false, defaultValue: false, submitOnChange: true
             		input "notify8", "bool", title: "Send message to Mobile App Notifications Tab (optional)", required: false, defaultValue: false, submitOnChange: true
-            		}
+                        }
+                    }
                 }		
             } 
         }
     }
-
-/*
-		section("Water Sensors", hideWhenEmpty: true) {
-        	input "ShowWater", "bool", title: "Water Detectors", default: false, submitOnChange: true
+}
+/*		section("Water Sensors", hideWhenEmpty: true) {
         	if (TheWater || audioTextWet || audioTextDry || speech6 || push6 || notify6 || music6) paragraph "Configured with Settings"
+            if (Water) {
+            input "ShowWater", "bool", title: "Water Detectors", default: false, submitOnChange: true
             if (ShowWater) {
                 input "TheWater", "capability.waterSensor", title: "Choose Water Sensors...", required: false, multiple: true, submitOnChange: true
                 input "audioTextWet", "textWet", title: "Play this message", description: "Message to play when water is detected", required: false, capitalization: "sentences"
@@ -319,26 +368,7 @@ page name: "Alerts"
             	}
 			}                
         }        
-        section("Garage Doors", hideWhenEmpty: true) {
-        	input "ShowGarage", "bool", title: "Garage Doors", default: false, submitOnChange: true
-        	if (TheGarage || audioTextOpening || audioTextClosing || speech7 || push7 || notify7 || music7) paragraph "Configured with Settings"
-            if (ShowGarage) {
-                input "TheGarage", "capability.garageDoorControl", title: "Choose Garage Doors...", required: false, multiple: true, submitOnChange: true
-                input "audioTextOpening", "textOpening", title: "Play this message", description: "Message to play when the Garage Door Opens", required: false, capitalization: "sentences"
-                input "audioTextClosing", "textClosing", title: "Play this message", description: "Message to play when the Garage Door Closes", required: false, capitalization: "sentences" 
-                input "speech7", "capability.speechSynthesis", title: "Message Player", required: false, multiple: true, submitOnChange: true
-                input "music7", "capability.musicPlayer", title: "On this Sonos Type Devices", required: false, multiple: true, submitOnChange: true
-                if (music7) {
-                    input "volume7", "number", title: "Temporarily change volume", description: "0-100%", required: false
-                    input "resumePlaying7", "bool", title: "Resume currently playing music after notification", required: false, defaultValue: false
-                	}
-                input "sendMsg7", "bool", title: "Send Push and/or Notifications", default: false, submitOnChange: true
-                	if (sendMsg7) {
-                	input "push7", "bool", title: "Send Push Notification (optional)", required: false, defaultValue: false, submitOnChange: true
-            		input "notify7", "bool", title: "Send message to Mobile App Notifications Tab (optional)", required: false, defaultValue: false, submitOnChange: true
-            		}
-                }		
-            } 
+	}        
 */            
 page name: "Integrations"
 	def Integrations(){
@@ -360,21 +390,16 @@ page name: "CoRE"
     def CoRE(){
             dynamicPage(name: "CoRE", uninstall: false) {
                 section ("Welcome to the CoRE integration page"){
-                    paragraph ("--- This integration is in place to enhance the"+
-                    " communication abilities of EchoSistant and your SmartThings"+
-                    " Home Automation Project. It is not intended"+
-                    " for the control of HA devices."+
-                    " --- CoRE integration is currently one way only. You can NOT "+
-                    " trigger profiles from within CoRE. CoRE listens for a "+
-                    " profile execution and then performs the programmed tasks."+
-                    " --- Configuration is simple. In EchoSistant create your profile."+
-                    " Then open CoRE and create a new piston. In the condition section"+
-                    " choose 'EchoSistant Profile' as the trigger. Choose the appropriate"+
-                    " profile and then finish configuring the piston."+
-                    " --- When the profile is executed the CoRE piston will also execute.")
+                    paragraph ("This integration is in place to enhance the\n"+
+                    "communication abilities of EchoSistant and your SmartThings Home Automation Project, allowing you more control and flexibility. \n\n"+
+                    "CoRE integration is currently one way only. You can NOT trigger profiles from within CoRE. CoRE listens for a profile execution and then performs the programmed tasks. \n\n"+
+                    "Configuration is simple. In EchoSistant create your profile. Then open CoRE and create a new piston. In the condition section choose 'EchoSistant Profile' \n"+
+                    "as the trigger. Choose the appropriate profile and then finish configuring the piston. \n\n"+
+                    "When the profile is executed the CoRE piston will also execute.")
+                    href url:"http://thingsthataresmart.wiki/index.php?title=EchoSistant#CoRE_Integration", title: "Tap here for more information", description: none
+                 }   
             }
-        }
-    }    
+        }    
 page name: "devicesControlMain"    
     def devicesControlMain(){
         dynamicPage(name: "devicesControlMain", title: "Select Devices That Alexa Can Control Directly",install: false, uninstall: false) {
@@ -799,38 +824,54 @@ def subscribeChildToEvents() {
    		subscribe(runDay, location.day, location.currentDay)
 		} 
     }
-def subscribeToEvents() { 
-    	if (debug) log.debug "Subscribing Parent app to events"
+
+def subscribeToEvents() {
+	if (allNotifications) {
+    if (debug) log.debug "Subscribing Parent app to events"
+    if (switchesAndDimmers) {
     if (TheSwitch) {
         if (audioTextOn) {subscribe(TheSwitch, "switch.on", alertsHandler)}
         if (audioTextOff) {subscribe(TheSwitch, "switch.off", alertsHandler)}
-        }
+    	}    
+	}
+    if (doorsAndWindows) {
     if (TheContact) {
         if (audioTextOpen) {subscribe(TheContact, "contact.open", alertsHandler)}
         if (audioTextClosed) {subscribe(TheContact, "contact.closed", alertsHandler)}
         }
+	}
+    if (Locks) {
     if (TheLock) {
         if (audioTextLocked) {subscribe(TheLock, "lock.locked", alertsHandler)}
         if (audioTextUnlocked) {subscribe(TheLock, "lock.unlocked", alertsHandler)}
         }
+    }
+    if (Motions) {
     if (TheMotion) {
         if (audioTextActive) {subscribe(TheMotion, "motion.active", alertsHandler)}
         if (audioTextInactive) {subscribe(TheMotion, "motion.inactive", alertsHandler)}
         }
+    }
+    if (Presence) {
     if (ThePresence) {
         if (audioTextPresent || audioTextNotPresent ) {subscribe(ThePresence, "presence", alertsHandler)}
         }
+    }
+    if (TStats) {
     if (TheThermostat) {    
         if (audioTextHeating) {subscribe(TheThermostat, "heatingSetpoint", alertsHandler)}
         if (audioTextCooling) {subscribe(TheThermostat, "coolingSetpoint", alertsHandler)}
+        	}
         }
+	}
 } 
 
-//    if (TheWater) {    
+//    		if (Water) {
+//			if (TheWater) {    
 //       	if (audioTextDry) {subscribe(TheWater, "water.dry", alertsHandler)}
-//        if (audioTextWet) {subscribe(TheWater, "water.wet", alertsHandler)}
-//        }
-
+//       	if (audioTextWet) {subscribe(TheWater, "water.wet", alertsHandler)}
+//        	}
+//		}
 
 /************************************************************************************************************
 		CoRE Integration
@@ -1044,7 +1085,7 @@ def controlDevices() {
         }
         if (ctProfile != "undefined"){
         	def profile = childApps.find {c -> c.label.toLowerCase() == ctProfile}             
-			def profileMatch = profile.label
+			def profileMatch = profile?.label
             if (debug) log.debug "Found a Profile match = '${profileMatch}'"
            	if (debug) log.debug "Old commands = '${commandLVL}', '${command}' "
             if (profileMatch) {
@@ -1092,7 +1133,7 @@ def controlHandler(data) {
         	def cMatch = child.label
             if (cMatch == deviceD) {
             	if (deviceCommand == "on" || deviceCommand == "off")
-            		child.gSwitches."${deviceCommand}"()
+            		child?.gSwitches."${deviceCommand}"()
         			if (debug) log.debug "cProfile with command '${deviceCommand}'" 
 			}
 			else if (deviceCommand == "increase" || deviceCommand == "decrease" || deviceCommand == "setLevel") {
@@ -1823,11 +1864,11 @@ def profilesDescr() {
     def text = "No Profiles have been configured. Tap here to begin"
     def ch = childApps.size()     
     if (ch == 1) {
-        text = "One profile has been configured. Tap here to change its settings or add more Profiles"
+        text = "One profile has been configured. Tap here to view and change"
     }
     else {
     	if (ch > 1) {
-        text = "${ch} Profiles have been configured. Tap here to change their settings or add more Profiles"
+        text = "${ch} Profiles have been configured. Tap here to view and change"
      	}
     }
     text
@@ -1842,11 +1883,11 @@ def completeSettings(){
 def settingsDescr() {
     def text = "Tap here to configure settings"
     if (debug && ShowTokens) {
-    	text = "Logging and Show License are enabled; details are displayed in the Live Logs section of the IDE. Tap here to change this and other general settings." 
+    	text = "Logging and Show License are enabled and displayed in the Live Logs of the IDE. Tap here to configure." 
         }
     else {
     	if (ShowTokens) {
-    		text = "Attention: Security Tokens are displayed in the Live Logs section of the IDE. Tap here to change this and other general settings"  
+    		text = "Attention: Security Tokens are displayed in the Live Logs section of the IDE. Tap here to configure"  
         }
    		else {
         	if (ShowLicense) {
@@ -1859,20 +1900,24 @@ def settingsDescr() {
     }
    text
 }
-def supportDescrST()  {
+/*def supportDescrST()  {
 	def text = 	" Apps Version = ${textVersion()} \n" +
         		" Release Number = ${textRelease()} \n"+
     			" Release Date = ${dateRelease()} \n"+
                 " Release Notes: \n"+ 
                 " ${textReleaseNotes()} \n"+
                 " Click to visit our Wiki Page" 
-}
+} */
 def supportDescrL() {
-	def text = 	" Version = ${state.lambdatextVersion} \n" +
+	def text = 	"EchoSistant Version Information \n" +
+    			" Apps Version = ${textVersion()} \n" +
+        		" Release Number = ${textRelease()} \n"+
+    			" Release Date = ${dateRelease()} \n"+
+    			" AWS Lambda Version Information \n" +
+    			" Version = ${state.lambdatextVersion} \n" +
                 " Release Number = ${state.lambdaReleaseTxt} \n"+
-    			" Release Date = ${state.lambdaReleaseDt} \n"+
-                " Click here to access AWS" 
-}
+    			" Release Date = ${state.lambdaReleaseDt} \n"
+                }
 def DevProDescr() {
     def text = "Tap here to Configure"
     if (switches || dimmers || hues ||runRoutine || flashSwitches) { 
