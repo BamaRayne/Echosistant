@@ -165,7 +165,6 @@ page name: "about"
                          }
                 section("Debugging") {
                     input "debug", "bool", title: "Enable Debug Logging", default: false, submitOnChange: true 
-                    if (debug) log.info "${textAppName()}\n${textVersion()}"
                     }
                 section ("Apache License"){
                     input "ShowLicense", "bool", title: "Show License", default: false, submitOnChange: true
@@ -350,30 +349,7 @@ page name: "Alerts"
             } 
         }
     }
-}
-/*		section("Water Sensors", hideWhenEmpty: true) {
-        	if (TheWater || audioTextWet || audioTextDry || speech6 || push6 || notify6 || music6) paragraph "Configured with Settings"
-            if (Water) {
-            input "ShowWater", "bool", title: "Water Detectors", default: false, submitOnChange: true
-            if (ShowWater) {
-                input "TheWater", "capability.waterSensor", title: "Choose Water Sensors...", required: false, multiple: true, submitOnChange: true
-                input "audioTextWet", "textWet", title: "Play this message", description: "Message to play when water is detected", required: false, capitalization: "sentences"
-                input "audioTextDry", "textDry", title: "Play this message", description: "Message to play when is no longer detected", required: false, capitalization: "sentences"
-                input "speech6", "capability.speechSynthesis", title: "Message Player", required: false, multiple: true, submitOnChange: true
-				input "music6", "capability.musicPlayer", title: "On this Sonos Type Devices", required: false, multiple: true, submitOnChange: true
-                if (music6) {
-                    input "volume6", "number", title: "Temporarily change volume", description: "0-100%", required: false
-                    input "resumePlaying6", "bool", title: "Resume currently playing music after notification", required: false, defaultValue: false
-                	}
-                input "sendMsg6", "bool", title: "Send Push and/or Notifications", default: false, submitOnChange: true
-                	if (sendMsg6) {
-                	input "push6", "bool", title: "Send Push Notification (optional)", required: false, defaultValue: false, submitOnChange: true
-            		input "notify6", "bool", title: "Send message to Mobile App Notifications Tab (optional)", required: false, defaultValue: false, submitOnChange: true
-            	}
-			}                
-        }        
-	}        
-*/            
+}            
 page name: "Integrations"
 	def Integrations(){
     		dynamicPage(name: "Integrations", title: " 'Alexa Feelings' and Device Control", uninstall: false){
@@ -430,10 +406,10 @@ page name: "devicesControlCustom"
             section ("Create a Device", hideWhenEmpty: true){
                 input "custSwitch1", "capability.switch", title: "Select Device...", multiple: false, required: false, submitOnChange: true
                 input "custName1", "text", title: "Name Device...", multiple: false, required: false
-				if(custSwitch1) {
-						def availableCommands = custSwitch1.supportedCommands                       
+				if(custSwitch1) {                           
+                        def availableCommands = custSwitch1.capabilities                      
                     	availableCommands.sort()
-                        log.debug "availableCommands = $availableCommands"
+                        if (debug) log.debug "availableCommands = $availableCommands"
                         paragraph "Add any of these commands to your LIST_OF_COMMANDS custom slot: $availableCommands"
     			}
             }
@@ -444,7 +420,7 @@ page name: "devicesControlCustom"
                     if(custSwitch2) {
 						def availableCommands = custSwitch2.supportedCommands                       
                     	availableCommands.sort()
-                        log.debug "availableCommands = $availableCommands"
+                        if (debug) log.debug "availableCommands = $availableCommands"
                         paragraph "Add any of these commands to your LIST_OF_COMMANDS custom slot: $availableCommands"
     				} 
                 }
@@ -456,7 +432,7 @@ page name: "devicesControlCustom"
                     if(custSwitch3) {
 						def availableCommands = custSwitch2.supportedCommands                       
                     	availableCommands.sort()
-                        log.debug "availableCommands = $availableCommands"
+                        if (debug) log.debug "availableCommands = $availableCommands"
                         paragraph "Add any of these commands to your LIST_OF_COMMANDS custom slot: $availableCommands"
     				}
                 }
@@ -468,7 +444,7 @@ page name: "devicesControlCustom"
                     if(custSwitch4) {
 						def availableCommands = custSwitch2.supportedCommands                       
                     	availableCommands.sort()
-                        log.debug "availableCommands = $availableCommands"
+                        if (debug) log.debug "availableCommands = $availableCommands"
                         paragraph "Add any of these commands to your LIST_OF_COMMANDS custom slot: $availableCommands"
     				}
                 }
@@ -480,7 +456,7 @@ page name: "devicesControlCustom"
                     if(custSwitch5) {
 						def availableCommands = custSwitch2.supportedCommands                       
                     	availableCommands.sort()
-                        log.debug "availableCommands = $availableCommands"
+                        if (debug) log.debug "availableCommands = $availableCommands"
                         paragraph "Add any of these commands to your LIST_OF_COMMANDS custom slot: $availableCommands"
     				}
                 }
@@ -544,7 +520,6 @@ page name: "pageReset"
 ***********************************************************************************************************************/
 def mainProfilePage() {	
     dynamicPage(name: "mainProfilePage", title:"I Want This Profile To...", install: true, uninstall: true) {
-        //go to Profile set up
         section {
            	href "MsgPro", title: "Send Audio Messages...", description: MsgProDescr(), state: completeMsgPro(),
    				image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Media.png" 
@@ -613,7 +588,7 @@ page name: "DevPro"
                 def actions = location.helloHome?.getPhrases()*.label 
                 if (actions) {
                     actions.sort()
-                    if (parent.debug) log.info actions
+                    //if (parent.debug) log.info actions
             	}                
                 input "runRoutine", "enum", title: "Select a Routine(s) to execute", required: false, options: actions, multiple: true, 
                 image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Routines.png"
@@ -705,9 +680,6 @@ page name: "MsgConfig"
                             }				
                         }
                     input "AfeedBack", "bool", title: "Turn on to disable Alexa Feedback Responses (silence Alexa) Overrides all other Alexa Options...", defaultValue: false, submitOnChange: true
-                        if (AfeedBack) {
-                        if (parent.debug) log.debug "Afeedback = '${AfeedBack}"
-                        }
                     input "disableTts", "bool", title: "Disable All spoken notifications (No voice output from the speakers or Alexa)", required: false, submitOnChange: true  
                     input "ContCmds", "bool", title: "Allow Alexa to prompt for additional commands after message is delivered...", defaultValue: false, submitOnChange: true
                     input "ContCmdsR", "bool", title: "Allow Alexa to prompt for additional commands after Repeat command is given...", defaultValue: false, submitOnChange: true
@@ -789,7 +761,6 @@ def initialize() {
         state.lambdaReleaseTxt = "Not Set"
         state.lambdaReleaseDt = "Not Set" 
 		state.lambdatextVersion = "Not Set"
-
     	def children = getChildApps()
     		if (debug) log.debug "$children.size Profiles installed"
 			children.each { child ->
@@ -829,52 +800,44 @@ def subscribeChildToEvents() {
 
 def subscribeToEvents() {
 	if (allNotifications) {
-    if (debug) log.debug "Subscribing Parent app to events"
-    if (switchesAndDimmers) {
-    if (TheSwitch) {
-        if (audioTextOn) {subscribe(TheSwitch, "switch.on", alertsHandler)}
-        if (audioTextOff) {subscribe(TheSwitch, "switch.off", alertsHandler)}
-    	}    
-	}
-    if (doorsAndWindows) {
-    if (TheContact) {
-        if (audioTextOpen) {subscribe(TheContact, "contact.open", alertsHandler)}
-        if (audioTextClosed) {subscribe(TheContact, "contact.closed", alertsHandler)}
+    	if (debug) log.debug "Subscribing Parent app to events"
+    	if (switchesAndDimmers) {
+            if (TheSwitch) {
+                if (audioTextOn) {subscribe(TheSwitch, "switch.on", alertsHandler)}
+                if (audioTextOff) {subscribe(TheSwitch, "switch.off", alertsHandler)}
+                }    
+			}
+        if (doorsAndWindows) {
+            if (TheContact) {
+                if (audioTextOpen) {subscribe(TheContact, "contact.open", alertsHandler)}
+                if (audioTextClosed) {subscribe(TheContact, "contact.closed", alertsHandler)}
+                }
         }
-	}
-    if (Locks) {
-    if (TheLock) {
-        if (audioTextLocked) {subscribe(TheLock, "lock.locked", alertsHandler)}
-        if (audioTextUnlocked) {subscribe(TheLock, "lock.unlocked", alertsHandler)}
+        if (Locks) {
+            if (TheLock) {
+                if (audioTextLocked) {subscribe(TheLock, "lock.locked", alertsHandler)}
+                if (audioTextUnlocked) {subscribe(TheLock, "lock.unlocked", alertsHandler)}
+                }
         }
-    }
-    if (Motions) {
-    if (TheMotion) {
-        if (audioTextActive) {subscribe(TheMotion, "motion.active", alertsHandler)}
-        if (audioTextInactive) {subscribe(TheMotion, "motion.inactive", alertsHandler)}
+        if (Motions) {
+            if (TheMotion) {
+                if (audioTextActive) {subscribe(TheMotion, "motion.active", alertsHandler)}
+                if (audioTextInactive) {subscribe(TheMotion, "motion.inactive", alertsHandler)}
+                }
+    	}
+        if (Presence) {
+            if (ThePresence) {
+                if (audioTextPresent || audioTextNotPresent ) {subscribe(ThePresence, "presence", alertsHandler)}
+                }
         }
-    }
-    if (Presence) {
-    if (ThePresence) {
-        if (audioTextPresent || audioTextNotPresent ) {subscribe(ThePresence, "presence", alertsHandler)}
-        }
-    }
-    if (TStats) {
-    if (TheThermostat) {    
-        if (audioTextHeating) {subscribe(TheThermostat, "heatingSetpoint", alertsHandler)}
-        if (audioTextCooling) {subscribe(TheThermostat, "coolingSetpoint", alertsHandler)}
-        	}
-        }
-	}
+        if (TStats) {
+            if (TheThermostat) {    
+                if (audioTextHeating) {subscribe(TheThermostat, "heatingSetpoint", alertsHandler)}
+                if (audioTextCooling) {subscribe(TheThermostat, "coolingSetpoint", alertsHandler)}
+                    }
+                }
+		}
 } 
-
-//    		if (Water) {
-//			if (TheWater) {    
-//       	if (audioTextDry) {subscribe(TheWater, "water.dry", alertsHandler)}
-//       	if (audioTextWet) {subscribe(TheWater, "water.wet", alertsHandler)}
-//        	}
-//		}
-
 /************************************************************************************************************
 		CoRE Integration
 ************************************************************************************************************/
@@ -890,7 +853,7 @@ def childUninstalled() {
 		Begining Process - Lambda via page b
 ************************************************************************************************************/
 def processBegin(){
-    if (debug) log.debug "-- Initial Commands Received from Lambda --"
+    if (debug) log.debug "^^^^____Initial Commands Received from Lambda___^^^^"
     
     def versionTxt  = params.versionTxt 		
     def versionDate = params.versionDate
@@ -926,9 +889,9 @@ def controlDevices() {
         def deviceType = " "
         def numText = " "
         def result = " "        
-        if (debug) log.debug "Message received from Lambda to control devices with settings: (ctCommand)"+
-    						"= '${ctCommand}', (ctProfile) = '${ctProfile}', ctNum = '${ctNum}', (ctDevice) = '${ctDevice}', (pintentName) = '${pintentName}', , (ctUnit) = '${ctUnit}'"
-        
+        if (debug) log.debug "Received Lambda request to control devices with settings:" +
+        						" (ctCommand)= ${ctCommand}', (ctProfile) = '${ctProfile}',"+
+                                " ctNum = '${ctNum}', (ctDevice) = '${ctDevice}', (ctUnit) = '${ctUnit}', (pintentName) = '${pintentName}'"   
     //Temperature Commands
                 if (command == "colder" || command =="not cold enough" || command =="too hot" || command == "too warm") {
                     commandLVL = "decrease"
@@ -941,7 +904,7 @@ def controlDevices() {
                     if (debug) log.debug "Temperature command = '${commandLVL}'"
                 }
 	//Dimmer Commands
-                if (command == "darker" || command == "too bright") {
+                if (command == "darker" || command == "too bright" || command == "dim" ) {
                     commandLVL = "decrease" 
                     deviceType = "cDimmers"
                     if (debug) log.debug "Light command = '${commandLVL}'"
@@ -959,6 +922,11 @@ def controlDevices() {
                 }
         		if (command == "not loud enough") {
                     commandLVL = "increase"
+                    deviceType = "cVol"
+                    if (debug) log.debug "Volume command = '${commandLVL}'"
+                }
+                if (command == "mute") {
+                    commandLVL = "decrease"
                     deviceType = "cVol"
                     if (debug) log.debug "Volume command = '${commandLVL}'"
                 }
@@ -1010,111 +978,122 @@ def controlDevices() {
 				outputTxt = getLastMessageMain()
          	if (debug) log.debug "Received message: '${outputTxt}' ; sending to Lambda"           
        }
-       if (command == "on" || command == "off") {
-             if (cSwitches) {
-                    if (debug) log.debug "Searching for device type = switch, device name ='${ctDevice}'"
-					def deviceMatch = cSwitches.find {s -> s.label.toLowerCase() == ctDevice}             
-             		if (deviceMatch) {
-                    	if (debug) log.debug "Found a device: '${deviceMatch}'"
-                		if (ctNum > 0 && ctUnit == "MIN") {
-                            runIn(ctNum*60, controlHandler, [data: [type: "cSwitches", command: command, device: ctDevice, unit: ctUnit, num: ctNum]])
-							outputTxt = "Ok, turning " + deviceMatch + " " + command + ", in " + numText
-                    	}
-                		else {
-							def data = [type: "cSwitches", command: command, device: ctDevice, unit: ctUnit, num: ctNum]
-                    		controlHandler(data)
-							outputTxt = "Ok, turning " + ctDevice + " " + command
-                    	}
-                 	}
-                    else {outputTxt = "Sorry, I couldn't find a device named " + ctDevice + " in your list of selected switches"}
-              }
-        }
-		if (deviceType == "cDimmers" || deviceType == "cGlobal") {
-            if (commandLVL == "decrease" || commandLVL == "increase" || commandLVL == "setLevel" ) { 
-                if (cDimmers) {           
-                    if (debug) log.debug "Searching for device type = dimmer, device name='${ctDevice}'"
-                        def deviceDMatch = cDimmers.find {s -> s.label.toLowerCase() == ctDevice}
-                    if (deviceDMatch) {
-                        if (debug) log.debug "Found a device: '${deviceDMatch}'"
-                        if (ctNum && ctUnit == "MIN") {
-                            runIn(ctNum*60, delayHandler, [data: [type: "cDimmers", command: commandLVL, device: ctDevice, unit: ctUnit, num: ctNum]])
-                            if (commandLVL == "decrease") {outputTxt = "Ok, decreasing the " + ctDevice + " level in " + numText}
-                            else if (commandLVL == "increase") {outputTxt = "Ok, increasing the " + ctDevice + " level in " + numText}
-                        }
-                        else {
-                            def data = [type: "cDimmers", command: commandLVL, device: ctDevice, unit: ctUnit, num: ctNum]
-                            controlHandler(data)
-                            if (ctUnit == "PERC"){outputTxt = "Ok, setting " + ctDevice + " to " + numText}
-                            else{
-                                if (commandLVL == "setLevel" && ctUnit == "unknown") {
-                                	def num = ctNum > 10 ? ctNum : ctNum*10 as int
-                                	outputTxt = "Ok, setting the " + ctDevice + " to " + num + " percent"
-                                }
-                                if (commandLVL == "decrease") {outputTxt = "Ok, decreasing the " + ctDevice + " level " + numText}
-                                if (commandLVL == "increase") {outputTxt = "Ok, increasing the " + ctDevice + " level " + numText}
+        if (ctDevice != "undefined"){       
+           if (command == "on" || command == "off") {
+                 if (cSwitches) {
+                        if (debug) log.debug "Searching for device type = switch, device name ='${ctDevice}'"
+                        def deviceMatch = cSwitches.find {s -> s.label.toLowerCase() == ctDevice}             
+                        if (deviceMatch) {
+                            if (debug) log.debug "Found a device: '${deviceMatch}'"
+                            if (ctNum > 0 && ctUnit == "MIN") {
+                                runIn(ctNum*60, controlHandler, [data: [type: "cSwitches", command: command, device: ctDevice, unit: ctUnit, num: ctNum]])
+                                outputTxt = "Ok, turning " + deviceMatch + " " + command + ", in " + numText
+                            }
+                            else {
+                                def data = [type: "cSwitches", command: command, device: ctDevice, unit: ctUnit, num: ctNum]
+                                controlHandler(data)
+                                if (debug) log.debug "Processing control handler with: '${data}'"
+                                outputTxt = "Ok, turning " + ctDevice + " " + command
                             }
                         }
+                        else {outputTxt = "Sorry, I couldn't find a device named " + ctDevice + " in your list of selected switches"}
+                  }
+            }
+            if (deviceType == "cDimmers" || deviceType == "cGlobal") {
+                if (commandLVL == "decrease" || commandLVL == "increase" || commandLVL == "setLevel" ) { 
+                    if (cDimmers) {           
+                        if (debug) log.debug "Searching for device type = dimmer, device name='${ctDevice}'"
+                            def deviceDMatch = cDimmers.find {s -> s.label.toLowerCase() == ctDevice}
+                        if (deviceDMatch) {
+                            if (debug) log.debug "Found a device: '${deviceDMatch}'"
+                            if (ctNum && ctUnit == "MIN") {
+                                runIn(ctNum*60, delayHandler, [data: [type: "cDimmers", command: commandLVL, device: ctDevice, unit: ctUnit, num: ctNum]])                           
+                                if (commandLVL == "decrease") {outputTxt = "Ok, decreasing the " + ctDevice + " level in " + numText}
+                                else if (commandLVL == "increase") {outputTxt = "Ok, increasing the " + ctDevice + " level in " + numText}
+                            }
+                            else {
+                                def data = [type: "cDimmers", command: commandLVL, device: ctDevice, unit: ctUnit, num: ctNum]
+                                controlHandler(data)
+                                if (debug) log.debug "Processing control handler with: '${data}'"
+                                if (ctUnit == "PERC"){outputTxt = "Ok, setting " + ctDevice + " to " + numText}
+                                else{
+                                    if (commandLVL == "setLevel" && ctUnit == "unknown") {
+                                        def num = ctNum > 10 ? ctNum : ctNum*10 as int
+                                        outputTxt = "Ok, setting the " + ctDevice + " to " + num + " percent"
+                                    }
+                                    if (commandLVL == "decrease") {outputTxt = "Ok, decreasing the " + ctDevice + " level " + numText}
+                                    if (commandLVL == "increase") {outputTxt = "Ok, increasing the " + ctDevice + " level " + numText}
+                                }
+                            }
+                        }
+                        else {outputTxt = "Sorry, I couldn't find a device named " + ctDevice + " in your list of selected dimmers"}
                     }
-                    else {outputTxt = "Sorry, I couldn't find a device named " + ctDevice + " in your list of selected dimmers"}
                 }
             }
-        }
-		if (deviceType == "cTstat" || deviceType == "cGlobal") {
-            if (commandLVL == "decrease" || commandLVL == "increase" || commandLVL == "setLevel" ) { 
-                if (cTstat) {           
-                    if (debug) log.debug "Searching for device type= thermostat, device='${ctDevice}'"
-                        def deviceDMatch = cTstat.find {s -> s.label.toLowerCase() == ctDevice}
-                    if (deviceDMatch) {
-                        if (ctNum && ctUnit == "MIN") {
-                            runIn(ctNum*60, delayHandler, [data: [type: "cTstat", command: commandLVL, device: ctDevice, unit: ctUnit, num: ctNum]])
-                            if (commandLVL == "decrease") {outputTxt = "Ok, decreasing the " + ctDevice + " temperature in " + numText}
-                            else if (commandLVL == "increase") {outputTxt = "Ok, increasing the " + ctDevice + " temperature in " + numText}
-                        }
-                        else {
-                            def data = [type: "cTstat", command: commandLVL, device: ctDevice, unit: ctUnit, num: ctNum]
-                            controlHandler(data)
-                            if (ctUnit == "TEMP"){outputTxt = "Ok, adjusting " + ctDevice + " to " + numText}
-                            else{        
-        						def numTxtTMP = cTemperature == 1 ? cTemperature + " degree" : cTemperature + " degrees"  
-                                if (commandLVL == "decrease") {outputTxt = "Ok, decreasing the temperature " + ctDevice + " by " + numTxtTMP}
-                                if (commandLVL == "increase") {outputTxt = "Ok, increasing the temperature " + ctDevice + " by " + numTxtTMP}
+            if (deviceType == "cTstat" || deviceType == "cGlobal") {
+                if (commandLVL == "decrease" || commandLVL == "increase" || commandLVL == "setLevel" ) { 
+                    if (cTstat) {           
+                        if (debug) log.debug "Searching for device type= thermostat, device='${ctDevice}'"
+                            def deviceDMatch = cTstat.find {s -> s.label.toLowerCase() == ctDevice}
+                        if (deviceDMatch) {
+                            if (ctNum && ctUnit == "MIN") {
+                                runIn(ctNum*60, delayHandler, [data: [type: "cTstat", command: commandLVL, device: ctDevice, unit: ctUnit, num: ctNum]])
+                                if (commandLVL == "decrease") {outputTxt = "Ok, decreasing the " + ctDevice + " temperature in " + numText}
+                                else if (commandLVL == "increase") {outputTxt = "Ok, increasing the " + ctDevice + " temperature in " + numText}
+                            }
+                            else {
+                                def data = [type: "cTstat", command: commandLVL, device: ctDevice, unit: ctUnit, num: ctNum]
+                                controlHandler(data)
+                                if (debug) log.debug "Processing control handler with: '${data}'"
+                                if (ctUnit == "TEMP"){outputTxt = "Ok, adjusting " + ctDevice + " to " + numText}
+                                else{        
+                                    def numTxtTMP = cTemperature == 1 ? cTemperature + " degree" : cTemperature + " degrees"  
+                                    if (commandLVL == "decrease") {outputTxt = "Ok, decreasing the temperature " + ctDevice + " by " + numTxtTMP}
+                                    if (commandLVL == "increase") {outputTxt = "Ok, increasing the temperature " + ctDevice + " by " + numTxtTMP}
+                                    if (commandLVL == "decrease" && ctCommand == "mute") {outputTxt = "Ok, muting " + ctDevice}
+                                }
                             }
                         }
                     }
+                        else {outputTxt = "Sorry, I couldn't find a device named " + ctDevice + " in your list of selected thermostats"}                
                 }
-                    else {outputTxt = "Sorry, I couldn't find a device named " + ctDevice + " in your list of selected thermostats"}                
             }
         }
         if (ctProfile != "undefined"){
         	def profile = childApps.find {c -> c.label.toLowerCase() == ctProfile}             
 			def profileMatch = profile?.label
             if (debug) log.debug "Found a Profile match = '${profileMatch}'"
-           	if (debug) log.debug "Old commands = '${commandLVL}', '${command}' "
             if (profileMatch) {
             	command = commandLVL != " " ?  commandLVL : command //== "on" || command == "off" ? command : command=  
-                if (debug) log.debug "New command = '${command}'"
-                if (ctNum > 0 && ctUnit == "MIN") {
-                runIn(ctNum*60, controlHandler, [data: [type: "cProfiles", command: command, device: profileMatch, unit: ctUnit, num: ctNum]])
-				if (command == "decrease") {outputTxt = "Ok, decreasing the " + profileMatch + " lights level in " + numText}
-                else if (command == "increase") {outputTxt = "Ok, increasing the " + profileMatch + " lights level in " + numText}
-                else if (command == "on" || command == "off" ) {outputTxt = "Ok, turning " + profileMatch + " lights " + command + ", in " + numText}
+                	if (debug) log.debug "Profile new command = '${command}'"
+                if (command != "undefined") {
+                    if (ctNum > 0 && ctUnit == "MIN") {
+                        runIn(ctNum*60, controlHandler, [data: [type: "cProfiles", command: command, device: profileMatch, unit: ctUnit, num: ctNum]])
+                        if (command == "decrease") {outputTxt = "Ok, decreasing the " + profileMatch + " lights level in " + numText}
+                        else if (command == "increase") {outputTxt = "Ok, increasing the " + profileMatch + " lights level in " + numText}
+                        else if (command == "on" || command == "off" ) {outputTxt = "Ok, turning " + profileMatch + " lights " + command + ", in " + numText}
+                    }
+                    else {
+                        def data = [type: "cProfiles", command: command, device: profileMatch, unit: ctUnit, num: ctNum]
+                        controlHandler(data)
+                        if (debug) log.debug "Processing control handler with: '${data}'"
+                        if (command == "on" || command == "on" ) {outputTxt = "Ok, turning " + profileMatch + " lights " + command}
+                        if (ctUnit == "PERC"){outputTxt = "Ok, setting " + profileMatch + " lights to " + numText}
+                        else{
+                            if (commandLVL == "setLevel" && ctUnit == "unknown") {
+                                def num = ctNum > 10 ? ctNum : ctNum*10 as int
+                                outputTxt = "Ok, setting the " + profileMatch + " to " + num + " percent"
+                            }
+                            if (commandLVL == "decrease") {outputTxt = "Ok, decreasing the " + profileMatch + " level " + numText}
+                            if (commandLVL == "increase") {outputTxt = "Ok, increasing the " + profileMatch + " level " + numText}
+                            if (commandLVL == "decrease" && ctCommand == "mute") {outputTxt = "Ok, muting the noise in the" + profileMatch}
+                            }
+                    }
                 }
                 else {
-					def data = [type: "cProfiles", command: command, device: profileMatch, unit: ctUnit, num: ctNum]
-                    controlHandler(data)
-                    if (debug) log.debug "Sending data to control handler with settings: (cProfiles)"+
-    						"= cProfiles , (command) = '${command}', device = '${profileMatch}', (unit) = '${ctUnit}', (num) = '${ctNum}' "
-					if (command == "on" || command == "on" ) {outputTxt = "Ok, turning " + profileMatch + " lights " + command}
-					if (ctUnit == "PERC"){outputTxt = "Ok, setting " + profileMatch + " lights to " + numText}
-                    else{
-                    	if (commandLVL == "setLevel" && ctUnit == "unknown") {
-                        	def num = ctNum > 10 ? ctNum : ctNum*10 as int
-                            outputTxt = "Ok, setting the " + profileMatch + " to " + num + " percent"
-                        }
-                        if (commandLVL == "decrease") {outputTxt = "Ok, decreasing the " + profileMatch + " level " + numText}
-                        if (commandLVL == "increase") {outputTxt = "Ok, increasing the " + profileMatch + " level " + numText}
-                        }
-               }
+                	def data = [type: "cProfiles", command: command, device: profileMatch, unit: ctUnit, num: ctNum]
+                    controlHandler(data)                
+                	outputTxt = "Ok, running profile actions, for " + ctProfile}
        		}
 			else {outputTxt = "Sorry, I couldn't find a profile named " + ctProfile + " in your list of selected profiles"}                        
      	}                    
@@ -1128,24 +1107,32 @@ def controlHandler(data) {
     def deviceCommand = data.command
    	def deviceD = data.device
     def unitU = data.unit
-    def numN = data.num    
-
+    def numN = data.num
+	def pLevel = cLevel
+    
     if (deviceType == "cProfiles") {	
 		childApps.each { child ->
         	def cMatch = child.label
             if (cMatch == deviceD) {
-            	if (deviceCommand == "on" || deviceCommand == "off")
+                def pintentName = cMatch
+                def ptts = "Running Profile as requested by the main intent"
+                def pttx = ptts
+                def pDataSet = [ptts:ptts,pttx:pttx,pintentName:pintentName] 
+            	if (debug) log.debug "triggering Profile actions from Main intent with data: ${pDataSet}"
+                if (deviceCommand == "on" || deviceCommand == "off") {
             		child?.gSwitches."${deviceCommand}"()
-        			if (debug) log.debug "cProfile with command '${deviceCommand}'" 
-			}
-			else if (deviceCommand == "increase" || deviceCommand == "decrease" || deviceCommand == "setLevel") {
-            		if (debug) log.debug "cProfile received deviceCommand '${deviceCommand}'"
+        			if (debug) log.debug "Matched Profile: ${cMatch} and processed: '${deviceCommand}' command" 
+				}
+				else if (deviceCommand == "increase" || deviceCommand == "decrease" || deviceCommand == "setLevel") {
                     def switchLVL
-                    child.gSwitches.eachWithIndex {s, i -> 
-                    def	currLevel = s.latestValue("level")
-                    def currState = s.latestValue("switch") 
-                    	def newLevel = cLevel*10 //30%
-                                if (debug) log.debug "cProfile with newLevel '${newLevel}'"     
+                    child?.gSwitches.each {s -> 
+                    	def	currLevel = s?.latestValue("level")
+                    		if (debug) log.debug "current level=  ${currLevel} for , switch ${s.label}"
+                    	def currState = s?.latestValue("switch") 
+                    		if (debug) log.debug "current state =  ${currState} for , switch ${s.label}"
+                    	if (currLevel) {
+                                def newLevel = pLevel*10
+                                if (debug) log.debug "${cMatch}, ${child} with newLevel '${newLevel}'"     
                                 if (unitU == "PERC") newLevel = numN 
                                     if (deviceCommand == "increase") {
                                 if (unitU == "PERC") {
@@ -1179,10 +1166,20 @@ def controlHandler(data) {
                                 s.setLevel(newLevel)
                             }
                             else {                                    
-                                if (newLevel == 0 && currState == "on") {s.off()}
+                                if (newLevel == 0 && currState == "on") {
+                                	s.off()
+                                    }
                                 else {s.setLevel(newLevel)}
-                            }                             
+                            }
+                        }
+                        //need logic here to handle non dimmable lights
+                        else if (currState == "off") {s.on()}
+                        else if (currState == "on") {s.off()}
             		}
+                }
+                else 
+                child.profileEvaluate(pDataSet)
+                if (debug) log.debug "Running actions for ${cMatch}" 
         	}
     	}
     }
@@ -2072,6 +2069,7 @@ def devicesControlCustomDescr(deviceName) {
     }
     text
 }
+
 /************************************************************************************************************
    Misc. Text fields
 ************************************************************************************************************/
