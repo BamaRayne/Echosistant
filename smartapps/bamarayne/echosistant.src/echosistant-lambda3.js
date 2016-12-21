@@ -95,7 +95,7 @@ exports.handler = function( event, context ) {
                         var speechText = resJSON.outputTxt;
                         if (pContCmds === true) { 
                             areWeDone=false;
-                            speechText = speechText + ', send another message?'; 
+                            speechText = speechText + ', send another message to' + intentName; 
                         }
                         else {
                             areWeDone=true;
