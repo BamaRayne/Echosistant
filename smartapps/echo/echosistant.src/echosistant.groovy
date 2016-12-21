@@ -154,9 +154,9 @@ page name: "support"
 		}
 page name: "about"
  def about(){
-        dynamicPage(name: "about", uninstall: true, nextPage: "mainParentPage" ) {
+        dynamicPage(name: "about", uninstall: true) {
                 section("Device and Action Notifications") {
-	                href "Choices", title: "Create and View Notifications...",description: AlertProDescr() , state: completeAlertPro(),
+	                href "Alerts", title: "Create and View Notifications...",description: AlertProDescr() , state: completeAlertPro(),
     	        	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Rest.png"
 				}
                 section ("'Alexa Feelings' and Device Control"){
@@ -189,7 +189,7 @@ page name: "about"
 	} 
 page name: "Choices"    
     def Choices(){
-        dynamicPage(name: "Choices", title: "Choose from the available Notifications",install: false, uninstall: false, nextPage: "Alerts" ) {
+        dynamicPage(name: "Choices", title: "Choose from the available Notifications",install: false, uninstall: false) {
             section ("Activate/DeActivate Notifications", hideWhenEmpty: true){
             input "allNotifications", "bool", title: "Turn on to Activate the Notifications Section", default: false, submitOnChange: true
             input "switchesAndDimmers", "bool", title: "Switches and Dimmers", default: false, submitOnChange: true
@@ -205,7 +205,7 @@ page name: "Choices"
 
 page name: "Alerts"
     def Alerts(){
-        dynamicPage(name: "Alerts", uninstall: false, nextPage: "about") {
+        dynamicPage(name: "Alerts", uninstall: false) {
         section ("Activate and Deactivate Notifications"){
             href "Choices", title: "Activate and Deactivate Notifications", description: none,
             image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Rest.png"
@@ -1911,14 +1911,14 @@ def settingsDescr() {
                 " Click to visit our Wiki Page" 
 } */
 def supportDescrL() {
-	def text = 	"EchoSistant Version Information \n" +
-    			" Apps Version = ${textVersion()} \n" +
-        		" Release Number = ${textRelease()} \n"+
-    			" Release Date = ${dateRelease()} \n"+
-    			" AWS Lambda Version Information \n" +
-    			" Version = ${state.lambdatextVersion} \n" +
-                " Release Number = ${state.lambdaReleaseTxt} \n"+
-    			" Release Date = ${state.lambdaReleaseDt} \n"
+	def text = 	"SmartThings Details \n" +
+    			"  Version = ${textVersion()} \n" +
+        		"  Release # = ${textRelease()} \n"+
+    			"  Date = ${dateRelease()} \n"+
+    			"AWS Lambda Details \n" +
+    			"  Version = ${state.lambdatextVersion} \n" +
+                "  Release # = ${state.lambdaReleaseTxt} \n"+
+    			"  Date = ${state.lambdaReleaseDt} \n"
                 }
 def DevProDescr() {
     def text = "Tap here to Configure"
