@@ -105,7 +105,7 @@ page name: "mainParentPage"
             section ("") {
                 href "profiles", title: "Profiles", description: profilesDescr(), state: completeProfiles(),
                     image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Config.png"    
-                href "about", title: "Control, Integrations, and Security", description: settingsDescr(), state: completeSettings(),
+                href "about", title: "'Alexa Feelings', Notifications and Security", description: settingsDescr(), state: completeSettings(),
                     image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_About.png"
                 href "support", title: "EchoSistant Support", description: supportDescrL() , state: completeProfiles(),
                     image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Amazon_alexa.png"                
@@ -138,25 +138,29 @@ page name: "support"
  				href url:"http://thingsthataresmart.wiki/index.php?title=EchoSistant", title: "Tap here to go to the EchoSistant Wiki", description: none,
                 image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/app-Echosistant.png"
                 }
+ 			section ("Directions, How-to's, and Troubleshooting") { 
+				href "CoRE", title: "About CoRe Integration...",
+                image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_CoRE.png"
+            	}
             section ("AWS Lambda website") {
             	href url:"https://aws.amazon.com/lambda/", title: "Tap here to go to the AWS Lambda Website", description: none,
-                image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/app-Echosistant.png"
+                image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_aws.png"
                 }
             section ("Amazon Developer website") {    
    				href url:"https://developer.amazon.com/", title: "Tap here to go to Amazon Developer website", description: none,
-                image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/app-Echosistant.png"
+                image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Skills.png"
                 }
    			}             
 		}
 page name: "about"
  def about(){
-        dynamicPage(name: "about", uninstall: true) {
+        dynamicPage(name: "about", uninstall: true, nextPage: "mainParentPage" ) {
                 section("Device and Action Notifications") {
-	                href "Alerts", title: "Create and View Notifications...",description: AlertProDescr() , state: completeAlertPro(),
+	                href "Choices", title: "Create and View Notifications...",description: AlertProDescr() , state: completeAlertPro(),
     	        	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Rest.png"
 				}
-                section ("Device Control and 3rd Party Integrations"){
-                	href "Integrations", title: "Device Control and 3rd Party Integrations...", description: ParConDescr() , state: completeParCon(), 
+                section ("'Alexa Feelings' and Device Control"){
+                	href "Integrations", title: "Device Control Settings", description: ParConDescr() , state: completeParCon(), 
                     image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Config.png" 
                          }
                 section("Debugging") {
@@ -185,7 +189,7 @@ page name: "about"
 	} 
 page name: "Choices"    
     def Choices(){
-        dynamicPage(name: "Choices", title: "Choose from the available Notifications",install: false, uninstall: false) {
+        dynamicPage(name: "Choices", title: "Choose from the available Notifications",install: false, uninstall: false, nextPage: "Alerts" ) {
             section ("Activate/DeActivate Notifications", hideWhenEmpty: true){
             input "allNotifications", "bool", title: "Turn on to Activate the Notifications Section", default: false, submitOnChange: true
             input "switchesAndDimmers", "bool", title: "Switches and Dimmers", default: false, submitOnChange: true
@@ -201,7 +205,7 @@ page name: "Choices"
 
 page name: "Alerts"
     def Alerts(){
-        dynamicPage(name: "Alerts", uninstall: false) {
+        dynamicPage(name: "Alerts", uninstall: false, nextPage: "about") {
         section ("Activate and Deactivate Notifications"){
             href "Choices", title: "Activate and Deactivate Notifications", description: none,
             image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Rest.png"
@@ -372,10 +376,8 @@ page name: "Alerts"
 */            
 page name: "Integrations"
 	def Integrations(){
-    		dynamicPage(name: "Integrations", title: "3rd Party Integrations and Device Control", uninstall: false){
+    		dynamicPage(name: "Integrations", title: " 'Alexa Feelings' and Device Control", uninstall: false){
             	section(""){
-                    href "CoRE", title: "About CoRe Integration...",
-                    image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_CoRE.png"
 					href "devicesControlMain", title: "Control These Devices with Voice by speaking commands to Alexa (via the Main Skill)", description: ParConDescr() , state: completeParCon(),
                     image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_devices.png"            			
                     paragraph ("Define Variables for Voice Controlled Devices (for increase/decrease commands)")
