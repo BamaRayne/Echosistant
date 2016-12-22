@@ -79,6 +79,8 @@ preferences {
         page name: "Integrations"
     	page name: "CoRE"
         page name: "skillDetails"
+        page name: "ProfileDetails"
+        page name: "DeviceDetails"
 		page name: "devicesControlMain"
 		page name: "tokens"
     	page name: "pageConfirmation"
@@ -145,8 +147,8 @@ page name: "support"
                 image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_CoRE.png"
             	}
  			section ("Skill Details") { 
-				href "skillDetails", title: "Access copy/paste detail also available in ide when you click this...",
-                image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_CoRE.png"
+				href "SkillDetails", title: "Access copy/paste detail also available in ide when you click this...",
+                image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Rest.png"
             	}                
             section ("AWS Lambda website") {
             	href url:"https://aws.amazon.com/lambda/", title: "Tap here to go to the AWS Lambda Website", description: none,
@@ -385,19 +387,41 @@ page name: "CoRE"
             }
         } 
                 
-page name: "skillDetails"
-    def skillDetails(){
-            dynamicPage(name: "skillDetails", uninstall: false) {
-                section ("Some text"){
-                def skillList = getSkillDetails()   
-                    paragraph ("${skillList}")
-                      	if (debug) log.info "Here is the list ${skillList} "
-
-                 }   
+page name: "SkillDetails"
+    def SkillDetails(){
+            dynamicPage(name: "SkillDetails", uninstall: false) {
+ 			section ("List of Profiles") { 
+				href "ProfileDetails", title: "View your List of Profiles for copy&paste to the AWS Skill...",
+                image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Rest.png"
+            }
+            section ("List of Devices") {
+				href "DeviceDetails", title: "View your LIst of Devices for copy&paste to the AWS Skill...",
+                image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Rest.png"            	
+				}
+					
+				   
             }
         }         
-        
-        
+page name: "ProfileDetails"
+    def ProfileDetails(){
+            dynamicPage(name: "ProfileDetails", uninstall: false) {
+ 			section ("List of Profiles") { 
+                def ProfileList = getProfileDetails()   
+                    paragraph ("${ProfileList}")
+                      	log.info "${ProfileList} "
+                        }
+					}
+				} 
+page name: "DeviceDetails"
+    def DeviceDetails(){
+            dynamicPage(name: "DeviceDetails", uninstall: false) {
+ 			section ("List of Devices") { 
+                def DeviceList = getDeviceDetails()   
+                    paragraph ("${DeviceList}")
+                      	log.info "${DeviceList} "
+                        }
+					}
+                }    
 page name: "devicesControlMain"    
     def devicesControlMain(){
         dynamicPage(name: "devicesControlMain", title: "Select Devices That Alexa Can Control Directly",install: false, uninstall: false) {
@@ -1473,25 +1497,44 @@ def getLastMessageMain() {
 /***********************************************************************************************************************
  		SKILL DETAILS
  ***********************************************************************************************************************/
-def getSkillDetails() {   
-	def skillDetails = 	"Details Title GOES HERE \n" +
-    					"Lambda Details Title GOES HERE \n" +
-                                " STappID = '${app.id}' \n" +
-                                " STtoken = '${state.accessToken}' \n" +
-    					"Skill Details Title GOES HERE \n" +
-                        "  LIST_OF_DEVICES \n" +
-                                "${cSwitches} \n"+
-                                "${cDimmers} \n"+
-                                "${cTstat} \n"+
-						"  LIST_OF_PROFILES \n" +
-    							"${getChildApps()*.label} \n" +
-                		"  LIST_OF_COMMANDS \n" +
-                                "if you want to add the commands, copy each line by line below \n" +
-                                "too dark \n"+
-                                "too bright \n"+
-                                "too difficult \n"
-    
-    return  skillDetails 
+def getProfileDetails() {
+def c = "" 
+def children = getChildApps()	
+    children?.each { child -> 
+		c +=child.label +"\n" } 
+
+def ProfileDetails = 	" \n" +
+					"Listed below you will find, for your quick reference, the LIST_OF_PROFILES required for the Main Intent Skill \n \n" +
+					
+					"AWS SKILL CUSTOM SLOTS INFORMATION \n " +
+                    
+                    "  LIST_OF_PROFILES \n" +
+							"${c} \n \n" 
+                            				            		
+return  ProfileDetails
+}
+
+def getDeviceDetails() {
+def s = "" 
+	cSwitches.each { device -> 
+		s +=device.label +"\n" }
+def d = "" 
+	cDimmers.each { device -> 
+		d +=device.label +"\n" }
+def t = "" 
+	cTstat.each { device -> 
+		t +=device.label +"\n" }
+        
+def DeviceDetails = 	" \n" +
+					"Listed below you will find, for your quick reference, the LIST_OF_DEVICES required for the Main Intent Skill \n \n" +
+                    
+					"AWS SKILL CUSTOM SLOTS INFORMATION \n " +                    
+                    
+                    "  LIST_OF_DEVICES \n \n" + 			
+                         		
+                            "${s} ${d} ${t}\n \n" 
+                    
+return DeviceDetails
 }
 /***********************************************************************************************************************
     RESTRICTIONS HANDLER
