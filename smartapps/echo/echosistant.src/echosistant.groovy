@@ -1155,8 +1155,9 @@ def controlDevices() {
         if (debug) log.debug "Sending response to Alexa with settings: '${pContCmds}' and the message:'${outputTxt}'"               
         return ["outputTxt":outputTxt, "pContCmds":pContCmds]
 }
-      
-
+/************************************************************************************************************
+   CONTROL HANDLER
+************************************************************************************************************/      
 def controlHandler(data) {   
     def deviceType = data.type
     def deviceCommand = data.command
@@ -1227,9 +1228,8 @@ def controlHandler(data) {
                                 else {s.setLevel(newLevel)}
                             }
                         }
-                        //need logic here to handle non dimmable lights
-                        else if (currState == "off") {s.on()}
-                        else if (currState == "on") {s.off()}
+                        else if  (deviceCommand == "increase" && currState == "off") {s.on()}
+                        else if (deviceCommand == "decrease" && currState == "on") {s.off()}
             		}
                 }
                 else 
@@ -1298,53 +1298,76 @@ def controlHandler(data) {
            	def currentTMP = deviceTMatch.latestValue("temperature") 
            	def newSetPoint = currentTMP             
 				numN = numN < 60 ? 60 : numN >85 ? 85 : numN
-            
             if (unitU == "TEMP") {
-            		newSetPoint = numN      
-            	if (currentMode == "off") {
-                 	if (newSetPoint > currentTMP) {
+            		newSetPoint = numN
+                    if (debug) log.debug "Targeted set point is = '${newSetPoint}', current temperature is = '${newSetPoint}'"
+            	if (newSetPoint > currentTMP) {
+                	if (currentMode == "cool" || currentMode == "off") {
                  		deviceTMatch?."heat"()
-                 		deviceTMatch?.setHeatingSetpoint(newSetPoint)
+                        if (debug) log.debug "Turning heat on because requested temperature of '${newSetPoint}' is greater than current temperature of '${currentTMP}' " 
             		}
-                    else if (newSetPoint < currentTMP) {
+                    deviceTMatch?.setHeatingSetpoint(newSetPoint)
+                    if (debug) log.debug "Adjusting Heating Set Point to '${newSetPoint}' because requested temperature is greater than current temperature of '${currentTMP}'"
+                }
+                else if (newSetPoint < currentTMP) {
+                    if (currentMode == "heat" || currentMode == "off") {
                     	deviceTMatch?."cool"()
-                        deviceTMatch?.setCoolingSetpoint(newSetPoint)
+                        if (debug) log.debug "Turning AC on because requested temperature of '${newSetPoint}' is less than current temperature of '${currentTMP}' "    
                     }
-                 }
-            	else {
-                	if  (newSetPoint > currentTMP) {deviceTMatch?.setHeatingSetpoint(newSetPoint)}
-                    if  (newSetPoint < currentTMP) {deviceTMatch?.setCoolingSetpoint(newSetPoint)}
+					deviceTMatch?.setCoolingSetpoint(newSetPoint)                 
+                    if (debug) log.debug "Adjusting Cooling Set Point to '${newSetPoint}' because requested temperature is less than current temperature of '${currentTMP}'"
                 }
             }
             if (deviceCommand == "increase") {
-            	newSetPoint = currentTMP + cTemperature
-                newSetPoint = newSetPoint < 60 ? 60 : newSetPoint >85 ? 85 : newSetPoint        
+            		newSetPoint = currentTMP + cTemperature
+                	newSetPoint = newSetPoint < 60 ? 60 : newSetPoint >85 ? 85 : newSetPoint        
                 if (currentMode == "cool" || currentMode == "off") {
                 	deviceTMatch?."heat"()
-                    deviceTMatch?.setHeatingSetpoint(newSetPoint)
-                    deviceTMatch?.poll()
+                   	if (debug) log.debug "Turning heat on because requested command asked for heat to be set to '${newSetPoint}'" 
                 }
-                else if  (currentHSP < newSetPoint) {
-                	deviceTMatch?.setHeatingSetpoint(newSetPoint)
-                  	thermostat?.poll()
-                }  
+           		else {
+                	if  (currentHSP < newSetPoint) {
+                		deviceTMatch?.setHeatingSetpoint(newSetPoint)
+                        thermostat?.poll()
+                    	if (debug) log.debug "Adjusting Heating Set Point to '${newSetPoint}'"
+                  	}
+                    else {
+                    	if (debug) log.debug "Not taking action because heating is already set to '${currentHSP}', which is higher than '${newSetPoint}'"  
+                	}  
+            	}
             }
             if (deviceCommand == "decrease") {
                 newSetPoint = currentTMP - cTemperature
                 newSetPoint = newSetPoint < 60 ? 60 : newSetPoint >85 ? 85 : newSetPoint     
                 if (currentMode == "heat" || currentMode == "off") {
                    	deviceTMatch?."cool"()
-                   	deviceTMatch?.setCoolingSetpoint(newSetPoint)
-                   	deviceTMatch?.poll()
-                }
-                else if  (currentCSP < newSetPoint) {
-                	deviceTMatch?.setCoolingSetpoint(newSetPoint)
-                	thermostat?.poll()
+                    if (debug) log.debug "Turning AC on because requested command asked for cooling to be set to '${newSetPoint}'"     
+                }   	
+                else {
+                	if (currentCSP < newSetPoint) {
+                		deviceTMatch?.setCoolingSetpoint(newSetPoint)
+                		thermostat?.poll()
+                    	if (debug) log.debug "Adjusting Cooling Set Point to '${newSetPoint}'"
+                    }
+                    else {
+                    	if (debug) log.debug "Not taking action because cooling is already set to '${currentCSP}', which is lower than '${newSetPoint}'"  
+                	} 
                 }  
               }
          }
 	}
 }
+/************************************************************************************************************
+   FEEDBACK HANDLER
+************************************************************************************************************/      
+def feedbackHandler(data) {   
+    def deviceType = data.type
+    def deviceCommand = data.command
+   	def deviceD = data.device
+    def unitU = data.unit
+    def numN = data.num
+	def pLevel = cLevel
+}    
 /************************************************************************************************************
    TEXT TO SPEECH PROCESS (PARENT) - Lambda via page t
 ************************************************************************************************************/
@@ -1607,12 +1630,12 @@ private void sendtxt(message) {
             if (parent.debug) log.debug "Sending sms to selected reipients"
     } 
     else {
-    	if (push || push1 || push2 || push3 || push4 || push5 || push6 || push7) { 
+    	if (push) { 
     		sendPush message
             	if (parent.debug) log.debug "Sending push message to selected reipients"
         }
     } 
-    if (notify || notify1 || notify2 || notify3 || notify4 || notify5 || notify6 || notify7) {
+    if (notify) {
         sendNotificationEvent(message)
              	if (parent.debug) log.debug "Sending notification to mobile app"
 
@@ -1790,20 +1813,19 @@ def alertsHandler(evt) {
     if (debug) log.debug "Received event name ${evt.name} with value:  ${evt.value}, from: ${evt.device}"
 
 	if (getDayOk()==true && getModeOk()==true && getTimeOk()==true) {
-        if (eVal == "on") {
-//            if (ShowSwitches) {            
+        if (eVal == "on") {          
             	if (audioTextOn) {   
                 	eTxt = txtFormat(audioTextOn, eDev, eVal)
                 	if (debug) log.debug "Received event: on, playing message:  ${eTxt}"
-                    speech1?.speak (eTxt)
+                    if(speech1) speech1?.speak (eTxt)
                     if (music1) {
                         playAlert(eTxt, music1)
-                    }      
+                    }
+                    if (push1) sendPush eTxt
+					if (notify1) sendNotificationEvent (eTxt)
                 }
-//            }
         }
-        if (eVal == "off") {
-//             if (ShowSwitches) {       
+        if (eVal == "off") {       
                 if (audioTextOff) {
                 eTxt = txtFormat(audioTextOn, eDev, eVal)
                 if (debug) log.debug "Received event: off, playing message:  ${eTxt}"
@@ -1812,56 +1834,59 @@ def alertsHandler(evt) {
                         playAlert(eTxt, music1)
                     }
                 }
+                    if (push1) sendPush eTxt
+					if (notify1) sendNotificationEvent (eTxt)
              }
         }
-        if (eVal == "open") {
-//            if (ShowContacts) {     
+        if (eVal == "open") {     
             	if (audioTextOpen) {
                eTxt = txtFormat(audioTextOpen, eDev, eVal)
                if (debug) log.debug "Received event:open, playing message:  ${eTxt}"
             speech2?.speak(eTxt)
                 if (music2) {
                 playAlert(eTxt, music2)
-						}
+				}
+                    if (push2) sendPush eTxt
+					if (notify2) sendNotificationEvent (eTxt)
 					} 
  	           }
-//            }
-            if (eVal == "closed") {
-//            	if (ShowContacts) {            
+            if (eVal == "closed") {           
                 	if (audioTextClosed) {
                 eTxt = txtFormat(audioTextClosed, eDev, eVal)
                 if (debug) log.debug "Received event closed, playing message:  ${eTxt}"
                 speech2?.speak(eTxt)
                 if (music2) {
                     playAlert(eTxt, music2)
-                		}
+                    if (push2) sendPush eTxt
+					if (notify2) sendNotificationEvent (eTxt)
+}
 					}
                 }
-//                }
-        if 	(eVal == "locked") {
-//           if (ShowLocks) {          
+        if 	(eVal == "locked") {         
 				if (audioTextLocked) {
                 eTxt = txtFormat(audioTextLocked, eDev, eVal)
             speech3?.speak(eTxt)
                     if (music3) {
                         playAlert(eTxt, music3)
-                    }  
+ 
+					} 
+                	if (push3) sendPush eTxt
+					if (notify3) sendNotificationEvent (eTxt)                    
                 }
             }
-//            }
-            if (eVal == "unlocked") {
-//               if (ShowLocks) {          
+            if (eVal == "unlocked") {        
                     if (audioTextUnlocked) {
                         eTxt = txtFormat(audioTextUnlocked, eDev, eVal)
                         speech3?.speak(eTxt)
                             if (music3) {
                                 playAlert(eTxt, music3)
-                            } 
+                                }
+                   	if (push3) sendPush eTxt
+					if (notify3) sendNotificationEvent (eTxt)                            
+                            
                     }
                }
-//            }
-        if (eVal == "active") {
-//        	if (ShowMotion) {          
+        if (eVal == "active") {         
 				if (debug) log.debug "Received Motion Event but Motion Alerts are turned off"
             		if (audioTextActive) { 
             			eTxt = txtFormat(audioTextActive, eDev, eVal)
@@ -1870,11 +1895,11 @@ def alertsHandler(evt) {
                     		if (music4) {
                         		playAlert(eTxt, music4)
                     		} 
+                   	if (push4) sendPush eTxt
+					if (notify4) sendNotificationEvent (eTxt)                            
                 	}
             }
-//        }
-            if (eVal == "inactive")  {
-//        	if (ShowMotion) {          
+            if (eVal == "inactive")  {         
 				if (debug) log.debug "Received Motion Event but Motion Alerts are turned off"
 					if (audioTextInactive) {
                 		eTxt = txtFormat(audioTextInactive, eDev, eVal)
@@ -1883,11 +1908,11 @@ def alertsHandler(evt) {
                     		if (music4) {
                         		playAlert(eTxt, music4)
                     		} 
-                    	}
+                   	if (push4) sendPush eTxt
+					if (notify4) sendNotificationEvent (eTxt)                     	
+                        }
                 }
-//            }
-        if (eVal == "present") {
-//        	if (ShowPresence) {          
+        if (eVal == "present") {          
 				if (debug) log.debug "Received Presence Event but Presence Alerts are turned off"
 				if (audioTextPresent) {
                 eTxt = txtFormat(audioTextPresent, eDev, eVal)        
@@ -1896,11 +1921,11 @@ def alertsHandler(evt) {
                     if (music5) {
                         playAlert(eTxt, music5)
                     } 
-                }
+                   	if (push5) sendPush eTxt
+					if (notify5) sendNotificationEvent (eTxt) 
+}
             }
-//          }
-        if (eVal == "not present")  {
-//        	if (ShowPresence) {          
+        if (eVal == "not present")  {        
 				if (debug) log.debug "Received Presence Event but Presence Alerts are turned off"
 				if (audioTextNotPresent) {
                 eTxt = txtFormat(audioTextNotPresent, eDev, eVal)            
@@ -1909,33 +1934,38 @@ def alertsHandler(evt) {
                     if (music5) {
                         playAlert(eTxt, music5)
                     } 
-                    }
+                   	if (push5) sendPush eTxt
+					if (notify5) sendNotificationEvent (eTxt) 
+}
                 }
-//                }
-        if (eName == "heatingSetpoint")  {
-//        	if (ShowTstat) {          
-				if (debug) log.debug "Received Thermostat Event but Thermostat Alerts are turned off"
-            
+        if (eName == "heatingSetpoint")  {                    
             if (audioTextHeating) {
-            eTxt = txtFormat(audioTextHeating, eDev, eVal)            
-            if (debug) log.debug "Received event heatingSetpoint, playing message:  ${eTxt}"
+            	def eTemp = eVal
+                eTemp = eTemp.replace('.0', " ")
+            	eTxt = txtFormat(audioTextHeating, eDev, eTemp)            
+            	if (debug) log.debug "Received event heatingSetpoint, playing message:  ${eTxt}"
                 speech8?.speak(eTxt)
                     if (music8) {
                         playAlert(eTxt, music8)
                     } 
+                    
+                     if (push8) sendPush eTxt
+					if (notify8) sendNotificationEvent (eTxt) 
                 }
             }
-//            }
+
             if (eName == "coolingSetpoint") {
-//        	if (ShowTstat) {          
-				if (debug) log.debug "Received Thermostat Event but Thermostat Alerts are turned off"
 				if (audioTextCooling) {
-                    eTxt = txtFormat(audioTextCooling, eDev, eVal)            
-                if (debug) log.debug "Received event coolingSetpoint, playing message:  ${eTxt} "
-                speech8?.speak(eTxt)
-                if (music8) {
+            		def eTemp = eVal
+                	eTemp = eTemp.replace('.0', " ")
+                	eTxt = txtFormat(audioTextCooling, eDev, eTemp)            
+                	if (debug) log.debug "Received event coolingSetpoint, playing message:  ${eTxt} "
+                	speech8?.speak(eTxt)
+                	if (music8) {
                         playAlert(eTxt, music8)
-                    } 
+                    }
+                     if (push8) sendPush eTxt
+					if (notify8) sendNotificationEvent (eTxt) 
                 }
             }  
         }   
@@ -2133,7 +2163,7 @@ def completeDevCon() {
 }
 def completeAlertPro(){
 	def result = ""
-	if (speech1 || push1 || notify1 || music1 || speech2 || push2 || notify2 || music2 || speech3 || push3 || notify3 || music3 || speech4 || push4 || notify4 || music4 || speech5 || push5 || notify5 || music5 || speech6 || push6 || notify6 || music6 || speech7 || push7 || notify7 || music7) 
+	if (speech1 || push1 || notify1 || music1 || speech2 || push2 || notify2 || music2 || speech3 || push3 || notify3 || music3 || speech4 || push4 || notify4 || music4 || speech5 || push5 || notify5 || music5 || speech8 || push8 || notify8 || music8) 
     {
     result = "complete"
     }    	
@@ -2141,7 +2171,7 @@ def completeAlertPro(){
 }
 def AlertProDescr() {
     def text = "Tap here to Configure"
-	if (speech1 || push1 || notify1 || music1 || speech2 || push2 || notify2 || music2 || speech3 || push3 || notify3 || music3 || speech4 || push4 || notify4 || music4 || speech5 || push5 || notify5 || music5 || speech6 || push6 || notify6 || music6 || speech7 || push7 || notify7 || music7) 
+	if (speech1 || push1 || notify1 || music1 || speech2 || push2 || notify2 || music2 || speech3 || push3 || notify3 || music3 || speech4 || push4 || notify4 || music4 || speech5 || push5 || notify5 || music5 || speech8 || push8 || notify8 || music8) 
     {
     text = "Configured"
     }
