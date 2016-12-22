@@ -1706,7 +1706,7 @@ def alertsHandler(evt) {
 
 	if (getDayOk()==true && getModeOk()==true && getTimeOk()==true) {
         if (eVal == "on") {
-            if (ShowSwitches) {            
+//            if (ShowSwitches) {            
             	if (audioTextOn) {   
                 	eTxt = txtFormat(audioTextOn, eDev, eVal)
                 	if (debug) log.debug "Received event: on, playing message:  ${eTxt}"
@@ -1715,10 +1715,10 @@ def alertsHandler(evt) {
                         playAlert(eTxt, music1)
                     }      
                 }
-            }
+//            }
         }
         if (eVal == "off") {
-             if (ShowSwitches) {       
+//             if (ShowSwitches) {       
                 if (audioTextOff) {
                 eTxt = txtFormat(audioTextOn, eDev, eVal)
                 if (debug) log.debug "Received event: off, playing message:  ${eTxt}"
@@ -1730,31 +1730,31 @@ def alertsHandler(evt) {
              }
         }
         if (eVal == "open") {
-            if (ShowContacts) {     
+//            if (ShowContacts) {     
             	if (audioTextOpen) {
                eTxt = txtFormat(audioTextOpen, eDev, eVal)
                if (debug) log.debug "Received event:open, playing message:  ${eTxt}"
             speech2?.speak(eTxt)
                 if (music2) {
                 playAlert(eTxt, music2)
-             }
-        }
-            }
-            }
+						}
+					} 
+ 	           }
+//            }
             if (eVal == "closed") {
-            	if (ShowContacts) {            
+//            	if (ShowContacts) {            
                 	if (audioTextClosed) {
                 eTxt = txtFormat(audioTextClosed, eDev, eVal)
                 if (debug) log.debug "Received event closed, playing message:  ${eTxt}"
                 speech2?.speak(eTxt)
                 if (music2) {
                     playAlert(eTxt, music2)
+                		}
+					}
                 }
-             }
-                }
-                }
+//                }
         if 	(eVal == "locked") {
-           if (ShowLocks) {          
+//           if (ShowLocks) {          
 				if (audioTextLocked) {
                 eTxt = txtFormat(audioTextLocked, eDev, eVal)
             speech3?.speak(eTxt)
@@ -1763,9 +1763,9 @@ def alertsHandler(evt) {
                     }  
                 }
             }
-            }
+//            }
             if (eVal == "unlocked") {
-               if (ShowLocks) {          
+//               if (ShowLocks) {          
                     if (audioTextUnlocked) {
                         eTxt = txtFormat(audioTextUnlocked, eDev, eVal)
                         speech3?.speak(eTxt)
@@ -1774,9 +1774,9 @@ def alertsHandler(evt) {
                             } 
                     }
                }
-            }
+//            }
         if (eVal == "active") {
-        	if (ShowMotion) {          
+//        	if (ShowMotion) {          
 				if (debug) log.debug "Received Motion Event but Motion Alerts are turned off"
             		if (audioTextActive) { 
             			eTxt = txtFormat(audioTextActive, eDev, eVal)
@@ -1787,9 +1787,9 @@ def alertsHandler(evt) {
                     		} 
                 	}
             }
-        }
+//        }
             if (eVal == "inactive")  {
-        	if (ShowMotion) {          
+//        	if (ShowMotion) {          
 				if (debug) log.debug "Received Motion Event but Motion Alerts are turned off"
 					if (audioTextInactive) {
                 		eTxt = txtFormat(audioTextInactive, eDev, eVal)
@@ -1800,9 +1800,9 @@ def alertsHandler(evt) {
                     		} 
                     	}
                 }
-            }
+//            }
         if (eVal == "present") {
-        	if (ShowPresence) {          
+//        	if (ShowPresence) {          
 				if (debug) log.debug "Received Presence Event but Presence Alerts are turned off"
 				if (audioTextPresent) {
                 eTxt = txtFormat(audioTextPresent, eDev, eVal)        
@@ -1813,9 +1813,9 @@ def alertsHandler(evt) {
                     } 
                 }
             }
-          }
+//          }
         if (eVal == "not present")  {
-        	if (ShowPresence) {          
+//        	if (ShowPresence) {          
 				if (debug) log.debug "Received Presence Event but Presence Alerts are turned off"
 				if (audioTextNotPresent) {
                 eTxt = txtFormat(audioTextNotPresent, eDev, eVal)            
@@ -1826,9 +1826,9 @@ def alertsHandler(evt) {
                     } 
                     }
                 }
-                }
+//                }
         if (eName == "heatingSetpoint")  {
-        	if (ShowTstat) {          
+//        	if (ShowTstat) {          
 				if (debug) log.debug "Received Thermostat Event but Thermostat Alerts are turned off"
             
             if (audioTextHeating) {
@@ -1840,11 +1840,11 @@ def alertsHandler(evt) {
                     } 
                 }
             }
-            }
+//            }
             if (eName == "coolingSetpoint") {
-        	if (ShowTstat) {          
+//        	if (ShowTstat) {          
 				if (debug) log.debug "Received Thermostat Event but Thermostat Alerts are turned off"
-if (audioTextCooling) {
+				if (audioTextCooling) {
                     eTxt = txtFormat(audioTextCooling, eDev, eVal)            
                 if (debug) log.debug "Received event coolingSetpoint, playing message:  ${eTxt} "
                 speech8?.speak(eTxt)
@@ -1854,8 +1854,8 @@ if (audioTextCooling) {
                 }
             }  
         }   
-}
-}
+//}
+//}
 
 private txtFormat (message, eDev, eVal) {
     def eTxt = " " 
