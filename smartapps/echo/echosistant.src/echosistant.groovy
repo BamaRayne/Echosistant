@@ -78,6 +78,7 @@ preferences {
         page name: "Choices"
         page name: "Integrations"
     	page name: "CoRE"
+        page name: "skillDetails"
 		page name: "devicesControlMain"
 		page name: "tokens"
     	page name: "pageConfirmation"
@@ -143,6 +144,10 @@ page name: "support"
 				href "CoRE", title: "About CoRe Integration...",
                 image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_CoRE.png"
             	}
+ 			section ("Skill Details") { 
+				href "skillDetails", title: "Access copy/paste detail also available in ide when you click this...",
+                image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_CoRE.png"
+            	}                
             section ("AWS Lambda website") {
             	href url:"https://aws.amazon.com/lambda/", title: "Tap here to go to the AWS Lambda Website", description: none,
                 image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_aws.png"
@@ -378,7 +383,21 @@ page name: "CoRE"
                     href url:"http://thingsthataresmart.wiki/index.php?title=EchoSistant#CoRE_Integration", title: "Tap here for more information", description: none
                  }   
             }
-        }    
+        } 
+                
+page name: "skillDetails"
+    def skillDetails(){
+            dynamicPage(name: "skillDetails", uninstall: false) {
+                section ("Some text"){
+                def skillList = getSkillDetails()   
+                    paragraph ("${skillList}")
+                      	if (debug) log.info "Here is the list ${skillList} "
+
+                 }   
+            }
+        }         
+        
+        
 page name: "devicesControlMain"    
     def devicesControlMain(){
         dynamicPage(name: "devicesControlMain", title: "Select Devices That Alexa Can Control Directly",install: false, uninstall: false) {
@@ -1450,6 +1469,29 @@ def getLastMessageMain() {
 	def outputTxt = "The last message sent was," + state.lastMessage + ", and it was sent to, " + state.lastIntent + ", at, " + state.lastTime
     return  outputTxt 
   	if (debug) log.debug "Sending last message to Lambda ${outputTxt} "
+}
+/***********************************************************************************************************************
+ 		SKILL DETAILS
+ ***********************************************************************************************************************/
+def getSkillDetails() {   
+	def skillDetails = 	"Details Title GOES HERE \n" +
+    					"Lambda Details Title GOES HERE \n" +
+                                " STappID = '${app.id}' \n" +
+                                " STtoken = '${state.accessToken}' \n" +
+    					"Skill Details Title GOES HERE \n" +
+                        "  LIST_OF_DEVICES \n" +
+                                "${cSwitches} \n"+
+                                "${cDimmers} \n"+
+                                "${cTstat} \n"+
+						"  LIST_OF_PROFILES \n" +
+    							"${getChildApps()*.label} \n" +
+                		"  LIST_OF_COMMANDS \n" +
+                                "if you want to add the commands, copy each line by line below \n" +
+                                "too dark \n"+
+                                "too bright \n"+
+                                "too difficult \n"
+    
+    return  skillDetails 
 }
 /***********************************************************************************************************************
     RESTRICTIONS HANDLER
