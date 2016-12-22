@@ -1,6 +1,7 @@
 /*
  * EchoSistant - The Ultimate Voice and Text Messaging Assistant Using Your Alexa Enabled Device.
- *		
+ *
+ *		12/22/2016		Release 3.0.5 	Alert variables (Bobby) 
  *		12/19/2016		Release 3.0.4 	Final Review of 3.0 version (Bobby)
  *		12/14/2016		Release 3.0.4 	Bug Fixes and Changes by Jason - Garage alert not playing.
  *		12/09/2016		Release 3.0.2	Major overhaul of UI and process (cotnt'd)
@@ -221,8 +222,8 @@ page name: "Alerts"
             input "ShowSwitches", "bool", title: "Switches and Dimmers", default: false, submitOnChange: true
             if (ShowSwitches) {        
                 input "TheSwitch", "capability.switch", title: "Choose Switches...", required: false, multiple: true, submitOnChange: true
-				input "audioTextOn", "audioTextOn", title: "Play this message", description: "Message to play when the switch turns on", required: false, capitalization: "sentences"
-                input "audioTextOff", "audioTextOff", title: "Play this message", description: "Message to play when the switch turns off", required: false, capitalization: "sentences"
+				input "audioTextOn", "audioTextOn", title: "Play this message", description: "...when the switch turns on", required: false, capitalization: "sentences"
+                input "audioTextOff", "audioTextOff", title: "Play this message", description: "...when the switch turns off", required: false, capitalization: "sentences"
                 input "speech1", "capability.speechSynthesis", title: "Message Player", required: false, multiple: true, submitOnChange: true
                 input "music1", "capability.musicPlayer", title: "On this Sonos Type Devices", required: false, multiple: true, submitOnChange: true
                 if (music1) {
@@ -861,6 +862,7 @@ def processBegin(){
         state.lambdaReleaseTxt = releaseTxt
         state.lambdaReleaseDt = versionDate
         state.lambdatextVersion = versionTxt
+        
     def versionSTtxt = textVersion()
 	def pContinue = true
 
@@ -904,18 +906,18 @@ def controlDevices() {
                     if (debug) log.debug "Temperature command = '${commandLVL}'"
                 }
 	//Dimmer Commands
-                if (command == "darker" || command == "too bright" || command == "dim" ) {
+                if (command == "darker" || command == "too bright" || command == "dim" || command == "dimmer" ) {
                     commandLVL = "decrease" 
                     deviceType = "cDimmers"
                     if (debug) log.debug "Light command = '${commandLVL}'"
                 }
-        		if (command == "not bright enough" || command == "brighter" || command == "too dark") {
+        		if (command == "not bright enough" || command == "brighter" || command == "too dark" || command == "brighten") {
                     commandLVL = "increase" 
                     deviceType = "cDimmers"
                     if (debug) log.debug "Light command = '${commandLVL}'"                   
                 }
 	//Volume Commands
-                if (command == "too loud") {
+                if (command == "too loud" ) {
                     commandLVL = "decrease"
                     deviceType = "cVol"
                     if (debug) log.debug "Volume command = '${commandLVL}'"
@@ -925,11 +927,15 @@ def controlDevices() {
                     deviceType = "cVol"
                     if (debug) log.debug "Volume command = '${commandLVL}'"
                 }
-                if (command == "mute") {
-                    commandLVL = "decrease"
+                if (command == "mute" || command == "quiet" ) {
                     deviceType = "cVol"
                     if (debug) log.debug "Volume command = '${commandLVL}'"
                 }
+                if (command == "unmute") {
+                    deviceType = "cVol"
+                    if (debug) log.debug "Volume command = '${commandLVL}'"
+                }
+
 	//Global Commands
                 if (command == "decrease" || command == "down") {
                     commandLVL = "decrease" 
@@ -978,7 +984,13 @@ def controlDevices() {
 				outputTxt = getLastMessageMain()
          	if (debug) log.debug "Received message: '${outputTxt}' ; sending to Lambda"           
        }
-        if (ctDevice != "undefined"){       
+       if (ctCommand == "cancel") {
+        	if (debug) log.debug "Canceling timmer!"
+            unschedule()
+			outputTxt = "Ok, canceling timer"
+         	if (debug) log.debug "Cancel message received; sending '${outputTxt}' to Lambda"           
+       }      
+       if (ctDevice != "undefined"){       
            if (command == "on" || command == "off") {
                  if (cSwitches) {
                         if (debug) log.debug "Searching for device type = switch, device name ='${ctDevice}'"
@@ -1690,159 +1702,179 @@ def alertsHandler(evt) {
     def eName = evt.name
     def eDev = evt.device
     def eTxt = " "
-		if (debug) log.debug "Received event name ${evt.name} with value:  ${evt.value}"
+    if (debug) log.debug "Received event name ${evt.name} with value:  ${evt.value}, from: ${evt.device}"
 
 	if (getDayOk()==true && getModeOk()==true && getTimeOk()==true) {
-     
-     if (eVal == "on") {
-     	if (audioTextOn) {
-        if (debug) log.debug "Received event: on, playing message:  ${audioTextOn}"
-  				speech1?.speak (audioTextOn)
-				if (music1) {
-        			playAlert(audioTextOn, music1)
-         		}      
-   			}
-        }
-    if (eVal == "off") {
-        	if (audioTextOff) {
-            if (debug) log.debug "Received event: off, playing message:  ${audioTextOff}"
-        	speech1?.speak(audioTextOff)
-				if (music1) {
-        			playAlert(audioTextOff, music1)
-         		}
+        if (eVal == "on") {
+            if (ShowSwitches) {            
+            	if (audioTextOn) {   
+                	eTxt = txtFormat(audioTextOn, eDev, eVal)
+                	if (debug) log.debug "Received event: on, playing message:  ${eTxt}"
+                    speech1?.speak (eTxt)
+                    if (music1) {
+                        playAlert(eTxt, music1)
+                    }      
+                }
             }
-    }
-    if (eVal == "open") {
-    	if (audioTextOpen) {
-        if (debug) log.debug "Received event:open, playing message:  ${audioTextOpen}"
-  		speech2?.speak(audioTextOpen)
-        	if (music2) {
-        	playAlert(audioTextOpen, music2)
-         }
-    }
         }
-    	if (eVal == "closed") {
-        	if (audioTextClosed) {
-        	if (debug) log.debug "Received event closed, playing message:  ${audioTextClosed}"
-            speech2?.speak(audioTextClosed)
-        	if (music2) {
-        		playAlert(audioTextClosed, music2)
+        if (eVal == "off") {
+             if (ShowSwitches) {       
+                if (audioTextOff) {
+                eTxt = txtFormat(audioTextOn, eDev, eVal)
+                if (debug) log.debug "Received event: off, playing message:  ${eTxt}"
+                speech1?.speak(eTxt)
+                    if (music1) {
+                        playAlert(eTxt, music1)
+                    }
+                }
+             }
+        }
+        if (eVal == "open") {
+            if (ShowContacts) {     
+            	if (audioTextOpen) {
+               eTxt = txtFormat(audioTextOpen, eDev, eVal)
+               if (debug) log.debug "Received event:open, playing message:  ${eTxt}"
+            speech2?.speak(eTxt)
+                if (music2) {
+                playAlert(eTxt, music2)
+             }
+        }
             }
-         }
             }
-    if 	(eVal == "locked") {
-    	if (audioTextLocked) {
-    	speech3?.speak(audioTextLocked)
-				if (music3) {
-        			playAlert(audioTextLocked, music3)
-         		}  
-    		}
-        }
-    	if (eVal == "unlocked") {
-        	if (audioTextUnlocked) {
-        	speech3?.speak(audioTextUnlocked)
-				if (music3) {
-        			playAlert(audioTextUnlocked, music3)
-         		} 
-        		}
+            if (eVal == "closed") {
+            	if (ShowContacts) {            
+                	if (audioTextClosed) {
+                eTxt = txtFormat(audioTextClosed, eDev, eVal)
+                if (debug) log.debug "Received event closed, playing message:  ${eTxt}"
+                speech2?.speak(eTxt)
+                if (music2) {
+                    playAlert(eTxt, music2)
+                }
+             }
+                }
+                }
+        if 	(eVal == "locked") {
+           if (ShowLocks) {          
+				if (audioTextLocked) {
+                eTxt = txtFormat(audioTextLocked, eDev, eVal)
+            speech3?.speak(eTxt)
+                    if (music3) {
+                        playAlert(eTxt, music3)
+                    }  
+                }
             }
-    if (eVal == "active") {
-    	if (audioTextActive) {
-        if (debug) log.debug "Received event Active, playing message:  ${audioTextActive}"
-    	speech4?.speak(audioTextActive)
-				if (music4) {
-        			playAlert(audioTextActive, music4)
-         		} 
-    		}
-        }
-    	if (eVal == "inactive")  {
-        	if (audioTextInactive) {
-            if (debug) log.debug "Received event Inactive, playing message:  ${audioTextInactive}"
-        	speech4?.speak(audioTextInactive)
-				if (music4) {
-        			playAlert(audioTextInactive, music4)
-         		} 
-        		}
             }
-    if (eVal == "present") {
-    	if (audioTextPresent) {
-        if (debug) log.debug "Received event Present, playing message:  ${audioTextPresent}"
-    	speech5?.speak(audioTextPresent)
-				if (music5) {
-        			playAlert(audioTextPresent, music5)
-         		} 
-    		}
-        }
-    if (eVal == "not present")  {
-        	if (audioTextNotPresent) {
-            if (debug) log.debug "Received event Not Present, playing message:  ${audioTextNotPresent}"
-        	speech5?.speak(audioTextNotPresent)
-				if (music5) {
-        			playAlert(audioTextNotPresent, music5)
-         		} 
-        		}
+            if (eVal == "unlocked") {
+               if (ShowLocks) {          
+                    if (audioTextUnlocked) {
+                        eTxt = txtFormat(audioTextUnlocked, eDev, eVal)
+                        speech3?.speak(eTxt)
+                            if (music3) {
+                                playAlert(eTxt, music3)
+                            } 
+                    }
+               }
             }
-	if (eVal == "dry")  {
-    	if (audioTextDry) {
-    	speech6?.speak(audioTextDry)
-				if (music6) {
-        			playAlert(audioTextOn, music6)
-         		} 
-    		}
-        }
-    	if (eVal == "wet")  {
-        	if (audioTextWet) {
-        	speech6?.speak(audioTextWet)
-				if (music6) {
-        			playAlert(audioTextWet, music6)
-         		} 
-        		}
+        if (eVal == "active") {
+        	if (ShowMotion) {          
+				if (debug) log.debug "Received Motion Event but Motion Alerts are turned off"
+            		if (audioTextActive) { 
+            			eTxt = txtFormat(audioTextActive, eDev, eVal)
+            			if (debug) log.debug "Received event Active, playing message:  ${eTxt}"
+            			speech4?.speak(eTxt)
+                    		if (music4) {
+                        		playAlert(eTxt, music4)
+                    		} 
+                	}
             }
-    if (eVal == "open")  {
-    	if (audioTextOpening) {
-        if (debug) log.debug "Received event Open, playing message:  ${audioTextOpening}"
-    	speech7?.speak(audioTextOpening)
-				if (music7) {
-        			playAlert(audioTextOn, music7)
-         		} 
-    		}
         }
-    	if (eVal == "close") {
-        	if (audioTextClosing) {
-            if (debug) log.debug "Received event Closing, playing message:  ${audioTextClosing}"
-        	speech7?.speak(audioTextClosing)
-				if (music7) {
-        			playAlert(audioTextClosing, music7)
-         		} 
-	  		}
-        }
-    if (eName == "heatingSetpoint")  {
-    	if (audioTextHeating) {
-        eTxt = audioTextHeating + " ${eVal},  degrees"
-    	if (debug) log.debug "Received event heatingSetpoint, playing message:  ${eTxt}"
-        speech8?.speak(audioTextHeating + "${eVal}, degrees")
-				if (music8) {
-                    playAlert(eTxt, music8)
-         		} 
-    		}
-        }
-    	if (eName == "coolingSetpoint") {
-        	if (audioTextCooling) {
-            eTxt = audioTextCooling + '${eVal}' + "  degrees"
-        	if (debug) log.debug "Received event coolingSetpoint, playing message:  ${eTxt} "
-            speech8?.speak(audioTextCooling + "${eVal}, degrees")
-				if (music8) {
-        			playAlert(eTxt, music8)
-         		} 
-	  		}
-        }  
-    }   
+            if (eVal == "inactive")  {
+        	if (ShowMotion) {          
+				if (debug) log.debug "Received Motion Event but Motion Alerts are turned off"
+					if (audioTextInactive) {
+                		eTxt = txtFormat(audioTextInactive, eDev, eVal)
+                		if (debug) log.debug "Received event Inactive, playing message:  ${eTxt}"
+                			speech4?.speak(eTxt)
+                    		if (music4) {
+                        		playAlert(eTxt, music4)
+                    		} 
+                    	}
+                }
+            }
+        if (eVal == "present") {
+        	if (ShowPresence) {          
+				if (debug) log.debug "Received Presence Event but Presence Alerts are turned off"
+				if (audioTextPresent) {
+                eTxt = txtFormat(audioTextPresent, eDev, eVal)        
+            if (debug) log.debug "Received event Present, playing message:  ${eTxt}"
+            speech5?.speak(eTxt)
+                    if (music5) {
+                        playAlert(eTxt, music5)
+                    } 
+                }
+            }
+          }
+        if (eVal == "not present")  {
+        	if (ShowPresence) {          
+				if (debug) log.debug "Received Presence Event but Presence Alerts are turned off"
+				if (audioTextNotPresent) {
+                eTxt = txtFormat(audioTextNotPresent, eDev, eVal)            
+                if (debug) log.debug "Received event Not Present, playing message:  ${eTxt}"
+                speech5?.speak(eTxt)
+                    if (music5) {
+                        playAlert(eTxt, music5)
+                    } 
+                    }
+                }
+                }
+        if (eName == "heatingSetpoint")  {
+        	if (ShowTstat) {          
+				if (debug) log.debug "Received Thermostat Event but Thermostat Alerts are turned off"
+            
+            if (audioTextHeating) {
+            eTxt = txtFormat(audioTextHeating, eDev, eVal)            
+            if (debug) log.debug "Received event heatingSetpoint, playing message:  ${eTxt}"
+                speech8?.speak(eTxt)
+                    if (music8) {
+                        playAlert(eTxt, music8)
+                    } 
+                }
+            }
+            }
+            if (eName == "coolingSetpoint") {
+        	if (ShowTstat) {          
+				if (debug) log.debug "Received Thermostat Event but Thermostat Alerts are turned off"
+if (audioTextCooling) {
+                    eTxt = txtFormat(audioTextCooling, eDev, eVal)            
+                if (debug) log.debug "Received event coolingSetpoint, playing message:  ${eTxt} "
+                speech8?.speak(eTxt)
+                if (music8) {
+                        playAlert(eTxt, music8)
+                    } 
+                }
+            }  
+        }   
 }
+}
+
+private txtFormat (message, eDev, eVal) {
+    def eTxt = " " 
+        if(message) {
+        	message = message.replace('$device', "${eDev}")
+        	message = message.replace('$action', "${eVal}")
+	  	    eTxt = message
+        }  	
+            if (debug) log.debug "Processed Alert: ${eTxt} "
+    		
+            return eTxt
+}
+
+
+
 /************************************************************************************************************
    Play Sonos Alert
 ************************************************************************************************************/
 def playAlert(message, speaker) {
-
     state.sound = textToSpeech(message instanceof List ? message[0] : message)
     speaker.playTrackAndResume(state.sound.uri, state.sound.duration, volume)
     if (debug) log.debug "Sending message: ${message} to speaker: ${speaker}"
