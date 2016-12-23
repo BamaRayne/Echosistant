@@ -154,7 +154,7 @@ page name: "support"
                 	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/app-Echosistant.png"
                 	}
  				section ("Skill Details") { 
-					href "SkillDetails", title: "Access copy/paste detail also available in ide when you click this...",
+					href "SkillDetails", title: "Setup data for the AWS Main Intent Skill and Amazon Lambda...",
                 	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Rest.png"
             		}                
             	section ("AWS Lambda website") {
