@@ -1,0 +1,39 @@
+main is {pCommand} {pDevice}
+main the {pDevice} is {pCommand} 
+main turn the {pDevice} {pCommand}
+main turn {pCommand} the {pDevice}
+main turn the {pDevice} {pCommand} in {pNum} {pUnit}
+main turn the {pDevice} {pCommand} in {pNum} {pUnit}
+main turn {pDevice} {pCommand} in {pNum} {pUnit}
+main turn {pDevice} {pCommand} in {pNum} {pUnit}
+main turn {pCommand} the {pDevice} in {pNum} {pUnit}
+main turn {pCommand} the {pDevice} in {pNum} {pUnit}
+main turn {pCommand} {pDevice} in {pNum} {pUnit}
+main turn {pCommand} {pDevice} in {pNum} {pUnit}
+main make the {pDevice} {pCommand}
+main make it {pCommand} {pDevice}
+main make the {pDevice} {pCommand} in {pNum} {pUnit}
+main make the {pDevice} {pCommand} in {pNum} {pUnit}
+main make {pDevice} {pCommand} in {pNum} {pUnit}
+main make {pDevice} {pCommand} in {pNum} {pUnit}
+main make it {pCommand} the {pDevice} in {pNum} {pUnit}
+main make it {pCommand} the {pDevice} in {pNum} {pUnit}
+main make it {pCommand} {pDevice} in {pNum} {pUnit}
+main make it {pCommand} {pDevice} in {pNum} {pUnit}
+main {pCommand} last message
+main {pCommand} temperature {pDevice}
+main {pCommand} temperature {pDevice} to {pNum} {pUnit}
+main {pCommand} {pDevice} to {pNum} {pUnit}
+main {pCommand} {pDevice} level to {pNum} {pUnit}
+main {pCommand} {pDevice} to {pNum} {pUnit}
+main {pCommand} {pDevice} {pUnit} to {pNum} 
+main {pCommand} the {pDevice} in {pNum} {pUnit}
+main {pCommand} the {pDevice} in {pNum} {pUnit}
+main {pCommand} {pProfile}
+main {pCommand} {pProfile} in  in {pNum} {pUnit}
+main is {pCommand} in the {pProfile}
+main make the {pProfile} lights {pCommand}
+main turn the {pProfile} lights {pCommand} in {pNum} {pUnit}
+main {pCommand} the {pProfile} lights to {pNum}
+main the {pProfile} lights are {pCommand}
+main I love {pDevice}
