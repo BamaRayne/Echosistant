@@ -1,17 +1,22 @@
 {
   "intents": [
     {
-"intent": "YourProfileNameHere",
-"slots": [
-{
-"name": "ttstext",
-"type": "LIST_OF_WORDS"
-},
-  {
-    "name": "ttstts",
-    "type": "LIST_OF_WORDS"
+      "intent": "LivingRoom",
+      "slots": [
+         {
+			"name": "ttstext",
+			"type": "LIST_OF_WORDS"
+        }
+        ]
+    },
+	{
+ 		"intent": "AMAZON.StopIntent"
+	},
+	{
+ 		"intent": "AMAZON.NoIntent"
+	},	
+    {
+    	"intent": "AMAZON.YesIntent"
+    }
+        ]
 }
-]
-}
-    ]
-}  
