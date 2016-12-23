@@ -99,7 +99,7 @@ page name: "mainParentPage"
                 href "profiles", title: "Profiles", description: profilesDescr(), state: completeProfiles(),
                     image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Config.png"    
                 href "about", title: "Notifications, Device Controls, and Integrations", description: settingsDescr(), state: completeSettings(),
-                    image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_About.png"
+                    image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Config.png"
                 href "support", title: "EchoSistant Security and Support", description: supportDescrL(), state: completeProfiles(),
                     image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Amazon_alexa.png"                
                 }
@@ -123,9 +123,11 @@ page name: "support"
     def support(){
         dynamicPage(name: "support", title: "View Support Information",install: false, uninstall: true) {
             section ("Developers", hideWhenEmpty: true){  
-            	paragraph ("You can reach out to the Echosistant Developers with the following information: \n\n" + 
-                "Jason Headley \nForum user name @bamarayne \n" +
-                "Bobby Dobrescu \nForum user name @SBDobrescu")
+            	paragraph ("You can reach out to the Echosistant Developers with the following information: \n" + 
+                "Jason Headley \n"+
+                "Forum user name @bamarayne \n" +
+                "Bobby Dobrescu \n"+
+                "Forum user name @SBDobrescu")
                 }
                 section("Debugging") {
                     input "debug", "bool", title: "Enable Debug Logging", default: false, submitOnChange: true 
@@ -142,25 +144,28 @@ page name: "support"
                     def msg = state.accessToken != null ? state.accessToken : "Could not create Access Token. OAuth may not be enabled. "+
                     "Go to the SmartApp IDE settings to enable OAuth."	
                     if (ShowTokens) log.info "STappID = '${app.id}' , STtoken = '${state.accessToken}'"
-                    if (ShowTokens) paragraph "Access token:\n${msg}\n\nApplication ID:\n${app.id}"
+                    if (ShowTokens) paragraph 	"Access token:\n"+
+                                                "${msg}\n"+
+                                                "Application ID:\n"+
+                                                "${app.id}"
                     }
                 section ("Revoke/Renew Access Token & Application ID"){
                     href "tokens", title: "Revoke/Reset Security Access Token", description: none
                     }
             	section ("Directions, How-to's, and Troubleshooting") { 
- 					href url:"http://thingsthataresmart.wiki/index.php?title=EchoSistant", title: "Tap here to go to the EchoSistant Wiki", description: none,
+ 					href url:"http://thingsthataresmart.wiki/index.php?title=EchoSistant", title: "Tap to go to the EchoSistant Wiki", description: none,
                 	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/app-Echosistant.png"
                 	}
  				section ("Amazon AWS Skill Details") { 
-					href "SkillDetails", title: "Setup data for the AWS Main Intent Skill...",
-                	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Rest.png"
+					href "SkillDetails", title: "Tap to view setup data for the AWS Main Intent Skill...", description: "",
+                	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/echosistant_About.png"
             		}                
             	section ("AWS Lambda website") {
-            		href url:"https://aws.amazon.com/lambda/", title: "Tap here to go to the AWS Lambda Website", description: none,
+            		href url:"https://aws.amazon.com/lambda/", title: "Tap to go to the AWS Lambda Website", description: none,
                 	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_aws.png"
                 	}
             	section ("Amazon Developer website") {    
-   					href url:"https://developer.amazon.com/", title: "Tap here to go to Amazon Developer website", description: none,
+   					href url:"https://developer.amazon.com/", title: "Tap to go to Amazon Developer website", description: none,
                 	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Skills.png"
             	}
                 section("Tap below to remove the ${textAppName()} application.  This will remove ALL Profiles and the App from the SmartThings mobile App."){
@@ -176,10 +181,10 @@ page name: "about"
 				}
                 section ("'Alexa Feelings' and Device Control"){
                 	href "Integrations", title: "Device Control Settings", description: ParConDescr() , state: completeParCon(), 
-                    image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Config.png" 
+                    image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_devices.png" 
                          }
                 section ("CoRE Integration") { 
-					href "CoRE", title: "About CoRe Integration...",
+					href "CoRE", title: "Tap to read about CoRe Integration..." , description: "" , state: complete, 
                 	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_CoRE.png"
             	}         
            }     
@@ -357,17 +362,17 @@ page name: "AlexaFeelings"
             paragraph "Alexa Feelings offers users a better way of controlling certain lights or group of lights. You may have tried to tell Alexa "+ 
             "that it is too bright in the living room, and watched Alexa making your lights, well...brighter. With EchoSistant, if you say to "+ 
             "the light or group of lights it is too bright, it will actually dim your lights. You can also say, it is not dark enough or simply "+ 
-            "say, make it darker, and your lights will dim the way you want them to. \n \n"+ 
-
+            "say, make it darker, and your lights will dim the way you want them to.\n"+ 
+			" \n" +
 			"You may have tried to tell Alexa to dim your group of lights and watched Alexa dimming only the first light on the list. "+
-            "With EchoSistants ability to dim the group ensures that each dimmer in the group is adjusted according to individual light levels. /n /n" +
-
+            "With EchoSistants ability to dim the group ensures that each dimmer in the group is adjusted according to individual light levels./n" +
+			" \n" +
 			"EchoSistant gives users a quick way of controlling multiple media devices in one Room. Have the TV on, a connected speaker on, and other " +
             "media devices making noise in one area when an important call comes through? Just tell Echosistant to mute the first floor* and " +
-            "the noise stops so you can pick up the call. \n \n" +
-            
-            "*Assumes you have named your devices appropriately \n \n" +
-            
+            "the noise stops so you can pick up the call.\n" +
+            " \n" +
+            "*Assumes you have named your devices appropriately\n" +
+            " \n" +
             "Do you have a connected Thermostat?  Ever tried to tell Alexa to adjust the temperature only to be told that your device can not " +
             "be found in your account?  Well, now you just tell Alexa that it's too cold or that it's too hot, and your thermostat will take the " +
             "appropriate actions to ensure you're comfortable."            
@@ -377,10 +382,9 @@ page name: "AlexaFeelings"
 page name: "Integrations"
 	def Integrations(){
     		dynamicPage(name: "Integrations", title: " 'Alexa Feelings' and Device Control", uninstall: false){
-				section ("") {
-                image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/app-Echosistant.png"              
-                href "AlexaFeelings", title: "Learn about Alexa Feelings",
-            	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/app-Echosistant.png"
+				section ("") {            
+                href "AlexaFeelings", title: "Tap to learn about Alexa Feelings", description: "", 
+            	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/echosistant_About.png"
                 href "devicesControlMain", title: "Control These Devices with Voice by speaking commands to Alexa (via the Main Skill)", description: ParConDescr() , state: completeParCon(),
                     image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_devices.png"            			
                     paragraph ("Define Variables for Voice Controlled Devices (for increase/decrease commands)")
@@ -395,11 +399,12 @@ page name: "CoRE"
     def CoRE(){
             dynamicPage(name: "CoRE", uninstall: false) {
                 section ("Welcome to the CoRE integration page"){
-                    paragraph ("This integration is in place to enhance the\n"+
-                    "communication abilities of EchoSistant and your SmartThings Home Automation Project, allowing you more control and flexibility. \n\n"+
-                    "CoRE integration is currently one way only. You can NOT trigger profiles from within CoRE. CoRE listens for a profile execution and then performs the programmed tasks. \n\n"+
-                    "Configuration is simple. In EchoSistant create your profile. Then open CoRE and create a new piston. In the condition section choose 'EchoSistant Profile' \n"+
-                    "as the trigger. Choose the appropriate profile and then finish configuring the piston. \n\n"+
+                    paragraph ("This integration is in place to enhance the"+
+                    "communication abilities of EchoSistant and your SmartThings Home Automation Project, allowing you more control and flexibility.\n"+
+                    "CoRE integration is currently one way only. You can NOT trigger profiles from within CoRE."+
+                    "CoRE listens for a profile execution and then performs the programmed tasks.\n"+
+                    "Configuration is simple. In EchoSistant create your profile. Then open CoRE and create a new piston. In the condition section choose 'EchoSistant Profile'"+
+                    "as the trigger. Choose the appropriate profile and then finish configuring the piston.\n"+
                     "When the profile is executed the CoRE piston will also execute.")
                     href url:"http://thingsthataresmart.wiki/index.php?title=EchoSistant#CoRE_Integration", title: "Tap here for more information", description: none
                  }   
@@ -410,12 +415,12 @@ page name: "SkillDetails"
     def SkillDetails(){
             dynamicPage(name: "SkillDetails", uninstall: false) {
  			section ("List of Profiles") { 
-				href "ProfileDetails", title: "View your List of Profiles for copy & paste to the AWS Skill...",
-                image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Rest.png"
+				href "ProfileDetails", title: "View your List of Profiles for copy & paste to the AWS Skill...", description: "", state: "complete", 
+                image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/echosistant_About.png"
             }
             section ("List of Devices") {
-				href "DeviceDetails", title: "View your List of Devices for copy & paste to the AWS Skill...",
-                image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Rest.png"            	
+				href "DeviceDetails", title: "View your List of Devices for copy & paste to the AWS Skill...", description: "", state: "complete", 
+                image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/echosistant_About.png"            	
 				}
 					
 				   
@@ -1052,7 +1057,18 @@ def controlDevices() {
             unschedule()
 			outputTxt = "Ok, canceling timer"
          	if (debug) log.debug "Cancel message received; sending '${outputTxt}' to Lambda"           
-       }      
+       }  
+/************************************************************************************************************
+   EASTER EGG HUNT STARTS
+************************************************************************************************************/       
+	if (ctDevice == "smart things") {
+        	if (debug) log.debug "I love SmartThings!"
+				outputTxt = "${loveSmartThings()}"        
+       } 
+/************************************************************************************************************
+   EASTER EGG HUNT ENDS
+************************************************************************************************************/        
+       
        if (ctDevice != "undefined"){       
            if (command == "on" || command == "off") {
                  if (cSwitches) {
@@ -1140,8 +1156,8 @@ def controlDevices() {
             if (debug) log.debug "Found a Profile match = '${profileMatch}'"
             if (profileMatch) {
             	command = commandLVL != " " ?  commandLVL : command //== "on" || command == "off" ? command : command=  
-                	if (debug) log.debug "Profile new command = '${command}'"
-                if (command != "undefined") {
+                	if (debug) log.debug "Profile new command = ${command}"
+                if (command != "undefined" && command != "run") {
                     if (ctNum > 0 && ctUnit == "MIN") {
                         runIn(ctNum*60, controlHandler, [data: [type: "cProfiles", command: command, device: profileMatch, unit: ctUnit, num: ctNum]])
                         if (command == "decrease") {outputTxt = "Ok, decreasing the " + profileMatch + " lights level in " + numText}
@@ -1166,10 +1182,22 @@ def controlDevices() {
                     }
                 }
                 else {
-                	def data = [type: "cProfiles", command: command, device: profileMatch, unit: ctUnit, num: ctNum]
-                    controlHandler(data)                
-                	outputTxt = "Ok, running profile actions, for " + ctProfile}
-       		}
+                    if (command == "run") {
+                    	if (debug) log.debug "Profile run command = '${ctCommand}'"
+                    	
+                        if (ctNum > 0 && ctUnit == "MIN") {
+                                runIn(ctNum*60, controlHandler, [data: [type: "cProfiles", command: command, device: profileMatch, unit: ctUnit, num: ctNum]])
+                                outputTxt = "Ok, running profile actions, for " + ctProfile + ", in " + numText
+                        
+                        }
+                        else {
+                        def data = [type: "cProfiles", command: command, device: profileMatch, unit: ctUnit, num: ctNum]
+                    		controlHandler(data)                
+                			outputTxt = "Ok, running profile actions, for " + ctProfile
+                        }
+                    }
+       			}  
+            }
 			else {outputTxt = "Sorry, I couldn't find a profile named " + ctProfile + " in your list of selected profiles"}                        
      	}                    
         if (debug) log.debug "Sending response to Alexa with settings: '${pContCmds}' and the message:'${outputTxt}'"               
@@ -1405,7 +1433,7 @@ def processTts() {
 						childApps.each { child ->
     						def cLast = child.label.toLowerCase()
             				if (cLast == pintentName.toLowerCase()) {
-                        		if (debug) log.debug "Last Child was = '${cLast}'"  
+                        		if (parent.debug) log.debug "Last Child was = '${cLast}'"  
                                 def cLastMessage 
                        			def cLastTime
                                 pContCmds = child.ContCmds
@@ -1414,7 +1442,7 @@ def processTts() {
                                 	pContCmds = pContCmdsR
                                 }
                                 outputTxt = child.getLastMessage()
-                                if (debug) log.debug "Profile matched is ${cLast}, last profile message was ${outputTxt}" 
+                                if (parent.debug) log.debug "Profile matched is ${cLast}, last profile message was ${outputTxt}" 
                 			}
                			}
         }    
@@ -1442,10 +1470,11 @@ def processTts() {
                             			else {
                         					if (cArepeat == !false || cArepeat == null ) {
                                             	outputTxt = "I have delivered the following message to '${cm}',  " + ptts
+                                                if (parent.debug) log.debug "Alexa verbal response = '${outputTxt}'"
 											}
                         					else {
                             					outputTxt = "Message sent to ${pintentName}, " 
-												if (debug) log.debug "Alexa verbal response = '${outputTxt}'"
+												if (parent.debug) log.debug "Alexa verbal response = '${outputTxt}'"
            									}
                                 		}
                              		}
@@ -1453,7 +1482,7 @@ def processTts() {
                   		}
 				}
       	}
-        if (debug) log.debug "Alexa response sent to Lambda = '${outputTxt}', '${pContCmds}' "
+        if (parent.debug) log.debug "Alexa response sent to Lambda = '${outputTxt}', '${pContCmds}' "
 		return ["outputTxt":outputTxt, "pContCmds":pContCmds]
 }
 
@@ -1472,19 +1501,23 @@ def profileEvaluate(params) {
             if (!disableTts){
         			if (PreMsg) 
         				tts = PreMsg + tts
-        				if (parent.debug) log.debug "tts with PreMsg = '${tts}'"
+        				if (parent.debug) log.debug "parent: tts with PreMsg = '${tts}'"
+                        if (debug) log.debug "child: tts with PreMsg = '${tts}'"
                     else {
             			tts = tts
-            			if (parent.debug) log.debug "tts without PreMsg = '${tts}'"
+            			if (parent.debug) log.debug "parent: tts without PreMsg = '${tts}'"
+                        if (debug) log.debug "child: tts without PreMsg = '${tts}'"
                     }
             			if (getDayOk()==true && getModeOk()==true && getTimeOk()==true) {
             					if (synthDevice) {
                                 synthDevice?.speak(tts) 
-        			    			if (parent.debug) log.debug "Sending message to Synthesis Devices" 
+        			    			if (parent.debug) log.debug "parent: Sending message to Synthesis Devices"
+                                    if (debug) log.debug "child: Sending message to Synthesis Devices" 
                                     }
                 				if (mediaDevice) {
                                 	mediaDevice?.speak(tts) 
-                					if (parent.debug) log.debug "Sending message to Media Devices"  
+                					if (parent.debug) log.debug "p: Sending message to Media Devices"
+                                    if (debug) log.debug "c: Sending message to Media Devices"
                                     }
             						if (tts) {
 										state.sound = textToSpeech(tts instanceof List ? tts[0] : tts)
@@ -1494,19 +1527,22 @@ def profileEvaluate(params) {
 									}
 								if (sonosDevice) {
 										sonosDevice.playTrackAndResume(state.sound.uri, state.sound.duration, volume)
-                    						if (parent.debug) log.debug "Sending message to Sonos Devices" 
+                    						if (parent.debug) log.debug "p: Sending message to Sonos Devices"
+                                            if (debug) log.debug "c: Sending message to Sonos Devices"
                                             }
     								}
     					sendtxt(txt) 
                         state.lastMessage = txt
                         state.lastTime = new Date(now()).format("h:mm aa", location.timeZone)
-            	if (parent.debug) log.debug "Sending sms and voice message to selected phones and speakers"  
+            	if (parent.debug) log.debug "p:Sending sms and voice message to selected phones and speakers" 
+                if (debug) log.debug "c: Sending sms and voice message to selected phones and speakers" 
 				}
 				else {
     					sendtxt(txt)
                         state.lastMessage = txt
                         state.lastTime = new Date(now()).format("h:mm aa", location.timeZone)
-           					if (parent.debug) log.debug "Only sending sms because disable voice message is ON"  
+           					if (parent.debug) log.debug "p:Only sending sms because disable voice message is ON"
+                            if (debug) log.debug "c: Only sending sms because disable voice message is ON" 
 				}
 				if (hues) {               
                 colorB() 
@@ -1538,6 +1574,18 @@ def getLastMessageMain() {
   	if (debug) log.debug "Sending last message to Lambda ${outputTxt} "
 }
 /***********************************************************************************************************************
+    EASTER EGGS - PROFILE
+***********************************************************************************************************************/
+def loveSmartThings() {
+	def cOutputTxt = 	"and so do I, With this new version of EchoSistant smart app, we are taking your experience interacting with Alexa and SmartThings, to a new level,"+
+    					"You can tell me that it's too dark, or too bright, and I will adjust the light level, just the way you want them to be, with no questions asked"+
+                        ", You can also tell me that it's too cold, or too hot, and I will make sure you are as comfortable as possible, in your own home, "+
+                        " I can do all of this and so much more, just dare to ask me. Congratulations for installing the new app, "+
+                        "and don't forget to let us know what other neat features you would like to see in future versions"
+	return  cOutputTxt 
+	if (parent.debug) log.debug "Sending last message to parent '${cOutputTxt}' "
+}
+/***********************************************************************************************************************
  		SKILL DETAILS
  ***********************************************************************************************************************/
 def getProfileDetails() {
@@ -1547,12 +1595,12 @@ def children = getChildApps()
 		c +=child.label +"\n" } 
 
 def ProfileDetails = 	" \n" +
-					"Listed below you will find, for your quick reference, the LIST_OF_PROFILES required for the Main Intent Skill \n \n" +
-					
+					"Listed below you will find, for your quick reference, the LIST_OF_PROFILES required for the Main Intent Skill \n" +
+					"\n"+
 					"AWS SKILL CUSTOM SLOTS INFORMATION \n " +
-                    
+                    "\n"+
                     "  LIST_OF_PROFILES \n" +
-							"${c} \n \n" 
+							"${c}" 
                             				            		
 return  ProfileDetails
 }
@@ -1569,13 +1617,13 @@ def t = ""
 		t +=device.label +"\n" }
         
 def DeviceDetails = 	" \n" +
-					"Listed below you will find, for your quick reference, the LIST_OF_DEVICES required for the Main Intent Skill \n \n" +
-                    
+					"Listed below you will find, for your quick reference, the LIST_OF_DEVICES required for the Main Intent Skill \n" +
+                    " \n" +
 					"AWS SKILL CUSTOM SLOTS INFORMATION \n " +                    
-                    
-                    "  LIST_OF_DEVICES \n \n" + 			
-                         		
-                            "${s} ${d} ${t}\n \n" 
+                    " \n" +
+                    "  LIST_OF_DEVICES\n" + 			
+                     " \n" +    		
+                            "${s} ${d} ${t}\n" 
                     
 return DeviceDetails
 }
@@ -2041,16 +2089,22 @@ def profilesDescr() {
 }
 def completeSettings(){
     def result = ""
-    if (allNotifications) {
-    	result = "complete"	
+    def ParConC = completeParCon()
+    def AlertProC = completeAlertPro()
+    
+    log.debug "ParConC = ${ParConC}, AlertProC = ${ParConC}"
+    if (ParConC || AlertProC ) {
+        result = "complete"	
     }
     result
 }
 def settingsDescr() {
     def text = "Tap here to configure settings" 
-    if (allNotifications) {
-    	text = "Configured"
+    def completeSettings = completeSettings()
+    if (completeSettings && !allNotifications) {
+    	text = "Configured but all notifications have been disabled"
     }
+    else text = "Configured"
 	text	
 }
 def supportDescrL() {
@@ -2080,15 +2134,19 @@ def DevConDescr() {
 }
 def ParConDescr() {
 	def text = "Tap to set"
+    def ParConD = " "
      if (cSwitches || cDimmers || cTstat || cLock || cDoors)
      { 
+            ParConD = "conf"
             text = "Configured" //"These devices will execute: ${switches}, ${dimmers}. Tap to change device(s)"
             }
     text   
 }       
 def completeParCon() {
     def result = ""
+    def ParConC = ""
     if (cSwitches || cDimmers || cTstat || cLock || cDoors) { 
+       ParConC = "comp"
        result = "complete"
     }
     result
@@ -2162,18 +2220,22 @@ def completeDevCon() {
 }
 def completeAlertPro(){
 	def result = ""
+    def AlertProC = ""
 	if (speech1 || push1 || notify1 || music1 || speech2 || push2 || notify2 || music2 || speech3 || push3 || notify3 || music3 || speech4 || push4 || notify4 || music4 || speech5 || push5 || notify5 || music5 || speech8 || push8 || notify8 || music8) 
     {
-    result = "complete"
+    	AlertProC = "comp"
+        result = "complete"
     }    	
     	result
 }
 def AlertProDescr() {
     def text = "Tap here to Configure"
-	if (speech1 || push1 || notify1 || music1 || speech2 || push2 || notify2 || music2 || speech3 || push3 || notify3 || music3 || speech4 || push4 || notify4 || music4 || speech5 || push5 || notify5 || music5 || speech8 || push8 || notify8 || music8) 
+	def completeAlertPro = completeAlertPro()
+    if (completeAlertPro && !allNotifications ) 
     {
-    text = "Configured"
+        text = "Configured but all Notifications have been disabled"
     }
+    else text = "Configured"
 	    text
 }
 def completeMsgConfig(){
@@ -2224,9 +2286,9 @@ private def textLicense() {
 	"Licensed under the Apache License, Version 2.0 (the 'License'); "+
 	"you may not use this file except in compliance with the License. "+
 	"You may obtain a copy of the License at"+
-	"\n\n"+
+	" \n"+
 	" http://www.apache.org/licenses/LICENSE-2.0"+
-	"\n\n"+
+	" \n"+
 	"Unless required by applicable law or agreed to in writing, software "+
 	"distributed under the License is distributed on an 'AS IS' BASIS, "+
 	"WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. "+
