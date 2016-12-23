@@ -121,7 +121,7 @@ page name: "profiles"
     }
 page name: "support"    
     def support(){
-        dynamicPage(name: "support", title: "View Support Information",install: false, uninstall: false) {
+        dynamicPage(name: "support", title: "View Support Information",install: false, uninstall: true) {
             section ("Developers", hideWhenEmpty: true){  
             	paragraph ("You can reach out to the Echosistant Developers with the following information: \n\n" + 
                 "Jason Headley \nForum user name @bamarayne \n" +
@@ -147,14 +147,12 @@ page name: "support"
                 section ("Revoke/Renew Access Token & Application ID"){
                     href "tokens", title: "Revoke/Reset Security Access Token", description: none
                     }
-                section("Tap below to remove the ${textAppName()} application.  This will remove ALL Profiles and the App from the SmartThings mobile App."){
-                	}
             	section ("Directions, How-to's, and Troubleshooting") { 
  					href url:"http://thingsthataresmart.wiki/index.php?title=EchoSistant", title: "Tap here to go to the EchoSistant Wiki", description: none,
                 	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/app-Echosistant.png"
                 	}
- 				section ("Skill Details") { 
-					href "SkillDetails", title: "Setup data for the AWS Main Intent Skill and Amazon Lambda...",
+ 				section ("Amazon AWS Skill Details") { 
+					href "SkillDetails", title: "Setup data for the AWS Main Intent Skill...",
                 	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Rest.png"
             		}                
             	section ("AWS Lambda website") {
@@ -165,11 +163,13 @@ page name: "support"
    					href url:"https://developer.amazon.com/", title: "Tap here to go to Amazon Developer website", description: none,
                 	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Skills.png"
             	}
-            }             
-		}
+                section("Tap below to remove the ${textAppName()} application.  This will remove ALL Profiles and the App from the SmartThings mobile App."){
+                	}
+				}             
+			}
 page name: "about"
  def about(){
-        dynamicPage(name: "about", uninstall: true) {
+        dynamicPage(name: "about", uninstall: false) {
                 section("Device and Action Notifications") {
 	                href "Alerts", title: "Create and View Notifications...",description: AlertProDescr() , state: completeAlertPro(),
     	        	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Rest.png"
@@ -354,21 +354,22 @@ page name: "AlexaFeelings"
 	def AlexaFeelings(){
         dynamicPage(name: "AlexaFeelings", title: "What are 'Alexa Feelings?'", uninstall: false) {
         	section("What are 'Alexa Feelings'?"){
-            paragraph "Alexa Feelings offers users a better way of controlling certain lights or group of lights. You may have tried to tell Alexa \n" +
-            "that it is too bright in the living room, and watched Alexa making your lights, well...brighter. With EchoSistant, if you say \n" +
-            "the light or group of lights is too bright, it will actually dim your lights. You can also say, it is not dark enough or simply \n" +
-            "say, make it darker, and your lights will dim the way you want them to. \n \n" +
+            paragraph "Alexa Feelings offers users a better way of controlling certain lights or group of lights. You may have tried to tell Alexa "+ 
+            "that it is too bright in the living room, and watched Alexa making your lights, well...brighter. With EchoSistant, if you say to "+ 
+            "the light or group of lights it is too bright, it will actually dim your lights. You can also say, it is not dark enough or simply "+ 
+            "say, make it darker, and your lights will dim the way you want them to. \n \n"+ 
 
-			"Alexa Feelings gives users a better way of controlling grouped lights. You may have tried to tell Alexa to dim your group of \n" +
-            "lights and watched Alexa dimming only the first switch on the list. With EchoSistant dim the group ensures that each dimmer in \n" +
-            "the group is adjusted according to individual light levels. /n /n" +
+			"You may have tried to tell Alexa to dim your group of lights and watched Alexa dimming only the first light on the list. "+
+            "With EchoSistants ability to dim the group ensures that each dimmer in the group is adjusted according to individual light levels. /n /n" +
 
-			"It gives users a quick way of controlling multiple media devices in one Room. Have the TV on, a connected speaker and other \n" +
-            "media devices making noise in one area when an important call comes through? Just tell Echosistant to mute the first floor* and \n" +
+			"EchoSistant gives users a quick way of controlling multiple media devices in one Room. Have the TV on, a connected speaker on, and other " +
+            "media devices making noise in one area when an important call comes through? Just tell Echosistant to mute the first floor* and " +
             "the noise stops so you can pick up the call. \n \n" +
             
-            "Do you have a connected Thermostat?  Ever tried to tell Alexa to adjust the temperature only to be told that your device can not \n" +
-            "be found in your account.  Well, now you just tell Alexa that it's too cold or it's too hot, and your thermostat will take the \n" +
+            "*Assumes you have named your devices appropriately \n \n" +
+            
+            "Do you have a connected Thermostat?  Ever tried to tell Alexa to adjust the temperature only to be told that your device can not " +
+            "be found in your account?  Well, now you just tell Alexa that it's too cold or that it's too hot, and your thermostat will take the " +
             "appropriate actions to ensure you're comfortable."            
             	}
             }
