@@ -1433,7 +1433,7 @@ def processTts() {
 						childApps.each { child ->
     						def cLast = child.label.toLowerCase()
             				if (cLast == pintentName.toLowerCase()) {
-                        		if (parent.debug) log.debug "Last Child was = '${cLast}'"  
+                        		if (debug) log.debug "Last Child was = '${cLast}'"  
                                 def cLastMessage 
                        			def cLastTime
                                 pContCmds = child.ContCmds
@@ -1442,7 +1442,7 @@ def processTts() {
                                 	pContCmds = pContCmdsR
                                 }
                                 outputTxt = child.getLastMessage()
-                                if (parent.debug) log.debug "Profile matched is ${cLast}, last profile message was ${outputTxt}" 
+                                if (debug) log.debug "Profile matched is ${cLast}, last profile message was ${outputTxt}" 
                 			}
                			}
         }    
@@ -1451,7 +1451,7 @@ def processTts() {
      				state.lastMessage = ptts
                     state.lastIntent = pintentName
                     state.lastTime = new Date(now()).format("h:mm aa", location.timeZone)
-                    if (debug) log.debug "Running main loop with '${ptts}'"                      
+                    if (debug) log.debug "Running main loop with '${ptts}' ...enabling debug logs for the Profile"                      
                     childApps.each {child ->
 						child.profileEvaluate(dataSet)
                         }
@@ -1470,11 +1470,11 @@ def processTts() {
                             			else {
                         					if (cArepeat == !false || cArepeat == null ) {
                                             	outputTxt = "I have delivered the following message to '${cm}',  " + ptts
-                                                if (parent.debug) log.debug "Alexa verbal response = '${outputTxt}'"
+                                                if (debug) log.debug "Alexa verbal response = '${outputTxt}'"
 											}
                         					else {
                             					outputTxt = "Message sent to ${pintentName}, " 
-												if (parent.debug) log.debug "Alexa verbal response = '${outputTxt}'"
+												if (debug) log.debug "Alexa verbal response = '${outputTxt}'"
            									}
                                 		}
                              		}
@@ -1482,7 +1482,7 @@ def processTts() {
                   		}
 				}
       	}
-        if (parent.debug) log.debug "Alexa response sent to Lambda = '${outputTxt}', '${pContCmds}' "
+        if (debug) log.debug "Alexa response sent to Lambda = '${outputTxt}', '${pContCmds}' "
 		return ["outputTxt":outputTxt, "pContCmds":pContCmds]
 }
 
@@ -1501,48 +1501,42 @@ def profileEvaluate(params) {
             if (!disableTts){
         			if (PreMsg) 
         				tts = PreMsg + tts
-        				if (parent.debug) log.debug "parent: tts with PreMsg = '${tts}'"
-                        if (debug) log.debug "child: tts with PreMsg = '${tts}'"
+        				if (parent.debug) log.debug "tts with PreMsg = '${tts}'"
                     else {
             			tts = tts
-            			if (parent.debug) log.debug "parent: tts without PreMsg = '${tts}'"
-                        if (debug) log.debug "child: tts without PreMsg = '${tts}'"
+            			if (parent.debug) log.debug "tts without PreMsg = '${tts}'"
                     }
             			if (getDayOk()==true && getModeOk()==true && getTimeOk()==true) {
             					if (synthDevice) {
                                 synthDevice?.speak(tts) 
-        			    			if (parent.debug) log.debug "parent: Sending message to Synthesis Devices"
-                                    if (debug) log.debug "child: Sending message to Synthesis Devices" 
+        			    			if (parent.debug) log.debug "Sending message to Synthesis Devices"
                                     }
                 				if (mediaDevice) {
                                 	mediaDevice?.speak(tts) 
-                					if (parent.debug) log.debug "p: Sending message to Media Devices"
-                                    if (debug) log.debug "c: Sending message to Media Devices"
+                					if (parent.debug) log.debug "Sending message to Media Devices"
                                     }
             						if (tts) {
 										state.sound = textToSpeech(tts instanceof List ? tts[0] : tts)
 									}
 									else {
 										state.sound = textToSpeech("You selected the custom message option but did not enter a message in the $app.label Smart App")
+                                        if (parent.debug) log.debug "You selected the custom message option but did not enter a message"
 									}
 								if (sonosDevice) {
 										sonosDevice.playTrackAndResume(state.sound.uri, state.sound.duration, volume)
-                    						if (parent.debug) log.debug "p: Sending message to Sonos Devices"
-                                            if (debug) log.debug "c: Sending message to Sonos Devices"
+                    						if (parent.debug) log.debug "Sending message to Sonos Devices"
                                             }
     								}
     					sendtxt(txt) 
                         state.lastMessage = txt
                         state.lastTime = new Date(now()).format("h:mm aa", location.timeZone)
-            	if (parent.debug) log.debug "p:Sending sms and voice message to selected phones and speakers" 
-                if (debug) log.debug "c: Sending sms and voice message to selected phones and speakers" 
+            			if (parent.debug) log.debug "Sending sms and voice message to selected phones and speakers" 
 				}
 				else {
     					sendtxt(txt)
                         state.lastMessage = txt
                         state.lastTime = new Date(now()).format("h:mm aa", location.timeZone)
-           					if (parent.debug) log.debug "p:Only sending sms because disable voice message is ON"
-                            if (debug) log.debug "c: Only sending sms because disable voice message is ON" 
+           					if (parent.debug) log.debug "Only sending sms because disable voice message is ON"
 				}
 				if (hues) {               
                 colorB() 
@@ -1740,22 +1734,14 @@ def turnOffOtherDimmers() { otherDimmers?.off() }
 
 // Primary control of profile triggered lights/switches when delayed
 def profileDeviceControl() {
-	if (sSecondsOn) { runIn(sSecondsOn,turnOnSwitch)
-    		if (parent.debug) log.debug "Turn switches on in '${sSecondsOn}' seconds"  }
-    if (sSecondsOff) { runIn(sSecondsOff,turnOffSwitch)
-			if (parent.debug) log.debug "Turn switches off in '${sSecondsOff}' seconds"  }
-    if (sSecondsOn1)  { runIn(sSecondsOn1,turnOnOtherSwitch)
-    		if (parent.debug) log.debug "Turn other Switches on in '${sSecondsOn1}' seconds"  }
-    if (sSecondsOff1) { runIn(sSecondsOff1,turnOffOtherSwitch)
-			if (parent.debug) log.debug "Turn other Switches off in '${sSecondsOff1}' seconds" }
-	if (sSecondsOn2) { runIn(sSecondsOn2,turnOnDimmers)
-    		if (parent.debug) log.debug "Turn Dimmers on in '${sSecondsOn2}' seconds" }
-	if (sSecondsOff2) { runIn(sSecondsOff2,turnOffDimmers)
-    		if (parent.debug) log.debug "Turn Dimmers off in '${sSecondsOff2}' seconds" }
-    if (sSecondsOn3) { runIn(sSecondsOn3,turnOnOtherDimmers)
-    		if (parent.debug) log.debug "Turn other Dimmers on in '${sSecondsOn3}' seconds" }
-	if (sSecondsOff3) { runIn(sSecondsOff3,turnOffOtherDimmers)
-    		if (parent.debug) log.debug "Turn other Dimmers off in '${sSecondsOff3}' seconds" }
+	if (sSecondsOn) { runIn(sSecondsOn,turnOnSwitch)}
+    if (sSecondsOff) { runIn(sSecondsOff,turnOffSwitch)}
+    if (sSecondsOn1)  { runIn(sSecondsOn1,turnOnOtherSwitch)}
+    if (sSecondsOff1) { runIn(sSecondsOff1,turnOffOtherSwitch)}
+	if (sSecondsOn2) { runIn(sSecondsOn2,turnOnDimmers)}
+	if (sSecondsOff2) { runIn(sSecondsOff2,turnOffDimmers)}
+    if (sSecondsOn3) { runIn(sSecondsOn3,turnOnOtherDimmers)}
+	if (sSecondsOff3) { runIn(sSecondsOff3,turnOffOtherDimmers)}
 
 // Control of Lights and Switches when not delayed            
     if (!sSecondsOn) {
@@ -1774,7 +1760,7 @@ def profileDeviceControl() {
 
 private colorB() { 
 	if (hueCmd == "off") { hues?.off() }
-	if (parent.debug) log.debug "color bulbs initiated"
+		if (debug) log.debug "color bulbs initiated"
 		def hueColor = 0
         fillColorSettings()
         if (color == "White")hueColor = 48
