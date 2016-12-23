@@ -1,6 +1,7 @@
 /*
  * EchoSistant - The Ultimate Voice and Text Messaging Assistant Using Your Alexa Enabled Device.
  *
+ *		12/23/2016		Release 3.0.6	Version 3.0 Release Version
  *		12/22/2016		Release 3.0.5 	Alert variables (Bobby) 
  *		12/19/2016		Release 3.0.4 	Final Review of 3.0 version (Bobby)
  *		12/14/2016		Release 3.0.4 	Bug Fixes and Changes by Jason - Garage alert not playing.
@@ -9,19 +10,6 @@
  *		??/??/2016		Release 3.0.0	Additions: Msg to Notify Tab in Mobile App, Push Msg, Complete Reconfigure of Profile Build, More Control of Dimmers, and Switches,
  *										Device Activity Alerts Page, Toggle control, Flash control for switches. 
  *										Bug fixes: Time out error resolved.
- *		11/23/2016		Release 2.0.1	Bug fix: Pre-message not showing correctly.  Set to default false.
- *		11/22/2016		Release 2.0.0	CoRE integration, Cont Commands per profile, Repeat Message per profile, one app and many bug fixes.
- *		11/20/2016		Release 1.2.0	Fixes: SMS&Push not working, calling multiple profiles at initialize. Additions: Run Routines and Switch enhancements
- *		11/13/2016		Release 1.1.1a	Roadmap update and spelling errors
- *		11/13/2016		Version 1.1.1	Addition - Repeat last message
- *		11/12/2016		Version 1.1.0	OAuth bug fix, additional debug actions, Alexa feedback options, Intent and Utterance file updates
- *										Control Switches on/off with delay off, pre-message "null" bug
- *		11/07/2016		Version 1.0.1f	Additional Debug messages and Alexa missing profile Response
- *		11/06/2016		Version 1.0.1d	Debug measures fixed
- *		11/06/2016		Version 1.0.1c  Debug measures added
- *		11/05/2016		Version 1.0.1b	OAuth Fix and Version # update 
- *		11/05/2016 		Version 1.0.1a	OAuth Log error	@ 11:46EST OAuth - Bobby
- *		11/05/2016		Version 1.0.1	OAuth error fix
  *		11/04/2016      Version 1.0		Initial Release
  *
  * ROADMAP
@@ -85,6 +73,7 @@ preferences {
 		page name: "tokens"
     	page name: "pageConfirmation"
     	page name: "pageReset"
+        page name: "AlexaFeelings"
 
 
     //Profile Pages    
@@ -109,9 +98,9 @@ page name: "mainParentPage"
             section ("") {
                 href "profiles", title: "Profiles", description: profilesDescr(), state: completeProfiles(),
                     image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Config.png"    
-                href "about", title: "'Alexa Feelings', Notifications and Security", description: settingsDescr(), state: completeSettings(),
+                href "about", title: "Notifications, Device Controls, and Integrations", description: settingsDescr(), state: completeSettings(),
                     image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_About.png"
-                href "support", title: "EchoSistant Support", description: supportDescrL() , state: completeProfiles(),
+                href "support", title: "EchoSistant Security and Support", description: supportDescrL(), state: completeProfiles(),
                     image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Amazon_alexa.png"                
                 }
             section ("") {
@@ -138,39 +127,6 @@ page name: "support"
                 "Jason Headley \nForum user name @bamarayne \n" +
                 "Bobby Dobrescu \nForum user name @SBDobrescu")
                 }
-            section ("Directions, How-to's, and Troubleshooting") { 
- 				href url:"http://thingsthataresmart.wiki/index.php?title=EchoSistant", title: "Tap here to go to the EchoSistant Wiki", description: none,
-                image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/app-Echosistant.png"
-                }
- 			section ("Directions, How-to's, and Troubleshooting") { 
-				href "CoRE", title: "About CoRe Integration...",
-                image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_CoRE.png"
-            	}
- 			section ("Skill Details") { 
-				href "SkillDetails", title: "Access copy/paste detail also available in ide when you click this...",
-                image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Rest.png"
-            	}                
-            section ("AWS Lambda website") {
-            	href url:"https://aws.amazon.com/lambda/", title: "Tap here to go to the AWS Lambda Website", description: none,
-                image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_aws.png"
-                }
-            section ("Amazon Developer website") {    
-   				href url:"https://developer.amazon.com/", title: "Tap here to go to Amazon Developer website", description: none,
-                image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Skills.png"
-                }
-   			}             
-		}
-page name: "about"
- def about(){
-        dynamicPage(name: "about", uninstall: true) {
-                section("Device and Action Notifications") {
-	                href "Alerts", title: "Create and View Notifications...",description: AlertProDescr() , state: completeAlertPro(),
-    	        	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Rest.png"
-				}
-                section ("'Alexa Feelings' and Device Control"){
-                	href "Integrations", title: "Device Control Settings", description: ParConDescr() , state: completeParCon(), 
-                    image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Config.png" 
-                         }
                 section("Debugging") {
                     input "debug", "bool", title: "Enable Debug Logging", default: false, submitOnChange: true 
                     }
@@ -191,13 +147,49 @@ page name: "about"
                 section ("Revoke/Renew Access Token & Application ID"){
                     href "tokens", title: "Revoke/Reset Security Access Token", description: none
                     }
-                section("Tap below to remove the ${textAppName()} application.  This will remove ALL Profiles and the App from the SmartThings mobile App."){}
-                }
+                section("Tap below to remove the ${textAppName()} application.  This will remove ALL Profiles and the App from the SmartThings mobile App."){
+                	}
+            	section ("Directions, How-to's, and Troubleshooting") { 
+ 					href url:"http://thingsthataresmart.wiki/index.php?title=EchoSistant", title: "Tap here to go to the EchoSistant Wiki", description: none,
+                	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/app-Echosistant.png"
+                	}
+ 				section ("Skill Details") { 
+					href "SkillDetails", title: "Access copy/paste detail also available in ide when you click this...",
+                	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Rest.png"
+            		}                
+            	section ("AWS Lambda website") {
+            		href url:"https://aws.amazon.com/lambda/", title: "Tap here to go to the AWS Lambda Website", description: none,
+                	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_aws.png"
+                	}
+            	section ("Amazon Developer website") {    
+   					href url:"https://developer.amazon.com/", title: "Tap here to go to Amazon Developer website", description: none,
+                	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Skills.png"
+            	}
+            }             
+		}
+page name: "about"
+ def about(){
+        dynamicPage(name: "about", uninstall: true) {
+                section("Device and Action Notifications") {
+	                href "Alerts", title: "Create and View Notifications...",description: AlertProDescr() , state: completeAlertPro(),
+    	        	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Rest.png"
+				}
+                section ("'Alexa Feelings' and Device Control"){
+                	href "Integrations", title: "Device Control Settings", description: ParConDescr() , state: completeParCon(), 
+                    image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Config.png" 
+                         }
+                section ("CoRE Integration") { 
+					href "CoRE", title: "About CoRe Integration...",
+                	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_CoRE.png"
+            	}         
+           }     
 	} 
 page name: "Choices"    
     def Choices(){
         dynamicPage(name: "Choices", title: "Choose from the available Notifications",install: false, uninstall: false) {
             section ("Activate/DeActivate Notifications", hideWhenEmpty: true){
+            paragraph "To mute a notification, disable its toggle \n" +
+            "To mute all notifications, disable the Top toggle"
             input "allNotifications", "bool", title: "Turn on to Activate the Notifications Section", default: false, submitOnChange: true
             input "switchesAndDimmers", "bool", title: "Switches and Dimmers", default: false, submitOnChange: true
             input "doorsAndWindows", "bool", title: "Doors and Windows", default: false, submitOnChange: true
@@ -357,17 +349,43 @@ page name: "Alerts"
             } 
         }
     }
-}            
+}    
+page name: "AlexaFeelings"
+	def AlexaFeelings(){
+        dynamicPage(name: "AlexaFeelings", title: "What are 'Alexa Feelings?'", uninstall: false) {
+        	section("What are 'Alexa Feelings'?"){
+            paragraph "Alexa Feelings offers users a better way of controlling certain lights or group of lights. You may have tried to tell Alexa \n" +
+            "that it is too bright in the living room, and watched Alexa making your lights, well...brighter. With EchoSistant, if you say \n" +
+            "the light or group of lights is too bright, it will actually dim your lights. You can also say, it is not dark enough or simply \n" +
+            "say, make it darker, and your lights will dim the way you want them to. \n \n" +
+
+			"Alexa Feelings gives users a better way of controlling grouped lights. You may have tried to tell Alexa to dim your group of \n" +
+            "lights and watched Alexa dimming only the first switch on the list. With EchoSistant dim the group ensures that each dimmer in \n" +
+            "the group is adjusted according to individual light levels. /n /n" +
+
+			"It gives users a quick way of controlling multiple media devices in one Room. Have the TV on, a connected speaker and other \n" +
+            "media devices making noise in one area when an important call comes through? Just tell Echosistant to mute the first floor* and \n" +
+            "the noise stops so you can pick up the call. \n \n" +
+            
+            "Do you have a connected Thermostat?  Ever tried to tell Alexa to adjust the temperature only to be told that your device can not \n" +
+            "be found in your account.  Well, now you just tell Alexa that it's too cold or it's too hot, and your thermostat will take the \n" +
+            "appropriate actions to ensure you're comfortable."            
+            	}
+            }
+		}            
 page name: "Integrations"
 	def Integrations(){
     		dynamicPage(name: "Integrations", title: " 'Alexa Feelings' and Device Control", uninstall: false){
-            	section(""){
-					href "devicesControlMain", title: "Control These Devices with Voice by speaking commands to Alexa (via the Main Skill)", description: ParConDescr() , state: completeParCon(),
+				section ("") {
+                image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/app-Echosistant.png"              
+                href "AlexaFeelings", title: "Learn about Alexa Feelings",
+            	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/app-Echosistant.png"
+                href "devicesControlMain", title: "Control These Devices with Voice by speaking commands to Alexa (via the Main Skill)", description: ParConDescr() , state: completeParCon(),
                     image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_devices.png"            			
                     paragraph ("Define Variables for Voice Controlled Devices (for increase/decrease commands)")
                     input "cLevel", "number", title: "Alexa Automatically Adjusts Light Levels by using a scale of 1-10 (default is +/-3)", defaultValue: 3, required: false
                     input "cTemperature", "number", title: "Alexa Automatically Adjusts temperature by using a scale of 1-10 (default is +/-1)", defaultValue: 1, required: false
-                    input "cPIN", "number", title: "Set a PIN number to prevent unathorized use of Voice Control", default: false, required: false
+//                    input "cPIN", "number", title: "Set a PIN number to prevent unathorized use of Voice Control", default: false, required: false
 					}
                 }
 			}    
@@ -391,11 +409,11 @@ page name: "SkillDetails"
     def SkillDetails(){
             dynamicPage(name: "SkillDetails", uninstall: false) {
  			section ("List of Profiles") { 
-				href "ProfileDetails", title: "View your List of Profiles for copy&paste to the AWS Skill...",
+				href "ProfileDetails", title: "View your List of Profiles for copy & paste to the AWS Skill...",
                 image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Rest.png"
             }
             section ("List of Devices") {
-				href "DeviceDetails", title: "View your LIst of Devices for copy&paste to the AWS Skill...",
+				href "DeviceDetails", title: "View your List of Devices for copy & paste to the AWS Skill...",
                 image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Rest.png"            	
 				}
 					
@@ -425,6 +443,7 @@ page name: "DeviceDetails"
 page name: "devicesControlMain"    
     def devicesControlMain(){
         dynamicPage(name: "devicesControlMain", title: "Select Devices That Alexa Can Control Directly",install: false, uninstall: false) {
+        	
             section ("Switches", hideWhenEmpty: true){
                 input "cSwitches", "capability.switch", title: "Control These Switches...", multiple: true, required: false, submitOnChange: true
             }
@@ -434,13 +453,13 @@ page name: "devicesControlMain"
             section ("Thermostats", hideWhenEmpty: true){
                 input "cTstat", "capability.thermostat", title: "Control These Thermostat(s)...", multiple: true, required: false
             }
-            section ("", hideWhenEmpty: true){
-                input "showAdvanced", "bool", title: "Advanced Options", default: false, submitOnChange: true
-				if (showAdvanced) {	
-                    href "devicesControlCustom", title: "Create custom devices and commands", description: devicesControlCustomDescr() , state: completeDevicesControlCustom(),
-                    image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Plus.png"                    
-            	}
-            }
+//            section ("", hideWhenEmpty: true){
+//                input "showAdvanced", "bool", title: "Advanced Options", default: false, submitOnChange: true
+//				if (showAdvanced) {	
+//                    href "devicesControlCustom", title: "Create custom devices and commands", description: devicesControlCustomDescr() , state: completeDevicesControlCustom(),
+//                    image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Plus.png"                    
+//            	}
+//            }
         }
     }
     
@@ -565,13 +584,13 @@ page name: "pageReset"
 def mainProfilePage() {	
     dynamicPage(name: "mainProfilePage", title:"I Want This Profile To...", install: true, uninstall: true) {
         section {
-           	href "MsgPro", title: "Send Audio Messages...", description: MsgProDescr(), state: completeMsgPro(),
+           	href "MsgPro", title: "Send Audio Messages to these devices...", description: MsgProDescr(), state: completeMsgPro(),
    				image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Media.png" 
             href "SMS", title: "Send Text & Push Messages...", description: SMSDescr() , state: completeSMS(),
             	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Text.png" 
   			href "DevPro", title: "Execute Actions when Profile runs...", description: DevProDescr(), state: completeDevPro(),
             	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_devices.png"            			
-  			href "groups", title: "Create Device Groups...", description: groupsDescr(), state: completeGroups(),
+  			href "groups", title: "Create Profile Device Groups...", description: groupsDescr(), state: completeGroups(),
             	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Plus.png" 
 			href "MsgConfig", title: "With These Global Message Options...", description: MsgConfigDescr() , state: completeMsgConfig(),
             	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Extra.png" 
@@ -643,16 +662,16 @@ page name: "DevPro"
 page name: "devicesControl"
     def devicesControl() {
             dynamicPage(name: "devicesControl", title: "Select Devices to use with this profile",install: false, uninstall: false) {
-                section ("Light Switches", hideWhenEmpty: true){
+                 section ("Light Switches", hideWhenEmpty: true){
                     input "switches", "capability.switch", title: "Select Lights and Switches...", multiple: true, required: false, submitOnChange: true
                         if (switches) input "switchCmd", "enum", title: "What do you want to do with these switches?", options:["on":"Turn on","off":"Turn off","toggle":"Toggle","delay":"Delay"], multiple: false, required: false, submitOnChange:true
-                        if (switchCmd == "delay") {
+                        if (switchCmd) {
                         input "sSecondsOn", "number", title: "Turn on in Seconds?", defaultValue: none, required: false
                         input "sSecondsOff", "number", title: "Turn off in Seconds?", defaultValue: none, required: false
                         }
-                		if (switchCmd) input "otherSwitch", "capability.switch", title: "...and these other switches?", multiple: true, required: false, submitOnChange: true
+                        if (switchCmd) input "otherSwitch", "capability.switch", title: "...and these other switches?", multiple: true, required: false, submitOnChange: true
                         if (otherSwitch) input "otherSwitchCmd", "enum", title: "What do you want to do with these other switches?", options: ["on1":"Turn on","off1":"Turn off","toggle1":"Toggle","delay1":"Delay"], multiple: false, required: false, submitOnChange: true
-                        if (otherSwitchCmd == "delay1") {
+                        if (otherSwitchCmd) {
                         input "sSecondsOn1", "number", title: "Turn on in Seconds?", defaultValue: none, required: false
                         input "sSecondsOff1", "number", title: "Turn off in Seconds?", defaultValue: none, required: false
                     	}
@@ -669,14 +688,14 @@ page name: "devicesControl"
                     input "dimmers", "capability.switchLevel", title: "Select Dimmers...", multiple: true, required: false , submitOnChange:true
                         if (dimmers) input "dimmersCmd", "enum", title: "Command To Send To Dimmers", options:["set":"Set level","delay2":"Delay","off":"Turn off"], multiple: false, required: false, submitOnChange:true
                         if (dimmersCmd) input "dimmersLVL", "number", title: "Dimmers Level", description: "Set dimmer level", required: false
-                            if (dimmersCmd == "delay2") {
+                            if (dimmersCmd) {
                         		input "sSecondsOn2", "number", title: "Turn on in Seconds?", defaultValue: none, required: false
                         		input "sSecondsOff2", "number", title: "Turn off in Seconds?", defaultValue: none, required: false
                         		}	
                         if (dimmersLVL) input "otherDimmers", "capability.switchLevel", title: "Control These Other Dimmers...", multiple: true, required: false , submitOnChange:true
                         if (otherDimmers) input "otherDimmersCmd", "enum", title: "Command To Send To Other Dimmers", options:["set":"Set level","delay3":"Delay","off":"Turn off"], multiple: false, required: false, submitOnChange:true
                         if (otherDimmersCmd) input "otherDimmersLVL", "number", title: "Dimmers Level", description: "Set dimmer level", required: false
-                			if (otherDimmersCmd == "delay3") {
+                			if (otherDimmersCmd) {
                         		input "sSecondsOn3", "number", title: "Turn on in Seconds?", defaultValue: none, required: false
                         		input "sSecondsOff3", "number", title: "Turn off in Seconds?", defaultValue: none, required: false
                         		}
@@ -695,7 +714,7 @@ page name: "devicesControl"
        }
 page name: "groups"
     def groups() {
-    	dynamicPage(name: "groups", title: "Select Devices to create groups that can be controlled by Alexa",install: false, uninstall: false) {
+    	dynamicPage(name: "groups", title: "Select Devices to create groups that can be controlled by Alexa within this Profile",install: false, uninstall: false) {
         	section ("Group of Lights ", hideWhenEmpty: true){
                     input "gSwitches", "capability.switch", title: "Select Lights and Switches...", multiple: true, required: false, submitOnChange: true
                     if (gSwitches) {
@@ -2021,39 +2040,18 @@ def profilesDescr() {
 }
 def completeSettings(){
     def result = ""
-    if (ShowTokens || debug || ShowLicense) {
+    if (allNotifications) {
     	result = "complete"	
     }
     result
 }
 def settingsDescr() {
-    def text = "Tap here to configure settings"
-    if (debug && ShowTokens) {
-    	text = "Logging and Show License are enabled and displayed in the Live Logs of the IDE. Tap here to configure." 
-        }
-    else {
-    	if (ShowTokens) {
-    		text = "Attention: Security Tokens are displayed in the Live Logs section of the IDE. Tap here to configure"  
-        }
-   		else {
-        	if (ShowLicense) {
-			text = "License information is displayed on the next page"         
-			}
-    		if (debug) {
-    		text = "Logging is enabled, view results in the IDE Live Logs"
-        	}
-		}
+    def text = "Tap here to configure settings" 
+    if (allNotifications) {
+    	text = "Configured"
     }
-   text
+	text	
 }
-/*def supportDescrST()  {
-	def text = 	" Apps Version = ${textVersion()} \n" +
-        		" Release Number = ${textRelease()} \n"+
-    			" Release Date = ${dateRelease()} \n"+
-                " Release Notes: \n"+ 
-                " ${textReleaseNotes()} \n"+
-                " Click to visit our Wiki Page" 
-} */
 def supportDescrL() {
 	def text = 	"SmartThings Details \n" +
     			"  Version = ${textVersion()} \n" +
@@ -2253,13 +2251,13 @@ private def textVersion() {
 	def text = "3.0"
 }
 private def textRelease() {
-	def text = "3.0.4"
+	def text = "3.0.6"
 }
 private def textReleaseNotes() {
-	def text = "New control and alert features; general bug fixes"
+	def text = "Complete Overhaul. See the Wiki"
 }
 private def dateRelease() {
-	def text = "12/19/2016"
+	def text = "12/23/2016"
 }
 private def textCopyright() {
 	def text = "       Copyright © 2016 Jason Headley"
