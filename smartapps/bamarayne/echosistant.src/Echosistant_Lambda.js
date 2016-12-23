@@ -93,7 +93,7 @@ exports.handler = function( event, context ) {
                         var resJSON = JSON.parse(data);
                         var pContCmds = resJSON.pContCmds;
                         var speechText = resJSON.outputTxt;
-                        if (pContCmds === true) { 
+                        if (pContCmds == "true") { 
                             areWeDone=false;
                             speechText = speechText + ', send another message to ' + intentName; 
                         }
