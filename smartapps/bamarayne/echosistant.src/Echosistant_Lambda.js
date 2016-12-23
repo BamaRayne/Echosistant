@@ -35,8 +35,8 @@ exports.handler = function( event, context ) {
         var areWeDone = true;
 //-------- Validation process and begining interaction with SmartThings app-------------------- 
         var versionTxt = '3.0';
-        var versionDate= '12/12/2016';
-        var releaseTxt = "3.1.2";
+        var versionDate= '12/23/2016';
+        var releaseTxt = "3.1.5";
         var beginURL = url + 'b?&versionTxt=' + versionTxt + '&versionDate=' + versionDate + '&releaseTxt=' + releaseTxt + '&access_token=' + STtoken;
         https.get( beginURL, function( response ) {
         response.on( 'data', function( data ) {
