@@ -848,7 +848,6 @@ def initialize() {
         if (parent.debug) log.debug "Initializing Child app"
         state.lastMessage = null
     	state.lastTime  = null
-        state.recording = null
         subscribeChildToEvents()
      }
      else{
@@ -1421,8 +1420,7 @@ def feedbackHandler(data) {
    TEXT TO SPEECH PROCESS (PARENT) - Lambda via page t
 ************************************************************************************************************/
 def processTts() {
-		def ptts = params.ttstext
-        
+		def ptts = params.ttstext 
 		def pttx = params.ttstext 
         def pintentName = params.intentName
             if (debug) log.debug "Message received from Lambda with: (ptts) = '${ptts}', (pintentName) = '${pintentName}'"
@@ -1430,21 +1428,12 @@ def processTts() {
     	def pContCmds = "false"
         def pContCmdsR = "false"
         def dataSet = [ptts:ptts,pttx:pttx,pintentName:pintentName] 
-        	def repeat = "repeat last message" 
-                    	log.debug "repeat = ${repeat}"
-
-        	def play = "play message"
-                    	log.debug "play = ${play}"
-
-        	def record = ptts.replace("record a message", "")
-        				log.debug "record = ${record}"
-        	def recordingNow = ptts.startsWith("record a message")
-        				log.debug "recordingNow = ${recordingNow}"
-      
-        if (ptts==repeat || ptts == play) {
+        def repeat = "repeat last message" 
+        if (ptts==repeat) {
 						childApps.each { child ->
     						def cLast = child.label.toLowerCase()
             				if (cLast == pintentName.toLowerCase()) {
+                        		if (debug) log.debug "Last Child was = '${cLast}'"  
                                 def cLastMessage 
                        			def cLastTime
                                 pContCmds = child.ContCmds
@@ -1452,10 +1441,7 @@ def processTts() {
                                 if (pContCmdsR == false) {
                                 	pContCmds = pContCmdsR
                                 }
-                                if (ptts==repeat) {
-                                	outputTxt = child.getLastMessage()
-                                }
-                                else outputTxt = "Your last recording was, " + state.recording
+                                outputTxt = child.getLastMessage()
                                 if (debug) log.debug "Profile matched is ${cLast}, last profile message was ${outputTxt}" 
                 			}
                			}
@@ -1464,9 +1450,10 @@ def processTts() {
     			if (ptts){
      				state.lastMessage = ptts
                     state.lastIntent = pintentName
-                    state.lastTime = new Date(now()).format("h:mm aa", location.timeZone)                   
+                    state.lastTime = new Date(now()).format("h:mm aa", location.timeZone)
+                    if (debug) log.debug "Running main loop with '${ptts}' ...enabling debug logs for the Profile"                      
                     childApps.each {child ->
-						if (recordingNow == false) child.profileEvaluate(dataSet)
+						child.profileEvaluate(dataSet)
                         }
             			//Preparing Alexa Response
                         childApps.each { child ->
@@ -1476,14 +1463,7 @@ def processTts() {
 									def cArepeat = child.Arepeat
 									def cAfeedBack = child.AfeedBack
                                     pContCmds = child.ContCmds
-
-                                    if (recordingNow == true) {
-        								state.recording = record
-        								outputTxt = "Ok, message recorded. To play it later, just say: play message to this profile"
-                                        pContCmds = "false"
-        							}
-                                    
-     	                			else (cAfeedBack != true) {
+     	                			if (cAfeedBack != true) {
                                 		if (cAcustom != false) {
                             				outputTxt = child.outputTxt
                             			}
