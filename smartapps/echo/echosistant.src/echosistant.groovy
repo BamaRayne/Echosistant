@@ -1422,13 +1422,12 @@ def feedbackHandler(data) {
 ************************************************************************************************************/
 def processTts() {
 		def ptts = params.ttstext
-        
 		def pttx = params.ttstext 
         def pintentName = params.intentName
             if (debug) log.debug "Message received from Lambda with: (ptts) = '${ptts}', (pintentName) = '${pintentName}'"
         def outputTxt = ''
-    	def pContCmds = "false"
-        def pContCmdsR = "false"
+    	def pContCmds = false
+        def pContCmdsR = false
         def dataSet = [ptts:ptts,pttx:pttx,pintentName:pintentName] 
         	def repeat = "repeat last message" 
                     	log.debug "repeat = ${repeat}"
@@ -1452,7 +1451,7 @@ def processTts() {
                                 if (pContCmdsR == false) {
                                 	pContCmds = pContCmdsR
                                 }
-                                if (ptts==repeat) {
+                                if (ptts == repeat) {
                                 	outputTxt = child.getLastMessage()
                                 }
                                 else outputTxt = "Your last recording was, " + state.recording
@@ -1480,10 +1479,9 @@ def processTts() {
                                     if (recordingNow == true) {
         								state.recording = record
         								outputTxt = "Ok, message recorded. To play it later, just say: play message to this profile"
-                                        pContCmds = "false"
+                                        pContCmds = false
         							}
-                                    
-     	                			else (cAfeedBack != true) {
+     	                			else if (cAfeedBack != true) {
                                 		if (cAcustom != false) {
                             				outputTxt = child.outputTxt
                             			}
