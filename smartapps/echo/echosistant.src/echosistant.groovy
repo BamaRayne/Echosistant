@@ -1,7 +1,7 @@
 /*
  * EchoSistant - The Ultimate Voice and Text Messaging Assistant Using Your Alexa Enabled Device.
  *
- *		12/24/2016		updates			Profile triggered mode change, Home Status page
+ *		12/24/2016		updates			Profile triggered mode change, Home Status page, canned Alexa Message
  *		12/23/2016		Release 3.0.6	Version 3.0 Release Version
  *		12/22/2016		Release 3.0.5 	Alert variables (Bobby) 
  *		12/19/2016		Release 3.0.4 	Final Review of 3.0 version (Bobby)
@@ -770,21 +770,21 @@ page name: "devicesControl"
 							if ("setColor") input "color", "enum", title: "Hue Color?", required: false, multiple:false, options: parent.fillColorSettings().name
 							input "lightLevel", "enum", title: "Light Level?", required: false, options: [[10:"10%"],[20:"20%"],[30:"30%"],[40:"40%"],[50:"50%"],[60:"60%"],[70:"70%"],[80:"80%"],[90:"90%"],[100:"100%"]]                       
         					}
-                		}
+						}
                 section ("Dimmers", hideWhenEmpty: true){
                     input "dimmers", "capability.switchLevel", title: "Select Dimmers...", multiple: true, required: false , submitOnChange:true
                         if (dimmers) input "dimmersCmd", "enum", title: "Command To Send To Dimmers", options:["set":"Set level","delay2":"Delay","off":"Turn off"], multiple: false, required: false, submitOnChange:true
-                        if (dimmersCmd) input "dimmersLVL", "number", title: "Dimmers Level", description: "Set dimmer level", required: false
+                        if (dimmersCmd) input "dimmersLVL", "number", title: "Dimmers Level", description: "Set dimmer level", required: false, submitOnChange: true
                             if (dimmersCmd) {
-                        		input "sSecondsOn2", "number", title: "Turn on in Seconds?", defaultValue: none, required: false
-                        		input "sSecondsOff2", "number", title: "Turn off in Seconds?", defaultValue: none, required: false
+                        		input "sSecondsOn2", "number", title: "Turn on in Seconds?", defaultValue: none, required: false, submitOnChange: true
+                        		input "sSecondsOff2", "number", title: "Turn off in Seconds?", defaultValue: none, required: false, submitOnChange: true
                         		}	
                         if (dimmersLVL) input "otherDimmers", "capability.switchLevel", title: "Control These Other Dimmers...", multiple: true, required: false , submitOnChange:true
                         if (otherDimmers) input "otherDimmersCmd", "enum", title: "Command To Send To Other Dimmers", options:["set":"Set level","delay3":"Delay","off":"Turn off"], multiple: false, required: false, submitOnChange:true
-                        if (otherDimmersCmd) input "otherDimmersLVL", "number", title: "Dimmers Level", description: "Set dimmer level", required: false
+                        if (otherDimmersCmd) input "otherDimmersLVL", "number", title: "Dimmers Level", description: "Set dimmer level", required: false, submitOnChange: true
                 			if (otherDimmersCmd) {
-                        		input "sSecondsOn3", "number", title: "Turn on in Seconds?", defaultValue: none, required: false
-                        		input "sSecondsOff3", "number", title: "Turn off in Seconds?", defaultValue: none, required: false
+                        		input "sSecondsOn3", "number", title: "Turn on in Seconds?", defaultValue: none, required: false, submitOnChange: true
+                        		input "sSecondsOff3", "number", title: "Turn off in Seconds?", defaultValue: none, required: false, submitOnChange: true
                         		}
                     		}
                 section ("Flash These Switches") {
@@ -797,8 +797,8 @@ page name: "devicesControl"
 					input "offFor", "number", title: "Off for (default 1 second)", required: false, submitOnChange:true
 					}
                 }
-            }
-       }
+			}
+		}
 page name: "groups"
     def groups() {
     	dynamicPage(name: "groups", title: "Select Devices to create groups that can be controlled by Alexa within this Profile",install: false, uninstall: false) {
@@ -818,7 +818,9 @@ page name: "MsgConfig"
             input "MsgOpt", "bool", title: "I want to use these configuration options...", defaultValue: false, submitOnChange: true,
                 image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Media.png"
                 if (MsgOpt) {
-                    input "ShowPreMsg", "bool", title: "Pre-Message (plays on Audio Playback Device before message)", defaultValue: false, submitOnChange: true
+                	input "AprofileMsg", "bool", title: "Have Alexa speak a predetermined message when profile executes?", default: false, submitOnChange: true 
+                		if (AprofileMsg) input "AprofileMsgTxt", "Text", title: "Play this message when this profile executes", description: none, required: false, capitalization: "sentences"
+					input "ShowPreMsg", "bool", title: "Pre-Message (plays on Audio Playback Device before message)", defaultValue: false, submitOnChange: true
                         if (ShowPreMsg) input "PreMsg", "text", title: "Pre-Message...", defaultValue: none, submitOnChange: true, required: false 
                     input "Acustom", "bool", title: "Custom Response from Alexa...", defaultValue: false, submitOnChange: true
                         if (Acustom) input "outputTxt", "text", title: "Input custom phrase...", required: false, defaultValue: "Message sent,   ", submitOnChange: true
@@ -1555,13 +1557,18 @@ def processTts() {
                               		def cAcustom = child.Acustom
 									def cArepeat = child.Arepeat
 									def cAfeedBack = child.AfeedBack
+                                    def AprofileMsg = child.AprofileMsg
                                     pContCmds = child.ContCmds
-
+                                    
                                     if (recordingNow == true) {
         								state.recording = record
         								outputTxt = "Ok, message recorded. To play it later, just say: play message to this profile"
                                         pContCmds = false
         							}
+                                    if (AprofileMsg == true) {
+                                    	outputTxt = child.AprofileMsgTxt
+                                        log.info "The child profile message has initiated and the message is: '${child.AprofileMsgTxt}'"
+                                        }
      	                			else if (cAfeedBack != true) {
                                 		if (cAcustom != false) {
                             				outputTxt = child.outputTxt
@@ -1637,7 +1644,7 @@ def profileEvaluate(params) {
                         state.lastTime = new Date(now()).format("h:mm aa", location.timeZone)
            					if (parent.debug) log.debug "Only sending sms because disable voice message is ON"
 				}
-				if (hues) {               
+ 				if (hues) {               
                 colorB() 
                	}
                 if (flashSwitches) {
@@ -1649,12 +1656,10 @@ def profileEvaluate(params) {
                 }
 				if (newMode) {
 				setLocationMode(newMode)
-				//else log.warn "Unable to change to undefined mode '${setMode}'"
                 log.info "The mode has been changed from '${location.mode}' to '${setMode}'"
 				}    		
     		}
         }
-
 /***********************************************************************************************************************
     LAST MESSAGE HANDLER - PROFILE
 ***********************************************************************************************************************/
@@ -1864,8 +1869,10 @@ def profileDeviceControl() {
 
 private colorB() { 
 	if (hueCmd == "off") { hues?.off() }
+    if (hueCmd1 == "off") { hues1?.off() }
 		if (debug) log.debug "color bulbs initiated"
 		def hueColor = 0
+        def hueColor1 = 0
         fillColorSettings()
         if (color == "White")hueColor = 48
         if (color == "Red")hueColor = 0
@@ -1879,7 +1886,7 @@ private colorB() {
         
         
         
-	def colorB = [hue: hueColor, saturation: 100, level: (lightLevel as Integer) ?: 100]
+	def colorB = [hue: hueColor, hue1: hueColor1, saturation: 100, level: (lightLevel as Integer) ?: 100]
     hues*.setColor(colorB)
 	}
  def fillColorSettings(){
@@ -1959,7 +1966,6 @@ private flashLights() {
 		}
 	}
 }
-
 /************************************************************************************************************
    Alerts Handler
 ************************************************************************************************************/
