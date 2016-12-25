@@ -1,6 +1,7 @@
 /*
  * EchoSistant - The Ultimate Voice and Text Messaging Assistant Using Your Alexa Enabled Device.
  *
+ *		12/24/2016		updates			Profile triggered mode change
  *		12/23/2016		Release 3.0.6	Version 3.0 Release Version
  *		12/22/2016		Release 3.0.5 	Alert variables (Bobby) 
  *		12/19/2016		Release 3.0.4 	Final Review of 3.0 version (Bobby)
@@ -74,6 +75,8 @@ preferences {
     	page name: "pageConfirmation"
     	page name: "pageReset"
         page name: "AlexaFeelings"
+        page name: "homeStatus"
+        page name: "homeStatusConfig"
 
 
     //Profile Pages    
@@ -99,14 +102,16 @@ page name: "mainParentPage"
                 href "profiles", title: "Profiles", description: profilesDescr(), state: completeProfiles(),
                     image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Config.png"    
                 href "about", title: "Notifications, Device Controls, and Integrations", description: settingsDescr(), state: completeSettings(),
-                    image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Config.png"
-                href "support", title: "EchoSistant Security and Support", description: supportDescrL(), state: completeProfiles(),
-                    image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Amazon_alexa.png"                
+                    image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Config.png"                
+                href "homeStatus", title: "What is the status of my Home?", 
+                    image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Routines.png"                
+				href "support", title: "EchoSistant Security and Support", description: supportDescrL(), state: completeProfiles(),
+                    image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Amazon_alexa.png"                               
                 }
             section ("") {
                 paragraph "${textCopyright()}"
-                }
-         }
+			}
+		}
     }
 page name: "profiles"
     def profiles() {
@@ -186,9 +191,85 @@ page name: "about"
                 section ("CoRE Integration") { 
 					href "CoRE", title: "Tap to read about CoRe Integration..." , description: "" , state: complete, 
                 	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_CoRE.png"
-            	}         
-           }     
-	} 
+            	} 
+                section ("Configure the Home Status Page") {
+                	href "homeStatusConfig", title: "Choose devices to display on the Home Status Page", description: "" , state: comlete,               
+                	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Routines.png" 
+				}
+			}     
+		} 
+page name: "homeStatus"
+	def homeStatus(){
+        dynamicPage(name: "homeStatus", uninstall: false) {
+        section ("Current Mode") {
+            paragraph "${textCurrentMode()}"
+                }
+        section ("ThermoStats and Temperature") {
+        	def tStat1 = ThermoStat1
+            def temp1 = (tStat1?.currentValue("temperature"))
+            def setPC1 = (tStat1?.currentValue("coolingSetpoint"))
+            def setPH1 = (tStat1?.currentValue("heatingSetpoint"))
+            def mode1 = (tStat1?.currentValue("thermostatMode"))
+            def tStat2 = ThermoStat2
+            def temp2 = (tStat2?.currentValue("temperature"))
+            def setPC2 = (tStat2?.currentValue("coolingSetpoint"))
+            def setPH2 = (tStat2?.currentValue("heatingSetpoint"))
+            def mode2 = (tStat2?.currentValue("thermostatMode"))
+		if ("${mode1}" == "auto") 
+        	paragraph "The temperature of the ${tStat1} is ${temp1} degrees. The thermostat is in ${mode1} mode, the heating setpoint is ${setPH1} and the cooling setpoint is ${setPC1}."
+        if ("${mode1}" == "cool")
+            paragraph "The temperature of the ${tStat1} is ${temp1} degrees, the thermostat is set to ${setPC1} degrees and is in ${mode1} mode."
+        if ("${mode1}" == "heat")
+            paragraph "The temperature of the ${tStat1} is ${temp1} degrees, and the thermostat is set to ${setPH1} degrees and is in ${mode1} mode."
+        if ("${mode1}" == "off")
+        	paragraph "The ${tStat1} theremostat is currently ${mode1}"      	
+        if ("${mode2}" == "auto") 
+        	paragraph "The temperature of the ${tStat2} is ${temp2} degrees. The thermostat is in ${mode2} mode, the heating setpoint is ${setPH2} and the cooling setpoint is ${setPC2}."
+        if ("${mode2}" == "cool")
+            paragraph "The temperature of the ${tStat2} is ${temp2} degrees, and the thermostat is set to ${setPC2} degrees and is in ${mode2} mode."
+        if ("${mode2}" == "heat")
+            paragraph "The temperature of the ${tStat2} is ${temp2} degrees, and the thermostat is set to ${setPH2} degrees and is in ${mode2} mode."
+        if ("${mode2}" == "off")
+        	paragraph "The ${tStat2} theremostat is currently ${mode2}."
+		}
+		section ("Temperature Sensors") {
+        	def Sens1temp = (tempSens1?.currentValue("temperature"))
+            def Sens2temp = (tempSens2?.currentValue("temperature"))
+            def Sens3temp = (tempSens3?.currentValue("temperature"))
+            def Sens4temp = (tempSens4?.currentValue("temperature"))
+            def Sens5temp = (tempSens5?.currentValue("temperature"))
+            if (tempSens1)
+            	paragraph "The temperature of the ${tempSens1} is ${Sens1temp} degrees."
+            if (tempSens2)
+            	paragraph "The temperature of the ${tempSens2} is ${Sens2temp} degrees."
+            if (tempSens3)
+            	paragraph "The temperature of the ${tempSens3} is ${Sens3temp} degrees."
+            if (tempSens4)
+            	paragraph "The temperature of the ${tempSens4} is ${Sens4temp} degrees."
+            if (tempSens5)
+            	paragraph "The temperature of the ${tempSens5} is ${Sens5temp} degrees."
+			}
+		} 
+	}      
+        
+        
+page name: "homeStatusConfig"
+	def homeStatusConfig(){
+        dynamicPage(name: "homeStatusConfig", uninstall: false) {
+        section ("Thermoststats") {
+        	input "ThermoStat1", "capability.temperatureMeasurement", title: "First ThermoStat", required: false, default: false, submitOnChange: true 
+        	input "ThermoStat2", "capability.temperatureMeasurement", title: "Second ThermoStat", required: false, default: false, submitOnChange: true 
+        }
+        section ("Temperature Sensors") {
+        	input "tempSens1", "capability.temperatureMeasurement", title: "First Temperature Sensor", required: false, default: false, submitOnChange: true 
+            input "tempSens2", "capability.temperatureMeasurement", title: "Second Temperature Sensor", required: false, default: false, submitOnChange: true 
+            input "tempSens3", "capability.temperatureMeasurement", title: "Third Temperature Sensor", required: false, default: false, submitOnChange: true 
+            input "tempSens4", "capability.temperatureMeasurement", title: "Fourth Temperature Sensor", required: false, default: false, submitOnChange: true 
+            input "tempSens5", "capability.temperatureMeasurement", title: "Fifth Temperature Sensor", required: false, default: false, submitOnChange: true 
+		
+        }
+    }
+}    
 page name: "Choices"    
     def Choices(){
         dynamicPage(name: "Choices", title: "Choose from the available Notifications",install: false, uninstall: false) {
@@ -263,7 +344,7 @@ page name: "Alerts"
             	}
             }
         }
-	}        
+	}        garageDoorControl
         section("Locks", hideWhenEmpty: true) {
             if (TheLock || audioTextLocked || audioTextUnlocked || speech3 || push3 || notify3 || music3) paragraph "Configured with Settings"
             if (Locks) {
@@ -653,15 +734,15 @@ page name: "DevPro"
             section ("Trigger these lights and/or execute these routines when the Profile runs...") {
                 href "devicesControl", title: "Select switches...", description: DevConDescr() , state: completeDevCon(),
                     image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_devices.png"
-                image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Routines.png"
-                def actions = location.helloHome?.getPhrases()*.label 
+                input "newMode", "enum", title: "Choose Mode to change to...", options: location.modes.name.sort(), multiple: false, required: false, submitOnChange: true, 
+					image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Routines.png"
+				def actions = location.helloHome?.getPhrases()*.label 
                 if (actions) {
                     actions.sort()
-                    //if (parent.debug) log.info actions
+                    if (parent.debug) log.info actions
             	}                
                 input "runRoutine", "enum", title: "Select a Routine(s) to execute", required: false, options: actions, multiple: true, 
                 image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Routines.png"
-
             }
         }
     }
@@ -1566,6 +1647,11 @@ def profileEvaluate(params) {
                 if (runRoutine) {
                 location.helloHome?.execute(settings.runRoutine)
                 }
+				if (newMode) {
+				setLocationMode(newMode)
+				//else log.warn "Unable to change to undefined mode '${setMode}'"
+                log.info "The mode has been changed from '${location.mode}' to '${setMode}'"
+				}    		
     		}
         }
 
@@ -2123,7 +2209,7 @@ def supportDescrL() {
                 }
 def DevProDescr() {
     def text = "Tap here to Configure"
-    if (switches || dimmers || hues ||runRoutine || flashSwitches) { 
+    if (switches || dimmers || hues ||runRoutine || flashSwitches || newMode) { 
             text = "Configured" //"These devices will execute: ${switches}, ${dimmers}. Tap to change device(s)" 
     }
     text
@@ -2210,7 +2296,7 @@ def groupsDescr() {
 
 def completeDevPro(){
     def result = ""
-    if (switches || dimmers || runRoutine || hues || flashSwitches) {
+    if (switches || dimmers || runRoutine || hues || flashSwitches || newMode) {
     	result = "complete"	
     }    
     result
@@ -2328,4 +2414,8 @@ private def dateRelease() {
 }
 private def textCopyright() {
 	def text = "       Copyright © 2016 Jason Headley"
+}
+private def textCurrentMode() {
+	def text = "                     The current Mode is \n" +
+    "                            '${location.currentMode}'"
 }
