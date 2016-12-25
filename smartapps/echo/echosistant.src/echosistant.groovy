@@ -1,7 +1,7 @@
 /*
  * EchoSistant - The Ultimate Voice and Text Messaging Assistant Using Your Alexa Enabled Device.
  *
- *		12/24/2016		updates			Profile triggered mode change
+ *		12/24/2016		updates			Profile triggered mode change, Home Status page
  *		12/23/2016		Release 3.0.6	Version 3.0 Release Version
  *		12/22/2016		Release 3.0.5 	Alert variables (Bobby) 
  *		12/19/2016		Release 3.0.4 	Final Review of 3.0 version (Bobby)
