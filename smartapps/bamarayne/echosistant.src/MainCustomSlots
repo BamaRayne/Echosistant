@@ -1,12 +1,18 @@
 LIST_OF_COMMANDS
 
+brighten
 brighter
+cancel
 colder
 cooler
 darker
-hotter
+decrease
+dim
 down
 freezing
+hotter
+increase
+mute
 not bright enough
 not cold enough
 not dark enough
@@ -14,7 +20,11 @@ not hot enough
 not loud enough
 off
 on
+quiet
 repeat
+run
+set
+set level
 too bright
 too chilly
 too cold
@@ -22,21 +32,12 @@ too dark
 too hot
 too loud
 too warm
+unmute
 up
 warmer
-increase
-decrease
-set
-set level
-dim
-brighten
-what temperature
 what lights
-mute
-unmute
-quiet
-cancel
-run
+what mode
+what temperature
 
 
 LIST_OF_UNITS
