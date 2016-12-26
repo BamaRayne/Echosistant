@@ -1,7 +1,7 @@
 /*
  * EchoSistant - The Ultimate Voice and Text Messaging Assistant Using Your Alexa Enabled Device.
  *
- *		12/24/2016		updates			Profile triggered mode change, Home Status page, canned Alexa Message
+ *		12/25/2016		Release 3.0.7	Profile triggered mode change, Home Status page, canned Alexa Message
  *		12/23/2016		Release 3.0.6	Version 3.0 Release Version
  *		12/22/2016		Release 3.0.5 	Alert variables (Bobby) 
  *		12/19/2016		Release 3.0.4 	Final Review of 3.0 version (Bobby)
@@ -81,7 +81,8 @@ preferences {
 
     //Profile Pages    
     page name: "mainProfilePage"
-    	page name: "MsgPro"
+    	page name: "ProTrig"
+        page name: "MsgPro"
     	page name: "SMS"
     	page name: "DevPro"
     	page name: "devicesControl"    
@@ -103,7 +104,7 @@ page name: "mainParentPage"
                     image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Config.png"    
                 href "about", title: "Notifications, Device Controls, and Integrations", description: settingsDescr(), state: completeSettings(),
                     image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Config.png"                
-                href "homeStatus", title: "What is the status of my Home?", 
+                href "homeStatus", title: "Home Status Dashboard", description:  "The current mode is '${location.currentMode}'", state: completeSettings(),
                     image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Routines.png"                
 				href "support", title: "EchoSistant Security and Support", description: supportDescrL(), state: completeProfiles(),
                     image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Amazon_alexa.png"                               
@@ -193,7 +194,7 @@ page name: "about"
                 	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_CoRE.png"
             	} 
                 section ("Configure the Home Status Page") {
-                	href "homeStatusConfig", title: "Choose devices to display on the Home Status Page", description: "" , state: comlete,               
+                	href "homeStatusConfig", title: "Choose devices to display on the Home Status Page", description: "" , state: complete,               
                 	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Routines.png" 
 				}
 			}     
@@ -201,9 +202,9 @@ page name: "about"
 page name: "homeStatus"
 	def homeStatus(){
         dynamicPage(name: "homeStatus", uninstall: false) {
-        section ("Current Mode") {
-            paragraph "${textCurrentMode()}"
-                }
+//        section ("Current Mode") {
+//            paragraph "${textCurrentMode()}"
+//                }
         section ("ThermoStats and Temperature") {
         	def tStat1 = ThermoStat1
             def temp1 = (tStat1?.currentValue("temperature"))
@@ -222,7 +223,7 @@ page name: "homeStatus"
         if ("${mode1}" == "heat")
             paragraph "The temperature of the ${tStat1} is ${temp1} degrees, and the thermostat is set to ${setPH1} degrees and is in ${mode1} mode."
         if ("${mode1}" == "off")
-        	paragraph "The ${tStat1} theremostat is currently ${mode1}"      	
+        	paragraph "The ${tStat1} thermostat is currently ${mode1}"      	
         if ("${mode2}" == "auto") 
         	paragraph "The temperature of the ${tStat2} is ${temp2} degrees. The thermostat is in ${mode2} mode, the heating setpoint is ${setPH2} and the cooling setpoint is ${setPC2}."
         if ("${mode2}" == "cool")
@@ -230,7 +231,7 @@ page name: "homeStatus"
         if ("${mode2}" == "heat")
             paragraph "The temperature of the ${tStat2} is ${temp2} degrees, and the thermostat is set to ${setPH2} degrees and is in ${mode2} mode."
         if ("${mode2}" == "off")
-        	paragraph "The ${tStat2} theremostat is currently ${mode2}."
+        	paragraph "The ${tStat2} thermostat is currently ${mode2}."
 		}
 		section ("Temperature Sensors") {
         	def Sens1temp = (tempSens1?.currentValue("temperature"))
@@ -671,6 +672,8 @@ page name: "pageReset"
 def mainProfilePage() {	
     dynamicPage(name: "mainProfilePage", title:"I Want This Profile To...", install: true, uninstall: true) {
         section {
+        	href "ProTrig", title: "Run this Profile when these actions occur...", description: none, 
+            	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Config.png"
            	href "MsgPro", title: "Send Audio Messages to these devices...", description: MsgProDescr(), state: completeMsgPro(),
    				image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Media.png" 
             href "SMS", title: "Send Text & Push Messages...", description: SMSDescr() , state: completeSMS(),
@@ -687,6 +690,18 @@ def mainProfilePage() {
         }    
 	}
 }
+page name: "ProTrig"
+    def ProTrig(){
+        dynamicPage(name: "ProTrig", title: "External Profile Triggers", uninstall: false){
+        section ("When any of these Devices Trigger", hideWhenEmpty: true){
+        	input "trigMotion", "capability.motionSensor", title: "Motion Sensor?", required: false, multiple: true, submitOnChange: true
+			input "trigContact", "capability.contactSensor", title: "Contact Sensor?", required: false, multiple: true, submitOnChange: true
+		//	input "trigButtons", "capability.holdableButton", title: "Button?", required: false, multiple: true, submitOnChange: true
+			input "trigPresence", "capability.presenceSensor", title: "Presence Sensor?", required: false, multiple: true, submitOnChange: true
+            input "trigSwitches", "capability.switch", title: "Switches?", required: false, multiple: true, submitOnChange: true
+		}
+	}
+}    
 page name: "MsgPro"
     def MsgPro(){
         dynamicPage(name: "MsgPro", title: "Using These Media Devices...", uninstall: false){
@@ -942,7 +957,7 @@ def initialize() {
 		Subscriptions
 ************************************************************************************************************/
 def subscribeChildToEvents() {
-    	if (debug) log.debug "Subscribing Child apps to events"
+   	if (debug) log.debug "Subscribing Child apps to events"
 	if (runModes) {
 		subscribe(runMode, location.currentMode, modeChangeHandler)
 	}
@@ -952,7 +967,7 @@ def subscribeChildToEvents() {
     }
 
 def subscribeToEvents() {
-	if (allNotifications) {
+    if (allNotifications) {
     	if (debug) log.debug "Subscribing Parent app to events"
     	if (switchesAndDimmers) {
             if (TheSwitch) {
@@ -2284,6 +2299,13 @@ def SMSDescr() {
      }
     text
 }
+def completeStatus(){
+	def text = ""
+    if (tStat1) {
+    	text = "${location.currentMode}"
+        }
+        text
+}
 
 def completeGroups(){
     def result = ""
@@ -2410,13 +2432,13 @@ private def textVersion() {
 	def text = "3.0"
 }
 private def textRelease() {
-	def text = "3.0.6"
+	def text = "3.0.7"
 }
 private def textReleaseNotes() {
-	def text = "Complete Overhaul. See the Wiki"
+	def text = "See the Wiki"
 }
 private def dateRelease() {
-	def text = "12/23/2016"
+	def text = "12/25/2016"
 }
 private def textCopyright() {
 	def text = "       Copyright © 2016 Jason Headley"
