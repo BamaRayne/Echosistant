@@ -1,7 +1,7 @@
 /*
  * EchoSistant - The Ultimate Voice and Text Messaging Assistant Using Your Alexa Enabled Device.
  *
- *		12/25/2016		Release 3.0.7	Profile triggered mode change, Home Status page, canned Alexa Message
+ *		12/25/2016		Release 3.0.7	Profile triggered mode change, Home Status page
  *		12/23/2016		Release 3.0.6	Version 3.0 Release Version
  *		12/22/2016		Release 3.0.5 	Alert variables (Bobby) 
  *		12/19/2016		Release 3.0.4 	Final Review of 3.0 version (Bobby)
@@ -77,6 +77,8 @@ preferences {
         page name: "AlexaFeelings"
         page name: "homeStatus"
         page name: "homeStatusConfig"
+        page name: "setWeather"
+        page name: "getWeather"
 
 
     //Profile Pages    
@@ -195,17 +197,18 @@ page name: "about"
             	} 
                 section ("Configure the Home Status Page") {
                 	href "homeStatusConfig", title: "Choose devices to display on the Home Status Page", description: "" , state: complete,               
-                	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Routines.png" 
+                	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Routines.png"
+                    href "setWeather", title: "Tap here to configure Weather information", description: "", state: complete,
+                    image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Routines.png"
 				}
 			}     
 		} 
-//
 page name: "homeStatus"
 	def homeStatus(){
         dynamicPage(name: "homeStatus", uninstall: false) {
-//        section ("Current Mode") {
-//            paragraph "${textCurrentMode()}"
-//                }
+         section("Today's Weather"){
+            paragraph(getWeather())
+    	}
         section ("ThermoStats and Temperature") {
         	def tStat1 = ThermoStat1
             def temp1 = (tStat1?.currentValue("temperature"))
@@ -545,16 +548,8 @@ page name: "devicesControlMain"
             section ("Thermostats", hideWhenEmpty: true){
                 input "cTstat", "capability.thermostat", title: "Control These Thermostat(s)...", multiple: true, required: false
             }
-//            section ("", hideWhenEmpty: true){
-//                input "showAdvanced", "bool", title: "Advanced Options", default: false, submitOnChange: true
-//				if (showAdvanced) {	
-//                    href "devicesControlCustom", title: "Create custom devices and commands", description: devicesControlCustomDescr() , state: completeDevicesControlCustom(),
-//                    image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Plus.png"                    
-//            	}
-//            }
         }
     }
-    
 page name: "devicesControlCustom"    
     def devicesControlCustom(){
         dynamicPage(name: "devicesControlCustom", title: "Create Devices That Alexa Can Control Directly",install: false, uninstall: false) {
@@ -618,7 +613,6 @@ page name: "devicesControlCustom"
             }
         }
     }    
-
 page name: "tokens"
     def tokens(){
             dynamicPage(name: "tokens", title: "Security Tokens", uninstall: false){
@@ -670,14 +664,37 @@ page name: "pageReset"
                     }
                 }
             } 
+def setWeather() {
+	dynamicPage(name: "setWeather", title: "Weather Settings") {
+		section {
+    		input "wImperial", "bool", title: "Report Weather In Imperial Units\n(°F / MPH)", defaultValue: "false", required: "false"
+            input "wZipCode", "text", title: "Zip Code (If Location Not Set)", required: "false"
+            paragraph("Currently forecast is automatically pulled from getWeatherFeature your location must be set in your SmartThings app for this to work.")
+		}
+	}
+}
+def getWeather(){
+	def result ="Today's weather is unavailable"
+	try {
+    	def weather = getWeatherFeature("forecast", settings.wZipCode)
+    	if(settings.wImperial){
+			result = "Today's forcast is " + weather.forecast.txt_forecast.forecastday[0].fcttext + " Tonight it will be " + weather.forecast.txt_forecast.forecastday[1].fcttext
+	    }else{
+    		result = "Today's forcast is " + weather.forecast.txt_forecast.forecastday[0].fcttext_metric + " Tonight it will be " + weather.forecast.txt_forecast.forecastday[1].fcttext_metric
+	    }
+		return result
+	}
+	catch (Throwable t) {
+		log.error t
+        return result
+	}
+}
 /***********************************************************************************************************************
     PROFILE UI CONFIGURATION
 ***********************************************************************************************************************/
 def mainProfilePage() {	
     dynamicPage(name: "mainProfilePage", title:"I Want This Profile To...", install: true, uninstall: true) {
         section {
-        	href "ProTrig", title: "Run this Profile when these actions occur...", description: none, 
-            	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Config.png"
            	href "MsgPro", title: "Send Audio Messages to these devices...", description: MsgProDescr(), state: completeMsgPro(),
    				image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Media.png" 
             href "SMS", title: "Send Text & Push Messages...", description: SMSDescr() , state: completeSMS(),
@@ -694,18 +711,6 @@ def mainProfilePage() {
         }    
 	}
 }
-page name: "ProTrig"
-    def ProTrig(){
-        dynamicPage(name: "ProTrig", title: "External Profile Triggers", uninstall: false){
-        section ("When any of these Devices Trigger", hideWhenEmpty: true){
-        	input "trigMotion", "capability.motionSensor", title: "Motion Sensor?", required: false, multiple: true, submitOnChange: true
-			input "trigContact", "capability.contactSensor", title: "Contact Sensor?", required: false, multiple: true, submitOnChange: true
-		//	input "trigButtons", "capability.holdableButton", title: "Button?", required: false, multiple: true, submitOnChange: true
-			input "trigPresence", "capability.presenceSensor", title: "Presence Sensor?", required: false, multiple: true, submitOnChange: true
-            input "trigSwitches", "capability.switch", title: "Switches?", required: false, multiple: true, submitOnChange: true
-		}
-	}
-}    
 page name: "MsgPro"
     def MsgPro(){
         dynamicPage(name: "MsgPro", title: "Using These Media Devices...", uninstall: false){
@@ -837,8 +842,6 @@ page name: "MsgConfig"
             input "MsgOpt", "bool", title: "I want to use these configuration options...", defaultValue: false, submitOnChange: true,
                 image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Media.png"
                 if (MsgOpt) {
-                	input "AprofileMsg", "bool", title: "Have Alexa speak a predetermined message when profile executes?", default: false, submitOnChange: true 
-                		if (AprofileMsg) input "AprofileMsgTxt", "Text", title: "Play this message when this profile executes", description: none, required: false, capitalization: "sentences"
 					input "ShowPreMsg", "bool", title: "Pre-Message (plays on Audio Playback Device before message)", defaultValue: false, submitOnChange: true
                         if (ShowPreMsg) input "PreMsg", "text", title: "Pre-Message...", defaultValue: none, submitOnChange: true, required: false 
                     input "Acustom", "bool", title: "Custom Response from Alexa...", defaultValue: false, submitOnChange: true
@@ -921,7 +924,6 @@ def updated() {
     unsubscribe()
     initialize()
 }
-
 def initialize() {
 	if (!parent){
     	if (debug) log.debug "Initializing Parent app"
@@ -969,7 +971,6 @@ def subscribeChildToEvents() {
    		subscribe(runDay, location.day, location.currentDay)
 		} 
     }
-
 def subscribeToEvents() {
 	if (allNotifications) {
     	if (debug) log.debug "Subscribing Parent app to events"
@@ -1026,17 +1027,14 @@ def childUninstalled() {
 ************************************************************************************************************/
 def processBegin(){
     if (debug) log.debug "^^^^____Initial Commands Received from Lambda___^^^^"
-    
     def versionTxt  = params.versionTxt 		
     def versionDate = params.versionDate
     def releaseTxt = params.releaseTxt
         state.lambdaReleaseTxt = releaseTxt
         state.lambdaReleaseDt = versionDate
         state.lambdatextVersion = versionTxt
-        
     def versionSTtxt = textVersion()
 	def pContinue = true
-
     if (debug){
         log.debug "Message received from Lambda with: (ver) = '${versionTxt}', (date) = '${versionDate}', (release) = '${releaseTxt}'"+ 
         ". And sent to Lambda: pContinue = '${pContinue}', versionSTtxt = '${versionSTtxt}'"
@@ -1053,7 +1051,6 @@ def controlDevices() {
         def ctDevice = params.pDevice
         def ctUnit = params.pUnit
 		def pintentName = params.intentName
-
         def outputTxt = " "
         def pContCmds = "false"
         def pContCmdsR = "false"
@@ -1177,7 +1174,6 @@ def controlDevices() {
 /************************************************************************************************************
    EASTER EGG HUNT ENDS
 ************************************************************************************************************/        
-       
        if (ctDevice != "undefined"){       
            if (command == "on" || command == "off") {
                  if (cSwitches) {
@@ -1293,11 +1289,9 @@ def controlDevices() {
                 else {
                     if (command == "run") {
                     	if (debug) log.debug "Profile run command = '${ctCommand}'"
-                    	
                         if (ctNum > 0 && ctUnit == "MIN") {
                                 runIn(ctNum*60, controlHandler, [data: [type: "cProfiles", command: command, device: profileMatch, unit: ctUnit, num: ctNum]])
                                 outputTxt = "Ok, running profile actions, for " + ctProfile + ", in " + numText
-                        
                         }
                         else {
                         def data = [type: "cProfiles", command: command, device: profileMatch, unit: ctUnit, num: ctNum]
@@ -1322,7 +1316,6 @@ def controlHandler(data) {
     def unitU = data.unit
     def numN = data.num
 	def pLevel = cLevel
-    
     if (deviceType == "cProfiles") {	
 		childApps.each { child ->
         	def cMatch = child.label
@@ -1518,7 +1511,6 @@ def controlHandler(data) {
    FEEDBACK HANDLER
 ************************************************************************************************************/      
 def getFeedback(data) { 
-
     def cmd = data.command
     def dvc = data.device
     def tStat1 = ThermoStat1
@@ -1529,39 +1521,31 @@ def getFeedback(data) {
     def sens4temp = tempSens4//?.currentValue("temperature"))
     def sens5temp = tempSens5//?.currentValue("temperature"))
     def sensTemp
-
 //mode
-	if (cmd == "what mode") {
+	if (cmd == "what mode is it" || cmd == "what mode" || cmd == "mode"  ) {
 		def fTxt =  "The current mode is " + location.currentMode
         if (debug) log.debug "Preparing feedback: '${fTxt}', for command: '${cmd}', device: '${dvc}'"
     		return  fTxt 
-
 	}
 //temperature
 	else {
-        if (cmd == "what temperature") {
+        if (cmd == "what temperature" || cmd == "temperature") {
             if (dvc == tStat1.label.toLowerCase()) {
                     sensTemp = tStat1
            			if (debug) log.debug "Matched labe: feedback:"// '${sensTemp}'"
-
             }
             else 
                 if (dvc == tStat2.label.toLowerCase()) {
                     sensTemp = tStat2
            			if (debug) log.debug "Matched labe: feedback:"// '${sensTemp}'"
-
-
                 }
                 if (dvc == sens1temp.label.toLowerCase()) {
                     sensTemp = sens1temp //(sens1temp?.currentValue("temperature"))
            			if (parent.debug) log.debug "Matched labe: feedback:"// '${sensTemp}'"
-
-                    
                 } 
                 if (dvc == sens2temp?.label.toLowerCase()) {
                     sensTemp = sens2temp  //?.currentValue("temperature"))
            			if (parent.debug) log.debug "Matched labe: feedback:"// '${sensTemp}'"
-
                 } 
                 if (dvc == sens3temp.label.toLowerCase()) {
                     sensTemp = sens3temp //?.currentValue("temperature"))
@@ -1578,18 +1562,15 @@ def getFeedback(data) {
                     def fTxt = dvc + " temperature is " + tTemp + " degrees"
         			if (debug) log.debug "Preparing feedback: '${fTxt}', for command: '${cmd}', device: '${dvc}'"
                     return  fTxt 
-
             	}
              }
 		if (cmd == "what lights") {
         			def fTxt = "Sorry I cannot give you status feedback on light switches, yet"
                         return  fTxt 
-
     	}
     }
        def fTxt = "Sorry I could not find a device named " + tTemp + " in your list of selected feedback devices"
                         return  fTxt 
-    
 }    
 /************************************************************************************************************
    TEXT TO SPEECH PROCESS (PARENT) - Lambda via page t
@@ -1605,15 +1586,12 @@ def processTts() {
         def dataSet = [ptts:ptts,pttx:pttx,pintentName:pintentName] 
         	def repeat = "repeat last message" 
                     	log.debug "repeat = ${repeat}"
-
         	def play = "play message"
                     	log.debug "play = ${play}"
-
         	def record = ptts.replace("record a message", "")
         				log.debug "record = ${record}"
         	def recordingNow = ptts.startsWith("record a message")
         				log.debug "recordingNow = ${recordingNow}"
-      
         if (ptts==repeat || ptts == play) {
 						childApps.each { child ->
     						def cLast = child.label.toLowerCase()
@@ -1650,7 +1628,6 @@ def processTts() {
 									def cAfeedBack = child.AfeedBack
                                     def AprofileMsg = child.AprofileMsg
                                     pContCmds = child.ContCmds
-                                    
                                     if (recordingNow == true) {
         								state.recording = record
         								outputTxt = "Ok, message recorded. To play it later, just say: play message to this profile"
@@ -1682,7 +1659,6 @@ def processTts() {
         if (debug) log.debug "Alexa response sent to Lambda = '${outputTxt}', '${pContCmds}' "
 		return ["outputTxt":outputTxt, "pContCmds":pContCmds]
 }
-
 /******************************************************************************************************
    SPEECH AND TEXT PROCESSING (PROFILE)
 ******************************************************************************************************/
@@ -1787,7 +1763,6 @@ def c = ""
 def children = getChildApps()	
     children?.each { child -> 
 		c +=child.label +"\n" } 
-
 def ProfileDetails = 	" \n" +
 					"Listed below you will find, for your quick reference, the LIST_OF_PROFILES required for the Main Intent Skill \n" +
 					"\n"+
@@ -1795,10 +1770,8 @@ def ProfileDetails = 	" \n" +
                     "\n"+
                     "  LIST_OF_PROFILES \n" +
 							"${c}" 
-                            				            		
 return  ProfileDetails
 }
-
 def getDeviceDetails() {
 def s = "" 
 	cSwitches.each { device -> 
@@ -1809,7 +1782,6 @@ def d = ""
 def t = "" 
 	cTstat.each { device -> 
 		t +=device.label +"\n" }
-        
 def DeviceDetails = 	" \n" +
 					"Listed below you will find, for your quick reference, the LIST_OF_DEVICES required for the Main Intent Skill \n" +
                     " \n" +
@@ -1818,7 +1790,6 @@ def DeviceDetails = 	" \n" +
                     "  LIST_OF_DEVICES\n" + 			
                      " \n" +    		
                             "${s} ${d} ${t}\n" 
-                    
 return DeviceDetails
 }
 /***********************************************************************************************************************
@@ -1900,7 +1871,6 @@ private void sendtxt(message) {
     if (notify) {
         sendNotificationEvent(message)
              	if (parent.debug) log.debug "Sending notification to mobile app"
-
     }
     if (sms) {
         sendText(sms, message)
@@ -1916,7 +1886,6 @@ private void sendText(number, message) {
         }
     }
 }
-
 /************************************************************************************************************
    Switch/Color/Dimmer/Toggle Handlers
 ************************************************************************************************************/
@@ -1931,7 +1900,6 @@ def turnOffDimmers() { dimmers?.off() }
 def turnOnOtherDimmers() { def otherlevel = otherDimmersLVL < 0 || !otherDimmersLVL ?  0 : otherDimmersLVL >100 ? 100 : otherDimmersLVL as int
 			otherDimmers?.setLevel(otherDimmersLVL) }
 def turnOffOtherDimmers() { otherDimmers?.off() }            
-
 // Primary control of profile triggered lights/switches when delayed
 def profileDeviceControl() {
 	if (sSecondsOn) { runIn(sSecondsOn,turnOnSwitch)}
@@ -1942,7 +1910,6 @@ def profileDeviceControl() {
 	if (sSecondsOff2) { runIn(sSecondsOff2,turnOffDimmers)}
     if (sSecondsOn3) { runIn(sSecondsOn3,turnOnOtherDimmers)}
 	if (sSecondsOff3) { runIn(sSecondsOff3,turnOffOtherDimmers)}
-
 // Control of Lights and Switches when not delayed            
     if (!sSecondsOn) {
             	if  (switchCmd == "on") { switches?.on() }
@@ -1957,7 +1924,6 @@ def profileDeviceControl() {
         				otherDimmers?.setLevel(otherlevel) }
                 }
 			}
-
 private colorB() { 
 	if (hueCmd == "off") { hues?.off() }
     if (hueCmd1 == "off") { hues1?.off() }
@@ -1969,14 +1935,10 @@ private colorB() {
         if (color == "Red")hueColor = 0
         if (color == "Blue")hueColor = 70//60  
         if (color == "Green")hueColor = 39//30
-        
         if(color == "Yellow")hueColor = 25//16
         if(color == "Orange")hueColor = 11
         if(color == "Purple")hueColor = 75
         if(color == "Pink")hueColor = 83
-        
-        
-        
 	def colorB = [hue: hueColor, hue1: hueColor1, saturation: 100, level: (lightLevel as Integer) ?: 100]
     hues*.setColor(colorB)
 	}
@@ -1991,7 +1953,6 @@ private colorB() {
     if (customName && (customHue > -1 && customerHue < 101) && (customSat > -1 && customerSat < 101)) colorData << [name: customName, hue: customHue as int, sat: customSat as int]
     return colorData    
 }    
-    
 private toggle() {
     if (parent.debug) log.debug "The selected device is toggling now"
 	if (switches) {
@@ -2066,7 +2027,6 @@ def alertsHandler(evt) {
     def eDev = evt.device
     def eTxt = " "
     if (debug) log.debug "Received event name ${evt.name} with value:  ${evt.value}, from: ${evt.device}"
-
 	if (getDayOk()==true && getModeOk()==true && getTimeOk()==true) {
         if (eVal == "on") {          
             	if (audioTextOn) {   
@@ -2114,7 +2074,7 @@ def alertsHandler(evt) {
                     playAlert(eTxt, music2)
                     if (push2) sendPush eTxt
 					if (notify2) sendNotificationEvent (eTxt)
-}
+						}
 					}
                 }
         if 	(eVal == "locked") {         
@@ -2123,7 +2083,6 @@ def alertsHandler(evt) {
             speech3?.speak(eTxt)
                     if (music3) {
                         playAlert(eTxt, music3)
- 
 					} 
                 	if (push3) sendPush eTxt
 					if (notify3) sendNotificationEvent (eTxt)                    
@@ -2138,7 +2097,6 @@ def alertsHandler(evt) {
                                 }
                    	if (push3) sendPush eTxt
 					if (notify3) sendNotificationEvent (eTxt)                            
-                            
                     }
                }
         if (eVal == "active") {         
@@ -2178,7 +2136,7 @@ def alertsHandler(evt) {
                     } 
                    	if (push5) sendPush eTxt
 					if (notify5) sendNotificationEvent (eTxt) 
-}
+				}
             }
         if (eVal == "not present")  {        
 				if (debug) log.debug "Received Presence Event but Presence Alerts are turned off"
@@ -2191,7 +2149,7 @@ def alertsHandler(evt) {
                     } 
                    	if (push5) sendPush eTxt
 					if (notify5) sendNotificationEvent (eTxt) 
-}
+					}
                 }
         if (eName == "heatingSetpoint")  {                    
             if (audioTextHeating) {
@@ -2203,12 +2161,10 @@ def alertsHandler(evt) {
                     if (music8) {
                         playAlert(eTxt, music8)
                     } 
-                    
                      if (push8) sendPush eTxt
 					if (notify8) sendNotificationEvent (eTxt) 
                 }
             }
-
             if (eName == "coolingSetpoint") {
 				if (audioTextCooling) {
             		def eTemp = eVal
@@ -2224,9 +2180,6 @@ def alertsHandler(evt) {
                 }
             }  
         }   
-//}
-//}
-
 private txtFormat (message, eDev, eVal) {
     def eTxt = " " 
         if(message) {
@@ -2235,12 +2188,8 @@ private txtFormat (message, eDev, eVal) {
 	  	    eTxt = message
         }  	
             if (debug) log.debug "Processed Alert: ${eTxt} "
-    		
             return eTxt
 }
-
-
-
 /************************************************************************************************************
    Play Sonos Alert
 ************************************************************************************************************/
@@ -2248,7 +2197,6 @@ def playAlert(message, speaker) {
     state.sound = textToSpeech(message instanceof List ? message[0] : message)
     speaker.playTrackAndResume(state.sound.uri, state.sound.duration, volume)
     if (debug) log.debug "Sending message: ${message} to speaker: ${speaker}"
-
 }
 /************************************************************************************************************
    Page status and descriptions 
@@ -2380,7 +2328,6 @@ def completeStatus(){
         }
         text
 }
-
 def completeGroups(){
     def result = ""
     if (gSwitches) {
@@ -2395,7 +2342,6 @@ def groupsDescr() {
      }
     text
 }
-
 def completeDevPro(){
     def result = ""
     if (switches || dimmers || runRoutine || hues || flashSwitches || newMode) {
@@ -2461,7 +2407,6 @@ def completeDevicesControlCustom() {
     }
     result
 }
-
 def devicesControlCustomDescr(deviceName) {
     def text = "Tap here to Configure"
     if (custSwitch1) { 
@@ -2469,7 +2414,6 @@ def devicesControlCustomDescr(deviceName) {
     }
     text
 }
-
 /************************************************************************************************************
    Misc. Text fields
 ************************************************************************************************************/
@@ -2495,7 +2439,6 @@ private def textHelp() {
 		"This smartapp allows you to use an Alexa device to generate a voice or text message on on a different device"
         "See our Wikilinks page for user information!"
 		}
-
 /************************************************************************************************************
    Version/Copyright/Information/Help
 ************************************************************************************************************/
