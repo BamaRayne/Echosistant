@@ -199,6 +199,7 @@ page name: "about"
 				}
 			}     
 		} 
+//
 page name: "homeStatus"
 	def homeStatus(){
         dynamicPage(name: "homeStatus", uninstall: false) {
@@ -260,6 +261,8 @@ page name: "homeStatusConfig"
         section ("Thermoststats") {
         	input "ThermoStat1", "capability.temperatureMeasurement", title: "First ThermoStat", required: false, default: false, submitOnChange: true 
         	input "ThermoStat2", "capability.temperatureMeasurement", title: "Second ThermoStat", required: false, default: false, submitOnChange: true 
+        	//input "ThermoStat3", "capability.temperatureMeasurement", title: "Other Thermostats (not displayed on Dashboard)", required: false, multiple: true 
+        	
         }
         section ("Temperature Sensors") {
         	input "tempSens1", "capability.temperatureMeasurement", title: "First Temperature Sensor", required: false, default: false, submitOnChange: true 
@@ -267,6 +270,7 @@ page name: "homeStatusConfig"
             input "tempSens3", "capability.temperatureMeasurement", title: "Third Temperature Sensor", required: false, default: false, submitOnChange: true 
             input "tempSens4", "capability.temperatureMeasurement", title: "Fourth Temperature Sensor", required: false, default: false, submitOnChange: true 
             input "tempSens5", "capability.temperatureMeasurement", title: "Fifth Temperature Sensor", required: false, default: false, submitOnChange: true 
+            //input "tempSens6", "capability.temperatureMeasurement", title: "Other Temperature Sensors (not displayed on Dashboard)", required: false, multiple: true 
 		
         }
     }
@@ -957,7 +961,7 @@ def initialize() {
 		Subscriptions
 ************************************************************************************************************/
 def subscribeChildToEvents() {
-   	if (debug) log.debug "Subscribing Child apps to events"
+    	if (debug) log.debug "Subscribing Child apps to events"
 	if (runModes) {
 		subscribe(runMode, location.currentMode, modeChangeHandler)
 	}
@@ -967,7 +971,7 @@ def subscribeChildToEvents() {
     }
 
 def subscribeToEvents() {
-    if (allNotifications) {
+	if (allNotifications) {
     	if (debug) log.debug "Subscribing Parent app to events"
     	if (switchesAndDimmers) {
             if (TheSwitch) {
@@ -1156,7 +1160,13 @@ def controlDevices() {
             unschedule()
 			outputTxt = "Ok, canceling timer"
          	if (debug) log.debug "Cancel message received; sending '${outputTxt}' to Lambda"           
-       }  
+       }
+       if (ctCommand == "what temperature" || ctCommand == "what lights" || ctCommand == "what mode" ) {
+        	if (debug) log.debug "Processing feedback"
+            def data = [command: ctCommand, device: ctDevice]
+            outputTxt = getFeedback(data)         	
+            if (debug) log.debug "Sending feedback message to Lambda '${outputTxt}'"           
+       }       
 /************************************************************************************************************
    EASTER EGG HUNT STARTS
 ************************************************************************************************************/       
@@ -1507,13 +1517,79 @@ def controlHandler(data) {
 /************************************************************************************************************
    FEEDBACK HANDLER
 ************************************************************************************************************/      
-def feedbackHandler(data) {   
-    def deviceType = data.type
-    def deviceCommand = data.command
-   	def deviceD = data.device
-    def unitU = data.unit
-    def numN = data.num
-	def pLevel = cLevel
+def getFeedback(data) { 
+
+    def cmd = data.command
+    def dvc = data.device
+    def tStat1 = ThermoStat1
+    def tStat2 = ThermoStat2
+    def sens1temp = tempSens1//?.currentValue("temperature"))
+    def sens2temp = tempSens2//?.currentValue("temperature"))
+    def sens3temp = tempSens3//?.currentValue("temperature"))
+    def sens4temp = tempSens4//?.currentValue("temperature"))
+    def sens5temp = tempSens5//?.currentValue("temperature"))
+    def sensTemp
+
+//mode
+	if (cmd == "what mode") {
+		def fTxt =  "The current mode is " + location.currentMode
+        if (debug) log.debug "Preparing feedback: '${fTxt}', for command: '${cmd}', device: '${dvc}'"
+    		return  fTxt 
+
+	}
+//temperature
+	else {
+        if (cmd == "what temperature") {
+            if (dvc == tStat1.label.toLowerCase()) {
+                    sensTemp = tStat1
+           			if (debug) log.debug "Matched labe: feedback:"// '${sensTemp}'"
+
+            }
+            else 
+                if (dvc == tStat2.label.toLowerCase()) {
+                    sensTemp = tStat2
+           			if (debug) log.debug "Matched labe: feedback:"// '${sensTemp}'"
+
+
+                }
+                if (dvc == sens1temp.label.toLowerCase()) {
+                    sensTemp = sens1temp //(sens1temp?.currentValue("temperature"))
+           			if (parent.debug) log.debug "Matched labe: feedback:"// '${sensTemp}'"
+
+                    
+                } 
+                if (dvc == sens2temp?.label.toLowerCase()) {
+                    sensTemp = sens2temp  //?.currentValue("temperature"))
+           			if (parent.debug) log.debug "Matched labe: feedback:"// '${sensTemp}'"
+
+                } 
+                if (dvc == sens3temp.label.toLowerCase()) {
+                    sensTemp = sens3temp //?.currentValue("temperature"))
+                }
+                if (dvc == sens4temp.label.toLowerCase()) {
+                    sensTemp = sens4temp //?.currentValue("temperature"))
+                }
+                if (dvc == sens5temp.label.toLowerCase()) {
+                    sensTemp = sens5temp //?.currentValue("temperature"))
+               }
+               if (sensTemp) {
+                    def tTemp = (sensTemp?.currentValue("temperature"))
+                    tTemp = (int) tTemp
+                    def fTxt = dvc + " temperature is " + tTemp + " degrees"
+        			if (debug) log.debug "Preparing feedback: '${fTxt}', for command: '${cmd}', device: '${dvc}'"
+                    return  fTxt 
+
+            	}
+             }
+		if (cmd == "what lights") {
+        			def fTxt = "Sorry I cannot give you status feedback on light switches, yet"
+                        return  fTxt 
+
+    	}
+    }
+       def fTxt = "Sorry I could not find a device named " + tTemp + " in your list of selected feedback devices"
+                        return  fTxt 
+    
 }    
 /************************************************************************************************************
    TEXT TO SPEECH PROCESS (PARENT) - Lambda via page t
@@ -2202,8 +2278,6 @@ def completeSettings(){
     def result = ""
     def ParConC = completeParCon()
     def AlertProC = completeAlertPro()
-    
-    log.debug "ParConC = ${ParConC}, AlertProC = ${ParConC}"
     if (ParConC || AlertProC ) {
         result = "complete"	
     }
@@ -2432,13 +2506,13 @@ private def textVersion() {
 	def text = "3.0"
 }
 private def textRelease() {
-	def text = "3.0.7"
+	def text = "3.0.6"
 }
 private def textReleaseNotes() {
-	def text = "See the Wiki"
+	def text = "Complete Overhaul. See the Wiki"
 }
 private def dateRelease() {
-	def text = "12/25/2016"
+	def text = "12/23/2016"
 }
 private def textCopyright() {
 	def text = "       Copyright © 2016 Jason Headley"
