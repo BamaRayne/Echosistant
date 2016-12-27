@@ -741,7 +741,9 @@ page name: "DevPro"
                     actions.sort()
                     if (parent.debug) log.info actions
             	}                
-                input "runRoutine", "enum", title: "Select a Routine(s) to execute", required: false, options: actions, multiple: true, 
+                input "runRoutine", "enum", title: "Select Routine(s) to execute", required: false, options: actions, multiple: true, 
+                image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Routines.png"
+                input "appLink", "enum", title: "Trigger These appLink Actions", required: false, multiple: true, options: parent.appLinkHandler(value: "list"),
                 image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Routines.png"
             }
         }
@@ -925,7 +927,7 @@ def initialize() {
         subscribeToEvents()
 	}
 	else{
-        unschedule()
+        //unschedule()
     }
     if (parent) {
         if (parent.debug) log.debug "Initializing Child app"
@@ -935,7 +937,7 @@ def initialize() {
         subscribeChildToEvents()
      }
      else{
-        unschedule()
+       //unschedule()
 	}
 }
 /************************************************************************************************************
@@ -952,6 +954,7 @@ def subscribeChildToEvents() {
     }
 
 def subscribeToEvents() {
+	subscribe(location, "appLink", appLinkHandler) //listen for appLink capable apps
 	if (allNotifications) {
     	if (debug) log.debug "Subscribing Parent app to events"
     	if (switchesAndDimmers) {
@@ -1604,6 +1607,7 @@ def profileEvaluate(params) {
         if (intent.toLowerCase() == childName.toLowerCase()){
         	sendLocationEvent(name: "echoSistantProfile", value: app.label, data: data, displayed: true, isStateChange: true, descriptionText: "EchoSistant activated '${app.label}' profile.")
       		if (parent.debug) log.debug "sendNotificationEvent sent to CoRE was '${app.label}' from the TTS process section"
+            if(settings?.appLink){ appLink.each { app -> parent.appLinkHandler(value: "run", data: app) } }
             if (!disableTts){
         			if (PreMsg) 
         				tts = PreMsg + tts
@@ -2424,4 +2428,21 @@ private def textCopyright() {
 private def textCurrentMode() {
 	def text = "                     The current Mode is \n" +
     "                            '${location.currentMode}'"
+}
+
+/*****************************************************************
+ appLink
+*****************************************************************/
+
+// appLink core code: This should be included in every appLink compatible app, and not customised.
+def appLinkHandler(evt){
+    if(!state.appLink) state.appLink = [:]
+    switch(evt.value) { //[appLink V0.0.2 2016-12-08]
+   		case "add":	state.appLink << evt.jsonData;	break;
+        case "del":	state.appLink.remove(evt.jsonData.app);	break;             
+        case "list":	def list = [:];	state.appLink.each {key, value -> value.each{skey, svalue -> list << ["${key}:${skey}" : "[${key}] ${svalue}"]}};
+        	return list.sort { a, b -> a.value.toLowerCase() <=> b.value.toLowerCase() };	break;
+        case "run":	sendLocationEvent(name: "${evt.data.split(":")[0]}", value: evt.data.split(":")[1] , isStateChange: true, descriptionText: "appLink run"); break;
+    }
+    state.appLink.remove("$app.name") // removes this app from list
 }
