@@ -891,6 +891,7 @@ mappings {
 	path("/b") { action: [GET: "processBegin"] }
 	path("/c") { action: [GET: "controlDevices"] }
     path("/t") {action: [GET: "processTts"]}
+    path("/m") { action: [GET: "messengerGetHandler", POST: "messengerPostHandler"] }
 }
 /************************************************************************************************************
 		Base Process
@@ -927,18 +928,13 @@ def initialize() {
         subscribeToEvents()
 	}
 	else{
-        unschedule()
-    }
-    if (parent) {
         if (parent.debug) log.debug "Initializing Child app"
         state.lastMessage = null
     	state.lastTime  = null
         state.recording = null
         subscribeChildToEvents()
+        unschedule()
      }
-     else{
-       unschedule()
-	}
 }
 /************************************************************************************************************
 		Subscriptions
@@ -2446,3 +2442,54 @@ def appLinkHandler(evt){
     }
     state.appLink.remove("$app.name") // removes this app from list
 }
+
+/*****************************************************************
+ Facebook Messenger
+*****************************************************************/
+
+def messengerGetHandler(){
+    if (params.hub.mode == 'subscribe' && params.hub.verify_token == settings.verifyToken) {
+        log.debug "Validating webhook"
+        render contentType: "text/html", data: params.hub.challenge, status: 200
+    } else {
+        log.debug "Failed validation. Make sure the Verify Tokens match."
+        render contentType: "text/html", data: params.hub.challenge, status: 403        
+    }
+}
+
+def messengerPostHandler(){
+    def fbJSON = request.JSON
+    def responseTxt = "Sorry I don't know you."
+    if (debug) log.debug "FB MESSENGER POST EVENT - MESSAGE:  ${fbJSON.entry.messaging.message.text[0][0]}"
+    if (debug) log.debug "FB MESSENGER POST EVENT - SENDER_ID:  ${fbJSON.entry.messaging.sender.id[0][0]}"
+	if(fbAllowedUsers != null && fbAllowedUsers.indexOf("${fbJSON.entry.messaging.sender.id[0][0]}") >= 0){ 
+    	//responseTxt = actionCommand(fbJSON.entry.messaging.message.text[0][0]) as String
+        // The above is my code so wont work for you you will need to set response Txt whatever value you want to return in the FB chat in response to a message
+    }
+    fbSendMessage(fbJSON.entry.messaging.sender.id[0][0], responseTxt)
+}
+
+def fbSendMessage(userid, message){
+	// Send a message to FB
+    def params = [
+        uri: "https://graph.facebook.com/v2.6/me/messages?access_token=$fbAccessToken",
+        body: [recipient: [id: userid], message: [text: message] ]
+    ]
+    try { httpPostJson(params) { resp ->
+    	resp.headers.each { if (debug) log.debug "${it.name} : ${it.value}" }
+        if (debug) log.debug "response contentType: ${resp.contentType}"
+    } } catch (e) { if (debug) log.debug "something went wrong: $e" }
+}
+
+/*
+		// This is used for linking to FB messenger and setting valid users
+		section ("Facebook Messenger Settings") { 
+            input "verifyToken", "password", title: "Verify Token", description:"", required: false
+            input "fbAccessToken", "password", title: "FB Page Access Token", description:"", required: false
+            input "fbAllowedUsers", "text", title: "Allowed User IDs", description:"", required: false
+            paragraph "Verify Token: Used to setup link to FB bot (You make up this value)\nAccess Token: To allow ST to send messages via FB Messenger (From developers.facebook.com)\nAllowed Users: These are the Facebook user IDs, seperated by commas (You can get this in the debug logging)"
+        }
+        
+        // This you should put in the same method you use for returning the app ID and OAuth 
+        log.trace "URL FOR USE AT DEVELOPERS.FACEBOOK.COM:\n${getApiServerUrl()}/api/smartapps/installations/${app.id}/m?access_token=${state.accessToken}"
+*/
