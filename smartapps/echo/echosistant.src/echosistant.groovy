@@ -927,7 +927,7 @@ def initialize() {
         subscribeToEvents()
 	}
 	else{
-        //unschedule()
+        unschedule()
     }
     if (parent) {
         if (parent.debug) log.debug "Initializing Child app"
@@ -937,7 +937,7 @@ def initialize() {
         subscribeChildToEvents()
      }
      else{
-       //unschedule()
+       unschedule()
 	}
 }
 /************************************************************************************************************
