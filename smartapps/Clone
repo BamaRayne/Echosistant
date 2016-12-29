@@ -19,12 +19,12 @@
  *
 /**********************************************************************************************************************************************/
 definition(
-	name			: "Clone${parent ? " - Profile" : ""}",
-    namespace		: "Clone",
+	name			: "EchoSistant${parent ? " - Profile" : ""}",
+    namespace		: "Echo",
     author			: "JH",
 	description		: "The Ultimate Voice Controlled Assistant Using Alexa Enabled Devices.",
 	singleInstance	: true,
-    parent: parent ? "Clone.Clone" : null,
+    parent: parent ? "Echo.EchoSistant" : null,
     category		: "My Apps",
 	iconUrl			: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/app-Echosistant.png",
 	iconX2Url		: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/app-Echosistant@2x.png",
@@ -359,7 +359,7 @@ page name: "profilesPage"
                     section(childApps.size()==1 ? "One Profile configured" : childApps.size() + " Profiles configured" )
             }
             section("Create New Profiles"){
-                    app(appName: "Clone", namespace: "Clone", multiple: true, description: "Tap Here to Create New Profiles...")
+                    app(appName: "EchoSistant", namespace: "Echo", multiple: true, description: "Tap Here to Create New Profiles...")
             } 
         } 
     }
@@ -773,6 +773,18 @@ def mainProfilePage() {
   			href "proGroupsPage", title: "Create Profile Device Groups...", description: ProGroupsDescr(), state: completeProGroups(),
             	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Plus.png" 
             	}
+            }
+            section ("Version 3.0.7 Profiles") {
+           	href "audioPage", title: "Send Audio Messages to these devices...", //description: MsgProDescr(), state: completeMsgPro(),
+   				image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Media.png" 
+            href "smsPage", title: "Send Text & Push Messages...", //description: SMSDescr() , state: completeSMS(),
+            	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Text.png" 
+  			href "proActionsPage", title: "Execute Actions when Profile runs...", //description: DevProDescr(), state: completeDevPro(),
+            	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_devices.png"            			
+  			href "proGroupsPage", title: "Create Profile Device Groups...", //description: groupsDescr(), state: completeGroups(),
+            	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Plus.png" 
+			href "proMsgConPage", title: "With These Global Message Options...", //description: MsgConfigDescr() , state: completeMsgConfig(),
+            	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Extra.png" 
             }
         section ("Name and/or Remove this Profile") {
  		   	label title:"              Rename Profile ", required:false, defaultValue: "New Profile"  
