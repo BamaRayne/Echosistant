@@ -64,6 +64,8 @@ preferences {
             	page name: "proDevicesConPage"            
         	page name: "proGroupsPage"
         	page name: "proMsgConPage"
+            page name: "proActionsRoomPage"
+            page name: "proGroupsRoomPage"
     page name: "profileChoicePage"
     page name: "ttsProfilePage"
     page name: "roomProfilePage"
@@ -383,9 +385,9 @@ page name: "generalPage"
                 	paragraph ("Log into the IDE on your computer and navigate to the Live Logs tab. Leave that window open, come back here, and open this section")
                     input "ShowTokens", "bool", title: "Show Security Tokens", default: false, submitOnChange: true
                     if (ShowTokens) paragraph "The Security Tokens are now displayed in the Live Logs section of the IDE"
-    				if (ShowTokens) log.info "STappID = '${app.id}' , STtoken = '${state.accessToken}'"
+    				if (ShowTokens) log.trace "STappID = '${app.id}' , STtoken = '${state.accessToken}'"
                     if (ShowTokens) paragraph 	"Access token:\n"+
-                                                "${msg}\n"+
+                                                "${state.accessToken}\n"+
                                                 "Application ID:\n"+
                                                 "${app.id}"
 
@@ -738,7 +740,7 @@ page name: "pageReset"
 /***********************************************************************************************************************
     PROFILE UI CONFIGURATION
 ***********************************************************************************************************************/
-def mainProfilePage() {	
+def mainProfilePage() {	///////////////////// REMOVE VER 3 PROFILE INFORMATION IN FUTURE RELEASE//////////////////////////
     dynamicPage(name: "mainProfilePage", title:"I Want This Profile To...", install: true, uninstall: true) {
     	section ("Choose your Profile Type") {
            	if (!profileTypeRoom && !profileTypeTTS) {
@@ -752,45 +754,32 @@ def mainProfilePage() {
         	input "profileTypeRoom", "bool", title: "I want this profile to be a control room...", required: false, submitOnChange: true
             }
         }    
-        if (profileTypeTTS && !profileTypeRoom) {
+        if (profileTypeTTS && !profileTypeRoom) { 
         section ("Messaging Profile") {
-           	href "audioPage", title: "Send Audio Messages to these devices...", description: AudioDescr(), state: completeAudio(),
-   				image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Media.png" 
-            href "smsPage", title: "Send Text & Push Messages...", description: SMSDescr() , state: completeSMS(),
-            	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Text.png" 
-  			href "proActionsPage", title: "Execute Actions when Profile runs...", description: ProActionsDescr(), state: completeProActions(),
-            	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_devices.png"            			
-  			href "proGroupsPage", title: "Create Profile Device Groups...", description: ProGroupsDescr(), state: completeProGroups(),
-            	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Plus.png" 
-			href "proMsgConPage", title: "With These Global Message Options...", description: ProMsgConDescr() , state: completeProMsgCon(),
-            	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Extra.png" 
-            	}
-            }
-        if (profileTypeRoom && !profileTypeTTS) {
-        section ("Room Profile") {
-  			href "proActionsPage", title: "Execute Actions when Profile runs...", description: ProActionsDescr(), state: completeProActions(),
-            	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_devices.png"            			
-  			href "proGroupsPage", title: "Create Profile Device Groups...", description: ProGroupsDescr(), state: completeProGroups(),
-            	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Plus.png" 
-            	}
-            }
-            section ("Version 3.0.7 Profiles") {
-           	href "audioPage", title: "Send Audio Messages to these devices...", //description: MsgProDescr(), state: completeMsgPro(),
+           	href "audioPage", title: "Send Audio Messages to these devices...", //description: AudioDescr(), state: completeAudio(),
    				image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Media.png" 
             href "smsPage", title: "Send Text & Push Messages...", //description: SMSDescr() , state: completeSMS(),
             	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Text.png" 
-  			href "proActionsPage", title: "Execute Actions when Profile runs...", //description: DevProDescr(), state: completeDevPro(),
+  			href "proActionsPage", title: "Execute Actions when Profile runs...", //description: ProActionsDescr(), state: completeProActions(),
             	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_devices.png"            			
-  			href "proGroupsPage", title: "Create Profile Device Groups...", //description: groupsDescr(), state: completeGroups(),
-            	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Plus.png" 
-			href "proMsgConPage", title: "With These Global Message Options...", //description: MsgConfigDescr() , state: completeMsgConfig(),
+			href "proMsgConPage", title: "With These Global Message Options...", //description: ProMsgConDescr() , state: completeProMsgCon(),
             	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Extra.png" 
+            	}
             }
-        section ("Name and/or Remove this Profile") {
+        if (profileTypeRoom && !profileTypeTTS) { 
+        section ("Room Profile") {
+  			href "proActionsRoomPage", title: "Execute Actions when Profile runs...", //description: ProActionsDescr(), state: completeProActions(),
+            	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_devices.png"            			
+  			href "proGroupsRoomPage", title: "Create Profile Device Groups...", //description: ProGroupsDescr(), state: completeProGroups(),
+            	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Plus.png" 
+            	}
+            }
+            section ("Name and/or Remove this Profile") {
  		   	label title:"              Rename Profile ", required:false, defaultValue: "New Profile"  
         }    
 	}
 }
+/////////// START TTS MESSAGING PROFILE ///////////////
 page name: "audioPage"
     def audioPage(){
         dynamicPage(name: "audioPage", title: "Using These Media Devices...", uninstall: false){
@@ -832,27 +821,9 @@ page name: "smsPage"
             }        
         }        
     }
-page name: "proActionsPage"
-    def proActionsPage(){
-        dynamicPage(name: "proActionsPage", uninstall: false) {
-            section ("Trigger these lights and/or execute these routines when the Profile runs...") {
-                href "proDevicesConPage", title: "Select switches...", //description: DevConDescr() , state: completeDevCon(),
-                    image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_devices.png"
-                input "newMode", "enum", title: "Choose Mode to change to...", options: location.modes.name.sort(), multiple: false, required: false, submitOnChange: true, 
-					image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Routines.png"
-				def actions = location.helloHome?.getPhrases()*.label 
-                if (actions) {
-                    actions.sort()
-                    if (parent.debug) log.info actions
-            	}                
-                input "runRoutine", "enum", title: "Select a Routine(s) to execute", required: false, options: actions, multiple: true, 
-                image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Routines.png"
-            }
-        }
-    }
-page name: "proDevicesConPage"
-    def proDevicesConPage() {
-            dynamicPage(name: "proDevicesConPage", title: "Select Devices to use with this profile",install: false, uninstall: false) {
+page name: "proActionsTTSPage"
+    def proActionsTTSPage() {
+            dynamicPage(name: "proActionsTTSPage", title: "Select Devices to use with this profile",install: false, uninstall: false) {
                  section ("Light Switches", hideWhenEmpty: true){
                     input "switches", "capability.switch", title: "Select Lights and Switches...", multiple: true, required: false, submitOnChange: true
                         if (switches) input "switchCmd", "enum", title: "What do you want to do with these switches?", options:["on":"Turn on","off":"Turn off","toggle":"Toggle","delay":"Delay"], multiple: false, required: false, submitOnChange:true
@@ -903,18 +874,6 @@ page name: "proDevicesConPage"
                 }
 			}
 		}
-page name: "proGroupsPage"
-    def proGroupsPage() {
-    	dynamicPage(name: "proGroupsPage", title: "Select Devices to create groups that can be controlled by Alexa within this Profile",install: false, uninstall: false) {
-        	section ("Group of Lights ", hideWhenEmpty: true){
-                    input "gSwitches", "capability.switch", title: "Select Lights and Switches...", multiple: true, required: false, submitOnChange: true
-                    if (gSwitches) {
-                    	paragraph "You can now control this group by speaking commands to Alexa:  \n" +
-                        " E.G: Alexa tell Main Skill, to turn on/off the lights in the Profile Name"
-                    }
-            }
-      	}
-	}
 page name: "proMsgConPage"
     def proMsgConPage(){
         dynamicPage(name: "proMsgConPage", title: "Configure Global Profile Options...", uninstall: false) {
@@ -974,7 +933,40 @@ page name: "certainTime"
                 }
             }
         }
-    }
+    }    
+/////////// END TTS MESSAGING PROFILE ///////////////  
+
+/////////// START ROOM CONTROL PROFILE /////////////// 
+page name: "proActionsRoomPage"
+    def proActionsRoomPage(){
+        dynamicPage(name: "proActionsRoomPage", uninstall: false) {
+                input "newMode", "enum", title: "Choose Mode to change to...", options: location.modes.name.sort(), multiple: false, required: false, submitOnChange: true, 
+					image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Routines.png"
+				def actions = location.helloHome?.getPhrases()*.label 
+                if (actions) {
+                    actions.sort()
+                    if (parent.debug) log.info actions
+            	}                
+                input "runRoutine", "enum", title: "Select a Routine(s) to execute", required: false, options: actions, multiple: true, 
+                image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Routines.png"
+            }
+        }
+    
+
+page name: "proGroupsRoomPage"
+    def proGroupsRoomPage() {
+    	dynamicPage(name: "proGroupsRoomPage", title: "Select Devices to create groups that can be controlled by Alexa within this Profile",install: false, uninstall: false) {
+        	section ("Group of Lights ", hideWhenEmpty: true){
+                    input "gSwitches", "capability.switch", title: "Select Lights and Switches...", multiple: true, required: false, submitOnChange: true
+                    if (gSwitches) {
+                    	paragraph "You can now control this group by speaking commands to Alexa:  \n" +
+                        " E.G: Alexa tell Main Skill, to turn on/off the lights in the Profile Name"
+                    }
+            }
+      	}
+	}
+/////////// END ROOM CONTROL PROFILE ///////////////  
+
 /*************************************************************************************************************
    CREATE INITIAL TOKEN
 ************************************************************************************************************/
@@ -2099,7 +2091,7 @@ private flashLights() {
 	}
 }
 /************************************************************************************************************
-   Alerts Handler
+   Notifications Handler
 ************************************************************************************************************/
 def alertsHandler(evt) {
 	def eVal = evt.value
