@@ -1,6 +1,7 @@
 /*
  * EchoSistant - The Ultimate Voice and Text Messaging Assistant Using Your Alexa Enabled Device.
  *
+ *		12/29/2016		Release 3.0.8	Bug Fix to correct error for auto adjustment of light levels
  *		12/25/2016		Release 3.0.7	Profile triggered mode change, Home Status page, canned Alexa Message
  *		12/23/2016		Release 3.0.6	Version 3.0 Release Version
  *		12/22/2016		Release 3.0.5 	Alert variables (Bobby) 
@@ -1046,6 +1047,7 @@ def controlDevices() {
         if (debug) log.debug "Received Lambda request to control devices with settings:" +
         						" (ctCommand)= ${ctCommand}', (ctProfile) = '${ctProfile}',"+
                                 " ctNum = '${ctNum}', (ctDevice) = '${ctDevice}', (ctUnit) = '${ctUnit}', (pintentName) = '${pintentName}'"   
+			    if (cLevel == null) cLevel = 3 // to fix default missing value
     //Temperature Commands
                 if (command == "colder" || command =="not cold enough" || command =="too hot" || command == "too warm") {
                     commandLVL = "decrease"
@@ -2410,13 +2412,13 @@ private def textVersion() {
 	def text = "3.0"
 }
 private def textRelease() {
-	def text = "3.0.7"
+	def text = "3.0.8"
 }
 private def textReleaseNotes() {
 	def text = "See the Wiki"
 }
 private def dateRelease() {
-	def text = "12/25/2016"
+	def text = "12/29/2016"
 }
 private def textCopyright() {
 	def text = "       Copyright © 2016 Jason Headley"
