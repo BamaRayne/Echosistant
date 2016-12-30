@@ -7,6 +7,7 @@
  *  assistance in troubleshooting.... as I learned.....  Special thanks to Bobby
  *  @SBDOBRESCU for jumping on board and being a co-consipirator in this adventure.
  *
+ *  Version 3.1.3 - 12/29/2016 Minor bug fix to stop cont. command for blending with profile name 
  *  Version 3.1.2 - 12/12/2016
  *  Version 3.1.0 - 12/7/2016
  *  Version 3.0.0 - 12/1/2016  Added new parent variables
@@ -34,8 +35,8 @@ exports.handler = function( event, context ) {
         var areWeDone = true;
 //-------- Validation process and begining interaction with SmartThings app-------------------- 
         var versionTxt = '3.0';
-        var versionDate= '12/23/2016';
-        var releaseTxt = "3.1.5";
+        var versionDate= '12/29/2016';
+        var releaseTxt = "3.1.3";
         var beginURL = url + 'b?&versionTxt=' + versionTxt + '&versionDate=' + versionDate + '&releaseTxt=' + releaseTxt + '&access_token=' + STtoken;
         https.get( beginURL, function( response ) {
         response.on( 'data', function( data ) {
@@ -94,7 +95,7 @@ exports.handler = function( event, context ) {
                         var speechText = resJSON.outputTxt;
                         if (pContCmds === true) { 
                             areWeDone=false;
-                            speechText = speechText + ', send another message to' + intentName; 
+                            speechText = speechText + ', send another message to, ' + intentName; 
                         }
                         else {
                             areWeDone=true;
