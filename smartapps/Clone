@@ -19,12 +19,12 @@
  *
 /**********************************************************************************************************************************************/
 definition(
-	name			: "EchoSistant${parent ? " - Profile" : ""}",
-    namespace		: "Echo",
+	name			: "Clone${parent ? " - Profile" : ""}",
+    namespace		: "Clone",
     author			: "JH",
 	description		: "The Ultimate Voice Controlled Assistant Using Alexa Enabled Devices.",
 	singleInstance	: true,
-    parent: parent ? "Echo.EchoSistant" : null,
+    parent: parent ? "Clone.Clone" : null,
     category		: "My Apps",
 	iconUrl			: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/app-Echosistant.png",
 	iconX2Url		: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/app-Echosistant@2x.png",
@@ -81,7 +81,7 @@ def pageMain() { if (!parent) mainParentPage() else mainProfilePage() }
 page name: "mainParentPage"
     def mainParentPage() {	
        dynamicPage(name: "mainParentPage", title:"", install: true, uninstall:false) {
-            section ("") {
+       		section ("") {
                 href "mainIntentPage", title: "EchoSistant Main Intent",  //description: settingsDescr(), state: completeSettings(),
                     image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Config.png"                
 				href "profilesPage", title: "Create Profiles",// description: profilesDescr(), state: completeProfiles(),
@@ -94,31 +94,29 @@ page name: "mainParentPage"
                 	 href "dashboardPage", title: " Dashboard ",
                      image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Config.png"
                      }
-                href "bonusPage", title: " ${textCopyright()}", description: ""
+                href "bonusPage", title: "                    The Current Mode is \n" +
+                	"					                            ${location.currentMode}"
                      }
                 }
 			}
 page name: "mainIntentPage"
     def mainIntentPage() {
             dynamicPage (name: "mainIntentPage", title: "", install: false, uninstall: false) {
-             //section ("Main Intent Page") {
-             //    paragraph "The Main Intent is the Master Control for EchoSistant. You will use it for feedback, executing " +
-            //    "profiles, controlling devices, and most importantly this is where you use 'Alexa Feelings' controls"
-            //     }
-			section("Authorize Devices") {
-	            href "selectDevicesPage", title: "EchoSistant Devices", description: selectDevicesDescr() , state: completeSelectDevices(),
+            section (" I want EchoSistant to... ")
+			section("... use these devices") {
+	            href "selectDevicesPage", title: "Choose devices...", description: selectDevicesDescr() , state: completeSelectDevices(),
     	        image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Rest.png"
 				}
-			section("Alerts & Notifications") {
-	            href "notificationsPage", title: "Alexa Shouts Settings", description: AlertProDescr() , state: completeAlertPro(),
+			section("... tell me about alerts and events") {
+	            href "notificationsPage", title: "Configure Notifications and Alerts...", description: AlertProDescr() , state: completeAlertPro(),
     	        image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Rest.png"
 				}
-			section("Event Updates & Alexa Status Feedback") {
-	            href "feedbackPage", title: "Alexa BackTalks Settings", description: AlertProDescr() , state: completeAlertPro(),
+			section("... give me status about my home") {
+	            href "feedbackPage", title: "Configure Feedback...", description: AlertProDescr() , state: completeAlertPro(),
     	        image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Rest.png"
 				}                
-            section ("Device & Profile Control") {
-                href "deviceControlPage", title: "Alexa Feelings Settings", description: ParConDescr() , state: completeParCon(), 
+            section ("... control my devices using these settings") {
+                href "deviceControlPage", title: "Defaults controls...", description: ParConDescr() , state: completeParCon(), 
                 image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_devices.png" 
                 }
             section ("Integrations & Special Features") {
@@ -129,7 +127,7 @@ page name: "mainIntentPage"
 }
 page name: "selectDevicesPage"    
     def selectDevicesPage(){
-        dynamicPage(name: "selectDevicesPage", title: "Select Devices That EchoSistant Can Use",install: false, uninstall: false) {
+        dynamicPage(name: "selectDevicesPage", title: "Select devices that can be used by EchoSistant...",install: false, uninstall: false) {
         	
             section ("Switches", hideWhenEmpty: true){
                 input "cSwitches", "capability.switch", title: "Allow These Switch(es)...", multiple: true, required: false, submitOnChange: true
@@ -170,7 +168,6 @@ page name: "selectDevicesPage"
                 "HWW":	"Hurricane Wind Warning"
                 ]
              }
-
         }
     }
 page name: "notificationsPage"
@@ -309,7 +306,7 @@ page name: "notificationsPage"
                 	input "push8", "bool", title: "Send Push Notification (optional)", required: false, defaultValue: false, submitOnChange: true
             		input "notify8", "bool", title: "Send message to Mobile App Notifications Tab (optional)", required: false, defaultValue: false, submitOnChange: true
                     }
-                 }
+				}
             }		
        }
          section("Weather", hideWhenEmpty: true) {
@@ -537,8 +534,6 @@ page name: "deviceControlPage"
 	def deviceControlPage(){
     		dynamicPage(name: "deviceControlPage", title: " 'Alexa Feelings' and Device Control", uninstall: false){
 				section ("") {            
-                href "devicesControlMain", title: "Control These Devices with Voice by speaking commands to Alexa (via the Main Skill)", description: ParConDescr() , state: completeParCon(),
-                    image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_devices.png"            			
                     paragraph ("Define Variables for Voice Controlled Devices (for increase/decrease commands)")
                     input "cLevel", "number", title: "Alexa Automatically Adjusts Light Levels by using a scale of 1-10 (default is +/-3)", defaultValue: 3, required: false
                     input "cTemperature", "number", title: "Alexa Automatically Adjusts temperature by using a scale of 1-10 (default is +/-1)", defaultValue: 1, required: false
@@ -612,7 +607,7 @@ page name: "profilesPage"
                     section(childApps.size()==1 ? "One Profile configured" : childApps.size() + " Profiles configured" )
             }
             section("Create New Profiles"){
-                    app(appName: "EchoSistant", namespace: "Echo", multiple: true, description: "Tap Here to Create New Profiles...")
+                    app(appName: "Clone", namespace: "Clone", multiple: true, description: "Tap Here to Create New Profiles...")
             } 
         } 
     }
@@ -849,21 +844,6 @@ page name: "DeviceDetails"
                         }
 					}
                 }    
-page name: "devicesControlMain"    
-    def devicesControlMain(){
-        dynamicPage(name: "devicesControlMain", title: "Select Devices That Alexa Can Control Directly",install: false, uninstall: false) {
-        	
-            section ("Switches", hideWhenEmpty: true){
-                input "cSwitches", "capability.switch", title: "Control These Switches...", multiple: true, required: false, submitOnChange: true
-            }
-            section ("Dimmers", hideWhenEmpty: true){
-                input "cDimmers", "capability.switchLevel", title: "Control These Dimmers...", multiple: true, required: false, submitOnChange: true
-            }
-            section ("Thermostats", hideWhenEmpty: true){
-                input "cTstat", "capability.thermostat", title: "Control These Thermostat(s)...", multiple: true, required: false
-            }
-        }
-    }
 page name: "devicesControlCustom"    
     def devicesControlCustom(){
         dynamicPage(name: "devicesControlCustom", title: "Create Devices That Alexa Can Control Directly",install: false, uninstall: false) {
@@ -2732,6 +2712,9 @@ def devicesControlCustomDescr(deviceName) {
 ************************************************************************************************************/
 private def textLicense() {
 	def text =
+    "       Copyright © 2016 Jason Headley \n" +
+    		   "        Copyright © 2016 Bobby Dobrescu \n \n" +
+
 	"Licensed under the Apache License, Version 2.0 (the 'License'); "+
 	"you may not use this file except in compliance with the License. "+
 	"You may obtain a copy of the License at"+
