@@ -1,6 +1,7 @@
 /*
  * EchoSistant - The Ultimate Voice and Text Messaging Assistant Using Your Alexa Enabled Device.
  *
+ *		12/31/2016		Release 3.0.9	Garage Door control - commands are open and close
  *		12/29/2016		Release 3.0.8	Bug Fix to correct error for auto adjustment of light levels
  *		12/25/2016		Release 3.0.7	Profile triggered mode change, Home Status page, canned Alexa Message
  *		12/23/2016		Release 3.0.6	Version 3.0 Release Version
@@ -538,6 +539,9 @@ page name: "devicesControlMain"
             section ("Dimmers", hideWhenEmpty: true){
                 input "cDimmers", "capability.switchLevel", title: "Control These Dimmers...", multiple: true, required: false, submitOnChange: true
             }
+            section ("Garage Doors", hideWhenEmpty: true){
+            	input "cGdoor", "capability.garageDoorControl", title: "Allow These Garage Door(s)...", multiple: true, required: false, submitOnChange: true
+                }
             section ("Thermostats", hideWhenEmpty: true){
                 input "cTstat", "capability.thermostat", title: "Control These Thermostat(s)...", multiple: true, required: false
             }
@@ -1111,7 +1115,14 @@ def controlDevices() {
                     deviceType = "cGlob"
                     if (debug) log.debug "Global command = '${command}'"
                 }
-        if (ctNum == "undefined" || ctNum =="?") {ctNum = 0}
+
+//Garage Door Commands    
+    			if (command == "open" || command == "close") {
+                	deviceType = "cGdoor"
+                	if (debug) log.debug "Garage Door Command = '${command}'"
+                }
+
+		if (ctNum == "undefined" || ctNum =="?") {ctNum = 0}
 			ctNum = ctNum as int 
       	
         if (ctUnit == "undefined" || ctUnit =="?") {ctUnit = "unknown"}
@@ -1176,6 +1187,37 @@ def controlDevices() {
                         else {outputTxt = "Sorry, I couldn't find a device named " + ctDevice + " in your list of selected switches"}
                   }
             }
+       if (deviceType == "cGdoor"){       
+           if (command == "open" || command == "close") {
+                 if (cGdoor) {
+                        if (debug) log.debug "Searching for device type = cGdoor, device name ='${ctDevice}'"
+                        def deviceMatch = cGdoor.find {s -> s.label.toLowerCase() == ctDevice}             
+                        if (deviceMatch) {
+                            if (debug) log.debug "Found a device: '${deviceMatch}'"
+                            if (ctNum > 0 && ctUnit == "MIN") {
+                                runIn(ctNum*60, controlHandler, [data: [type: "cGdoor", command: command, device: ctDevice, unit: ctUnit, num: ctNum]])
+                                if (command == "open") {
+                                	outputTxt = "Ok, opening " + deviceMatch + ", in " + numText
+                                	}
+                                	else if (command == "close") {
+                                		outputTxt = "Ok, closing " + deviceMatch + ", in " + numText
+                                	}
+                             }
+                             else {
+                                def data = [type: "cGdoor", command: command, device: ctDevice, unit: ctUnit, num: ctNum]
+                                controlHandler(data)
+                                if (debug) log.debug "Processing control handler with: '${data}'"
+                                if (command == "open") {
+                                	outputTxt = "Ok, opening " + deviceMatch }
+                                    	else if (command == "close") {
+                                    		outputTxt = "ok, closing " + deviceMatch }
+                                	else outputTxt = "Ok, turning " + ctDevice + " " + command
+                            }
+                        }
+                        else {outputTxt = "Sorry, I couldn't find a device named " + ctDevice }
+                  }
+            }
+       }             
             if (deviceType == "cDimmers" || deviceType == "cGlobal") {
                 if (commandLVL == "decrease" || commandLVL == "increase" || commandLVL == "setLevel" ) { 
                     if (cDimmers) {           
@@ -1378,7 +1420,14 @@ def controlHandler(data) {
         	deviceMatch."${deviceCommand}"()
         	if (debug) log.debug "cSwitches with command '${deviceCommand}'" 
         } 
-    } 
+    }
+    if (deviceType == "cGdoor") {
+    		def deviceMatch = cGdoor.find {s -> s.label.toLowerCase() == deviceD}
+       if (deviceMatch) {
+       		deviceMatch."${deviceCommand}"()
+            if (debug) log.debug "cGdoor with command '${deviceCommand}'"
+		}
+    }   
 	if (deviceType == "cDimmers") {
 			def deviceDMatch = cDimmers.find {s -> s.label.toLowerCase() == deviceD}
 		if (deviceDMatch) {
@@ -2412,13 +2461,13 @@ private def textVersion() {
 	def text = "3.0"
 }
 private def textRelease() {
-	def text = "3.0.8"
+	def text = "3.0.9"
 }
 private def textReleaseNotes() {
 	def text = "See the Wiki"
 }
 private def dateRelease() {
-	def text = "12/29/2016"
+	def text = "12/31/2016"
 }
 private def textCopyright() {
 	def text = "       Copyright © 2016 Jason Headley"
