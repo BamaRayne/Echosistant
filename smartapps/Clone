@@ -1,7 +1,8 @@
 /*
  * EchoSistant - The Ultimate Voice and Text Messaging Assistant Using Your Alexa Enabled Device.
  *
- *		12/27/2016		Rebuild		Complete makeover of the EchoSistant UI
+ *		12/31/2016		Ver. 4.0.0		Garage door support w/commands open and close, notifications in profiles
+ *		12/27/2016		Rebuild			Complete makeover of the EchoSistant UI
  *
  *
  *
@@ -131,6 +132,9 @@ page name: "selectDevicesPage"
             section ("Dimmers and Colored Bulbs", hideWhenEmpty: true){
                 input "cDimmers", "capability.switchLevel", title: "Allow These Dimmer(s)...", multiple: true, required: false, submitOnChange: true
             }
+            section ("Garage Doors", hideWhenEmpty: true){
+            	input "cGdoor", "capability.garageDoorControl", title: "Allow These Garage Door(s)...", multiple: true, required: false, submitOnChange: true
+                }
             section ("Thermostats", hideWhenEmpty: true){
                 input "cTstat", "capability.thermostat", title: "Allow These Thermostat(s)...", multiple: true, required: false
             }
@@ -1387,7 +1391,7 @@ def controlDevices() {
                     if (debug) log.debug "Temperature command = '${commandLVL}'"
                 }
 	//Dimmer Commands
-                if (command == "darker" || command == "too bright" || command == "dim" || command == "dimmer" ) {
+                if (command == "darker" || command == "darken" || command == "too bright" || command == "dim" || command == "dimmer" ) {
                     commandLVL = "decrease" 
                     deviceType = "cDimmers"
                     if (debug) log.debug "Light command = '${commandLVL}'"
@@ -1433,7 +1437,10 @@ def controlDevices() {
                     deviceType = "cGlobal"
                     if (debug) log.debug "Global command = '${commandLVL}'"
                 }
-
+				if (command == "open" || command == "close") {
+                	deviceType = "cGdoor"
+                	if (debug) log.debug "Garage Door Command = '${command}'"
+                }
                 if (command == "on" || command == "off") {
                     deviceType = "cGlob"
                     if (debug) log.debug "Global command = '${command}'"
@@ -1492,8 +1499,8 @@ def controlDevices() {
                             if (ctNum > 0 && ctUnit == "MIN") {
                                 runIn(ctNum*60, controlHandler, [data: [type: "cSwitches", command: command, device: ctDevice, unit: ctUnit, num: ctNum]])
                                 outputTxt = "Ok, turning " + deviceMatch + " " + command + ", in " + numText
-                            }
-                            else {
+                                }
+                             else {
                                 def data = [type: "cSwitches", command: command, device: ctDevice, unit: ctUnit, num: ctNum]
                                 controlHandler(data)
                                 if (debug) log.debug "Processing control handler with: '${data}'"
@@ -1503,6 +1510,37 @@ def controlDevices() {
                         else {outputTxt = "Sorry, I couldn't find a device named " + ctDevice + " in your list of selected switches"}
                   }
             }
+       if (deviceType == "cGdoor"){       
+           if (command == "open" || command == "close") {
+                 if (cGdoor) {
+                        if (debug) log.debug "Searching for device type = cGdoor, device name ='${ctDevice}'"
+                        def deviceMatch = cGdoor.find {s -> s.label.toLowerCase() == ctDevice}             
+                        if (deviceMatch) {
+                            if (debug) log.debug "Found a device: '${deviceMatch}'"
+                            if (ctNum > 0 && ctUnit == "MIN") {
+                                runIn(ctNum*60, controlHandler, [data: [type: "cGdoor", command: command, device: ctDevice, unit: ctUnit, num: ctNum]])
+                                if (command == "open") {
+                                	outputTxt = "Ok, opening " + deviceMatch + ", in " + numText
+                                	}
+                                	else (command == "close") {
+                                		outputTxt = "Ok, closing " + deviceMatch + ", in " + numText
+                                	}
+                             }
+                             else {
+                                def data = [type: "cGdoor", command: command, device: ctDevice, unit: ctUnit, num: ctNum]
+                                controlHandler(data)
+                                if (debug) log.debug "Processing control handler with: '${data}'"
+                                if (command == "open") {
+                                	outputTxt = "Ok, opening " + deviceMatch }
+                                    	else if (command == "close") {
+                                    		outputTxt = "ok, closing " + deviceMatch }
+                                	else outputTxt = "Ok, turning " + ctDevice + " " + command
+                            }
+                        }
+                        else {outputTxt = "Sorry, I couldn't find a device named " + ctDevice }
+                  }
+            }
+       }     
             if (deviceType == "cDimmers" || deviceType == "cGlobal") {
                 if (commandLVL == "decrease" || commandLVL == "increase" || commandLVL == "setLevel" ) { 
                     if (cDimmers) {           
@@ -1705,7 +1743,14 @@ def controlHandler(data) {
         	deviceMatch."${deviceCommand}"()
         	if (debug) log.debug "cSwitches with command '${deviceCommand}'" 
         } 
-    } 
+    }
+    if (deviceType == "cGdoor") {
+    		def deviceMatch = cGdoor.find {s -> s.label.toLowerCase() == deviceD}
+       if (deviceMatch) {
+       		deviceMatch."${deviceCommand}"()
+            if (debug) log.debug "cGdoor with command '${deviceCommand}'"
+		}
+    }   
 	if (deviceType == "cDimmers") {
 			def deviceDMatch = cDimmers.find {s -> s.label.toLowerCase() == deviceD}
 		if (deviceDMatch) {
