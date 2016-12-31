@@ -24,7 +24,7 @@ main turn the {pDevice} {pCommand} in {pNum} {pUnit}
 main make the {pDevice} {pCommand}
 main make the {pDevice} {pCommand} in {pNum} {pUnit}
 main make the {pDevice} {pCommand} in {pNum} {pUnit}
-main I love {pDevice}
+main I love {pDevice} 
 
 main turn {pCommand} the {pDevice} in {pNum} {pUnit}
 main turn {pCommand} the {pDevice} in {pNum} {pUnit}
@@ -35,7 +35,7 @@ main make it {pCommand} the {pDevice} in {pNum} {pUnit}
 main make it {pCommand} the {pDevice} in {pNum} {pUnit}
 main make it {pCommand} {pDevice} in {pNum} {pUnit}
 main make it {pCommand} {pDevice} in {pNum} {pUnit}
-main {pCommand} last message
+main {pCommand} last message 
 main {pCommand} temperature {pDevice}
 main {pCommand} temperature {pDevice} to {pNum} {pUnit}
 main {pCommand} {pDevice} to {pNum} {pUnit}
