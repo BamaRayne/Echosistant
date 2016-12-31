@@ -2304,13 +2304,11 @@ def alertsHandler(evt) {
     def eName = evt.name
     def eDev = evt.device
     def eTxt = " "
-    if (debug) log.debug "Received event name ${evt.name} with value:  ${evt.value}, from: ${evt.device}"
 
 	if (getDayOk()==true && getModeOk()==true && getTimeOk()==true) {
         if (eVal == "on") {          
             	if (audioTextOn) {   
                 	eTxt = txtFormat(audioTextOn, eDev, eVal)
-                	if (debug) log.debug "Received event: on, playing message:  ${eTxt}"
                     if(speech1) speech1?.speak (eTxt)
                     if (music1) {
                         playAlert(eTxt, music1)
@@ -2321,8 +2319,7 @@ def alertsHandler(evt) {
         }
         if (eVal == "off") {       
                 if (audioTextOff) {
-                eTxt = txtFormat(audioTextOn, eDev, eVal)
-                if (debug) log.debug "Received event: off, playing message:  ${eTxt}"
+                eTxt = txtFormat(audioTextOff, eDev, eVal)
                 speech1?.speak(eTxt)
                     if (music1) {
                         playAlert(eTxt, music1)
@@ -2335,7 +2332,6 @@ def alertsHandler(evt) {
         if (eVal == "open") {     
             	if (audioTextOpen) {
                eTxt = txtFormat(audioTextOpen, eDev, eVal)
-               if (debug) log.debug "Received event:open, playing message:  ${eTxt}"
             speech2?.speak(eTxt)
                 if (music2) {
                 playAlert(eTxt, music2)
@@ -2347,7 +2343,6 @@ def alertsHandler(evt) {
             if (eVal == "closed") {           
                 	if (audioTextClosed) {
                 eTxt = txtFormat(audioTextClosed, eDev, eVal)
-                if (debug) log.debug "Received event closed, playing message:  ${eTxt}"
                 speech2?.speak(eTxt)
                 if (music2) {
                     playAlert(eTxt, music2)
@@ -2359,7 +2354,7 @@ def alertsHandler(evt) {
         if 	(eVal == "locked") {         
 				if (audioTextLocked) {
                 eTxt = txtFormat(audioTextLocked, eDev, eVal)
-            speech3?.speak(eTxt)
+	            speech3?.speak(eTxt)
                     if (music3) {
                         playAlert(eTxt, music3)
  
@@ -2381,10 +2376,8 @@ def alertsHandler(evt) {
                     }
                }
         if (eVal == "active") {         
-				if (debug) log.debug "Received Motion Event but Motion Alerts are turned off"
             		if (audioTextActive) { 
             			eTxt = txtFormat(audioTextActive, eDev, eVal)
-            			if (debug) log.debug "Received event Active, playing message:  ${eTxt}"
             			speech4?.speak(eTxt)
                     		if (music4) {
                         		playAlert(eTxt, music4)
@@ -2394,10 +2387,8 @@ def alertsHandler(evt) {
                 	}
             }
             if (eVal == "inactive")  {         
-				if (debug) log.debug "Received Motion Event but Motion Alerts are turned off"
 					if (audioTextInactive) {
                 		eTxt = txtFormat(audioTextInactive, eDev, eVal)
-                		if (debug) log.debug "Received event Inactive, playing message:  ${eTxt}"
                 			speech4?.speak(eTxt)
                     		if (music4) {
                         		playAlert(eTxt, music4)
@@ -2407,10 +2398,8 @@ def alertsHandler(evt) {
                         }
                 }
         if (eVal == "present") {          
-				if (debug) log.debug "Received Presence Event but Presence Alerts are turned off"
 				if (audioTextPresent) {
                 eTxt = txtFormat(audioTextPresent, eDev, eVal)        
-            if (debug) log.debug "Received event Present, playing message:  ${eTxt}"
             speech5?.speak(eTxt)
                     if (music5) {
                         playAlert(eTxt, music5)
@@ -2420,10 +2409,8 @@ def alertsHandler(evt) {
 }
             }
         if (eVal == "not present")  {        
-				if (debug) log.debug "Received Presence Event but Presence Alerts are turned off"
 				if (audioTextNotPresent) {
                 eTxt = txtFormat(audioTextNotPresent, eDev, eVal)            
-                if (debug) log.debug "Received event Not Present, playing message:  ${eTxt}"
                 speech5?.speak(eTxt)
                     if (music5) {
                         playAlert(eTxt, music5)
@@ -2437,23 +2424,19 @@ def alertsHandler(evt) {
             	def eTemp = eVal
                 eTemp = eTemp.replace('.0', " ")
             	eTxt = txtFormat(audioTextHeating, eDev, eTemp)            
-            	if (debug) log.debug "Received event heatingSetpoint, playing message:  ${eTxt}"
                 speech8?.speak(eTxt)
                     if (music8) {
                         playAlert(eTxt, music8)
                     } 
-                    
                      if (push8) sendPush eTxt
 					if (notify8) sendNotificationEvent (eTxt) 
                 }
             }
-
             if (eName == "coolingSetpoint") {
 				if (audioTextCooling) {
             		def eTemp = eVal
                 	eTemp = eTemp.replace('.0', " ")
                 	eTxt = txtFormat(audioTextCooling, eDev, eTemp)            
-                	if (debug) log.debug "Received event coolingSetpoint, playing message:  ${eTxt} "
                 	speech8?.speak(eTxt)
                 	if (music8) {
                         playAlert(eTxt, music8)
@@ -2462,10 +2445,9 @@ def alertsHandler(evt) {
 					if (notify8) sendNotificationEvent (eTxt) 
                 }
             }  
-        }   
-//}
-//}
-
+if (parent.debug) log.debug "Received a Notification Event.  Event type = ${evt.name}. Event value = ${evt.value}. Event device = ${evt.device}.  \n" +
+"The Notification message is:  ${eTxt}"      
+}   
 private txtFormat (message, eDev, eVal) {
     def eTxt = " " 
         if(message) {
@@ -2474,12 +2456,8 @@ private txtFormat (message, eDev, eVal) {
 	  	    eTxt = message
         }  	
             if (debug) log.debug "Processed Alert: ${eTxt} "
-    		
             return eTxt
 }
-
-
-
 /************************************************************************************************************
    Play Sonos Alert
 ************************************************************************************************************/
@@ -2487,7 +2465,6 @@ def playAlert(message, speaker) {
     state.sound = textToSpeech(message instanceof List ? message[0] : message)
     speaker.playTrackAndResume(state.sound.uri, state.sound.duration, volume)
     if (debug) log.debug "Sending message: ${message} to speaker: ${speaker}"
-
 }
 /************************************************************************************************************
    Page status and descriptions 
@@ -2517,7 +2494,6 @@ def completeSettings(){
     def result = ""
     def ParConC = completeParCon()
     def AlertProC = completeAlertPro()
-    
     log.debug "ParConC = ${ParConC}, AlertProC = ${ParConC}"
     if (ParConC || AlertProC ) {
         result = "complete"	
@@ -2629,7 +2605,6 @@ def groupsDescr() {
      }
     text
 }
-
 def completeDevPro(){
     def result = ""
     if (switches || dimmers || runRoutine || hues || flashSwitches || newMode) {
@@ -2679,8 +2654,6 @@ def selectDevicesDescr() {
 	    
         text
 }
-
-
 def completeMsgConfig(){
     def result = ""
     if (ShowPreMsg || Acustom || Arepeat || AfeedBack || disableTts || ContCmds || ContCmdsR || modes || runDay) {
@@ -2712,7 +2685,6 @@ def completeDevicesControlCustom() {
     }
     result
 }
-
 def devicesControlCustomDescr(deviceName) {
     def text = "Tap here to Configure"
     if (custSwitch1) { 
@@ -2720,7 +2692,6 @@ def devicesControlCustomDescr(deviceName) {
     }
     text
 }
-
 /************************************************************************************************************
    Misc. Text fields
 ************************************************************************************************************/
@@ -2748,7 +2719,6 @@ private def textHelp() {
 		"This smartapp allows you to use an Alexa device to generate a voice or text message on on a different device"
         "See our Wikilinks page for user information!"
 		}
-
 /************************************************************************************************************
    Version/Copyright/Information/Help
 ************************************************************************************************************/
@@ -2771,17 +2741,14 @@ private def textCopyright() {
 	def text = "       Copyright © 2016 Jason Headley \n" +
     		   "        Copyright © 2016 Bobby Dobrescu \n" +
                "	       The Current Mode is ${location.currentMode}"
-			
 }
 private def textCurrentMode() {
 	def text = "                     The current Mode is \n" +
     "                            '${location.currentMode}'"
 }
-
 /*****************************************************************
  appLink
 *****************************************************************/
-
 // appLink core code: This should be included in every appLink compatible app, and not customised.
 def appLinkHandler(evt){
     if(!state.appLink) state.appLink = [:]
@@ -2794,11 +2761,9 @@ def appLinkHandler(evt){
     }
     state.appLink.remove("$app.name") // removes this app from list
 }
-
 /*****************************************************************
  Facebook Messenger
 *****************************************************************/
-
 def messengerGetHandler(){
     if (params.hub.mode == 'subscribe' && params.hub.verify_token == settings.verifyToken) {
         log.debug "Validating webhook"
@@ -2808,7 +2773,6 @@ def messengerGetHandler(){
         render contentType: "text/html", data: params.hub.challenge, status: 403        
     }
 }
-
 def messengerPostHandler(){
     def fbJSON = request.JSON
     def responseTxt = "Sorry I don't know you."
@@ -2820,7 +2784,6 @@ def messengerPostHandler(){
     }
     fbSendMessage(fbJSON.entry.messaging.sender.id[0][0], responseTxt)
 }
-
 def fbSendMessage(userid, message){
 	// Send a message to FB
     def params = [
@@ -2832,7 +2795,6 @@ def fbSendMessage(userid, message){
         if (debug) log.debug "response contentType: ${resp.contentType}"
     } } catch (e) { if (debug) log.debug "something went wrong: $e" }
 }
-
 /*
 		// This is used for linking to FB messenger and setting valid users
 		section ("Facebook Messenger Settings") { 
@@ -2841,12 +2803,9 @@ def fbSendMessage(userid, message){
             input "fbAllowedUsers", "text", title: "Allowed User IDs", description:"", required: false
             paragraph "Verify Token: Used to setup link to FB bot (You make up this value)\nAccess Token: To allow ST to send messages via FB Messenger (From developers.facebook.com)\nAllowed Users: These are the Facebook user IDs, seperated by commas (You can get this in the debug logging)"
         }
-        
         // This you should put in the same method you use for returning the app ID and OAuth 
         log.trace "URL FOR USE AT DEVELOPERS.FACEBOOK.COM:\n${getApiServerUrl()}/api/smartapps/installations/${app.id}/m?access_token=${state.accessToken}"
 */
-
-
 private loadText() {
 	switch ( actionType) {
 		case "Bell 1":
