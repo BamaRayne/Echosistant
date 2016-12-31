@@ -4,6 +4,14 @@ main {pCommand} is my home
 main {pCommand} are on
 main {pCommand} are offmain is {pCommand} {pDevice}
 main turn {pCommand} the {pDevice}
+main what is the {pCommand}
+main what {pCommand} is it
+main what is the current {pCommand}
+
+main what {pCommand} is the {pDevice}
+main what {pCommand} is it {pDevice}
+main for the {pCommand}
+main {pCommand} the {pDevice}
 
 main the {pDevice} is {pCommand} 
 main turn {pDevice} {pCommand} in {pNum} {pUnit}
