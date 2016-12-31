@@ -35,7 +35,7 @@ main make it {pCommand} the {pDevice} in {pNum} {pUnit}
 main make it {pCommand} the {pDevice} in {pNum} {pUnit}
 main make it {pCommand} {pDevice} in {pNum} {pUnit}
 main make it {pCommand} {pDevice} in {pNum} {pUnit}
-main {pCommand} last message 
+main {pCommand} last message  
 main {pCommand} temperature {pDevice}
 main {pCommand} temperature {pDevice} to {pNum} {pUnit}
 main {pCommand} {pDevice} to {pNum} {pUnit}
