@@ -1,7 +1,7 @@
 /*
  * EchoSistant - The Ultimate Voice and Text Messaging Assistant Using Your Alexa Enabled Device.
  *
- *		01/01/2017		Release 3.1.1	Ceiling Fan Controls - speed up and slow down
+ *		01/01/2017		Release 3.1.1	Ceiling Fan Controls - speed up, slow down, low, medium, high
  *		12/31/2016		Release 3.1.0	Lock Control - commands are lock and unlock
  *		12/31/2016		Release 3.0.9	Garage Door control - commands are open and close
  *		12/29/2016		Release 3.0.8	Bug Fix to correct error for auto adjustment of light levels
@@ -1079,7 +1079,22 @@ def controlDevices() {
                     if (debug) log.debug "Light command = '${commandLVL}'"                   
                 }
     //Ceiling Fan Commands 
-				if (command == "speed up") {
+				if (command == "high") {
+                    commandLVL = "high" 
+                    deviceType = "cDimmers"
+                    if (debug) log.debug "Fan command = '${commandLVL}'"                   
+                }
+                if (command == "medium") {
+                    commandLVL = "medium" 
+                    deviceType = "cDimmers"
+                    if (debug) log.debug "Fan command = '${commandLVL}'"                   
+                }
+                if (command == "low") {
+                    commandLVL = "low" 
+                    deviceType = "cDimmers"
+                    if (debug) log.debug "Fan command = '${commandLVL}'"                   
+                }
+                if (command == "speed up") {
                     commandLVL = "speed up" 
                     deviceType = "cDimmers"
                     if (debug) log.debug "Fan command = '${commandLVL}'"                   
@@ -1272,7 +1287,7 @@ def controlDevices() {
                         }
 					}                     
             if (deviceType == "cDimmers" || deviceType == "cGlobal") {
-                if (commandLVL == "decrease" || commandLVL == "increase" || commandLVL == "setLevel" || commandLVL == "speed up" || commandLVL == "slow down" ) { 
+                if (commandLVL == "decrease" || commandLVL == "increase" || commandLVL == "setLevel" || commandLVL == "speed up" || commandLVL == "slow down" || commandLVL == "high" || commandLVL == "medium" || commandLVL == "low") { 
                     if (cDimmers) {           
                         if (debug) log.debug "Searching for device type = dimmer, device name='${ctDevice}'"
                             def deviceDMatch = cDimmers.find {s -> s.label.toLowerCase() == ctDevice}
@@ -1297,7 +1312,10 @@ def controlDevices() {
                                     if (commandLVL == "increase") {outputTxt = "Ok, increasing the " + ctDevice + " level " + numText}
                                 	if (commandLVL == "speed up") {outputTxt = "Ok, increasing the " + ctDevice + " by " + fLevel + " percent "}
                                     if (commandLVL == "slow down") {outputTxt = "Ok, decreasing the " + ctDevice + " by " + fLevel + " percent "}
-								}
+									if (commandLVL == "high") {outputTxt = "Ok, setting " + ctDevice + " to high "}
+                                    if (commandLVL == "medium") {outputTxt = "Ok, setting " + ctDevice + " to medium "}
+                                    if (commandLVL == "low") {outputTxt = "Ok, setting " + ctDevice + " to low "}
+                                }
                             }
                         }
                         else {outputTxt = "Sorry, I couldn't find a device named " + ctDevice + " in your list of selected dimmers"}
@@ -1511,7 +1529,31 @@ def controlHandler(data) {
                 	newLevel = numN
                 }   
                 else {
-                	newLevel =  currLevel + fLevel 
+                	newLevel = currLevel + fLevel 
+            	}
+            }
+            if (deviceCommand == "high") {
+            	if (unitU == "PERC") {
+                	newLevel = 99
+                }   
+                else {
+                	newLevel = 99
+            	}
+            }
+            if (deviceCommand == "medium") {
+            	if (unitU == "PERC") {
+                	newLevel = 66
+                }   
+                else {
+                	newLevel = 66
+            	}
+            }
+            if (deviceCommand == "low") {
+            	if (unitU == "PERC") {
+                	newLevel = 33
+                }   
+                else {
+                	newLevel = 33
             	}
             }
 				if (deviceCommand == "decrease") {
