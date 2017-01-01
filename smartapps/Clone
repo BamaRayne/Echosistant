@@ -1,6 +1,7 @@
 /*
  * EchoSistant - The Ultimate Voice and Text Messaging Assistant Using Your Alexa Enabled Device.
  *
+ *		01/01/20017		Ver. 4.0.0		Ceiling Fan controls - speed up, slow down, low, medium, high
  *		12/31/2016		Ver. 4.0.0		Garage door support w/commands open and close, notifications in profiles
  *		12/27/2016		Rebuild			Complete makeover of the EchoSistant UI
  *
@@ -129,7 +130,7 @@ page name: "selectDevicesPage"
             section ("Switches", hideWhenEmpty: true){
                 input "cSwitches", "capability.switch", title: "Allow These Switch(es)...", multiple: true, required: false, submitOnChange: true
             }
-            section ("Dimmers and Colored Bulbs", hideWhenEmpty: true){
+            section ("Dimmers, Colored Bulbs, and Fans", hideWhenEmpty: true){
                 input "cDimmers", "capability.switchLevel", title: "Allow These Dimmer(s)...", multiple: true, required: false, submitOnChange: true
             }
             section ("Doors and Locks", hideWhenEmpty: true){
@@ -149,9 +150,7 @@ page name: "selectDevicesPage"
             section ("Presence", hideWhenEmpty: true){
                 input "cPresence", "capability.presenceSensor", title: "Allow These Presence Device(s)...", multiple: true, required: false
             }
-//            section ("Locks", hideWhenEmpty: true){
-//                input "cLock", "capability.lock", title: "Allow These Presence Device(s)...", multiple: true, required: false
-//            }
+
             section ("Weather Alerts") {
                 input "TheWeather", "enum", title: "Choose Weather Alerts...", required: false, multiple: true, submitOnChange: true,
                 options: [
@@ -351,6 +350,7 @@ page name: "deviceControlPage"
 				section ("") {            
                     paragraph ("Define Variables for Voice Controlled Devices (for increase/decrease commands)")
                     input "cLevel", "number", title: "Alexa Automatically Adjusts Light Levels by using a scale of 1-10 (default is +/-3)", defaultValue: 3, required: false
+                    input "fLevel", "number", title: "Alexa Automatically Adjusts Ceiling Fans by this percentage (default is 33%) when using commands 'speed up & slow down'", defaultValue: 33, required: false
                     input "cTemperature", "number", title: "Alexa Automatically Adjusts temperature by using a scale of 1-10 (default is +/-1)", defaultValue: 1, required: false
 //                    input "cPIN", "number", title: "Set a PIN number to prevent unathorized use of Voice Control", default: false, required: false
 					}
@@ -429,7 +429,6 @@ page name: "profilesPage"
 page name: "generalPage"  
  def generalPage(){
         dynamicPage(name: "generalPage", uninstall: false) {
-//			section (Main Intent Skill Setup Information) 
  				section ("Amazon AWS Skill Details") { 
 					href "SkillDetails", title: "Tap to view setup data for the AWS Main Intent Skill...", description: "",
                 	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/echosistant_About.png"
@@ -1392,16 +1391,43 @@ def controlDevices() {
                     if (debug) log.debug "Temperature command = '${commandLVL}'"
                 }
 	//Dimmer Commands
-                if (command == "darker" || command == "darken" || command == "too bright" || command == "dim" || command == "dimmer" ) {
+                if (command == "darker" || command == "darken" || command == "too bright" || command == "dim" || command == "dimmer" || command == "slow down" ) {
                     commandLVL = "decrease" 
                     deviceType = "cDimmers"
                     if (debug) log.debug "Light command = '${commandLVL}'"
                 }
-        		if (command == "not bright enough" || command == "brighter" || command == "too dark" || command == "brighten") {
+        		if (command == "not bright enough" || command == "brighter" || command == "too dark" || command == "brighten" || command == "speed up") {
                     commandLVL = "increase" 
                     deviceType = "cDimmers"
                     if (debug) log.debug "Light command = '${commandLVL}'"                   
                 }
+    //Ceiling Fan Commands 
+    			if (command == "high") {
+                    commandLVL = "high" 
+                    deviceType = "cDimmers"
+                    if (debug) log.debug "Fan command = '${commandLVL}'"                   
+                }
+                if (command == "medium") {
+                    commandLVL = "medium" 
+                    deviceType = "cDimmers"
+                    if (debug) log.debug "Fan command = '${commandLVL}'"                   
+                }
+                if (command == "low") {
+                    commandLVL = "low" 
+                    deviceType = "cDimmers"
+                    if (debug) log.debug "Fan command = '${commandLVL}'"                   
+                }
+                if (command == "speed up") {
+                    commandLVL = "speed up" 
+                    deviceType = "cDimmers"
+                    if (debug) log.debug "Fan command = '${commandLVL}'"                   
+                }
+                if (command == "slow down") {
+                    commandLVL = "slow down" 
+                    deviceType = "cDimmers"
+                    if (debug) log.debug "Fan command = '${commandLVL}'"                   
+                }
+
 	//Volume Commands
                 if (command == "too loud" ) {
                     commandLVL = "decrease"
@@ -1582,7 +1608,7 @@ def controlDevices() {
                         }
 					}
 	if (deviceType == "cDimmers" || deviceType == "cGlobal") {
-                if (commandLVL == "decrease" || commandLVL == "increase" || commandLVL == "setLevel" ) { 
+                if (commandLVL == "decrease" || commandLVL == "increase" || commandLVL == "setLevel" || commandLVL == "speed up" || commandLVL == "slow down" || commandLVL == "high" || commandLVL == "medium" || commandLVL == "low") { 
                     if (cDimmers) {           
                         if (debug) log.debug "Searching for device type = dimmer, device name='${ctDevice}'"
                             def deviceDMatch = cDimmers.find {s -> s.label.toLowerCase() == ctDevice}
@@ -1603,8 +1629,14 @@ def controlDevices() {
                                         def num = ctNum > 10 ? ctNum : ctNum*10 as int
                                         outputTxt = "Ok, setting the " + ctDevice + " to " + num + " percent"
                                     }
+                                    
                                     if (commandLVL == "decrease") {outputTxt = "Ok, decreasing the " + ctDevice + " level " + numText}
                                     if (commandLVL == "increase") {outputTxt = "Ok, increasing the " + ctDevice + " level " + numText}
+                                	if (commandLVL == "speed up") {outputTxt = "Ok, increasing the " + ctDevice + " by " + fLevel + " percent "}
+                                    if (commandLVL == "slow down") {outputTxt = "Ok, decreasing the " + ctDevice + " by " + fLevel + " percent "}
+									if (commandLVL == "high") {outputTxt = "Ok, setting " + ctDevice + " to high "}
+                                    if (commandLVL == "medium") {outputTxt = "Ok, setting " + ctDevice + " to medium "}
+                                    if (commandLVL == "low") {outputTxt = "Ok, setting " + ctDevice + " to low "}
                                 }
                             }
                         }
@@ -1704,6 +1736,7 @@ def controlHandler(data) {
     def unitU = data.unit
     def numN = data.num
 	def pLevel = cLevel
+    
 
     if (deviceType == "cProfiles") {	
 		childApps.each { child ->
@@ -1726,7 +1759,7 @@ def controlHandler(data) {
                     	def currState = s?.latestValue("switch") 
                     		if (debug) log.debug "current state =  ${currState} for , switch ${s.label}"
                     	if (currLevel) {
-                                def newLevel = pLevel*10
+                        	def newLevel = pLevel*10
                                 if (debug) log.debug "${cMatch}, ${child} with newLevel '${newLevel}'"     
                                 if (unitU == "PERC") newLevel = numN 
                                     if (deviceCommand == "increase") {
@@ -1736,8 +1769,8 @@ def controlHandler(data) {
                                 else {
                                     newLevel =  currLevel + newLevel
                                     newLevel = newLevel < 0 ? 0 : newLevel >100 ? 100 : newLevel
+                                	}
                                 }
-                            }
                             if (deviceCommand == "decrease") {
                                 if (unitU == "PERC") {
                                     newLevel = numN
@@ -1814,6 +1847,38 @@ def controlHandler(data) {
             		newLevel = newLevel < 0 ? 0 : newLevel >100 ? 100 : newLevel
             	}
             }
+            if (deviceCommand == "speed up") {
+            	if (unitU == "PERC") {
+                	newLevel = numN
+                }   
+                else {
+                	newLevel =  currLevel + fLevel 
+            	}
+            }
+            if (deviceCommand == "high") {
+            	if (unitU == "PERC") {
+                	newLevel = 99
+                }   
+                else {
+                	newLevel = 99
+            	}
+            }
+            if (deviceCommand == "medium") {
+            	if (unitU == "PERC") {
+                	newLevel = 66
+                }   
+                else {
+                	newLevel = 66
+            	}
+            }
+            if (deviceCommand == "low") {
+            	if (unitU == "PERC") {
+                	newLevel = 33
+                }   
+                else {
+                	newLevel = 33
+            	}
+            }
             if (deviceCommand == "decrease") {
             	if (unitU == "PERC") {
                 	newLevel = numN
@@ -1821,7 +1886,15 @@ def controlHandler(data) {
                 else {
                 	newLevel =  currLevel - newLevel
             		newLevel = newLevel < 0 ? 0 : newLevel >100 ? 100 : newLevel
-                }            
+            	}            
+            }
+            if (deviceCommand == "slow down") {
+            	if (unitU == "PERC") {
+                	newLevel = numN
+                }   
+                else {
+                	newLevel =  currLevel - fLevel
+            	}            
             }
             if (deviceCommand == "setLevel") {
             	if (unitU == "PERC") {
