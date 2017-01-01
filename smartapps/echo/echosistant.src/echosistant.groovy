@@ -1,6 +1,7 @@
 /*
  * EchoSistant - The Ultimate Voice and Text Messaging Assistant Using Your Alexa Enabled Device.
  *
+ *		01/01/2017		Release 3.1.2	Bug Fix - Devices not showing in List_of_Devices in Logs
  *		01/01/2017		Release 3.1.1	Ceiling Fan Controls - speed up, slow down, low, medium, high
  *		12/31/2016		Release 3.1.0	Lock Control - commands are lock and unlock
  *		12/31/2016		Release 3.0.9	Garage Door control - commands are open and close
@@ -1886,6 +1887,12 @@ def s = ""
 def d = "" 
 	cDimmers.each { device -> 
 		d +=device.label +"\n" }
+def G = ""
+	cGdoor.each { device ->
+    	G +=device.label +"\n" }
+def L = ""
+	cGlock.each { device ->
+    	L +=device.label +"\n" }
 def t = "" 
 	cTstat.each { device -> 
 		t +=device.label +"\n" }
@@ -1897,7 +1904,7 @@ def DeviceDetails = 	" \n" +
                     " \n" +
                     "  LIST_OF_DEVICES\n" + 			
                      " \n" +    		
-                            "${s} ${d} ${t}\n" 
+                            "${s} ${d} ${G} ${L} ${t}\n" 
                     
 return DeviceDetails
 }
@@ -2581,7 +2588,7 @@ private def textVersion() {
 	def text = "3.0"
 }
 private def textRelease() {
-	def text = "3.1.1"
+	def text = "3.1.2"
 }
 private def textReleaseNotes() {
 	def text = "See the Wiki"
