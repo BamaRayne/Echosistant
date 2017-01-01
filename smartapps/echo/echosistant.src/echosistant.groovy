@@ -1,6 +1,7 @@
 /*
  * EchoSistant - The Ultimate Voice and Text Messaging Assistant Using Your Alexa Enabled Device.
  *
+ *		12/31/2016		Release 3.1.1	Ceiling Fan Controls - speed up and slow down
  *		12/31/2016		Release 3.1.0	Lock Control - commands are lock and unlock
  *		12/31/2016		Release 3.0.9	Garage Door control - commands are open and close
  *		12/29/2016		Release 3.0.8	Bug Fix to correct error for auto adjustment of light levels
@@ -347,7 +348,7 @@ page name: "Alerts"
             	}
             }
         }
-	}        garageDoorControl
+	}      
         section("Locks", hideWhenEmpty: true) {
             if (TheLock || audioTextLocked || audioTextUnlocked || speech3 || push3 || notify3 || music3) paragraph "Configured with Settings"
             if (Locks) {
@@ -473,6 +474,7 @@ page name: "Integrations"
                     image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_devices.png"            			
                     paragraph ("Define Variables for Voice Controlled Devices (for increase/decrease commands)")
                     input "cLevel", "number", title: "Alexa Automatically Adjusts Light Levels by using a scale of 1-10 (default is +/-3)", defaultValue: 3, required: false
+                    input "fLevel", "number", title: "Alexa Automatically Adjusts Ceiling Fans by this percentage (default is 33%) when using commands 'speed up & slow down'", defaultValue: 33, required: false
                     input "cTemperature", "number", title: "Alexa Automatically Adjusts temperature by using a scale of 1-10 (default is +/-1)", defaultValue: 1, required: false
 //                    input "cPIN", "number", title: "Set a PIN number to prevent unathorized use of Voice Control", default: false, required: false
 					}
@@ -1076,6 +1078,18 @@ def controlDevices() {
                     deviceType = "cDimmers"
                     if (debug) log.debug "Light command = '${commandLVL}'"                   
                 }
+    //Ceiling Fan Commands 
+				if (command == "speed up") {
+                    commandLVL = "speed up" 
+                    deviceType = "cDimmers"
+                    if (debug) log.debug "Fan command = '${commandLVL}'"                   
+                }
+                if (command == "slow down") {
+                    commandLVL = "slow down" 
+                    deviceType = "cDimmers"
+                    if (debug) log.debug "Fan command = '${commandLVL}'"                   
+                }
+                
 	//Volume Commands
                 if (command == "too loud" ) {
                     commandLVL = "decrease"
@@ -1258,7 +1272,7 @@ def controlDevices() {
                         }
 					}                     
             if (deviceType == "cDimmers" || deviceType == "cGlobal") {
-                if (commandLVL == "decrease" || commandLVL == "increase" || commandLVL == "setLevel" ) { 
+                if (commandLVL == "decrease" || commandLVL == "increase" || commandLVL == "setLevel" || commandLVL == "speed up" || commandLVL == "slow down" ) { 
                     if (cDimmers) {           
                         if (debug) log.debug "Searching for device type = dimmer, device name='${ctDevice}'"
                             def deviceDMatch = cDimmers.find {s -> s.label.toLowerCase() == ctDevice}
@@ -1281,7 +1295,9 @@ def controlDevices() {
                                     }
                                     if (commandLVL == "decrease") {outputTxt = "Ok, decreasing the " + ctDevice + " level " + numText}
                                     if (commandLVL == "increase") {outputTxt = "Ok, increasing the " + ctDevice + " level " + numText}
-                                }
+                                	if (commandLVL == "speed up") {outputTxt = "Ok, increasing the " + ctDevice + " by " + fLevel + " percent "}
+                                    if (commandLVL == "slow down") {outputTxt = "Ok, decreasing the " + ctDevice + " by " + fLevel + " percent "}
+								}
                             }
                         }
                         else {outputTxt = "Sorry, I couldn't find a device named " + ctDevice + " in your list of selected dimmers"}
@@ -1490,7 +1506,15 @@ def controlHandler(data) {
             		newLevel = newLevel < 0 ? 0 : newLevel >100 ? 100 : newLevel
             	}
             }
-            if (deviceCommand == "decrease") {
+                if (deviceCommand == "speed up") {
+            	if (unitU == "PERC") {
+                	newLevel = numN
+                }   
+                else {
+                	newLevel =  currLevel + fLevel 
+            	}
+            }
+				if (deviceCommand == "decrease") {
             	if (unitU == "PERC") {
                 	newLevel = numN
                 }   
@@ -1498,6 +1522,14 @@ def controlHandler(data) {
                 	newLevel =  currLevel - newLevel
             		newLevel = newLevel < 0 ? 0 : newLevel >100 ? 100 : newLevel
                 }            
+            }
+            if (deviceCommand == "slow down") {
+            	if (unitU == "PERC") {
+                	newLevel = numN
+                }   
+                else {
+                	newLevel =  currLevel - fLevel
+            	}            
             }
             if (deviceCommand == "setLevel") {
             	if (unitU == "PERC") {
@@ -2507,7 +2539,7 @@ private def textVersion() {
 	def text = "3.0"
 }
 private def textRelease() {
-	def text = "3.1.0"
+	def text = "3.1.1"
 }
 private def textReleaseNotes() {
 	def text = "See the Wiki"
