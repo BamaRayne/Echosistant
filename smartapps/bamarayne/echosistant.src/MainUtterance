@@ -7,6 +7,12 @@ main turn {pCommand} the {pDevice}
 main what is the {pCommand}
 main what {pCommand} is it
 main what is the current {pCommand}
+main turn the {pDevice} to {pCommand}
+main turn up the {pDevice} to {pCommand}
+main turn down the {pDevice} to {pCommand}
+main turn the {pDevice} up to {pCommand}
+main turn the {pDevice} down to {pCommand}
+main set the {pDevice} to {pCommand}
 
 main what {pCommand} is the {pDevice}
 main what {pCommand} is it {pDevice}
@@ -24,7 +30,7 @@ main turn the {pDevice} {pCommand} in {pNum} {pUnit}
 main make the {pDevice} {pCommand}
 main make the {pDevice} {pCommand} in {pNum} {pUnit}
 main make the {pDevice} {pCommand} in {pNum} {pUnit}
-main I love {pDevice} 
+main I love {pDevice}
 
 main turn {pCommand} the {pDevice} in {pNum} {pUnit}
 main turn {pCommand} the {pDevice} in {pNum} {pUnit}
@@ -35,7 +41,7 @@ main make it {pCommand} the {pDevice} in {pNum} {pUnit}
 main make it {pCommand} the {pDevice} in {pNum} {pUnit}
 main make it {pCommand} {pDevice} in {pNum} {pUnit}
 main make it {pCommand} {pDevice} in {pNum} {pUnit}
-main {pCommand} last message  
+main {pCommand} last message
 main {pCommand} temperature {pDevice}
 main {pCommand} temperature {pDevice} to {pNum} {pUnit}
 main {pCommand} {pDevice} to {pNum} {pUnit}
@@ -52,4 +58,3 @@ main is {pCommand} in the {pProfile}
 main make the {pProfile} lights {pCommand}
 main turn the {pProfile} lights {pCommand} in {pNum} {pUnit}
 main the {pProfile} lights are {pCommand}
-
