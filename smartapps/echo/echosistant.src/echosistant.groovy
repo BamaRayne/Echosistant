@@ -1,6 +1,7 @@
 /*
  * EchoSistant - The Ultimate Voice and Text Messaging Assistant Using Your Alexa Enabled Device.
  *
+ *		12/31/2016		Release 3.1.0	Lock Control - commands are lock and unlock
  *		12/31/2016		Release 3.0.9	Garage Door control - commands are open and close
  *		12/29/2016		Release 3.0.8	Bug Fix to correct error for auto adjustment of light levels
  *		12/25/2016		Release 3.0.7	Profile triggered mode change, Home Status page, canned Alexa Message
@@ -539,9 +540,10 @@ page name: "devicesControlMain"
             section ("Dimmers", hideWhenEmpty: true){
                 input "cDimmers", "capability.switchLevel", title: "Control These Dimmers...", multiple: true, required: false, submitOnChange: true
             }
-            section ("Garage Doors", hideWhenEmpty: true){
+            section ("Doors and Locks", hideWhenEmpty: true){
             	input "cGdoor", "capability.garageDoorControl", title: "Allow These Garage Door(s)...", multiple: true, required: false, submitOnChange: true
-                }
+            	input "cGlock", "capability.lock", title: "Allow These Lock(s)...", multiple: true, required: false, submitOnChange: true
+			}
             section ("Thermostats", hideWhenEmpty: true){
                 input "cTstat", "capability.thermostat", title: "Control These Thermostat(s)...", multiple: true, required: false
             }
@@ -1116,11 +1118,15 @@ def controlDevices() {
                     if (debug) log.debug "Global command = '${command}'"
                 }
 
-//Garage Door Commands    
+//Door Commands    
     			if (command == "open" || command == "close") {
                 	deviceType = "cGdoor"
                 	if (debug) log.debug "Garage Door Command = '${command}'"
                 }
+                if (command == "lock" || command == "unlock") {
+                	deviceType = "cGlock"
+                    if (debug) log.debug "Door Lock Command = '${command}'"
+                }    
 
 		if (ctNum == "undefined" || ctNum =="?") {ctNum = 0}
 			ctNum = ctNum as int 
@@ -1197,12 +1203,12 @@ def controlDevices() {
                             if (ctNum > 0 && ctUnit == "MIN") {
                                 runIn(ctNum*60, controlHandler, [data: [type: "cGdoor", command: command, device: ctDevice, unit: ctUnit, num: ctNum]])
                                 if (command == "open") {
-                                	outputTxt = "Ok, opening " + deviceMatch + ", in " + numText
+                                	outputTxt = "Ok, opening the " + deviceMatch + ", in " + numText
                                 	}
                                 	else if (command == "close") {
-                                		outputTxt = "Ok, closing " + deviceMatch + ", in " + numText
-                                	}
-                             }
+                                		outputTxt = "Ok, closing the " + deviceMatch + ", in " + numText
+                                		}
+                                    }
                              else {
                                 def data = [type: "cGdoor", command: command, device: ctDevice, unit: ctUnit, num: ctNum]
                                 controlHandler(data)
@@ -1210,14 +1216,47 @@ def controlDevices() {
                                 if (command == "open") {
                                 	outputTxt = "Ok, opening " + deviceMatch }
                                     	else if (command == "close") {
-                                    		outputTxt = "ok, closing " + deviceMatch }
+                                    		outputTxt = "ok, closing " + deviceMatch 
+                                            	}
                                 	else outputTxt = "Ok, turning " + ctDevice + " " + command
                             }
                         }
                         else {outputTxt = "Sorry, I couldn't find a device named " + ctDevice }
-                  }
-            }
-       }             
+							}
+						}
+                    } 
+       if (deviceType == "cGlock"){       
+           if (command == "lock" || command == "unlock") {
+                 if (cGdoor) {
+                        if (debug) log.debug "Searching for device type = cGlock, device name ='${ctDevice}'"
+                        def deviceMatch = cGlock.find {s -> s.label.toLowerCase() == ctDevice}             
+                        if (deviceMatch) {
+                            if (debug) log.debug "Found a device: '${deviceMatch}'"
+                            if (ctNum > 0 && ctUnit == "MIN") {
+                                runIn(ctNum*60, controlHandler, [data: [type: "cGlock", command: command, device: ctDevice, unit: ctUnit, num: ctNum]])
+                                if (command == "lock") {
+                                	outputTxt = "Ok, locking the " + deviceMatch + ", in " + numText
+                                	}
+                                	else if (command == "unlock") {
+                                		outputTxt = "Ok, unlocking the " + deviceMatch + ", in " + numText
+                                		}
+                                    }
+                             else {
+                                def data = [type: "cGlock", command: command, device: ctDevice, unit: ctUnit, num: ctNum]
+                                controlHandler(data)
+                                if (debug) log.debug "Processing control handler with: '${data}'"
+                                if (command == "lock") {
+                                	outputTxt = "Ok, locking the " + deviceMatch }
+                                    	else if (command == "unlock") {
+                                    		outputTxt = "ok, unlocking the " + deviceMatch 
+                                            	}
+                                	else outputTxt = "Ok, setting the " + ctDevice + ", to " + command
+                            }
+                        }
+                        else {outputTxt = "Sorry, I couldn't find a device named " + ctDevice }
+							}
+                        }
+					}                     
             if (deviceType == "cDimmers" || deviceType == "cGlobal") {
                 if (commandLVL == "decrease" || commandLVL == "increase" || commandLVL == "setLevel" ) { 
                     if (cDimmers) {           
@@ -1427,7 +1466,14 @@ def controlHandler(data) {
        		deviceMatch."${deviceCommand}"()
             if (debug) log.debug "cGdoor with command '${deviceCommand}'"
 		}
-    }   
+    } 
+    if (deviceType == "cGlock") {
+    		def deviceMatch = cGlock.find {s -> s.label.toLowerCase() == deviceD}
+       if (deviceMatch) {
+       		deviceMatch."${deviceCommand}"()
+            if (debug) log.debug "cGlock with command '${deviceCommand}'"
+			}
+    	}    
 	if (deviceType == "cDimmers") {
 			def deviceDMatch = cDimmers.find {s -> s.label.toLowerCase() == deviceD}
 		if (deviceDMatch) {
@@ -2461,7 +2507,7 @@ private def textVersion() {
 	def text = "3.0"
 }
 private def textRelease() {
-	def text = "3.0.9"
+	def text = "3.1.0"
 }
 private def textReleaseNotes() {
 	def text = "See the Wiki"
