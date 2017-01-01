@@ -1,6 +1,7 @@
 /*
  * EchoSistant - The Ultimate Voice and Text Messaging Assistant Using Your Alexa Enabled Device.
  *
+ *		01/01/2017		Ver. 4.0.0		Bug Fix - Devices not showing in List_of_Devices in the Live Logs
  *		01/01/20017		Ver. 4.0.0		Ceiling Fan controls - speed up, slow down, low, medium, high
  *		12/31/2016		Ver. 4.0.0		Garage door support w/commands open and close, notifications in profiles
  *		12/27/2016		Rebuild			Complete makeover of the EchoSistant UI
@@ -1391,12 +1392,12 @@ def controlDevices() {
                     if (debug) log.debug "Temperature command = '${commandLVL}'"
                 }
 	//Dimmer Commands
-                if (command == "darker" || command == "darken" || command == "too bright" || command == "dim" || command == "dimmer" || command == "slow down" ) {
+                if (command == "lower" || command == "darker" || command == "darken" || command == "too bright" || command == "dim" || command == "dimmer" || command == "slow down" ) {
                     commandLVL = "decrease" 
                     deviceType = "cDimmers"
                     if (debug) log.debug "Light command = '${commandLVL}'"
                 }
-        		if (command == "not bright enough" || command == "brighter" || command == "too dark" || command == "brighten" || command == "speed up") {
+        		if (command == "raise" || "not bright enough" || command == "brighter" || command == "too dark" || command == "brighten" || command == "speed up") {
                     commandLVL = "increase" 
                     deviceType = "cDimmers"
                     if (debug) log.debug "Light command = '${commandLVL}'"                   
@@ -2210,6 +2211,12 @@ def s = ""
 def d = "" 
 	cDimmers.each { device -> 
 		d +=device.label +"\n" }
+def G = ""
+	cGdoor.each { device ->
+    	G +=device.label +"\n" }
+def L = ""
+	cLock.each { device ->
+    	L +=device.label +"\n" }
 def t = "" 
 	cTstat.each { device -> 
 		t +=device.label +"\n" }
@@ -2221,7 +2228,7 @@ def DeviceDetails = 	" \n" +
                     " \n" +
                     "  LIST_OF_DEVICES\n" + 			
                      " \n" +    		
-                            "${s} ${d} ${t}\n" 
+                            "${s} ${d} ${G} ${L} ${t}\n" 
                     
 return DeviceDetails
 }
