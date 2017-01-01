@@ -1,7 +1,7 @@
 /*
  * EchoSistant - The Ultimate Voice and Text Messaging Assistant Using Your Alexa Enabled Device.
  *
- *		12/31/2016		Release 3.1.1	Ceiling Fan Controls - speed up and slow down
+ *		01/01/2017		Release 3.1.1	Ceiling Fan Controls - speed up and slow down
  *		12/31/2016		Release 3.1.0	Lock Control - commands are lock and unlock
  *		12/31/2016		Release 3.0.9	Garage Door control - commands are open and close
  *		12/29/2016		Release 3.0.8	Bug Fix to correct error for auto adjustment of light levels
