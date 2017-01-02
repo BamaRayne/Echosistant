@@ -1,6 +1,7 @@
 /*
  * EchoSistant - The Ultimate Voice and Text Messaging Assistant Using Your Alexa Enabled Device.
  *
+ *		01/01/2017		Release 3.1.3	Bug Fix - Door locks not working, now they do.
  *		01/01/2017		Release 3.1.2	Bug Fix - Devices not showing in List_of_Devices in Logs
  *		01/01/2017		Release 3.1.1	Ceiling Fan Controls - speed up, slow down, low, medium, high
  *		12/31/2016		Release 3.1.0	Lock Control - commands are lock and unlock
@@ -1257,7 +1258,7 @@ def controlDevices() {
                     } 
        if (deviceType == "cGlock"){       
            if (command == "lock" || command == "unlock") {
-                 if (cGdoor) {
+                 if (cGlock) {
                         if (debug) log.debug "Searching for device type = cGlock, device name ='${ctDevice}'"
                         def deviceMatch = cGlock.find {s -> s.label.toLowerCase() == ctDevice}             
                         if (deviceMatch) {
@@ -2588,13 +2589,13 @@ private def textVersion() {
 	def text = "3.0"
 }
 private def textRelease() {
-	def text = "3.1.2"
+	def text = "3.1.3"
 }
 private def textReleaseNotes() {
 	def text = "See the Wiki"
 }
 private def dateRelease() {
-	def text = "12/31/2016"
+	def text = "01/01/2017"
 }
 private def textCopyright() {
 	def text = "       Copyright © 2016 Jason Headley"
