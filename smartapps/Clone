@@ -1,9 +1,10 @@
 /*
  * EchoSistant - The Ultimate Voice and Text Messaging Assistant Using Your Alexa Enabled Device.
  *
- *		01/01/2017		Ver. 4.0.0		Bug Fix - Devices not showing in List_of_Devices in the Live Logs
- *		01/01/20017		Ver. 4.0.0		Ceiling Fan controls - speed up, slow down, low, medium, high
- *		12/31/2016		Ver. 4.0.0		Garage door support w/commands open and close, notifications in profiles
+ *		01/02/2017		Ver. 4 build	Smart Vents added, Garage door changed commands
+ *		01/01/2017		Ver. 4 build	Bug Fix - Devices not showing in List_of_Devices in the Live Logs
+ *		01/01/20017		Ver. 4 build	Ceiling Fan controls - speed up, slow down, low, medium, high
+ *		12/31/2016		Ver. 4 build	Garage door support w/commands open and close, notifications in profiles
  *		12/27/2016		Rebuild			Complete makeover of the EchoSistant UI
  *
  *
@@ -131,14 +132,17 @@ page name: "selectDevicesPage"
             section ("Switches", hideWhenEmpty: true){
                 input "cSwitches", "capability.switch", title: "Allow These Switch(es)...", multiple: true, required: false, submitOnChange: true
             }
-            section ("Dimmers, Colored Bulbs, and Fans", hideWhenEmpty: true){
-                input "cDimmers", "capability.switchLevel", title: "Allow These Dimmer(s)...", multiple: true, required: false, submitOnChange: true
+            section ("Dimmers, Colored Bulbs, Vents, and Fans", hideWhenEmpty: true){
+                input "cDimmers", "capability.switchLevel", title: "Allow These Dimmers, Bulbs, Vents, and Fans...", multiple: true, required: false, submitOnChange: true
             }
             section ("Doors and Locks", hideWhenEmpty: true){
             	input "cGdoor", "capability.garageDoorControl", title: "Allow These Garage Door(s)...", multiple: true, required: false, submitOnChange: true
             	input "cLock", "capability.lock", title: "Allow These Lock(s)...", multiple: true, required: false, submitOnChange: true
 			}
-            section ("Thermostats", hideWhenEmpty: true){
+//			section ("Vents", hideWhenEmpty: true){
+//            	input "cVent", "capability.switchLevel", title: "Allow These Vent(s)...", multiple: true, required: false, submitOnChange: true
+//            }    
+			section ("Thermostats", hideWhenEmpty: true){
                 input "cTstat", "capability.thermostat", title: "Allow These Thermostat(s)...", multiple: true, required: false
             }
             section ("Temperature", hideWhenEmpty: true){
@@ -1397,10 +1401,19 @@ def controlDevices() {
                     deviceType = "cDimmers"
                     if (debug) log.debug "Light command = '${commandLVL}'"
                 }
-        		if (command == "raise" || "not bright enough" || command == "brighter" || command == "too dark" || command == "brighten" || command == "speed up") {
+                if (command == "close") {
+                	commandLVL = "setLevel"
+                    deviceType = "cDimmers"
+                    if (debug) log.debug "Light command = '${commandLVL}'"
+                }
+        		else if (command == "raise" || "not bright enough" || command == "brighter" || command == "too dark" || command == "brighten" || command == "speed up") {
                     commandLVL = "increase" 
                     deviceType = "cDimmers"
                     if (debug) log.debug "Light command = '${commandLVL}'"                   
+                }
+                if (command == "open") {
+                    deviceType = "cDimmers"
+                    if (debug) log.debug "Light command = '${commandLVL}'"
                 }
     //Ceiling Fan Commands 
     			if (command == "high") {
@@ -1470,10 +1483,11 @@ def controlDevices() {
                     if (debug) log.debug "Global command = '${command}'"
                 }
                 
-//Door Commands    
-    			if (command == "open" || command == "close") {
+//Door and Locks Commands    
+
+                if (command == "open up" || command == "close up" || command == "shut") {
                 	deviceType = "cGdoor"
-                	if (debug) log.debug "Garage Door Command = '${command}'"
+                    if (debug) log.debug "Door Command = '${command}'"
                 }
                 if (command == "lock" || command == "unlock") {
                 	deviceType = "cLock"
@@ -1508,7 +1522,7 @@ def controlDevices() {
          	if (debug) log.debug "Received message: '${outputTxt}' ; sending to Lambda"           
        }
        if (ctCommand == "cancel") {
-        	if (debug) log.debug "Canceling timmer!"
+        	if (debug) log.debug "Canceling timer!"
             unschedule()
 			outputTxt = "Ok, canceling timer"
          	if (debug) log.debug "Cancel message received; sending '${outputTxt}' to Lambda"           
@@ -1546,30 +1560,30 @@ def controlDevices() {
                   }
             }
        if (deviceType == "cGdoor"){       
-           if (command == "open" || command == "close") {
+           if (command == "open up" || command == "close up" || command == "shut") {
                  if (cGdoor) {
-                        if (debug) log.debug "Searching for device type = cGdoor, device name ='${ctDevice}'"
-                        def deviceMatch = cGdoor.find {s -> s.label.toLowerCase() == ctDevice}             
+                        if (debug) log.debug "Searching for device type = cVent, device name ='${ctDevice}'"
+                        def deviceMatch = cGdoor.find {s -> s.label.toLowerCase() == ctDevice }            
                         if (deviceMatch) {
                             if (debug) log.debug "Found a device: '${deviceMatch}'"
                             if (ctNum > 0 && ctUnit == "MIN") {
                                 runIn(ctNum*60, controlHandler, [data: [type: "cGdoor", command: command, device: ctDevice, unit: ctUnit, num: ctNum]])
-                                if (command == "open") {
-                                	outputTxt = "Ok, opening " + deviceMatch + ", in " + numText
+                                if (command == "open up") {
+                                	outputTxt = "Ok, opening the " + deviceMatch + ", in " + numText
                                 	}
-                                	else if (command == "close") {
-                                		outputTxt = "Ok, closing " + deviceMatch + ", in " + numText
+                                	else if (command == "close up" || command == "shut") {
+                                		outputTxt = "Ok, closing the " + deviceMatch + ", in " + numText
                                 	}
                              }
                              else {
                                 def data = [type: "cGdoor", command: command, device: ctDevice, unit: ctUnit, num: ctNum]
                                 controlHandler(data)
                                 if (debug) log.debug "Processing control handler with: '${data}'"
-                                if (command == "open") {
-                                	outputTxt = "Ok, opening " + deviceMatch }
-                                    	else if (command == "close") {
-                                    		outputTxt = "ok, closing " + deviceMatch }
-                                	else outputTxt = "Ok, turning " + ctDevice + " " + command
+                                if (command == "open up") {
+                                	outputTxt = "Ok, opening the " + deviceMatch }
+                                    	else if (command == "close up" || command == "shut") {
+                                    		outputTxt = "ok, closing the " + deviceMatch }
+                                //	else outputTxt = "Ok, turning " + ctDevice + " " + command
                             }
                         }
                         else {outputTxt = "Sorry, I couldn't find a device named " + ctDevice }
@@ -1608,8 +1622,8 @@ def controlDevices() {
 							}
                         }
 					}
-	if (deviceType == "cDimmers" || deviceType == "cGlobal") {
-                if (commandLVL == "decrease" || commandLVL == "increase" || commandLVL == "setLevel" || commandLVL == "speed up" || commandLVL == "slow down" || commandLVL == "high" || commandLVL == "medium" || commandLVL == "low") { 
+	if (deviceType == "cDimmers") {
+                if (commandLVL == "on" || commandLVL == "off" || commandLVL == "decrease" || commandLVL == "increase" || commandLVL == "setLevel" || commandLVL == "speed up" || commandLVL == "slow down" || commandLVL == "high" || commandLVL == "medium" || commandLVL == "low") { 
                     if (cDimmers) {           
                         if (debug) log.debug "Searching for device type = dimmer, device name='${ctDevice}'"
                             def deviceDMatch = cDimmers.find {s -> s.label.toLowerCase() == ctDevice}
@@ -1628,9 +1642,8 @@ def controlDevices() {
                                 else{
                                     if (commandLVL == "setLevel" && ctUnit == "unknown") {
                                         def num = ctNum > 10 ? ctNum : ctNum*10 as int
-                                        outputTxt = "Ok, setting the " + ctDevice + " to " + num + " percent"
+                                        outputTxt = "Ok, setting the " + ctDevice + " to " + num + " percent" 
                                     }
-                                    
                                     if (commandLVL == "decrease") {outputTxt = "Ok, decreasing the " + ctDevice + " level " + numText}
                                     if (commandLVL == "increase") {outputTxt = "Ok, increasing the " + ctDevice + " level " + numText}
                                 	if (commandLVL == "speed up") {outputTxt = "Ok, increasing the " + ctDevice + " by " + fLevel + " percent "}
@@ -1638,6 +1651,10 @@ def controlDevices() {
 									if (commandLVL == "high") {outputTxt = "Ok, setting " + ctDevice + " to high "}
                                     if (commandLVL == "medium") {outputTxt = "Ok, setting " + ctDevice + " to medium "}
                                     if (commandLVL == "low") {outputTxt = "Ok, setting " + ctDevice + " to low "}
+                                	if (command == "close") {outputTxt = "Ok, closing " + ctDevice + " all the way" }
+                                    if (command == "open") {outputTxt = "Ok, opening " + ctDevice + " all the way" }
+                                    if (command == "increase") {outputTxt = "Ok, setting the " + ctDevice + " to " + numText + " open " }
+                                    
                                 }
                             }
                         }
@@ -1811,6 +1828,17 @@ def controlHandler(data) {
         	}
     	}
     }
+    if (deviceType == "cGdoor") {
+			def deviceMatch = cGdoor.find {s -> s.label.toLowerCase() == deviceD}
+        if (deviceMatch) {
+			if (deviceCommand == "open up")
+            	deviceCommand = "open"
+                if (deviceCommand == "close up" || deviceCommand == "shut") 
+                 deviceCommand = "close" 
+        	deviceMatch."${deviceCommand}"()
+        	if (debug) log.debug "cGdoor with command '${deviceCommand}'" 
+        } 
+    }
 	if (deviceType == "cSwitches") {
 			def deviceMatch = cSwitches.find {s -> s.label.toLowerCase() == deviceD}
         if (deviceMatch) {
@@ -1818,11 +1846,11 @@ def controlHandler(data) {
         	if (debug) log.debug "cSwitches with command '${deviceCommand}'" 
         } 
     }
-    if (deviceType == "cGdoor") {
-    		def deviceMatch = cGdoor.find {s -> s.label.toLowerCase() == deviceD}
+    if (deviceType == "cVent") {
+    		def deviceMatch = cVent.find {s -> s.label.toLowerCase() == deviceD}
        if (deviceMatch) {
        		deviceMatch."${deviceCommand}"()
-            if (debug) log.debug "cGdoor with command '${deviceCommand}'"
+            if (debug) log.debug "cVent with command '${deviceCommand}'"
 		}
     }
     if (deviceType == "cLock") {
@@ -1846,6 +1874,22 @@ def controlHandler(data) {
                 else {
                 	newLevel =  currLevel + newLevel
             		newLevel = newLevel < 0 ? 0 : newLevel >100 ? 100 : newLevel
+            	}
+            }
+            if (deviceCommand == "close") {
+            	if (unitU == "PERC") {
+                	newLevel = currLevel - 100
+                }   
+                else {
+                	newLevel =  0 
+            	}
+            }
+            if (deviceCommand == "open") {
+            	if (unitU == "PERC") {
+                	newLevel = currLevel + 100
+                }   
+                else {
+                	newLevel =  100 
             	}
             }
             if (deviceCommand == "speed up") {
