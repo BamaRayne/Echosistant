@@ -1,6 +1,7 @@
 /*
  * EchoSistant - The Ultimate Voice and Text Messaging Assistant Using Your Alexa Enabled Device.
  *
+ *		01/04/2017		Release 3.1.4	Bug Fix - Notifications for Motion and Switches not working. Fixed.
  *		01/01/2017		Release 3.1.3	Bug Fix - Door locks not working, now they do.
  *		01/01/2017		Release 3.1.2	Bug Fix - Devices not showing in List_of_Devices in Logs
  *		01/01/2017		Release 3.1.1	Ceiling Fan Controls - speed up, slow down, low, medium, high
@@ -27,12 +28,6 @@
  * Personal Message Que per User
  *
  *
- *
- * Credits
- * Thank you to @MichaelS (creator of AskAlexa) for guidance and for letting me use his outstanding Wiki
- * and to begin this project using his code as a jump start.  Thanks goes to Keith @n8xd for his help with  
- * troubleshooting my lambda code. And a huge thank you to @SBDOBRESCU, the co-author of this project, for 
- * jumping on board and helping me expand this project into something more. 
  *
  *  Copyright 2016 Jason Headley
  *
@@ -819,9 +814,11 @@ page name: "groups"
                     	paragraph "You can now control this group by speaking commands to Alexa:  \n" +
                         " E.G: Alexa tell Main Skill, to turn on/off the lights in the Profile Name"
                     }
+                    input "cVent", "capability.switchLevel", title: "Select these Vents...", multiple: true, required: false, submitOnChange: true
+                }
             }
       	}
-	}
+	
 page name: "MsgConfig"
     def MsgConfig(){
         dynamicPage(name: "MsgConfig", title: "Configure Global Profile Options...", uninstall: false) {
@@ -983,7 +980,7 @@ def subscribeToEvents() {
                 if (audioTextUnlocked) {subscribe(TheLock, "lock.unlocked", alertsHandler)}
                 }
         }
-        if (Motions) {
+        if (Motion) {
             if (TheMotion) {
                 if (audioTextActive) {subscribe(TheMotion, "motion.active", alertsHandler)}
                 if (audioTextInactive) {subscribe(TheMotion, "motion.inactive", alertsHandler)}
@@ -1150,15 +1147,28 @@ def controlDevices() {
                 }
 
 //Door Commands    
-    			if (command == "open" || command == "close") {
-                	deviceType = "cGdoor"
-                	if (debug) log.debug "Garage Door Command = '${command}'"
-                }
-                if (command == "lock" || command == "unlock") {
+			if (cGdoor.find {s -> s.label.toLowerCase() == ctDevice}) {
+				if (command == "close" || command == "open") {
+						def deviceMatch = cGdoor.find {s -> s.label.toLowerCase() == ctDevice} 
+                            if (deviceMatch) {
+                            log.debug "I Found the device: '${ctDevice}'" }
+                                if (deviceMatch && command == "close") {
+                                commandLVL = "close"
+                                }
+                                else {
+                                	commandLVL = "open"
+                                	}
+                				deviceType = "cGdoor"
+                                
+                        		if (cGdoor == deviceMatch) log.debug "the cGdoor Command = '${commandLVL}'"
+                					}
+                                }
+             if (command == "lock" || command == "unlock") {
                 	deviceType = "cGlock"
                     if (debug) log.debug "Door Lock Command = '${command}'"
-                }    
-
+                }
+                
+           
 		if (ctNum == "undefined" || ctNum =="?") {ctNum = 0}
 			ctNum = ctNum as int 
       	
@@ -1226,9 +1236,9 @@ def controlDevices() {
             }
        if (deviceType == "cGdoor"){       
            if (command == "open" || command == "close") {
-                 if (cGdoor) {
+                 
                         if (debug) log.debug "Searching for device type = cGdoor, device name ='${ctDevice}'"
-                        def deviceMatch = cGdoor.find {s -> s.label.toLowerCase() == ctDevice}             
+                        def deviceMatch = cGdoor.find {s -> s.label.toLowerCase() == ctDevice }            
                         if (deviceMatch) {
                             if (debug) log.debug "Found a device: '${deviceMatch}'"
                             if (ctNum > 0 && ctUnit == "MIN") {
@@ -1238,24 +1248,21 @@ def controlDevices() {
                                 	}
                                 	else if (command == "close") {
                                 		outputTxt = "Ok, closing the " + deviceMatch + ", in " + numText
-                                		}
-                                    }
+                                	}
+                             }
                              else {
                                 def data = [type: "cGdoor", command: command, device: ctDevice, unit: ctUnit, num: ctNum]
                                 controlHandler(data)
                                 if (debug) log.debug "Processing control handler with: '${data}'"
                                 if (command == "open") {
-                                	outputTxt = "Ok, opening " + deviceMatch }
+                                	outputTxt = "Ok, opening the " + deviceMatch }
                                     	else if (command == "close") {
-                                    		outputTxt = "ok, closing " + deviceMatch 
-                                            	}
-                                	else outputTxt = "Ok, turning " + ctDevice + " " + command
+                                    		outputTxt = "ok, closing the " + deviceMatch }
                             }
                         }
                         else {outputTxt = "Sorry, I couldn't find a device named " + ctDevice }
-							}
-						}
-                    } 
+                  }
+            } 
        if (deviceType == "cGlock"){       
            if (command == "lock" || command == "unlock") {
                  if (cGlock) {
@@ -1501,8 +1508,8 @@ def controlHandler(data) {
        if (deviceMatch) {
        		deviceMatch."${deviceCommand}"()
             if (debug) log.debug "cGdoor with command '${deviceCommand}'"
-		}
-    } 
+			}
+        }   
     if (deviceType == "cGlock") {
     		def deviceMatch = cGlock.find {s -> s.label.toLowerCase() == deviceD}
        if (deviceMatch) {
@@ -2170,7 +2177,7 @@ def alertsHandler(evt) {
         }
         if (eVal == "off") {       
                 if (audioTextOff) {
-                eTxt = txtFormat(audioTextOn, eDev, eVal)
+                eTxt = txtFormat(audioTextOff, eDev, eVal)
                 if (debug) log.debug "Received event: off, playing message:  ${eTxt}"
                 speech1?.speak(eTxt)
                     if (music1) {
@@ -2589,7 +2596,7 @@ private def textVersion() {
 	def text = "3.0"
 }
 private def textRelease() {
-	def text = "3.1.3"
+	def text = "3.1.4"
 }
 private def textReleaseNotes() {
 	def text = "See the Wiki"
