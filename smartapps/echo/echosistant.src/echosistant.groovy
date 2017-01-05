@@ -1692,7 +1692,8 @@ def processTts() {
     	def pContCmds = false
         def pContCmdsR = false
         def dataSet = [ptts:ptts,pttx:pttx,pintentName:pintentName] 
-        	def repeat = "repeat last message" 
+        	def repeat = "repeat last message"
+		def whatsUP = "what's up"
                     	log.debug "repeat = ${repeat}"
 
         	def play = "play message"
@@ -1703,7 +1704,7 @@ def processTts() {
         	def recordingNow = ptts.startsWith("record a message")
         				log.debug "recordingNow = ${recordingNow}"
       
-        if (ptts==repeat || ptts == play) {
+        if (ptts==repeat || ptts == play  || ptts == whatsUP) {
 						childApps.each { child ->
     						def cLast = child.label.toLowerCase()
             				if (cLast == pintentName.toLowerCase()) {
