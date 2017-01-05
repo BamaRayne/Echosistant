@@ -1,15 +1,13 @@
 /**
  *  EchoSistant - Lambda Code
  *
- *  Copyright © 2016 Jason Headley
+ *  Version 4.0.1 - 11/29/2016 Copyright © 2016 Jason Headley
+ *  Version 3.0.0 - 11/21/2016 Copyright © 2016 Jason Headley
  *  Special thanks for Michael Struck @MichaelS (Developer of AskAlexa) for allowing me
  *  to build off of his base code.  Special thanks to Keith DeLong  @N8XD for his 
  *  assistance in troubleshooting.... as I learned.....  Special thanks to Bobby
  *  @SBDOBRESCU for jumping on board and being a co-consipirator in this adventure.
  *
- *  Version 3.1.3 - 12/19/2016 
- *  Version 3.1.2 - 12/12/2016
- *  Version 3.1.0 - 12/7/2016
  *  Version 3.0.0 - 12/1/2016  Added new parent variables
  *  Version 2.0.0 - 11/20/2016  Continued Commands
  * 
@@ -26,17 +24,17 @@
 'use strict';
 exports.handler = function( event, context ) {
     var https = require( 'https' );
-//-------- Paste app code here between the breaks------------------------------------------------
-    var STappID = '99b2b9e7-2199-43cf-aa13-f734b885f660';
-    var STtoken = '3b4aaca9-aa5b-46fb-b342-7d5380e19813';
+    // Paste app code here between the breaks------------------------------------------------
+    var STappID = '765bbc1d-b898-4547-88b0-7bd442b00c75';
+    var STtoken = '0e1feb04-76f1-47f8-83d2-2e77d0543418';
     var url='https://graph.api.smartthings.com:443/api/smartapps/installations/' + STappID + '/' ;
-//-----------------------------------------------------------------------------------------------
+        //---------------------------------------------------------------------------------------
         var cardName ="";
         var areWeDone = true;
 //-------- Validation process and begining interaction with SmartThings app-------------------- 
-        var versionTxt = '3.0';
-        var versionDate= '12/23/2016';
-        var releaseTxt = "3.1.5";
+        var versionTxt = '4.0';
+        var versionDate= '12/29/2016';
+        var releaseTxt = "4.0.0";
         var beginURL = url + 'b?&versionTxt=' + versionTxt + '&versionDate=' + versionDate + '&releaseTxt=' + releaseTxt + '&access_token=' + STtoken;
         https.get( beginURL, function( response ) {
         response.on( 'data', function( data ) {
@@ -64,16 +62,39 @@ exports.handler = function( event, context ) {
                 if (intentName.startsWith("AMAZON") && intentName.endsWith("Intent")) { 
                     alexaResp (intentName, context, "Amazon Intent", areWeDone); 
                 }
-//-------- Control Type Request------------------------------------------------------------------
+//-------- Devicce Control Type Request------------------------------------------------------------------
                 else if (intentName == "main"){           
-                    var pCommand = event.request.intent.slots.pCommand.value;
-                    var pProfile = event.request.intent.slots.pProfile.value;
-                    var pNum = event.request.intent.slots.pNum.value;
-                    var pDevice = event.request.intent.slots.pDevice.value;
-                    var pUnit = event.request.intent.slots.pUnit.value;
-                    url += 'c?pDevice=' + pDevice + '&pCommand=' + pCommand + '&pNum=' + pNum + '&pUnit=' + pUnit + '&pProfile=' + pProfile + '&intentName=' + intentName;    
+                    var cCommand = event.request.intent.slots.cCommand.value;
+                    var cNum = event.request.intent.slots.cNum.value;
+                    var cPIN = event.request.intent.slots.cPIN.value;
+                    var cDevice = event.request.intent.slots.cDevice.value;
+                    var cUnit = event.request.intent.slots.cUnit.value;
+                    var cGroup = event.request.intent.slots.cGroup.value;
+                    url += 'c?cDevice=' + cDevice + '&cGroup=' + cGroup + '&cCommand=' + cCommand + '&cNum=' + cNum + '&cPIN=' + cPIN + '&cUnit=' + cUnit + '&intentName=' + intentName;    
                     process = true;
                     cardName = "EchoSistant Control";
+                }
+//-------- Profile Control Type Request------------------------------------------------------------------
+                else if (intentName == "profile"){           
+                    var pCommand = event.request.intent.slots.cCommand.value;
+                    var pProfile = event.request.intent.slots.pProfile.value;
+                    var pNum = event.request.intent.slots.cNum.value;
+                    var pUnit = event.request.intent.slots.cUnit.value;
+
+                    url += 'p?pCommand=' + pCommand + '&pNum=' + pNum + '&pUnit=' + pUnit + '&intentName=' + intentName;
+                    process = true;
+                    cardName = "EchoSistant Profile Control";
+                }
+//-------- Feedback Type Request------------------------------------------------------------------
+                else if (intentName == "feedback"){           
+                    var fProfile = event.request.intent.slots.pProfile.value;
+                    var fDevice = event.request.intent.slots.cDevice.value;
+                    var fQuery = event.request.intent.slots.fQuery.value;
+                    var fOperand = event.request.intent.slots.fOperand.value;
+
+                    url += 'f?fProfile=' + fProfile + '&fDevice=' + fDevice + '&fQuery=' + fQuery + '&fOperand=' + fOperand + '&intentName=' + intentName;
+                    process = true;
+                    cardName = "EchoSistant Feedback";
                 }
 //-------- TTS Type Request------------------------------------------------------------------
                 else if (intentName != "main") {
@@ -92,14 +113,25 @@ exports.handler = function( event, context ) {
                         response.on( 'data', function( data ) {
                         var resJSON = JSON.parse(data);
                         var pContCmds = resJSON.pContCmds;
+                        var pContCmdsR = resJSON.pContCmdsR;
                         var speechText = resJSON.outputTxt;
-                        if (pContCmds == "true") { 
+                        if (pContCmds === true && pContCmdsR === false ) { 
                             areWeDone=false;
                             speechText = speechText + ', send another message to ' + intentName; 
                         }
-                        else {
-                            areWeDone=true;
+                        else if (pContCmds === false && pContCmdsR === true) {
+                            areWeDone=false;
+                            speechText = speechText + ',  would you like anything else? ';                            
+                            areWeDone=false;
                         }
+                        else if (pContCmds === true && pContCmdsR === true) {
+                            areWeDone=false;
+                            speechText = speechText + ',  anything else? ';                            
+                            areWeDone=false;
+                        }
+                        else if (pContCmds === false && pContCmdsR === false){
+                            areWeDone=true;
+                        } 
                         output(speechText, context, cardName, areWeDone);
                         } );
                     } );
@@ -141,4 +173,5 @@ function output( text, context, cardName, areWeDone) {
         shouldEndSession: areWeDone
         };
         context.succeed( { response: response } );
+  }
   }
