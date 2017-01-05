@@ -132,16 +132,16 @@ page name: "selectDevicesPage"
             section ("Switches", hideWhenEmpty: true){
                 input "cSwitches", "capability.switch", title: "Allow These Switch(es)...", multiple: true, required: false, submitOnChange: true
             }
-            section ("Dimmers and Colored Bulbs", hideWhenEmpty: true){
-                input "cDimmers", "capability.switchLevel", title: "Allow These Dimmers, Bulbs...", multiple: true, required: false, submitOnChange: true
+            section ("Dimmers, Colored Bulbs, Vents, and Fans", hideWhenEmpty: true){
+                input "cDimmers", "capability.switchLevel", title: "Allow These Dimmers, Bulbs, Vents, and Fans...", multiple: true, required: false, submitOnChange: true
             }
             section ("Doors and Locks", hideWhenEmpty: true){
             	input "cGdoor", "capability.garageDoorControl", title: "Allow These Garage Door(s)...", multiple: true, required: false, submitOnChange: true
             	input "cLock", "capability.lock", title: "Allow These Lock(s)...", multiple: true, required: false, submitOnChange: true
 			}
-			section ("Vents and Ceiling Fans", hideWhenEmpty: true){
-            	input "cVent", "capability.switchLevel", title: "Allow These Vents and Ceiling Fans...", multiple: true, required: false, submitOnChange: true
-            }    
+//			section ("Vents", hideWhenEmpty: true){
+//            	input "cVent", "capability.switchLevel", title: "Allow These Vent(s)...", multiple: true, required: false, submitOnChange: true
+//            }    
 			section ("Thermostats", hideWhenEmpty: true){
                 input "cTstat", "capability.thermostat", title: "Allow These Thermostat(s)...", multiple: true, required: false
             }
@@ -356,7 +356,6 @@ page name: "deviceControlPage"
                     paragraph ("Define Variables for Voice Controlled Devices (for increase/decrease commands)")
                     input "cLevel", "number", title: "Alexa Automatically Adjusts Light Levels by using a scale of 1-10 (default is +/-3)", defaultValue: 3, required: false
                     input "fLevel", "number", title: "Alexa Automatically Adjusts Ceiling Fans by this percentage (default is 33%) when using commands 'speed up & slow down'", defaultValue: 33, required: false
-                    input "vLevel", "number", title: "Alexa Automatically Adjusts Vents by using a scale of 1-10 (default is +/-3)", defaultValue: 3, required: false
                     input "cTemperature", "number", title: "Alexa Automatically Adjusts temperature by using a scale of 1-10 (default is +/-1)", defaultValue: 1, required: false
 //                    input "cPIN", "number", title: "Set a PIN number to prevent unathorized use of Voice Control", default: false, required: false
 					}
@@ -1310,7 +1309,7 @@ def subscribeChildToEvents() {
                 if (audioTextUnlocked) {subscribe(TheLock, "lock.unlocked", alertsHandler)}
                 }
         }
-        if (Motions) {
+        if (Motion) {
             if (TheMotion || cMotion) {
                 if (audioTextActive) {subscribe(TheMotion, "motion.active", alertsHandler)}
                 if (audioTextInactive) {subscribe(TheMotion, "motion.inactive", alertsHandler)}
@@ -1372,7 +1371,7 @@ def controlDevices() {
         def ctDevice = params.pDevice
         def ctUnit = params.pUnit
 		def pintentName = params.intentName
-
+		
         def outputTxt = " "
         def pContCmds = "false"
         def pContCmdsR = "false"
@@ -1380,9 +1379,9 @@ def controlDevices() {
 		def commandLVL = " "
         def deviceType = " "
         def numText = " "
-        def result = " " 
+        def result = " "        
         if (debug) log.debug "Received Lambda request to control devices with settings:" +
-        						" (ctCommand)= ${ctCommand}', (ctProfile) = '${ctProfile}', (params.pDevice) = '${params.pDevice}', (cGdoor) = '${cGdoor}'" +
+        						" (ctCommand)= ${ctCommand}', (ctProfile) = '${ctProfile}',"+
                                 " ctNum = '${ctNum}', (ctDevice) = '${ctDevice}', (ctUnit) = '${ctUnit}', (pintentName) = '${pintentName}'"   
     //Temperature Commands
     			if (cLevel == null) cLevel = 3 // to fix default missing value
@@ -1397,40 +1396,55 @@ def controlDevices() {
                     if (debug) log.debug "Temperature command = '${commandLVL}'"
                 }
 	//Dimmer Commands
-                if (command == "lower" || command == "darker" || command == "darken" || command == "too bright" || command == "dim" || command == "dimmer" || command == "slow down" ) {
+                if (command == "lower" || command == "darker" || command == "darken" || command == "too bright" || command == "dim" || command == "dimmer") {
                     commandLVL = "decrease" 
                     deviceType = "cDimmers"
-                    if (debug) log.debug "Light command #1 = '${commandLVL}'"
+                    if (debug) log.debug "Light command = '${commandLVL}'"
                 }
-              		else if (command == "raise" || command == "brighter" || command == "too dark" || command == "brighten" || command == "speed up") {
+                if (command == "close") {
+                	commandLVL = "close"
+                    deviceType = "cDimmers"
+                    if (debug) log.debug "Light command = '${commandLVL}'"
+                }
+        		else if (command == "raise" || "not bright enough" || command == "brighter" || command == "too dark" || command == "brighten") {
                     commandLVL = "increase" 
                     deviceType = "cDimmers"
-                    if (debug) log.debug "Light command #3 = '${commandLVL}'"                   
-                }                   
-    //Ceiling Fan Commands 
-    			 if (command == "set") {
-                    commandLVL = "setLevel" 
+                    if (debug) log.debug "Light command = '${commandLVL}'"                   
+                }
+                if (command == "open") {
+                    commandLVL = "open"
                     deviceType = "cDimmers"
-                    if (debug) log.debug "Fan command = '${commandLVL}'"                   
-                	}
-                if (command == "high") {
+                    if (debug) log.debug "Light command = '${commandLVL}'"
+                }
+    //Ceiling Fan Commands 
+				if (command == "high" || command == "set" || command == "adjust") {
                     commandLVL = "high" 
                     deviceType = "cDimmers"
                     if (debug) log.debug "Fan command = '${commandLVL}'"                   
-                	}
-                if (command == "medium") {
+                }
+                if (command == "medium" || command == "set to" || command == "adjust") {
                     commandLVL = "medium" 
                     deviceType = "cDimmers"
                     if (debug) log.debug "Fan command = '${commandLVL}'"                   
                 }
-                if (command == "low") {
+                if (command == "low" || command == "set to" || command == "adjust") {
                     commandLVL = "low" 
                     deviceType = "cDimmers"
                     if (debug) log.debug "Fan command = '${commandLVL}'"                   
-                	}
-                
+                }
+                if (command == "speed up" || command == "too slow") {
+                    commandLVL = "speed up" 
+                    deviceType = "cDimmers"
+                    if (debug) log.debug "Fan command = '${commandLVL}'"                   
+                }
+                if (command == "slow down" || command == "too fast") {
+                    commandLVL = "slow down" 
+                    deviceType = "cDimmers"
+                    if (debug) log.debug "Fan command = '${commandLVL}'"                   
+                }
+ 
 
-    //Volume Commands
+	//Volume Commands
                 if (command == "too loud" ) {
                     commandLVL = "decrease"
                     deviceType = "cVol"
@@ -1451,17 +1465,17 @@ def controlDevices() {
                 }
 
 	//Global Commands
-                if (command == "decrease" || command == "down") {
+/*                if (command == "decrease" || command == "down") {
                     commandLVL = "decrease" 
                     deviceType = "cGlobal"
                     if (debug) log.debug "Global command = '${commandLVL}'"
                 }
-       			if (command == "increase" || command == "up") {
+       			if (command == "increase" || command == "up" || command == "turn up") {
                     commandLVL = "increase"
                     deviceType = "cGlobal"
                     if (debug) log.debug "Global command = '${commandLVL}'"
                 }
-                if (command == "set level") {
+                if (command == "set" || command == "set level") {
                     commandLVL = "setLevel"
                     deviceType = "cGlobal"
                     if (debug) log.debug "Global command = '${commandLVL}'"
@@ -1470,13 +1484,13 @@ def controlDevices() {
                     deviceType = "cGlob"
                     if (debug) log.debug "Global command = '${command}'"
                 }
-                
-//  Garage Door Commands 
-				if (cGdoor.find {s -> s.label.toLowerCase() == ctDevice}) {
+*/
+//Door Commands    
+			if (cGdoor.find {s -> s.label.toLowerCase() == ctDevice}) {
 				if (command == "close" || command == "open") {
 						def deviceMatch = cGdoor.find {s -> s.label.toLowerCase() == ctDevice} 
                             if (deviceMatch) {
-                            log.debug "Found the device: '${ctDevice}'" }
+                            log.debug "I Found the device: '${ctDevice}'" }
                                 if (deviceMatch && command == "close") {
                                 commandLVL = "close"
                                 }
@@ -1485,38 +1499,16 @@ def controlDevices() {
                                 	}
                 				deviceType = "cGdoor"
                                 
-                        		if (cGdoor == deviceMatch) log.debug "Vent Command = '${commandLVL}'"
-                					}  
-                        		}
-//  Vent Commands     
-						if (cVent.find {s -> s.label.toLowerCase() == ctDevice})  {
-                        if (command == "close" || command == "open" || command == "set") {
-						def deviceMatch = cVent.find {s -> s.label.toLowerCase() == ctDevice} 
-                            if (deviceMatch) {
-                            log.debug "Found the device: '${ctDevice}'" }
-                                if (deviceMatch && command == "close") {
-                                commandLVL = "close"
-                                }
-                                else if (deviceMatch && command == "open") {
-                                	commandLVL = "open"
-                                	}
-                                    else if (deviceMatch && command == "set") {
-                                    commandLVL = "set"
-                                    }
-                				deviceType = "cVent"
-                                
-                        		if (cVent == deviceMatch) log.debug "Vent Command = '${commandLVL}'"
+                        		if (cGdoor == deviceMatch) log.debug "the cGdoor Command = '${commandLVL}'"
                 					}
-                             	}
-//  Lock Commands
-					if (command == "lock" || command == "unlock") {
-                		deviceType = "cLock"
-                    		if (debug) log.debug "Door Lock Command = '${command}'"
-                			}    
+                                }
+                                
+                if (command == "lock" || command == "unlock") {
+                	deviceType = "cLock"
+                    if (debug) log.debug "Door Lock Command = '${command}'"
+                }    
 
-                			
-
-		if (ctNum == "undefined" || ctNum =="?") {ctNum = 0}
+        if (ctNum == "undefined" || ctNum =="?") {ctNum = 0}
 			ctNum = ctNum as int 
       	
         if (ctUnit == "undefined" || ctUnit =="?") {ctUnit = "unknown"}
@@ -1559,11 +1551,11 @@ def controlDevices() {
 /************************************************************************************************************
    EASTER EGG HUNT ENDS
 ************************************************************************************************************/        
-       
+
        if (ctDevice != "undefined"){       
            if (command == "on" || command == "off") {
                  if (cSwitches) {
-                        if (debug) log.debug "Searching for device type = switch, device name ='${ctDevice}'"
+                 if (debug) log.debug "Searching for device type = switch, device name ='${ctDevice}'"
                         def deviceMatch = cSwitches.find {s -> s.label.toLowerCase() == ctDevice}             
                         if (deviceMatch) {
                             if (debug) log.debug "Found a device: '${deviceMatch}'"
@@ -1609,8 +1601,7 @@ def controlDevices() {
                         }
                         else {outputTxt = "Sorry, I couldn't find a device named " + ctDevice }
                   }
-            }
-           
+            }    
        if (deviceType == "cLock"){       
            if (command == "lock" || command == "unlock") {
                  if (cLock) {
@@ -1643,7 +1634,7 @@ def controlDevices() {
 							}
                         }
 					}
-	if (deviceType == "cDimmers") {
+            if (deviceType == "cDimmers") {
                 if (commandLVL == "open" || commandLVL == "close" || commandLVL == "decrease" || commandLVL == "increase" || commandLVL == "setLevel" || commandLVL == "speed up" || commandLVL == "slow down" || commandLVL == "high" || commandLVL == "medium" || commandLVL == "low") { 
                     if (cDimmers) {           
                         if (debug) log.debug "Searching for device type = dimmer, device name='${ctDevice}'"
@@ -1672,47 +1663,16 @@ def controlDevices() {
 									if (commandLVL == "high") {outputTxt = "Ok, setting " + ctDevice + " to high "}
                                     if (commandLVL == "medium") {outputTxt = "Ok, setting " + ctDevice + " to medium "}
                                     if (commandLVL == "low") {outputTxt = "Ok, setting " + ctDevice + " to low "}
-                                	}
+                                	if (commandLVL == "close") {outputTxt = "Ok, closing the " + ctDevice + " all the way "}
+                                    if (commandLVL == "open") {outputTxt = "Ok, opening the " + ctDevice + " all the way "}
+                                    }
                             	}
                         	}
                         else {outputTxt = "Sorry, I couldn't find a device named " + ctDevice + " in your list of selected dimmers"}
                     }
                 }
             }
-if (deviceType == "cVent") {
-                if (commandLVL == "open" || commandLVL == "close" || commandLVL == "set") { 
-                    if (cVent) {           
-                        if (debug) log.debug "Searching for device type = dimmer, device name='${ctDevice}'"
-                            def deviceDMatch = cVent.find {s -> s.label.toLowerCase() == ctDevice}
-                        if (deviceDMatch) {
-                            if (debug) log.debug "Found a device: '${deviceDMatch}'"
-                                if (ctNum && ctUnit == "MIN") {
-                                runIn(ctNum*60, delayHandler, [data: [type: "cVent", command: commandLVL, device: ctDevice, unit: ctUnit, num: ctNum]])                           
-                                if (commandLVL == "close") {outputTxt = "Ok, closing the " + ctDevice + " level in " + numText}
-                                if (commandLVL == "open") {outputTxt = "Ok, opening the " + ctDevice + " level in " + numText}
-                                else if (commandLVL == "set") {outputTxt = "Ok, setting the " + ctDevice + " to " + ctNum + " level in " + numText}
-                                }
-                            else {
-                                def data = [type: "cVent", command: commandLVL, device: ctDevice, unit: ctUnit, num: ctNum]
-                                controlHandler(data)
-                                if (debug) log.debug "Processing control handler with: '${data}'"
-                                if (ctUnit == "PERC"){outputTxt = "Ok, setting " + ctDevice + " to " + numText}
-                                else{
-                                    if (commandLVL == "set" && ctUnit == "unknown") {
-                                        def num = ctNum > 10 ? ctNum : ctNum*10 as int
-                                        outputTxt = "Ok, setting the " + ctDevice + " to " + num + " percent" 
-                                    }
-                                    if (command == "close") {outputTxt = "Ok, closing " + ctDevice + " all the way" }
-                                    if (command == "open") {outputTxt = "Ok, opening " + ctDevice + " all the way" }
-                                    if (command == "set") {outputTxt = "Ok, setting the " + ctDevice + " to " + setLevel + " open " }
-                                }
-                            }
-                        }
-                        else {outputTxt = "Sorry, I couldn't find a device named " + ctDevice + " in your list of selected dimmers"}
-                    }
-                }
-            }            
-            if (deviceType == "cTstat" || deviceType == "cGlobal") {
+            if (deviceType == "cTstat") {
                 if (commandLVL == "decrease" || commandLVL == "increase" || commandLVL == "setLevel" ) { 
                     if (cTstat) {           
                         if (debug) log.debug "Searching for device type= thermostat, device='${ctDevice}'"
@@ -1878,6 +1838,13 @@ def controlHandler(data) {
         	}
     	}
     }
+    if (deviceType == "cGdoor") {
+    		def deviceMatch = cGdoor.find {s -> s.label.toLowerCase() == deviceD}
+       if (deviceMatch) {
+       		deviceMatch."${deviceCommand}"()
+            if (debug) log.debug "cGdoor with command '${deviceCommand}'"
+			}
+        } 
 	if (deviceType == "cSwitches") {
 			def deviceMatch = cSwitches.find {s -> s.label.toLowerCase() == deviceD}
         if (deviceMatch) {
@@ -1885,13 +1852,15 @@ def controlHandler(data) {
         	if (debug) log.debug "cSwitches with command '${deviceCommand}'" 
         } 
     }
-       if (deviceType == "cGdoor") {
-    		def deviceMatch = cGdoor.find {s -> s.label.toLowerCase() == deviceD}
+/*    if (ctDevice == "cVent") {
+    if (deviceType == "cVent") {
+    		def deviceMatch = cVent.find {s -> s.label.toLowerCase() == deviceD}
        if (deviceMatch) {
        		deviceMatch."${deviceCommand}"()
-            if (debug) log.debug "cGdoor with command '${deviceCommand}'"
+            if (debug) log.debug "cVent with command '${deviceCommand}'"
 			}
-        }     
+        }
+    }*/
     if (deviceType == "cLock") {
 			def deviceMatch = cLock.find {s -> s.label.toLowerCase() == deviceD}
         if (deviceMatch) {
@@ -1905,7 +1874,6 @@ def controlHandler(data) {
             def currLevel = deviceDMatch.latestValue("level")
             def currState = deviceDMatch.latestValue("switch")
             def newLevel = cLevel*10 //30%
-            def off = 0
 			if (unitU == "PERC") newLevel = numN      
             if (deviceCommand == "increase") {
             	if (unitU == "PERC") {
@@ -1916,22 +1884,22 @@ def controlHandler(data) {
             		newLevel = newLevel < 0 ? 0 : newLevel >100 ? 100 : newLevel
             	}
             }
-/*            if (deviceCommand == "close") {
+            if (deviceCommand == "close") {
             	if (unitU == "PERC") {
-                	newLevel = off
+                	newLevel = currLevel - 100
                 }   
                 else {
                 	newLevel =  0 
             	}
             }
             if (deviceCommand == "open") {
-          	 	if (unitU == "PERC") {
-           	    	newLevel = ((100 - currLevel) + currLevel)
+            	if (unitU == "PERC") {
+                	newLevel = currLevel + 100
                 }   
                 else {
-                	newLevel = 100 
+                	newLevel =  100 
             	}
-            } 
+            }
             if (deviceCommand == "speed up") {
             	if (unitU == "PERC") {
                 	newLevel = numN
@@ -1973,14 +1941,14 @@ def controlHandler(data) {
             		newLevel = newLevel < 0 ? 0 : newLevel >100 ? 100 : newLevel
             	}            
             }
-            if (deviceCommand == "slow down") {
+            if (deviceCommand == "slow down" ) {
             	if (unitU == "PERC") {
                 	newLevel = numN
                 }   
                 else {
                 	newLevel =  currLevel - fLevel
             	}            
-            }  */
+            }
             if (deviceCommand == "setLevel") {
             	if (unitU == "PERC") {
                 	newLevel = numN
@@ -2000,99 +1968,6 @@ def controlHandler(data) {
             }      
     	}
 	}
-	if (deviceType == "cVent") {
-			def deviceDMatch = cVent.find {s -> s.label.toLowerCase() == deviceD}
-		if (deviceDMatch) {
-            def currLevel = deviceDMatch.latestValue("level")
-            def currState = deviceDMatch.latestValue("switch")
-            def newLevel = vLevel*10 //30%
-            def off = 0
-			if (unitU == "PERC") newLevel = numN      
-                        if (deviceCommand == "speed up") {
-            	if (unitU == "PERC") {
-                	newLevel = numN
-                }   
-                else {
-                	newLevel =  currLevel + fLevel 
-            	}
-            }
-            if (deviceCommand == "high") {
-            	if (unitU == "PERC") {
-                	newLevel = 99
-                }   
-                else {
-                	newLevel = 99
-            	}
-            }
-            if (deviceCommand == "medium") {
-            	if (unitU == "PERC") {
-                	newLevel = 66
-                }   
-                else {
-                	newLevel = 66
-            	}
-            }
-            if (deviceCommand == "low") {
-            	if (unitU == "PERC") {
-                	newLevel = 33
-                }   
-                else {
-                	newLevel = 33
-            	}
-            }
-            if (deviceCommand == "decrease") {
-            	if (unitU == "PERC") {
-                	newLevel = numN
-                }   
-                else {
-                	newLevel =  currLevel - newLevel
-            		newLevel = newLevel < 0 ? 0 : newLevel >100 ? 100 : newLevel
-            	}            
-            }
-            if (deviceCommand == "slow down") {
-            	if (unitU == "PERC") {
-                	newLevel = numN
-                }   
-                else {
-                	newLevel =  currLevel - fLevel
-            	}            
-            }
-            if (deviceCommand == "close") {
-            	if (unitU == "PERC") {
-                	newLevel = off
-                }   
-                else {
-                	newLevel =  0 
-            	}
-            }
-            if (deviceCommand == "open") {
-          	 	if (unitU == "PERC") {
-           	    	newLevel = ((100 - currLevel) + currLevel)
-                }   
-                else {
-                	newLevel = 100 
-            	}
-            }
-            if (deviceCommand == "set") {
-            	if (unitU == "PERC") {
-                	newLevel = numN
-                }   
-                else {
-                	newLevel =  numN*10
-            		newLevel = newLevel < 0 ? 0 : newLevel >100 ? 100 : newLevel
-                }            
-            }
-			if (newLevel > 0 && currState == "off") {
-            	deviceDMatch.on()
-            	deviceDMatch.setLevel(newLevel)
-            }
-            else {                                    
-            	if (newLevel == 0 && currState == "on") {deviceDMatch.off()}
-                else {deviceDMatch.setLevel(newLevel)}
-            }      
-    	}
-        
-	}    
 	if (deviceType == "cTstat") {
 			def deviceTMatch = cTstat.find {s -> s.label.toLowerCase() == deviceD}
 		if (deviceTMatch) {
