@@ -100,7 +100,7 @@ page name: "mIntent"
                     input "cVent", "capability.switchLevel", title: "Allow These Smart Vent(s)...", multiple: true, required: false
                     input "cFan", "capability.switchLevel", title: "Allow These Fan(s)...", multiple: true, required: false
                 }
-                section ("PIN Protected Devices (Optional)") {
+                section ("PIN Protected Devices (Voice Enabled Setting)" , hideWhenEmpty: true) {
                     input "cTstat", "capability.thermostat", title: "Allow These Thermostat(s)...", multiple: true, required: false, submitOnChange: true
                     	if (cTstat) {input "usePIN_T", "bool", title: "Use PIN to control Thermostats?", default: false}
                     input "cDoor", "capability.garageDoorControl", title: "Allow These Garage Door(s)...", multiple: true, required: false, submitOnChange: true
@@ -108,14 +108,17 @@ page name: "mIntent"
                     input "cLock", "capability.lock", title: "Allow These Lock(s)...", multiple: true, required: false, submitOnChange: true
                     	if (cLock) {input "usePIN_L", "bool", title: "Use PIN to control Locks?", default: false}
                 } 
-                section ("Sensors") {
+                section ("Sensors", hideWhenEmpty: true) {
                  	input "cMotion", "capability.motionSensor", title: "Allow These Motion Sensor(s)...", multiple: true, required: false
                     input "cContact", "capability.contactSensor", title: "Allow These Contact Sensor(s)...", multiple: true, required: false      
                     input "cPresence", "capability.presenceSensor", title: "Allow These Presence Sensors(s)...", multiple: true, required: false
                 }
-                section ("Media" ){
+                section ("Media" , hideWhenEmpty: true){
                     input "cSpeaker", "capability.musicPlayer", title: "Allow These Media Player Type Device(s)...", required: false, multiple: true
-                }               
+                } 
+                section ("Batteries", hideWhenEmpty: true ){
+                    input "cBattery", "capability.battery", title: "Allow These Device(s) with Batteries...", required: false, multiple: true
+                } 
                 section ("Weather Alerts") {
                     input "cWeather", "enum", title: "Choose Weather Alerts...", required: false, multiple: true, submitOnChange: true,
                     options: [
@@ -556,7 +559,12 @@ def initialize() {
         state.lambdaReleaseDt = "Not Set" 
 		state.lambdatextVersion = "Not Set"
     	state.weatherAlert = "There are no weather alerts for your area"
-        state.disableConv = null
+        state.disableConv = false
+        state.pContCmds = true
+        state.pContCmdsR = true
+		state.usePIN_T = false
+		state.usePIN_L = false
+		state.usePIN_D = false
         def children = getChildApps()
     	if (debug) log.debug "Refreshing Profiles for CoRE, ${getChildApps()*.label}"
 		if (!state.accessToken) {
@@ -598,7 +606,7 @@ def processBegin(){
         
     def versionSTtxt = textVersion()
 	def pContinue
-    if (state.disableConv) {pContinue = disableConv}
+    if (state.disableConv) {pContinue = state.disableConv}
     
     if (debug){
         log.debug "Message received from Lambda with: (ver) = '${versionTxt}', (date) = '${versionDate}', (release) = '${releaseTxt}'"+ 
@@ -612,13 +620,13 @@ def processBegin(){
 def controlDevices() {
 		def ctCommand = params.cCommand
         def ctNum = params.cNum
+        def ctPIN = params.cPIN
         def ctDevice = params.cDevice
         def ctUnit = params.cUnit
+        def ctGroup = params.cGroup       
 		def pintentName = params.intentName
 
-        def outputTxt = " "
-        def pContCmds = false
-        def pContCmdsR = false
+        def outputTxt = "I wish I could help, but EchoSistant couldn't find the device or the command is not supported yet,. Please try again."
 		def deviceType = " "
         def command = " "
 		def numText = " "
@@ -626,60 +634,85 @@ def controlDevices() {
         def delay = false
         def data
         if (debug) log.debug	"Received Lambda request to control devices with settings:" +
-        					  	" (ctCommand)= ${ctCommand}',(ctNum) = '${ctNum}', (ctDevice) = '${ctDevice}', (ctUnit) = '${ctUnit}', (pintentName) = '${pintentName}'"   
+        					  	" (ctCommand)= ${ctCommand}',(ctNum) = '${ctNum}', (ctPIN) = '${ctPIN}', (ctDevice) = '${ctDevice}', (ctUnit) = '${ctUnit}', (pintentName) = '${pintentName}'"   
+        
+        if (ctNum == "undefined" || ctNum =="?") {ctNum = 0}
+        ctNum = ctNum as int 
 
     if (pintentName == "main") {
         if (ctCommand == "repeat") {
             if (debug) log.debug "Processing repeat last message delivered to any of the Profiles"
                 outputTxt = getLastMessageMain()
-                if (debug) log.debug "Received message: '${outputTxt}' ; sending to Lambda"
+                if (debug) log.debug "Received message: '${outputTxt}' ; sending to Lambda with pContCmds = '${state.pContCmds}' and  pContCmdsR = '${state.pContCmdsR}' "
 
-                return ["outputTxt":outputTxt, "pContCmds":pContCmds, "pContCmdsR":pContCmdsR]
+                return ["outputTxt":outputTxt, "pContCmds": state.pContCmds, "pContCmdsR": state.pContCmdsR]
         }
         else {
             if (ctCommand == "cancel") {
                 if (debug) log.debug "Canceling timmer!"
                     unschedule()
                     outputTxt = "Ok, canceling timer"
-                if (debug) log.debug "Cancel message received; sending '${outputTxt}' to Lambda" 
-
-                return ["outputTxt":outputTxt, "pContCmds":pContCmds, "pContCmdsR":pContCmdsR]
+                if (debug) log.debug "Cancel message received; sending '${outputTxt}' to Lambda with pContCmds = '${state.pContCmds}' and  pContCmdsR = '${state.pContCmdsR}'" 
+                return ["outputTxt":outputTxt, "pContCmds": state.pContCmds, "pContCmdsR": state.pContCmdsR]
             }
-            if (ctCommand == "stop" && ctDevice == "undefined") {
+            if (ctCommand == "stop" && ctUnit == "conversation") {
                 if (debug) log.debug "Stopping Continuation Responses!"
                     state.disableConv = true
-                    pContCmds = false
-                    pContCmdsR = false
+                    state.pContCmds = false
+                    state.pContCmdsR = false
                     outputTxt = "Really? So, you don't like me to talk back to you. That's ok, if you change your mind, just say, start conversation"
-                    return ["outputTxt":outputTxt, "pContCmds":pContCmds, "pContCmdsR":pContCmdsR]
+                    return ["outputTxt":outputTxt, "pContCmds": state.pContCmds, "pContCmdsR": state.pContCmdsR]
             }
-            if (ctCommand == "start" && ctDevice == "undefined") {
+            if (ctCommand == "start" && ctUnit == "conversation") {
                 if (debug) log.debug "Starting Continuation Responses!"
                     state.disableConv = true
-                    pContCmds = true
-                    pContCmdsR = true
-                    outputTxt = "Great! I shall talk back to you every time you give me a new command. If you get tired of me promting for more commands, just say stop the conversation"
-                    return ["outputTxt":outputTxt, "pContCmds":pContCmds, "pContCmdsR":pContCmdsR]
-            } 
+                    state.pContCmds = true
+                    state.pContCmdsR = true
+                    outputTxt = "Great! I will talk back to you every time you give me a new command. If you get tired of me promting for more commands, just say stop the conversation"
+                    return ["outputTxt":outputTxt, "pContCmds": state.pContCmds, "pContCmdsR": state.pContCmdsR]
+            }
+             if (ctGroup != "undefined" && ctUnit != "undefined") {    
+                if (ctCommand == "enable" || ctCommand == "activate") {
+                    if (debug) log.debug "Activating PIN"
+                    if (ctGroup == "thermostats"  && ctUnit == "pin") {state.usePIN_T = true}
+                    else if (ctGroup == "locks"  && ctUnit == "pin") {state.usePIN_L = true}
+                    else if (ctGroup == "doors"  && ctUnit == "pin") {state.usePIN_D = true}
+                    if (debug) log.debug "usePIN_T = '${state.usePIN_T}', usePIN_L = '${state.usePIN_L}', usePIN_D = '${state.usePIN_D}' "
+                    outputTxt = "Ok, the pin has been activated for " + ctGroup + ".  To disable, just say disable the PIN for " + ctGroup
+                    return ["outputTxt":outputTxt, "pContCmds": state.pContCmds, "pContCmdsR": state.pContCmdsR]           
+                }
+                if (ctCommand == "disable" || ctCommand == "deactivate") {
+                    if (ctGroup == "thermostats"  && ctUnit == "pin") {state.usePIN_T = false}
+                    else if (ctGroup == "locks"  && ctUnit == "pin") {state.usePIN_L = false}
+                    else if (ctGroup == "doors"  && ctUnit == "pin") {state.usePIN_D = false}
+                    if (debug) log.debug "usePIN_T = '${state.usePIN_T}', usePIN_L = '${state.usePIN_L}', usePIN_D = '${state.usePIN_D}' "
+                    outputTxt = "Ok, I will no longer ask you for the pin number when controlling the " + ctGroup + ".  If you want to enable, just say enable the PIN for " + ctGroup
+                    return ["outputTxt":outputTxt, "pContCmds": state.pContCmds, "pContCmdsR": state.pContCmdsR]
+                }
+            }
             else {
-                if (debug) log.debug "Fetching command and device type"           
-                    def  getCMD = getCommand(ctCommand) 
+                if (ctNum > 0 && ctDevice != "undefined" && ctCommand == "undefined") {
+            		ctCommand = "set"
+                } 
+                if (ctCommand != "undefined") {
+                	if (debug) log.debug "Fetching command and device type"           
+                    def  getCMD = getCommand(ctCommand, ctUnit) 
                     deviceType = getCMD.deviceType
                     command = getCMD.command
                     if (debug) log.debug "Received command data: deviceType= '${deviceType}', command= '${command}', STARTING MAIN PROCESS"
+                }
             }
         }
 
     // Units/Text Conversions	
-        if (ctNum == "undefined" || ctNum =="?") {ctNum = 0}
-                ctNum = ctNum as int 
         if (ctUnit =="?") {ctUnit = "undefined"}
-        if (ctUnit == "minute" || ctUnit == "minutes") {
+        if (ctUnit == "minute" || ctUnit == "minutes" || ctUnit.contains ("minutes") || ctUnit.contains ("minute")) {
             ctUnit = "minutes"
             numText = ctNum == 1 ? ctNum + " minute" : ctNum + " minutes" 
         }      
         else if (ctUnit == "degrees") {
-            numText = ctNum + " degrees"
+        	int ctN = ctNum
+            numText = ctN + " degrees"
         }
         else if (ctUnit == "percent") {
             numText = ctNum + " percent"    
@@ -704,20 +737,21 @@ def controlDevices() {
                         if (command == "on" || command == "off" ) {outputTxt = "Ok, turning " + ctDevice + " " + command + ", in " + numText}
                         else if (command == "decrease") {outputTxt = "Ok, decreasing the " + ctDevice + " level in " + numText}
                         else if (command == "increase") {outputTxt = "Ok, increasing the " + ctDevice + " level in " + numText}
-                        return ["outputTxt":outputTxt, "pContCmds":pContCmds, "pContCmdsR":pContCmdsR]
+                        return ["outputTxt":outputTxt, "pContCmds": state.pContCmds, "pContCmdsR": state.pContCmdsR]
                     }
                     else {
                         delay = false
                         data = [type: "cSwitch", command: command, device: device, unit: ctUnit, num: ctNum, delay: delay]
                         outputTxt = controlHandler(data)
-                        return ["outputTxt":outputTxt, "pContCmds":pContCmds, "pContCmdsR":pContCmdsR]
+                        return ["outputTxt":outputTxt, "pContCmds": state.pContCmds, "pContCmdsR": state.pContCmdsR]
                     }
                 }
-                outputTxt = "I wish I could help, but I wasn't able to find a light switch named " + ctDevice + " in your list of selected switches"
+                // a catch all phrase for general commands or light commands with no matching device 
+                outputTxt = "I wish I could help, but EchoSistant couldn't find the device or the command is not supported yet,. Please try again."
             }
 
         }
-        else if (deviceType == "temp" || deviceType == "general") {
+        else if (deviceType == "temp") {
             if (cTstat) {           
                 if (debug) log.debug "Searching for a thermostat named '${ctDevice}'"
                 def deviceMatch = cTstat.find {t -> t.label.toLowerCase() == ctDevice.toLowerCase()}
@@ -730,7 +764,7 @@ def controlDevices() {
                         runIn(ctNum*60, delayHandler, [data: data])
                         if (command == "decrease") {outputTxt = "Ok, decreasing the " + ctDevice + " temperature in " + numText}
                         else if (command == "increase") {outputTxt = "Ok, increasing the " + ctDevice + " temperature in " + numText}
-                        return ["outputTxt":outputTxt, "pContCmds":pContCmds, "pContCmdsR":pContCmdsR]
+                        return ["outputTxt":outputTxt, "pContCmds": state.pContCmds, "pContCmdsR": state.pContCmdsR]
                     }
                     else {
                     delay = false
@@ -951,7 +985,8 @@ def controlHandler(data) {
 		numN = numN < 60 ? 60 : numN >85 ? 85 : numN
         if (unitU == "degrees") {
     		newSetPoint = numN
-    		if (debug) log.debug "Targeted set point is = '${newSetPoint}', current temperature is = '${newSetPoint}'"
+            int cNewSetPoint = newSetPoint
+    		if (debug) log.debug "Targeted set point is = '${newSetPoint}', current temperature is = '${currentTMP}'"
     		if (newSetPoint > currentTMP) {
     			if (currentMode == "cool" || currentMode == "off") {
     				deviceD?."heat"()
@@ -960,7 +995,7 @@ def controlHandler(data) {
     			}
 				deviceD?.setHeatingSetpoint(newSetPoint)
 				if (debug) log.debug "Adjusting Heating Set Point to '${newSetPoint}' because requested temperature is greater than current temperature of '${currentTMP}'"
-			    result = "Ok, setting " + deviceD + " heating to " + newSetPoint 
+                result = "Ok, setting " + deviceD + " heating to " + cNewSetPoint 
             	if (delayD == false) { return result }
             }
  			else if (newSetPoint < currentTMP) {
@@ -970,16 +1005,17 @@ def controlHandler(data) {
 				}
 				deviceTMatch?.setCoolingSetpoint(newSetPoint)                 
 				if (debug) log.debug "Adjusting Cooling Set Point to '${newSetPoint}' because requested temperature is less than current temperature of '${currentTMP}'"
-				result = "Ok, setting " + deviceD + " cooling to " + newSetPoint 
+                result = "Ok, setting " + deviceD + " cooling to " + cNewSetPoint + " degrees "
             		if (delayD == false) { return result }                        
             }
-            else result = "Your room temperature is already " + newSetPoint
+            else result = "Your room temperature is already " + cNewSetPoint + " degrees "
             		if (delayD == false) { return result }                        
             
 		}
 		if (deviceCommand == "increase") {
 			newSetPoint = currentTMP + cTemperature
-			newSetPoint = newSetPoint < 60 ? 60 : newSetPoint >85 ? 85 : newSetPoint        
+			newSetPoint = newSetPoint < 60 ? 60 : newSetPoint >85 ? 85 : newSetPoint
+            int cNewSetPoint = newSetPoint
 			if (currentMode == "cool" || currentMode == "off") {
 				deviceD?."heat"()
 				if (debug) log.debug "Turning heat on because requested command asked for heat to be set to '${newSetPoint}'" 
@@ -989,12 +1025,12 @@ def controlHandler(data) {
 					deviceD?.setHeatingSetpoint(newSetPoint)
 					thermostat?.poll()
 					if (debug) log.debug "Adjusting Heating Set Point to '${newSetPoint}'"
-                    result = "Ok, setting " + deviceD + " heating to " + newSetPoint 
+                    result = "Ok, setting " + deviceD + " heating to " + cNewSetPoint + " degrees "
             		if (delayD == false) { return result }     
                 }
                 else {
                    	if (debug) log.debug "Not taking action because heating is already set to '${currentHSP}', which is higher than '${newSetPoint}'" 
-                    result = "Your heating set point is already higher than  " + newSetPoint
+                    result = "Your heating set point is already higher than  " + cNewSetPoint + " degrees "
             		if (delayD == false) { return result }     
                	}  
             }
@@ -1002,22 +1038,22 @@ def controlHandler(data) {
         if (deviceCommand == "decrease") {
         	newSetPoint = currentTMP - cTemperature
         	newSetPoint = newSetPoint < 60 ? 60 : newSetPoint >85 ? 85 : newSetPoint     
-        	
+            int cNewSetPoint = newSetPoint
             if (currentMode == "heat" || currentMode == "off") {
         		deviceD?."cool"()
         		if (debug) log.debug "Turning AC on because requested command asked for cooling to be set to '${newSetPoint}'"     
         	}   	
         	else {
-        		if (currentCSP < newSetPoint) {
-        		deviceD?.setCoolingSetpoint(newSetPoint)
-        		thermostat?.poll()
-        		if (debug) log.debug "Adjusting Cooling Set Point to '${newSetPoint}'"
-        		result = "Ok, setting " + deviceD + " cooling to " + newSetPoint 
+        		if (currentCSP > newSetPoint) {
+        			deviceD?.setCoolingSetpoint(newSetPoint)
+        			thermostat?.poll()
+        			if (debug) log.debug "Adjusting Cooling Set Point to '${newSetPoint}'"
+        			result = "Ok, setting " + deviceD + " cooling to " + cNewSetPoint + " degrees "
             		if (delayD == false) { return result } 
                 }
         		else {
-        		if (debug) log.debug "Not taking action because cooling is already set to '${currentCSP}', which is lower than '${newSetPoint}'"  
-                    result = "Your cooling set point is already lower than  " + newSetPoint
+        			if (debug) log.debug "Not taking action because cooling is already set to '${currentCSP}', which is lower than '${newSetPoint}'"  
+                    result = "Your cooling set point is already lower than  " + cNewSetPoint + " degrees "
             		if (delayD == false) { return result }
                 } 
         	}  
@@ -1198,41 +1234,59 @@ private getDeviceDetails() {
 /***********************************************************************************************************************
     COMMANDS HANDLER
 ***********************************************************************************************************************/
-private getCommand(command) {
+private getCommand(command, unit) {
 	def deviceType = " "
 		if (command) {
 	//case "General Commands":
     		deviceType = "general"
-        if (command == "decrease" || command == "down") {
-            command = "decrease" 
-            deviceType = "general"
+        if (unit == "undefined") {
+            if (command == "decrease" || command == "down") {
+                command = "decrease" 
+                deviceType = "general"
+            }
+            if (command == "increase" || command == "up") {
+                command = "increase"
+                deviceType = "general"
+            }
+            if (command == "set" || command == "set level") {
+                command = "setLevel"
+                deviceType = "general"
+            }
         }
-        if (command == "increase" || command == "up") {
-            command = "increase"
-            deviceType = "general"
-        }
-        if (command == "set" || command == "set level") {
-            command = "setLevel"
-            deviceType = "general"
-        }     
 	//case "Temperature Commands":  
         if (command == "colder" || command =="not cold enough" || command =="too hot" || command == "too warm") {
             command = "decrease"
             deviceType = "temp"
-        }
-        if (command == "freezing" || command =="not hot enough" || command == "too chilly" || command == "too cold" || command == "warmer") {
+        }     
+        else if (command == "freezing" || command =="not hot enough" || command == "too chilly" || command == "too cold" || command == "warmer") {
             command = "increase"
             deviceType = "temp"
         }
+        else if (unit == "degrees" || unit =="heat" || unit =="AC" || unit =="cooling" || unit =="heating") {
+            if (command == "up") {
+           		command = "increase"
+        	}
+            else if (command == "down") {
+            	command = "decrease"
+            }
+            deviceType = "temp"
+        }
+        else if (unit.contains("degrees") ||  unit.contains("heat") ||  unit.contains("AC")) {
+           deviceType = "temp"    
+       }       
     //case "Dimmer Commands":
         if (command == "darker" || command == "too bright" || command == "dim" || command == "dimmer") {
             command = "decrease" 
             deviceType = "light"
         }
-        if  (command == "not bright enough" || command == "brighter" || command == "too dark" || command == "brighten") {
+        else if  (command == "not bright enough" || command == "brighter" || command == "too dark" || command == "brighten") {
             command = "increase" 
             deviceType = "light"     
-        }  
+        } 
+        else if (unit == "percent") {
+        	deviceType = "light"
+        }
+        
     //case "Volume Commands":
         if  (command == "mute" || command == "quiet" || command == "unmute" ) {
             deviceType = "volume" 
@@ -1241,7 +1295,7 @@ private getCommand(command) {
             command = "decrease"
             deviceType = "volume" 
         }
-        if  (command == "not loud enough") {
+        if  (command == "not loud enough" || command == "too quiet") {
             command = "increase"
             deviceType = "volume"
         }
