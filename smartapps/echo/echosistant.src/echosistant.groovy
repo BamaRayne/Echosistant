@@ -1715,7 +1715,7 @@ def processTts() {
                                 if (pContCmdsR == false) {
                                 	pContCmds = pContCmdsR
                                 }
-                                if (ptts == repeat) {
+                                if (ptts == repeat || ptts == whatsUP) {
                                 	outputTxt = child.getLastMessage()
                                 }
                                 else outputTxt = "Your last recording was, " + state.recording
