@@ -1,39 +1,69 @@
-main is {pCommand} {pDevice}
-main the {pDevice} is {pCommand} 
-main turn the {pDevice} {pCommand}
-main turn {pCommand} the {pDevice}
-main turn the {pDevice} {pCommand} in {pNum} {pUnit}
-main turn the {pDevice} {pCommand} in {pNum} {pUnit}
-main turn {pDevice} {pCommand} in {pNum} {pUnit}
-main turn {pDevice} {pCommand} in {pNum} {pUnit}
-main turn {pCommand} the {pDevice} in {pNum} {pUnit}
-main turn {pCommand} the {pDevice} in {pNum} {pUnit}
-main turn {pCommand} {pDevice} in {pNum} {pUnit}
-main turn {pCommand} {pDevice} in {pNum} {pUnit}
-main make the {pDevice} {pCommand}
-main make it {pCommand} {pDevice}
-main make the {pDevice} {pCommand} in {pNum} {pUnit}
-main make the {pDevice} {pCommand} in {pNum} {pUnit}
-main make {pDevice} {pCommand} in {pNum} {pUnit}
-main make {pDevice} {pCommand} in {pNum} {pUnit}
-main make it {pCommand} the {pDevice} in {pNum} {pUnit}
-main make it {pCommand} the {pDevice} in {pNum} {pUnit}
-main make it {pCommand} {pDevice} in {pNum} {pUnit}
-main make it {pCommand} {pDevice} in {pNum} {pUnit}
-main {pCommand} last message
-main {pCommand} temperature {pDevice}
-main {pCommand} temperature {pDevice} to {pNum} {pUnit}
-main {pCommand} {pDevice} to {pNum} {pUnit}
-main {pCommand} {pDevice} level to {pNum} {pUnit}
-main {pCommand} {pDevice} to {pNum} {pUnit}
-main {pCommand} {pDevice} {pUnit} to {pNum} 
-main {pCommand} the {pDevice} in {pNum} {pUnit}
-main {pCommand} the {pDevice} in {pNum} {pUnit}
-main {pCommand} {pProfile}
-main {pCommand} {pProfile} in  in {pNum} {pUnit}
-main is {pCommand} in the {pProfile}
-main make the {pProfile} lights {pCommand}
-main turn the {pProfile} lights {pCommand} in {pNum} {pUnit}
-main {pCommand} the {pProfile} lights to {pNum}
-main the {pProfile} lights are {pCommand}
-main I love {pDevice}
+main is {cCommand} {cDevice}
+main the {cDevice} is {cCommand} 
+main to set the {cDevice} to {cNum}
+main to set {cDevice} to {cNum}
+main to set the {cDevice} to {cNum} {cUnit}
+main to set {cDevice} to {cNum} {cUnit}
+
+main turn the {cDevice} {cCommand}
+main turn {cCommand} the {cDevice}
+main turn {cCommand} the {cUnit} {cDevice}
+main turn the {cDevice} {cCommand} in {cNum} {cUnit}
+main turn the {cDevice} {cCommand} in {cNum} {cUnit}
+main turn {cDevice} {cCommand} in {cNum} {cUnit}
+main turn {cDevice} {cCommand} in {cNum} {cUnit}
+main turn {cCommand} the {cDevice} in {cNum} {cUnit}
+main turn {cCommand} the {cDevice} in {cNum} {cUnit}
+main turn {cCommand} {cDevice} in {cNum} {cUnit}
+main turn {cCommand} {cDevice} in {cNum} {cUnit}
+
+main make the {cDevice} {cCommand}
+main make it {cCommand} {cDevice}
+main make the {cDevice} {cCommand} in {cNum} {cUnit}
+main make the {cDevice} {cCommand} in {cNum} {cUnit}
+main make {cDevice} {cCommand} in {cNum} {cUnit}
+main make {cDevice} {cCommand} in {cNum} {cUnit}
+main make it {cCommand} the {cDevice} in {cNum} {cUnit}
+main make it {cCommand} the {cDevice} in {cNum} {cUnit}
+main make it {cCommand} {cDevice} in {cNum} {cUnit}
+main make it {cCommand} {cDevice} in {cNum} {cUnit}
+
+main {cCommand} last message
+main {cCommand} temperature {cDevice}
+main {cCommand} temperature {cDevice} to {cNum} {cUnit}
+main {cCommand} {cDevice} to {cNum}
+main {cCommand} {cDevice} to {cNum} {cUnit}
+main {cCommand} {cDevice} level to {cNum} {cUnit}
+main {cCommand} {cDevice} {cUnit} to {cNum} 
+main {cCommand} the {cDevice} in {cNum} {cUnit}
+main to {cCommand} the {cUnit}
+main to {cCommand} the {cDevice}
+main to {cCommand} the {cUnit} for {cGroup}
+main to {cCommand} the {cGroup}
+main to {cCommand} the {cGroup} in {cNum} {cUnit}
+
+profile {cCommand} {pProfile}
+profile {cCommand} {pProfile} in  in {cNum} {cUnit}
+profile is {cCommand} in the {pProfile}
+profile make the {pProfile} lights {cCommand}
+profile turn the {pProfile} lights {cCommand} in {cNum} {cUnit}
+profile {cCommand} the {pProfile} lights to {cNum}
+profile the {pProfile} lights are {cCommand}
+
+feedback {fQuery} the status of {cDevice}
+feedback {fQuery} is the status of {cDevice}
+feedback to tell me {fQuery} {cDevice}
+feedback to tell me {fQuery} the {cDevice}
+feedback to {fQuery} the temperature {cDevice}
+feedback {fQuery} {fOperand} is my home
+feedback {fQuery} the {fOperand}
+feedback {fQuery} the current {fOperand}
+feedback {fQuery} {fOperand} is my home in
+feedback {fQuery} {fOperand}
+feedback {fQuery} was the last time I {fOperand} {cDevice} 
+feedback {fQuery} I {fOperand} {cDevice} 
+feedback {fQuery} {fOperand} are on in the {pProfile}
+feedback {fQuery} {fOperand} are on in {pProfile}
+feedback to tell me {fQuery} {pProfile}
+feedback to tell me {fQuery} the {pProfile}
+feedback to {fQuery} me the status of {pProfile}
