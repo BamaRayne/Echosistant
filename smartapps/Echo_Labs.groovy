@@ -17,21 +17,17 @@
  *
 /**********************************************************************************************************************************************/
 definition(
-	name			: "EchoSistantLabs${parent ? " - Profile" : ""}",
+	name			: "EchoSistantLabs",
     namespace		: "EchoLabs",
     author			: "JH/BD",
 	description		: "The Ultimate Voice Controlled Assistant Using Alexa Enabled Devices.",
-	singleInstance	: true,
-    parent			: parent ? "EchoLabs.EchoSistantLabs" : null,
-    category		: "My Apps",
+	category		: "My Apps",
+    singleInstance	: true,
 	iconUrl			: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/app-Echosistant.png",
 	iconX2Url		: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/app-Echosistant@2x.png",
 	iconX3Url		: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/app-Echosistant@2x.png")
 /**********************************************************************************************************************************************/
-
-preferences {
-    page name: "pageMain"
-//top Parent Pages    
+preferences {   
     page name: "mainParentPage"
     		page name: "mIntent"
 				page name: "mDevices"
@@ -45,20 +41,8 @@ preferences {
                 page name: "mTokens"
                     page name: "mConfirmation"            
                     	page name: "mTokenReset"            
-            
-//top Profile Pages    
-    page name: "mainProfilePage"
-    		page name: "pSend"          
-        	page name: "pGroups"
-        	page name: "pConfig"
-        	page name: "pRestrict"
-  			page name: "pDeviceControl"
-}
-def pageMain() { if (!parent) mainParentPage() else mainProfilePage() }
-
-/***********************************************************************************************************************
-    PARENT UI CONFIGURATION
-***********************************************************************************************************************/
+}            
+//dynamic page methods
 page name: "mainParentPage"
     def mainParentPage() {	
        dynamicPage(name: "mainParentPage", title:"", install: true, uninstall:false) {
@@ -93,7 +77,6 @@ page name: "mIntent"
     page name: "mDevices"    
         def mDevices(){
             dynamicPage(name: "mDevices", title: "",install: false, uninstall: false) {
-
                 section ("Select devices", hideWhenEmpty: true){ }
                 section ("Lights and Switches", hideWhenEmpty: true){  
                     input "cSwitch", "capability.switch", title: "Allow These Switch(es)...", multiple: true, required: false, submitOnChange: true
@@ -137,8 +120,7 @@ page name: "mIntent"
                     ]
                  }
             }
-        } 
-    
+        }   
     page name: "mFeedback"
         def mFeedback() {
             dynamicPage (name: "mFeedback", uninstall: false) {
@@ -261,19 +243,25 @@ page name: "mIntent"
                     }
                 }
         }
-
-page name: "mProfiles"
+page name: "mProfiles"    
     def mProfiles() {
-            dynamicPage (name: "mProfiles", title: "", install: false, uninstall: false) {
-            if (childApps.size()) { 
-                    section(childApps.size()==1 ? "One Profile configured" : childApps.size() + " Profiles configured" )
+        dynamicPage (name: "mProfiles", title: "", install: true, uninstall: false) {
+        	if (childApps.size()) { 
+            	section(childApps.size()==1 ? "One Room configured" : childApps.size() + " Room configured" )
             }
-            section("Profiles"){
-                    app(appName: "EchoSistantLabs", namespace: "EchoLabs", multiple: true, description: "Tap Here to Create a New Profile...")
-            } 
-        } 
-    }
-
+            if (childApps.size()) {  
+            	section("Rooms",  uninstall: false){
+                	app(name: "rooms", appName: "Rooms", namespace: "EchoLabs", title: "Create a new Room", multiple: true,  uninstall: false)
+            	}
+            }
+            else {
+            	section("Rooms",  uninstall: false){
+            		paragraph "NOTE: Looks like you haven't created any Rooms yet.\n \nPlease make sure you have installed the Rooms Smart App Add-on before creating a new Room!"
+            		app(name: "room", appName: "Rooms", namespace: "EchoLabs", title: "Create a new Room", multiple: true,  uninstall: false)
+        		}
+            }
+       }
+}
 page name: "mSettings"  
 	def mSettings(){
         dynamicPage(name: "mSettings", uninstall: true) {
@@ -386,135 +374,6 @@ page name: "mSkill"
                                     }
                                 }
                             }
-/***********************************************************************************************************************
-    PROFILE UI CONFIGURATION
-***********************************************************************************************************************/
-// top Profile Pages  
-def mainProfilePage() {	
-    dynamicPage(name: "mainProfilePage", title:"I Want This Profile To...", install: true, uninstall: true) {
-        section {
-           	href "pSend", title: "Send Messages... ", 
-   				image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Media.png"   			
-			href "pConfig", title: "Audio Message Options...",
-            	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Extra.png"             
-            href "pScenes", title: "Create Scenes... ", 
-            	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Plus.png" 
-			href "pRestrict", title: "With These General Profile Restrictions", 
-            	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Extra.png" 
-		}
-        section ("Name and/or Remove this Profile") {
- 		   	label title:"              Rename Profile ", required:false, defaultValue: "New Profile"  
-        }    
-	}
-}
-page name: "pSend"
-    def pSend(){
-        dynamicPage(name: "pSend", title: "", uninstall: false){
-             section ("Speakers", hideWhenEmpty: true){
-                input "synthDevice", "capability.speechSynthesis", title: "On this Speech Synthesis Type Devices", multiple: true, required: false,
-                    image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Media.png"
-                input "sonosDevice", "capability.musicPlayer", title: "On this Sonos Type Devices", required: false, multiple: true, submitOnChange: true,    
-                    image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Media.png"
-                if (sonosDevice) {
-                    input "volume", "number", title: "Temporarily change volume", description: "0-100%", required: false
-                    input "resumePlaying", "bool", title: "Resume currently playing music after notification", required: false, defaultValue: false
-                }  
-            }
-            section ("Text Messages" ) {
-            	input "sendContactText", "bool", title: "Enable Text Notifications to Contact Book (if available)", required: false, submitOnChange: true,    
-                	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Text.png" 
-                if (sendContactText) input "recipients", "contact", title: "Send text notifications to (optional)", multiple: true, required: false
-           			input "sendText", "bool", title: "Enable Text Notifications to non-contact book phone(s)", required: false, submitOnChange: true,      
-                        image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Text.png" 
-                if (sendText){      
-                    paragraph "You may enter multiple phone numbers separated by comma to deliver the Alexa message as a text and a push notification. E.g. 8045551122;8046663344"
-                    input name: "sms", title: "Send text notification to (optional):", type: "phone", required: false
-                }
-            }    
-            section ("Push Messages") {
-            input "push", "bool", title: "Send Push Notification (optional)", required: false, defaultValue: false,
-                image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Text.png" 
-            input "notify", "bool", title: "Send message to Mobile App Notifications Tab (optional)", required: false, defaultValue: false, submitOnChange: true,
-                image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Text.png"
-            }        
-    	}                 
-    }   
-page name: "pConfig"
-    def pConfig(){
-        dynamicPage(name: "pConfig", title: "", uninstall: false) {
-            section ("Alexa Responses") {
-                    input "pAcustResp", "text", title: "Custom Response from Alexa", required: false, defaultValue: "Message sent,   "
-                    input "pArepeat", "bool", title: "Alexa repeats the message sent to remote speaker...", defaultValue: false, submitOnChange: true
-                        if (pArepeat) {			
-                        	if (pArepeat && pAcustom){
-                           		paragraph 	"NOTE: only one custom Alexa response can"+
-                            				" be delivered at once. Please only enable Custom Response OR Repeat Message"
-                            }				
-                        }
-                    input "pContCmds", "bool", title: "Allow Alexa to prompt for additional commands after a message is sent to a remote speaker", defaultValue: false, submitOnChange: true
-                    input "pContCmdsR", "bool", title: "Allow Alexa to prompt for additional commands after a command is given...", defaultValue: false, submitOnChange: true
-             }
-             section ("Remote Speaker Settings") {
-                	input "pRunMsg", "Text", title: "Play this message when this profile executes", description: none, required: false
-                    input "pPreMsg", "text", title: "Remote Pre-Message...", defaultValue: none, submitOnChange: true, required: false 
-             }
-             section ("Sound Cancelation") {
-                    //formerly pAfeedBack
-					input "pDisableAlexa", "bool", title: "Turn on to disable Alexa Feedback Responses (silence Alexa) Overrides all other Alexa Options...", defaultValue: false, submitOnChange: true
-                    input "pDisableALL", "bool", title: "Disable All spoken notifications (No voice output from the speakers or Alexa)", required: false, submitOnChange: true  
-             }
-		}             
-	}             
-page name: "pScenes"    
-    def pScenes() {
-            dynamicPage (name: "pScenes", title: "", install: false, uninstall: false) {
-            if (childApps.size()) { 
-                    section(childApps.size()==1 ? "One Scene configured" : childApps.size() + " Scenes configured" )
-            }
-            section("Scenes"){
-                    app(name: "scenes", appName: "Scenes", namespace: "bd", title: "Create a new scene for this Profile", multiple: true,  uninstall: false)
-            } 
-        } 
-    }    
-page name: "pRestrict"
-    def pRestrict(){
-        dynamicPage(name: "pRestrict", title: "", uninstall: false) {
-			section ("Mode Restrictions") {
-                input "modes", "mode", title: "Only when mode is", multiple: true, required: false, submitOnChange: true,
-                image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Extra.png"
-            }        
-            section ("Days - Audio only on these days"){	
-                input "days", title: "Only on certain days of the week", multiple: true, required: false, submitOnChange: true,
-                    "enum", options: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"],
-                    image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Extra.png"
-            }
-            section ("Time - Audio only during these times"){
-                href "certainTime", title: "Only during a certain time", description: timeIntervalLabel ?: "Tap to set", state: timeIntervalLabel ? "complete" : null,
-                image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Extra.png"
-            }   
-	    }
-	}
-page name: "certainTime"
-    def certainTime() {
-        dynamicPage(name:"certainTime",title: "Only during a certain time", uninstall: false) {
-            section("Beginning at....") {
-                input "startingX", "enum", title: "Starting at...", options: ["A specific time", "Sunrise", "Sunset"], required: false , submitOnChange: true
-                if(startingX in [null, "A specific time"]) input "starting", "time", title: "Start time", required: false, submitOnChange: true
-                else {
-                    if(startingX == "Sunrise") input "startSunriseOffset", "number", range: "*..*", title: "Offset in minutes (+/-)", required: false, submitOnChange: true
-                    else if(startingX == "Sunset") input "startSunsetOffset", "number", range: "*..*", title: "Offset in minutes (+/-)", required: false, submitOnChange: true
-                }
-            }
-            section("Ending at....") {
-                input "endingX", "enum", title: "Ending at...", options: ["A specific time", "Sunrise", "Sunset"], required: false, submitOnChange: true
-                if(endingX in [null, "A specific time"]) input "ending", "time", title: "End time", required: false, submitOnChange: true
-                else {
-                    if(endingX == "Sunrise") input "endSunriseOffset", "number", range: "*..*", title: "Offset in minutes (+/-)", required: false, submitOnChange: true
-                    else if(endingX == "Sunset") input "endSunsetOffset", "number", range: "*..*", title: "Offset in minutes (+/-)", required: false, submitOnChange: true
-                }
-            }
-        }
-    }
 /*************************************************************************************************************
    CREATE INITIAL TOKEN
 ************************************************************************************************************/
@@ -541,7 +400,6 @@ mappings {
 ************************************************************************************************************/
 def installed() {
 	if (debug) log.debug "Installed with settings: ${settings}"
-	initialize()
 }
 def updated() { 
 	if (debug) log.debug "Updated with settings: ${settings}"
@@ -549,8 +407,6 @@ def updated() {
     initialize()
 }
 def initialize() {
-	if (!parent){
-    	if (debug) log.debug "Initializing Parent app"
         sendLocationEvent(name: "echoSistant", value: "refresh", data: [profiles: getProfileList()] , isStateChange: true, descriptionText: "echoSistant Profile list refresh")
     	state.lastMessage = null
 		state.lastIntent  = null
@@ -565,6 +421,7 @@ def initialize() {
 		state.usePIN_T = false
 		state.usePIN_L = false
 		state.usePIN_D = false
+        state.savedPINdata
         def children = getChildApps()
     	if (debug) log.debug "Refreshing Profiles for CoRE, ${getChildApps()*.label}"
 		if (!state.accessToken) {
@@ -572,14 +429,6 @@ def initialize() {
                 OAuthToken()
 			}
 	}
-	else{
-        if (parent.debug) log.debug "Initializing Child app"
-        state.lastMessage = null
-    	state.lastTime  = null
-        state.recording = null
-        unschedule()
-     }
-}
 /************************************************************************************************************
 		CoRE Integration
 ************************************************************************************************************/
@@ -626,26 +475,26 @@ def controlDevices() {
         def ctGroup = params.cGroup       
 		def pintentName = params.intentName
 
-        def outputTxt = "I wish I could help, but EchoSistant couldn't find the device or the command is not supported yet,. Please try again."
-		def deviceType = " "
+        def outputTxt = "I wish I could help, but EchoSistant couldn't find the device or the command is not supported, TOP"
+        def pTryAgain = false
+		def pPIN = false
+        def deviceType = " "
         def command = " "
 		def numText = " "
         def result = " "
         def delay = false
         def data
-        if (debug) log.debug	"Received Lambda request to control devices with settings:" +
-        					  	" (ctCommand)= ${ctCommand}',(ctNum) = '${ctNum}', (ctPIN) = '${ctPIN}', (ctDevice) = '${ctDevice}', (ctUnit) = '${ctUnit}', (pintentName) = '${pintentName}'"   
+    if (debug) log.debug	"Received Lambda request to control devices with settings:" +
+        					  	" (ctCommand)= ${ctCommand}',(ctNum) = '${ctNum}', (ctPIN) = '${ctPIN}', (ctDevice) = '${ctDevice}', (ctUnit) = '${ctUnit}', (ctGroup) = '${ctGroup}', (pintentName) = '${pintentName}'"   
         
-        if (ctNum == "undefined" || ctNum =="?") {ctNum = 0}
-        ctNum = ctNum as int 
+    if (ctNum == "undefined" || ctNum =="?") {ctNum = 0 as int } 
 
     if (pintentName == "main") {
         if (ctCommand == "repeat") {
             if (debug) log.debug "Processing repeat last message delivered to any of the Profiles"
                 outputTxt = getLastMessageMain()
-                if (debug) log.debug "Received message: '${outputTxt}' ; sending to Lambda with pContCmds = '${state.pContCmds}' and  pContCmdsR = '${state.pContCmdsR}' "
-
-                return ["outputTxt":outputTxt, "pContCmds": state.pContCmds, "pContCmdsR": state.pContCmdsR]
+                if (debug) log.debug "Received message: '${outputTxt}' ; sending to Lambda with pContCmds = '${state.pContCmds}' and  pContCmdsR = '${state.pContCmdsR}'"
+                return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]
         }
         else {
             if (ctCommand == "cancel") {
@@ -653,7 +502,7 @@ def controlDevices() {
                     unschedule()
                     outputTxt = "Ok, canceling timer"
                 if (debug) log.debug "Cancel message received; sending '${outputTxt}' to Lambda with pContCmds = '${state.pContCmds}' and  pContCmdsR = '${state.pContCmdsR}'" 
-                return ["outputTxt":outputTxt, "pContCmds": state.pContCmds, "pContCmdsR": state.pContCmdsR]
+                return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]
             }
             if (ctCommand == "stop" && ctUnit == "conversation") {
                 if (debug) log.debug "Stopping Continuation Responses!"
@@ -661,7 +510,7 @@ def controlDevices() {
                     state.pContCmds = false
                     state.pContCmdsR = false
                     outputTxt = "Really? So, you don't like me to talk back to you. That's ok, if you change your mind, just say, start conversation"
-                    return ["outputTxt":outputTxt, "pContCmds": state.pContCmds, "pContCmdsR": state.pContCmdsR]
+                return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]
             }
             if (ctCommand == "start" && ctUnit == "conversation") {
                 if (debug) log.debug "Starting Continuation Responses!"
@@ -669,31 +518,45 @@ def controlDevices() {
                     state.pContCmds = true
                     state.pContCmdsR = true
                     outputTxt = "Great! I will talk back to you every time you give me a new command. If you get tired of me promting for more commands, just say stop the conversation"
-                    return ["outputTxt":outputTxt, "pContCmds": state.pContCmds, "pContCmdsR": state.pContCmdsR]
+                	return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]
             }
              if (ctGroup != "undefined" && ctUnit != "undefined") {    
                 if (ctCommand == "enable" || ctCommand == "activate") {
                     if (debug) log.debug "Activating PIN"
-                    if (ctGroup == "thermostats"  && ctUnit == "pin") {state.usePIN_T = true}
-                    else if (ctGroup == "locks"  && ctUnit == "pin") {state.usePIN_L = true}
-                    else if (ctGroup == "doors"  && ctUnit == "pin") {state.usePIN_D = true}
-                    if (debug) log.debug "usePIN_T = '${state.usePIN_T}', usePIN_L = '${state.usePIN_L}', usePIN_D = '${state.usePIN_D}' "
-                    outputTxt = "Ok, the pin has been activated for " + ctGroup + ".  To disable, just say disable the PIN for " + ctGroup
-                    return ["outputTxt":outputTxt, "pContCmds": state.pContCmds, "pContCmdsR": state.pContCmdsR]           
+                    if (ctGroup == "thermostats"  && ctUnit == "pin number") {state.usePIN_T = true}
+                    else if (ctGroup == "locks"  && ctUnit == "pin number") {state.usePIN_L = true}
+                    else if (ctGroup == "doors"  && ctUnit == "pin number") {state.usePIN_D = true}
+                    else if (ctUnit == "pin number"){
+                    	if (debug) log.debug "usePIN_T = '${state.usePIN_T}', usePIN_L = '${state.usePIN_L}', usePIN_D = '${state.usePIN_D}' "
+                    	pPIN = true
+                    	outputTxt = "Ok, the pin has been activated for " + ctGroup + ".  To disable, just say disable the PIN for " + ctGroup
+                    	return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]          
+                	}
                 }
                 if (ctCommand == "disable" || ctCommand == "deactivate") {
-                    if (ctGroup == "thermostats"  && ctUnit == "pin") {state.usePIN_T = false}
-                    else if (ctGroup == "locks"  && ctUnit == "pin") {state.usePIN_L = false}
-                    else if (ctGroup == "doors"  && ctUnit == "pin") {state.usePIN_D = false}
-                    if (debug) log.debug "usePIN_T = '${state.usePIN_T}', usePIN_L = '${state.usePIN_L}', usePIN_D = '${state.usePIN_D}' "
-                    outputTxt = "Ok, I will no longer ask you for the pin number when controlling the " + ctGroup + ".  If you want to enable, just say enable the PIN for " + ctGroup
-                    return ["outputTxt":outputTxt, "pContCmds": state.pContCmds, "pContCmdsR": state.pContCmdsR]
+                    if (ctGroup == "thermostats"  && ctUnit == "pin number") {state.usePIN_T = false}
+                    else if (ctGroup == "locks"  && ctUnit == "pin number") {state.usePIN_L = false}
+                    else if (ctGroup == "doors"  && ctUnit == "pin number") {state.usePIN_D = false}
+                    else if (ctUnit == "pin"){
+                    	if (debug) log.debug "usePIN_T = '${state.usePIN_T}', usePIN_L = '${state.usePIN_L}', usePIN_D = '${state.usePIN_D}'"
+                    	outputTxt = "Ok, I will no longer ask you for the pin number when controlling the " + ctGroup + ".  If you want to enable, just say enable the PIN for " + ctGroup
+						return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]
+                    }
                 }
             }
             else {
                 if (ctNum > 0 && ctDevice != "undefined" && ctCommand == "undefined") {
             		ctCommand = "set"
-                } 
+                }
+                if (ctPIN == cPIN) {
+					data = state.savedPINdata
+                	if (debug) log.debug "PIN Matched! Preparing data: '${data}' "
+                	outputTxt = controlHandler(data)
+					return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]
+                }
+                if (ctPIN != cPIN && ctPIN != "undefined" ) {
+                	if (debug) log.debug "PIN NOT Matched! PIN = '${cPIN}', ctPIN= '${ctPIN}', ctCommand ='${ctCommand}' "
+                }
                 if (ctCommand != "undefined") {
                 	if (debug) log.debug "Fetching command and device type"           
                     def  getCMD = getCommand(ctCommand, ctUnit) 
@@ -703,7 +566,6 @@ def controlDevices() {
                 }
             }
         }
-
     // Units/Text Conversions	
         if (ctUnit =="?") {ctUnit = "undefined"}
         if (ctUnit == "minute" || ctUnit == "minutes" || ctUnit.contains ("minutes") || ctUnit.contains ("minute")) {
@@ -721,7 +583,7 @@ def controlDevices() {
 
         if (deviceType == "temp") {def numTxtTMP = cTemperature == 1 ? cTemperature + " degree" : cTemperature + " degrees" }
     // Units/Text Conversions Ends 
-
+        
         if (deviceType == "light" || deviceType == "general" ) {
             if (cSwitch) {
                 if (debug) log.debug "Searching for a switch named '${ctDevice}'"
@@ -737,44 +599,62 @@ def controlDevices() {
                         if (command == "on" || command == "off" ) {outputTxt = "Ok, turning " + ctDevice + " " + command + ", in " + numText}
                         else if (command == "decrease") {outputTxt = "Ok, decreasing the " + ctDevice + " level in " + numText}
                         else if (command == "increase") {outputTxt = "Ok, increasing the " + ctDevice + " level in " + numText}
-                        return ["outputTxt":outputTxt, "pContCmds": state.pContCmds, "pContCmdsR": state.pContCmdsR]
+						return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]
                     }
                     else {
                         delay = false
                         data = [type: "cSwitch", command: command, device: device, unit: ctUnit, num: ctNum, delay: delay]
                         outputTxt = controlHandler(data)
-                        return ["outputTxt":outputTxt, "pContCmds": state.pContCmds, "pContCmdsR": state.pContCmdsR]
+						return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]
                     }
                 }
                 // a catch all phrase for general commands or light commands with no matching device 
-                outputTxt = "I wish I could help, but EchoSistant couldn't find the device or the command is not supported yet,. Please try again."
+                if (state.pContCmds == true || state.pContCmds == true) {
+        			pTryAgain = false
+        		}
+        		else pTryAgain = true
+                outputTxt = "I wish I could help, but EchoSistant couldn't find the device or the command is not supported yet, "
             }
-
         }
         else if (deviceType == "temp") {
-            if (cTstat) {           
-                if (debug) log.debug "Searching for a thermostat named '${ctDevice}'"
-                def deviceMatch = cTstat.find {t -> t.label.toLowerCase() == ctDevice.toLowerCase()}
-                if (deviceMatch) {
-                    if (debug) log.debug "Found a device: '${deviceMatch}'"
-                     device = deviceMatch
-                    if (ctNum && ctUnit == "minutes") {
-                        delay = true
-                        data = [type: "cTstat", command: command, device: device, unit: ctUnit, num: ctNum, delay: delay]
-                        runIn(ctNum*60, delayHandler, [data: data])
-                        if (command == "decrease") {outputTxt = "Ok, decreasing the " + ctDevice + " temperature in " + numText}
-                        else if (command == "increase") {outputTxt = "Ok, increasing the " + ctDevice + " temperature in " + numText}
-                        return ["outputTxt":outputTxt, "pContCmds": state.pContCmds, "pContCmdsR": state.pContCmdsR]
-                    }
-                    else {
-                    delay = false
-                    data = [type: "cTstat", command: command, device: device, unit: ctUnit, num: ctNum, delay: delay]
-                    outputTxt = controlHandler(data)
-                    return ["outputTxt":outputTxt, "pContCmds":pContCmds, "pContCmdsR":pContCmdsR]
-                    }
+                if (cTstat) {           
+                    if (debug) log.debug "Searching for a thermostat named '${ctDevice}'"
+                    def deviceMatch = cTstat.find {t -> t.label.toLowerCase() == ctDevice.toLowerCase()}
+                    if (deviceMatch) {
+ 						device = deviceMatch 
+                        if (debug) log.debug "Found a device: '${deviceMatch}'"
+                                 	
+                        if(state.usePIN_T == true) {
+            				if (debug) log.debug "PIN protected device type - '${deviceType}'"
+                			delay = true
+                            data = [type: "cTstat", command: command, device: device, unit: ctUnit, num: ctNum]
+                			//state.
+                            state.savedPINdata = evt.jsonData && evt.jsonData?.data ? evt.jsonData.data : []
+                            def savedPINdata = data
+                			outputTxt = "Pin number please"
+                			pPIN = true
+                			return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]
+            			}
+                        else {
+                       
+                            if (ctNum && ctUnit == "minutes") {
+                                delay = true
+                                data = [type: "cTstat", command: command, device: device, unit: ctUnit, num: ctNum, delay: delay]
+                                runIn(ctNum*60, delayHandler, [data: data])
+                                if (command == "decrease") {outputTxt = "Ok, decreasing the " + ctDevice + " temperature in " + numText}
+                                else if (command == "increase") {outputTxt = "Ok, increasing the " + ctDevice + " temperature in " + numText}
+                                return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]
+                            }
+                            else {
+                            	delay = false
+                            	data = [type: "cTstat", command: command, device: device, unit: ctUnit, num: ctNum, delay: delay]
+                            	outputTxt = controlHandler(data)
+                            	return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]
+                            }
+                        }
+                   }
                 }
-            }
-        }
+         }
         else if (deviceType == "lock") {
             if (cLock) {   
                 if (debug) log.debug "Searching for a lock named '${ctDevice}'"
@@ -789,13 +669,13 @@ def controlDevices() {
                         runIn(ctNum*60, controlHandler, [data: data])
                         if (command == "lock") {outputTxt = "Ok, locking the " + ctDevice + " in " + numText}
                         else if (command == "unlock") {outputTxt = "Ok, unlocking the " + ctDevice + " in " + numText}
-                        return ["outputTxt":outputTxt, "pContCmds":pContCmds, "pContCmdsR":pContCmdsR]
+						return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]
                     }
                     else {
                         delay = false
                         data = [type: "cLock", command: command, device: device, unit: ctUnit, num: ctNum, delay: delay]
                         outputTxt = controlHandler(data)
-                        return ["outputTxt":outputTxt, "pContCmds":pContCmds, "pContCmdsR":pContCmdsR]
+						return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]
                     }
                 }
             }
@@ -810,7 +690,7 @@ def controlDevices() {
                         delay = false
                         data = [type: "cVolume", command: command, device: device, unit: ctUnit, num: ctNum, delay: delay]
                         outputTxt = controlHandler(data)
-                        return ["outputTxt":outputTxt, "pContCmds":pContCmds, "pContCmdsR":pContCmdsR]
+						return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]
                     }
                 }  
         }
@@ -827,13 +707,13 @@ def controlDevices() {
                             runIn(ctNum*60, delayHandler, [data: data])
                             if (command == "decrease") {outputTxt = "Ok, decreasing the " + ctDevice + " temperature in " + numText}
                             else if (command == "increase") {outputTxt = "Ok, increasing the " + ctDevice + " temperature in " + numText}
-                            return ["outputTxt":outputTxt, "pContCmds":pContCmds, "pContCmdsR":pContCmdsR]
+							return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]
                         }
                         else {
                             delay = false
                             data = [type: "cFan", command: command, device: device, unit: ctUnit, num: ctNum, delay: delay]
                             outputTxt = controlHandler(data)
-                            return ["outputTxt":outputTxt, "pContCmds":pContCmds, "pContCmdsR":pContCmdsR]
+							return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]
                         }
                 }
             }
@@ -851,13 +731,13 @@ def controlDevices() {
                             runIn(ctNum*60, delayHandler, [data: data])
                             if (command == "open") {outputTxt = "Ok, opening " + ctDevice + " in " + numText}
                             else if (command == "close") {outputTxt = "Ok, closing " + ctDevice + " in " + numText}
-                            return ["outputTxt":outputTxt, "pContCmds":pContCmds, "pContCmdsR":pContCmdsR]
+							return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]
                         }
                         else {
                             delay = false
                             data = [type: "cDoor", command: command, device: device, unit: ctUnit, num: ctNum, delay: delay]
                             outputTxt = controlHandler(data)
-                            return ["outputTxt":outputTxt, "pContCmds":pContCmds, "pContCmdsR":pContCmdsR]
+							return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]
                         }
                 }
                 else {
@@ -876,7 +756,7 @@ def controlDevices() {
                                     runIn(ctNum*60, controlHandler, [data: data])
                                     if (ctCommand == "open") {outputTxt = "Ok, opening the " + ctDevice + " in " + numText}
                                     else if (command == "close") {outputTxt = "Ok, closing the " + ctDevice + " in " + numText}
-                                return ["outputTxt":outputTxt, "pContCmds":pContCmds, "pContCmdsR":pContCmdsR]
+								return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]
                                 }
                                 else {
                                     delay = false
@@ -884,17 +764,68 @@ def controlDevices() {
                                     controlHandler(data)
                                     if (ctCommand == "open") {outputTxt = "Ok, opening the " + ctDevice}
                                     else if (ctCommand == "close") {outputTxt = "Ok, closing the " + ctDevice}
-                                return ["outputTxt":outputTxt, "pContCmds":pContCmds, "pContCmdsR":pContCmdsR]
+								return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]
+                                }
+                       }
+                    }
+                    else if (cVents) {
+                        if (debug) log.debug "Searching for a vent named '${ctDevice}'"
+                        deviceMatch = cVents.find {s -> s.label.toLowerCase() == ctDevice.toLowerCase()}             
+                        if (deviceMatch) {
+                            if (debug) log.debug "Found a device: '${deviceMatch}'"
+                                if (command == "open") {command = "onD"}
+                                if (command == "close") {command = "offD"}
+                                device = deviceMatch
+                                if (ctNum > 0 && ctUnit == "minutes") {
+                                    device = device.label
+                                    delay = true
+                                    data = [type: "cSwitch", command: command, device: device, unit: ctUnit, num: ctNum, delay: delay]
+                                    runIn(ctNum*60, controlHandler, [data: data])
+                                    if (ctCommand == "open") {outputTxt = "Ok, opening the " + ctDevice + " in " + numText}
+                                    else if (command == "close") {outputTxt = "Ok, closing the " + ctDevice + " in " + numText}
+								return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]
+                                }
+                                else {
+                                    delay = false
+                                    data = [type: "cSwitch", command: command, device: device, unit: ctUnit, num: ctNum, delay: delay]
+                                    controlHandler(data)
+                                    if (ctCommand == "open") {outputTxt = "Ok, opening the " + ctDevice}
+                                    else if (ctCommand == "close") {outputTxt = "Ok, closing the " + ctDevice}
+								return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]
                                 }
                        }
                     }
                 }
             }
         }
-         if (debug) log.debug "Sending response to Alexa with settings: pContCmds = '${pContCmds}', pContCmdsR = '${pContCmdsR}', message:'${outputTxt}'"               
-         return ["outputTxt":outputTxt, "pContCmds":pContCmds, "pContCmdsR":pContCmdsR]
-	}
+        if (debug) log.debug "Sending response to Alexa with settings BOTTOM: pContCmds = ${state.pContCmds}, pContCmdsR = ${state.pContCmdsR}, message:'${outputTxt}'"               
+		/*
+        if (state.pContCmds == true || state.pContCmds == true) {
+        	pTryAgain = false
+        }
+        else pTryAgain = true
+        	return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]
+        */
+        
+        return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]
+   }
 }
+
+def getPIN(data){
+    def deviceType = data.type
+    def deviceCommand = data.command
+   	def deviceD = data.device
+    def unitU = data.unit
+    def numN = data.num
+    def delayD = data.delay
+	def result = " "
+        if (debug) log.debug 	"Received PIN Protected data with settings: " +
+        					" (deviceType)= ${deviceType}',(deviceCommand) = '${deviceCommand}', (deviceD) = '${deviceD}', " +
+                            "(unitU) = '${unitU}', (numN) = '${numN}', (delayD) = '${delayD}'" 
+                            
+}
+    
+
 /************************************************************************************************************
    DEVICE CONTROL HANDLER
 ************************************************************************************************************/      
@@ -925,6 +856,9 @@ def controlHandler(data) {
         }
         else if (deviceCommand == "onD") {
         		deviceD.on()
+        }
+        else if (deviceCommand == "offD") {
+        		deviceD.off()
         }
         else if (deviceCommand == "increase" || deviceCommand == "decrease" || deviceCommand == "setLevel") {
  			if (delayD == true) {  
@@ -1170,20 +1104,12 @@ def controlHandler(data) {
 	}
 }
 /***********************************************************************************************************************
-    LAST MESSAGE HANDLER - PARENT
+    LAST MESSAGE HANDLER
 ***********************************************************************************************************************/
 def getLastMessageMain() {
 	def outputTxt = "The last message sent was," + state.lastMessage + ", and it was sent to, " + state.lastIntent + ", at, " + state.lastTime
     return  outputTxt 
   	if (debug) log.debug "Sending last message to Lambda ${outputTxt} "
-}
-/***********************************************************************************************************************
-    LAST MESSAGE HANDLER - PROFILE
-***********************************************************************************************************************/
-def getLastMessage() {
-	def cOutputTxt = "The last message sent to " + app.label + " was," + state.lastMessage + ", and it was sent at, " + state.lastTime
-	return  cOutputTxt 
-	if (parent.debug) log.debug "Sending last message to parent '${cOutputTxt}' "
 }
 /***********************************************************************************************************************
  		SKILL DETAILS
@@ -1321,130 +1247,7 @@ private getCommand(command, unit) {
     }
     return ["deviceType":deviceType, "command":command ]                          
 }
-/***********************************************************************************************************************
-    RESTRICTIONS HANDLER
-***********************************************************************************************************************/
-private getAllOk() {
-	modeOk && daysOk && timeOk
-}
-private getModeOk() {
-    def result = !modes || modes?.contains(location.mode)
-	if(debug) log.debug "modeOk = $result"
-    result
-} 
-private getDayOk() {
-    def result = true
-if (days) {
-		def df = new java.text.SimpleDateFormat("EEEE")
-		if (location.timeZone) {
-			df.setTimeZone(location.timeZone)
-		}
-		else {
-			df.setTimeZone(TimeZone.getTimeZone("America/New_York"))
-		}
-		def day = df.format(new Date())
-		result = days.contains(day)
-	}
-	if(debug) log.debug "daysOk = $result"
-	result
-}
-private getTimeOk() {
-	def result = true
-	if ((starting && ending) ||
-	(starting && endingX in ["Sunrise", "Sunset"]) ||
-	(startingX in ["Sunrise", "Sunset"] && ending) ||
-	(startingX in ["Sunrise", "Sunset"] && endingX in ["Sunrise", "Sunset"])) {
-		def currTime = now()
-		def start = null
-		def stop = null
-		def s = getSunriseAndSunset(zipCode: zipCode, sunriseOffset: startSunriseOffset, sunsetOffset: startSunsetOffset)
-		if(startingX == "Sunrise") start = s.sunrise.time
-		else if(startingX == "Sunset") start = s.sunset.time
-		else if(starting) start = timeToday(starting,location.timeZone).time
-		s = getSunriseAndSunset(zipCode: zipCode, sunriseOffset: endSunriseOffset, sunsetOffset: endSunsetOffset)
-		if(endingX == "Sunrise") stop = s.sunrise.time
-		else if(endingX == "Sunset") stop = s.sunset.time
-		else if(ending) stop = timeToday(ending,location.timeZone).time
-		result = start < stop ? currTime >= start && currTime <= stop : currTime <= stop || currTime >= start
-	if (parent.debug) log.trace "getTimeOk = $result."
-    }
-    return result
-}
-private hhmm(time, fmt = "h:mm a") {
-	def t = timeToday(time, location.timeZone)
-	def f = new java.text.SimpleDateFormat(fmt)
-	f.setTimeZone(location.timeZone ?: timeZone(time))
-	f.format(t)
-}
-private offset(value) {
-	def result = value ? ((value > 0 ? "+" : "") + value + " min") : ""
-}
-private timeIntervalLabel() {
-	def result = ""
-	if      (startingX == "Sunrise" && endingX == "Sunrise") result = "Sunrise" + offset(startSunriseOffset) + " to Sunrise" + offset(endSunriseOffset)
-	else if (startingX == "Sunrise" && endingX == "Sunset") result = "Sunrise" + offset(startSunriseOffset) + " to Sunset" + offset(endSunsetOffset)
-	else if (startingX == "Sunset" && endingX == "Sunrise") result = "Sunset" + offset(startSunsetOffset) + " to Sunrise" + offset(endSunriseOffset)
-	else if (startingX == "Sunset" && endingX == "Sunset") result = "Sunset" + offset(startSunsetOffset) + " to Sunset" + offset(endSunsetOffset)
-	else if (startingX == "Sunrise" && ending) result = "Sunrise" + offset(startSunriseOffset) + " to " + hhmm(ending, "h:mm a z")
-	else if (startingX == "Sunset" && ending) result = "Sunset" + offset(startSunsetOffset) + " to " + hhmm(ending, "h:mm a z")
-	else if (starting && endingX == "Sunrise") result = hhmm(starting) + " to Sunrise" + offset(endSunriseOffset)
-	else if (starting && endingX == "Sunset") result = hhmm(starting) + " to Sunset" + offset(endSunsetOffset)
-	else if (starting && ending) result = hhmm(starting) + " to " + hhmm(ending, "h:mm a z")
-}
-/***********************************************************************************************************************
-    SMS HANDLER
-***********************************************************************************************************************/
-private void sendtxt(message) {
-    if (parent.debug) log.debug "Request to send sms received with message: '${message}'"
-    if (sendContactText) { 
-        sendNotificationToContacts(message, recipients)
-            if (parent.debug) log.debug "Sending sms to selected reipients"
-    } 
-    else {
-    	if (push) { 
-    		sendPush message
-            	if (parent.debug) log.debug "Sending push message to selected reipients"
-        }
-    } 
-    if (notify) {
-        sendNotificationEvent(message)
-             	if (parent.debug) log.debug "Sending notification to mobile app"
 
-    }
-    if (sms) {
-        sendText(sms, message)
-        if (parent.debug) log.debug "Processing message for selected phones"
-	}
-}
-private void sendText(number, message) {
-    if (sms) {
-        def phones = sms.split("\\;")
-        for (phone in phones) {
-            sendSms(phone, message)
-            if (parent.debug) log.debug "Sending sms to selected phones"
-        }
-    }
-}
-private txtFormat (message, eDev, eVal) {
-    def eTxt = " " 
-        if(message) {
-        	message = message.replace('$device', "${eDev}")
-        	message = message.replace('$action', "${eVal}")
-	  	    eTxt = message
-        }  	
-            if (debug) log.debug "Processed Alert: ${eTxt} "
-    		
-            return eTxt
-}
-/************************************************************************************************************
-   Play Sonos Alert
-************************************************************************************************************/
-def playAlert(message, speaker) {
-    state.sound = textToSpeech(message instanceof List ? message[0] : message)
-    speaker.playTrackAndResume(state.sound.uri, state.sound.duration, volume)
-    if (debug) log.debug "Sending message: ${message} to speaker: ${speaker}"
-
-}
 /************************************************************************************************************
    Version/Copyright/Information/Help
 ************************************************************************************************************/
