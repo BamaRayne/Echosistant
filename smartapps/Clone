@@ -324,7 +324,12 @@ page name: "mFeedbackRoom"
 page name: "mSupport"  
  def mSupport(){
         dynamicPage(name: "mSupport", uninstall: false) {
- 				section ("Developers", hideWhenEmpty: true){  
+        	section ("EchoSistant Modules") {
+            	paragraph "For the notifications and room feedback to be operational, they must be installed in the ST IDE and the toggles below must be activated"
+            	input "notifyOn", "bool", title: "Is the Notifications Module Installed? ", required: true, defaultValue: false
+ 				input "feedbackOn", "bool", title: "Is the Feedback Module Installed?", required: true, defaultValue: false
+                }
+                section ("Developers", hideWhenEmpty: true){  
             		paragraph ("You can reach out to the Echosistant Developers with the following information: \n" + 
                 	"Jason Headley \n"+
                 	"Forum user name @bamarayne \n" +
@@ -616,15 +621,18 @@ def pCreate() {
 			href "MainProfiles", title: "View and Create Control and Messaging Rooms...", //description: ProActionsDescr(), state: completeProActions(),
             image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_devices.png"            			
             }
-     	section ("Notifications Room") {
+     	if (notifyOn) {
+        section ("Notifications Room") {
   			href "mNotifyRoom", title: "View and Create Notification Rooms...", //description: ProActionsDescr(), state: completeProActions(),
             image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_devices.png"            			
 			}
-
+		}
+        if (feedbackOn) {
         section ("FeedBack Room") {
 			href "mFeedbackRoom", title: "View and Create Feedback Rooms..", //description: ProActionsDescr(), state: completeProActions(),
             image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_devices.png"            			
-		}
+			}
+        }
     }   
 }		
 page name: "MainProfiles"
