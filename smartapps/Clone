@@ -25,7 +25,7 @@
 definition(
 	name			: "Clone${parent ? " - Profile" : ""}",
     namespace		: "Clone",
-    author			: "JH",
+    author			: "JH/BD",
 	description		: "The Ultimate Voice Controlled Assistant Using Alexa Enabled Devices.",
 	singleInstance	: true,
     parent: parent ? "Clone.Clone" : null,
@@ -42,20 +42,15 @@ preferences {
     page name: "pageMain"
     //Parent Pages    
     page name: "mainParentPage"
-    		page name: "mainIntentPage"
-            	page name: "selectDevicesPage"
-                page name: "feedbackPage"
-                	page name: "chooseFeedbackPage"
-                page name: "deviceControlPage"
-                	page name: "devicesControlCustom"
-                page name: "integrationsPage"
-                	page name: "alexaFeelingsPage"
-                    page name: "coreIntegrationPage"
-    		page name: "profilesPage"
-            page name: "generalPage"
-        	page name: "supportPage"
-            page name: "dashboardPage"
-            page name: "bonusPage"
+    		page name: "mIntent"
+            	page name: "mDevices"
+                page name: "mFeedback"
+                page name: "mDefaults"
+    		page name: "mProfiles"
+            page name: "mSupport"
+        	page name: "mSecurity"
+            page name: "mDashboard"
+            page name: "mBonus"
             	page name: "dashboardConfigPage"
                 page name: "weatherConfigPage"
                 page name: "severeWeatherAlertsPage"
@@ -73,10 +68,14 @@ preferences {
             page name: "proGroupsRoomPage"
             
     page name: "profileChoicePage"
-    page name: "ttsProfilePage"
+	
     page name: "roomProfilePage"
-    page name: "profileChooseNotifyPage"
-		page name: "profileNotificationsPage"
+    	page name: "pNotifyScene"
+    	page name: "pNotifyConfig"
+			page name: "pNotifications"
+        page name: "pFeedbackScene"    
+        page name: "pFeedbackConfig"
+        	page name: "pFeedback"
 }
 def pageMain() { if (!parent) mainParentPage() else mainProfilePage() }
 /***********************************************************************************************************************
@@ -86,343 +85,212 @@ page name: "mainParentPage"
     def mainParentPage() {	
        dynamicPage(name: "mainParentPage", title:"", install: true, uninstall:false) {
        		section ("") {
-                href "mainIntentPage", title: "EchoSistant Main Intent",  //description: settingsDescr(), state: completeSettings(),
+                href "mIntent", title: "Main Home Intent",  //description: settingsDescr(), state: completeSettings(),
                     image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/app-Echosistant%402x.png"                
-				href "profilesPage", title: "Create Profiles",// description: profilesDescr(), state: completeProfiles(),
+				href "mProfiles", title: "View and Create Profiles and Scenes",// description: profilesDescr(), state: completeProfiles(),
                     image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Config.png"    
-				href "generalPage", title: "General Settings",// description: supportDescrL(), state: completeProfiles(),
+				href "mSupport", title: "Install and Support",// description: supportDescrL(), state: completeProfiles(),
                     image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Config.png"                               
-				href "supportPage", title: "Security and Support",// description: supportDescrL(), state: completeProfiles(),
+				href "mSecurity", title: "Security Data",// description: supportDescrL(), state: completeProfiles(),
                     image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Amazon_alexa.png"                               
             	if (activateDashboard) {
-                	 href "dashboardPage", title: " Dashboard ",
+                	 href "mDashboard", title: " Dashboard ",
                      image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Config.png"
                      }
-                href "bonusPage", title: "                    The Current Mode is \n" +
+                href "mBonus", title: "                    The Current Mode is \n" +
                 	"					                            ${location.currentMode}"
                      }
                 }
 			}
-page name: "mainIntentPage"
-    def mainIntentPage() {
-            dynamicPage (name: "mainIntentPage", title: "", install: false, uninstall: false) {
+page name: "mIntent"
+    def mIntent() {
+            dynamicPage (name: "mIntent", title: "", install: false, uninstall: false) {
             section (" I want EchoSistant to... ")
 			section("... use these devices") {
-	            href "selectDevicesPage", title: "Choose devices...", description: selectDevicesDescr() , state: completeSelectDevices(),
+	            href "mDevices", title: "Select devices...", description: selectDevicesDescr() , state: completeSelectDevices(),
     	        image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Config.png"
 				}
-			section("... give me status about my home") {
-	            href "feedbackPage", title: "Configure Feedback...", description: AlertProDescr() , state: completeAlertPro(),
-    	        image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Config.png"
-				}                
-            section ("... control my devices using these settings") {
-                href "deviceControlPage", title: "Defaults controls...", description: ParConDescr() , state: completeParCon(), 
-                image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Config.png" 
-                }
-            section ("Integrations & Special Features") {
-            	href "integrationsPage", title: "3rd Party Apps and Special Features",
+			section("... give me feedback about my home") {
+	            href "mFeedback", title: "Smart Feedback Options",
+                image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Routines.png"
+			}                
+			section ("... control my devices using these settings") {
+                href "mDefaults", title: "Default control options...", description: ParConDescr() , state: completeParCon(), 
                 image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Config.png" 
     	}
     }            
 }
-page name: "selectDevicesPage"    
-    def selectDevicesPage(){
-        dynamicPage(name: "selectDevicesPage", title: "Select devices that can be used by EchoSistant...",install: false, uninstall: false) {
-        	
-            section ("Switches", hideWhenEmpty: true){
-                input "cSwitches", "capability.switch", title: "Allow These Switch(es)...", multiple: true, required: false, submitOnChange: true
-            }
-            section ("Dimmers, Colored Bulbs, Vents, and Fans", hideWhenEmpty: true){
-                input "cDimmers", "capability.switchLevel", title: "Allow These Dimmers, Bulbs, Vents, and Fans...", multiple: true, required: false, submitOnChange: true
-            }
-            section ("Doors and Locks", hideWhenEmpty: true){
-            	input "cGdoor", "capability.garageDoorControl", title: "Allow These Garage Door(s)...", multiple: true, required: false, submitOnChange: true
-            	input "cLock", "capability.lock", title: "Allow These Lock(s)...", multiple: true, required: false, submitOnChange: true
-			}
-//			section ("Vents", hideWhenEmpty: true){
-//            	input "cVent", "capability.switchLevel", title: "Allow These Vent(s)...", multiple: true, required: false, submitOnChange: true
-//            }    
-			section ("Thermostats", hideWhenEmpty: true){
-                input "cTstat", "capability.thermostat", title: "Allow These Thermostat(s)...", multiple: true, required: false
-            }
-            section ("Temperature", hideWhenEmpty: true){
-                input "cTemp", "capability.temperature", title: "Allow These Thermostat(s)...", multiple: true, required: false
-            }
-            section ("Sensors", hideWhenEmpty: true){
-                input "cMotion", "capability.motionSensor", title: "Allow These Motion Sensor(s)...", multiple: true, required: false
-                input "cContact", "capability.contactSensor", title: "Allow These Contact Sensor(s)...", multiple: true, required: false
-            }
-            section ("Presence", hideWhenEmpty: true){
-                input "cPresence", "capability.presenceSensor", title: "Allow These Presence Device(s)...", multiple: true, required: false
-            }
-
-            section ("Weather Alerts") {
-                input "TheWeather", "enum", title: "Choose Weather Alerts...", required: false, multiple: true, submitOnChange: true,
-                options: [
-                "TOR":	"Tornado Warning",
-                "TOW":	"Tornado Watch",
-                "WRN":	"Severe Thunderstorm Warning",
-                "SEW":	"Severe Thunderstorm Watch",
-                "WIN":	"Winter Weather Advisory",
-                "FLO":	"Flood Warning",
-                "WND":	"High Wind Advisoryt",
-                "HEA":	"Heat Advisory",
-                "FOG":	"Dense Fog Advisory",
-                "FIR":	"Fire Weather Advisory",
-                "VOL":	"Volcanic Activity Statement",
-                "HWW":	"Hurricane Wind Warning"
-                ]
-             }
-        }
-    }
-page name: "feedbackPage"
-    def feedbackPage() {
-        dynamicPage (name: "feedbackPage", uninstall: false) {
-        section ("Activate and Deactivate Alexa BackTalks Messages"){
-            href "chooseFeedbackPage", title: "Activate and Deactivate Alexa BackTalks Messages", description: none,
-            image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Rest.png"
-        	}
-        if (!allFeedback) {
-        section("") {
-        paragraph ("Alexa BackTalks Messages have been disabled.  Activate 'All Feedback Messages' to configure this section")
-        	}
-        }
-		if (allFeedback) {
-        section ("Switches and Dimmers", hideWhenEmpty: true) {
-            if (faudioTextOn || faudioTextOff || speech11 || music11) paragraph "Configured with Settings"
-            if (fSwitchesAndfDimmers) {
-            	input "fShowSwitches", "bool", title: "Switches and Dimmers", default: false, submitOnChange: true
-            if (fShowSwitches) {        
-                input "faudioTextOn", "text", title: "Alexa says this...", description: "...when the last event was on", required: false, capitalization: "sentences"
-                input "faudioTextOff", "text", title: "Alexa says this...", description: "...when the last event was off", required: false, capitalization: "sentences"
-                input "speech11", "capability.speechSynthesis", title: "Optional send Alexa Feedback to this Message Player", required: false, multiple: true, submitOnChange: true
-                input "music11", "capability.musicPlayer", title: "Optional send Alexa Feedback to this Sonos Type Devices", required: false, multiple: true, submitOnChange: true
-                if (music11) {
-                    input "volume11", "number", title: "Temporarily change volume", description: "0-100%", required: false
-                    input "resumePlaying11", "bool", title: "Resume currently playing music after notification", required: false, defaultValue: false
-                	}
-                //input "sendMsg11", "bool", title: "Send Push and/or Notifications", default: false, submitOnChange: true
-                //	if (sendMsg11) {
-                //	input "push11", "bool", title: "Send Push Notification (optional)", required: false, defaultValue: false, submitOnChange: true
-            	//	input "notify11", "bool", title: "Send message to Mobile App Notifications Tab (optional)", required: false, defaultValue: false, submitOnChange: true
-            	}
-            }             
-        }
-        section("Doors and Windows", hideWhenEmpty: true) {
-            if (fAudioTextOpen || fAudioTextClosed || speech12 || music12) paragraph "Configured with Settings"
-            if (fDoorsAndWindows) {
-            input "fShowContacts", "bool", title: "Doors and Windows", default: false, multiple: false, submitOnChange: true
-            if (fShowContacts) {
-                input "fAudioTextOpen", "text", title: "Alexa says this...", description: "...when the last event was door opened", required: false, capitalization: "sentences"
-                input "fAudioTextClosed", "text", title: "Alexa says this...", description: "...when the last event was door closed", required: false, capitalization: "sentences"
-                input "speech12", "capability.speechSynthesis", title: "Optional send Alexa Feedback to this Message Player", required: false, multiple: true, submitOnChange: true
-                input "music12", "capability.musicPlayer", title: "Optional send Alexa Feedback to this Sonos Type Devices", required: false, multiple: true, submitOnChange: true
-                if (music12) {
-                    input "volume12", "number", title: "Temporarily change volume", description: "0-100%", required: false
-                    input "resumePlaying12", "bool", title: "Resume currently playing music after notification", required: false, defaultValue: false
-                	}
-                //input "sendMsg12", "bool", title: "Send Push and/or Notifications", default: false, submitOnChange: true
-                //	if (sendMsg2) {
-                //	input "push12", "bool", title: "Send Push Notification (optional)", required: false, defaultValue: false, submitOnChange: true
-            	//	input "notify12", "bool", title: "Send message to Mobile App Notifications Tab (optional)", required: false, defaultValue: false, submitOnChange: true
-            	}
-            }
-        }       
-        section("Locks", hideWhenEmpty: true) {
-            if (fAudioTextLocked || fAudioTextUnlocked || speech13 || music13) paragraph "Configured with Settings"
-            if (fLocks) {
-            input "fShowLocks", "bool", title: "Locks", default: false, submitOnChange: true
-            if (fShowLocks) {
-                input "fAudioTextLocked", "text", title: "Alexa says this...", description: "...when the last event was locked", required: false, capitalization: "sentences"
-                input "fAudioTextUnlocked", "text", title: "Alexa says this...", description: "...when the last event was door unlocked", required: false, capitalization: "sentences"
-                input "speech13", "capability.speechSynthesis", title: "Optional send Alexa Feedback to this Message Player", required: false, multiple: true, submitOnChange: true
-                input "music13", "capability.musicPlayer", title: "Optional send Alexa Feedback to this Sonos Type Devices", required: false, multiple: true, submitOnChange: true
-                if (music13) {
-                    input "volume13", "number", title: "Temporarily change volume", description: "0-100%", required: false
-                    input "resumePlaying13", "bool", title: "Resume currently playing music after notification", required: false, defaultValue: false
-                	}
-                //input "sendMsg13", "bool", title: "Send Push and/or Notifications", default: false, submitOnChange: true
-                //	if (sendMsg13) {
-                //	input "push13", "bool", title: "Send Push Notification (optional)", required: false, defaultValue: false, submitOnChange: true
-            	//	input "notify13", "bool", title: "Send message to Mobile App Notifications Tab (optional)", required: false, defaultValue: false, submitOnChange: true
+    page name: "mDevices"    
+        def mDevices(){
+            dynamicPage(name: "mDevices", title: "",install: false, uninstall: false) {
+                section ("Select devices", hideWhenEmpty: true){ }
+                section ("Lights and Switches", hideWhenEmpty: true){  
+                    input "cSwitch", "capability.switch", title: "Allow These Switch(es)...", multiple: true, required: false, submitOnChange: true
+                    input "cVent", "capability.switchLevel", title: "Allow These Smart Vent(s)...", multiple: true, required: false
+                    input "cFan", "capability.switchLevel", title: "Allow These Fan(s)...", multiple: true, required: false
                 }
-            }
-        }       
-        section("Motion Sensors", hideWhenEmpty: true) {
-            if (fAudioTextActive || fAudioTextInactive || speech14 || music14) paragraph "Configured with Settings"
-            if (fMotion) {
-            input "fShowMotion", "bool", title: "Motion Sensors", default: false,  submitOnChange: true
-            if (fShowMotion) {
-                input "fAudioTextActive", "text", title: "Alexa says this...", description: "...when the last motion event was active", required: false, capitalization: "sentences"
-                input "fAudioTextInactive", "text", title: "Alexa says this...", description: "...when the last motion event was inactive", required: false, capitalization: "sentences"
-                input "speech14", "capability.speechSynthesis", title: "Optional send Alexa Feedback to this Message Player", required: false, multiple: true, submitOnChange: true
-                input "music14", "capability.musicPlayer", title: "Optional send Alexa Feedback to this Sonos Type Devices", required: false, multiple: true, submitOnChange: true
-                if (music14) {
-                    input "volume14", "number", title: "Temporarily change volume", description: "0-100%", required: false
-                    input "resumePlaying14", "bool", title: "Resume currently playing music after notification", required: false, defaultValue: false
-                	}
-                //input "sendMsg14", "bool", title: "Send Push and/or Notifications", default: false, submitOnChange: true
-                //	if (sendMsg4) {
-                //	input "push14", "bool", title: "Send Push Notification (optional)", required: false, defaultValue: false, submitOnChange: true
-            	//	input "notify14", "bool", title: "Send message to Mobile App Notifications Tab (optional)", required: false, defaultValue: false, submitOnChange: true
+                section ("PIN Protected Devices (Voice Enabled Setting)" , hideWhenEmpty: true) {
+                    input "cTstat", "capability.thermostat", title: "Allow These Thermostat(s)...", multiple: true, required: false, submitOnChange: true
+                    	if (cTstat) {input "usePIN_T", "bool", title: "Use PIN to control Thermostats?", default: false}
+                    input "cDoor", "capability.garageDoorControl", title: "Allow These Garage Door(s)...", multiple: true, required: false, submitOnChange: true
+                    	if (cDoor) {input "usePIN_D", "bool", title: "Use PIN to control Doors?", default: false}  
+                    input "cLock", "capability.lock", title: "Allow These Lock(s)...", multiple: true, required: false, submitOnChange: true
+                    	if (cLock) {input "usePIN_L", "bool", title: "Use PIN to control Locks?", default: false}
+                } 
+                section ("Sensors", hideWhenEmpty: true) {
+                 	input "cMotion", "capability.motionSensor", title: "Allow These Motion Sensor(s)...", multiple: true, required: false
+                    input "cContact", "capability.contactSensor", title: "Allow These Contact Sensor(s)...", multiple: true, required: false      
+                    input "cPresence", "capability.presenceSensor", title: "Allow These Presence Sensors(s)...", multiple: true, required: false
                 }
+                section ("Media" , hideWhenEmpty: true){
+                    input "cSpeaker", "capability.musicPlayer", title: "Allow These Media Player Type Device(s)...", required: false, multiple: true
+                } 
+                section ("Batteries", hideWhenEmpty: true ){
+                    input "cBattery", "capability.battery", title: "Allow These Device(s) with Batteries...", required: false, multiple: true
+                } 
+                section ("Weather Alerts") {
+                    input "cWeather", "enum", title: "Choose Weather Alerts...", required: false, multiple: true, submitOnChange: true,
+                    options: [
+                    "TOR":	"Tornado Warning",
+                    "TOW":	"Tornado Watch",
+                    "WRN":	"Severe Thunderstorm Warning",
+                    "SEW":	"Severe Thunderstorm Watch",
+                    "WIN":	"Winter Weather Advisory",
+                    "FLO":	"Flood Warning",
+                    "WND":	"High Wind Advisoryt",
+                    "HEA":	"Heat Advisory",
+                    "FOG":	"Dense Fog Advisory",
+                    "FIR":	"Fire Weather Advisory",
+                    "VOL":	"Volcanic Activity Statement",
+                    "HWW":	"Hurricane Wind Warning"
+                    ]
+                 }
             }
-        }        
-        section("Presence Sensors", hideWhenEmpty: true) {
-        	if (fAudioTextPresent || fAudioTextNotPresent || speech15 || music15) paragraph "Configured with Settings"
-            if (fPresence) {
-            input "fShowPresence", "bool", title: "Presence Sensors", default: false, submitOnChange: true
-            if (fShowPresence) {
-                input "fAudioTextPresent", "text", title: "Alexa says this...", description: "...when the last event was arrived", required: false, capitalization: "sentences"
-                input "fAudioTextNotPresent", "text", title: "Alexa says this...", description: "...when the last event was not home", required: false, capitalization: "sentences"
-                input "speech15", "capability.speechSynthesis", title: "Optional send Alexa Feedback to this Message Player", required: false, multiple: true, submitOnChange: true
-                input "music15", "capability.musicPlayer", title: "Optional send Alexa Feedback to this Sonos Type Devices", required: false, multiple: true, submitOnChange: true
-                if (music15) {
-                    input "volume15", "number", title: "Temporarily change volume", description: "0-100%", required: false
-                    input "resumePlaying15", "bool", title: "Resume currently playing music after notification", required: false, defaultValue: false
-                	}
-                //input "sendMsg5", "bool", title: "Send Push and/or Notifications", default: false, submitOnChange: true
-                //	if (sendMsg5) {
-                //	input "push5", "bool", title: "Send Push Notification (optional)", required: false, defaultValue: false, submitOnChange: true
-            	//	input "notify5", "bool", title: "Send message to Mobile App Notifications Tab (optional)", required: false, defaultValue: false, submitOnChange: true
-            	}
-			}
-		 }         
-         section("Thermostats", hideWhenEmpty: true) {
-        	if (fAudioTextHeating || fAudioTextCooling || speech18 || music18) paragraph "Configured with Settings"
-            if (fTStats) {
-            	input "fShowTstat", "bool", title: "Thermostats", default: false, submitOnChange: true
-            if (fShowTstat) {
-                input "fAudioTextHeating", "text", title: "Alexa says this...", description: "Message to play when the Heating Set Point Changes", required: false, capitalization: "sentences"
-                input "fAudioTextCooling", "text", title: "Alexa says this...", description: "Message to play when the Cooling Set Point Changes", required: false, capitalization: "sentences" 
-                input "speech18", "capability.speechSynthesis", title: "Message Player", required: false, multiple: true, submitOnChange: true
-                input "music18", "capability.musicPlayer", title: "On this Sonos Type Devices", required: false, multiple: true, submitOnChange: true
-                if (music18) {
-                    input "volume18", "number", title: "Temporarily change volume", description: "0-100%", required: false
-                    input "resumePlaying18", "bool", title: "Resume currently playing music after notification", required: false, defaultValue: false
-                	}
-                //input "sendMsg8", "bool", title: "Send Push and/or Notifications", default: false, submitOnChange: true
-                //	if (sendMsg8) {
-                //	input "push8", "bool", title: "Send Push Notification (optional)", required: false, defaultValue: false, submitOnChange: true
-            	//	input "notify8", "bool", title: "Send message to Mobile App Notifications Tab (optional)", required: false, defaultValue: false, submitOnChange: true
-                    //}
+        }   
+    page name: "mFeedback"
+        def mFeedback() {
+            dynamicPage (name: "mFeedback", uninstall: false) {
+                section ("Switches and Dimmers", hideWhenEmpty: true) {
+                    if (faudioTextOn || faudioTextOff || speech11 || music11) paragraph "Configured with Settings"
+                        input "fShowSwitches", "bool", title: "Switches and Dimmers", default: false, submitOnChange: true
+                    if (fShowSwitches) {        
+                        input "faudioTextOn", "text", title: "Alexa says this...", description: "...when the last event was on", required: false, capitalization: "sentences"
+                        input "faudioTextOff", "text", title: "Alexa says this...", description: "...when the last event was off", required: false, capitalization: "sentences"
+                        input "speech11", "capability.speechSynthesis", title: "Optional send Alexa Feedback to this Message Player", required: false, multiple: true, submitOnChange: true
+                        input "music11", "capability.musicPlayer", title: "Optional send Alexa Feedback to this Sonos Type Devices", required: false, multiple: true, submitOnChange: true
+                        if (music11) {
+                            input "volume11", "number", title: "Temporarily change volume", description: "0-100%", required: false
+                            input "resumePlaying11", "bool", title: "Resume currently playing music after notification", required: false, defaultValue: false
+                            }
+                    }             
+                }
+                section("Doors and Windows", hideWhenEmpty: true) {
+                    if (fAudioTextOpen || fAudioTextClosed || speech12 || music12) paragraph "Configured with Settings"
+                    input "fShowContacts", "bool", title: "Doors and Windows", default: false, multiple: false, submitOnChange: true
+                    if (fShowContacts) {
+                        input "fAudioTextOpen", "text", title: "Alexa says this...", description: "...when the last event was door opened", required: false, capitalization: "sentences"
+                        input "fAudioTextClosed", "text", title: "Alexa says this...", description: "...when the last event was door closed", required: false, capitalization: "sentences"
+                        input "speech12", "capability.speechSynthesis", title: "Optional send Alexa Feedback to this Message Player", required: false, multiple: true, submitOnChange: true
+                        input "music12", "capability.musicPlayer", title: "Optional send Alexa Feedback to this Sonos Type Devices", required: false, multiple: true, submitOnChange: true
+                        if (music12) {
+                            input "volume12", "number", title: "Temporarily change volume", description: "0-100%", required: false
+                            input "resumePlaying12", "bool", title: "Resume currently playing music after notification", required: false, defaultValue: false
+                            }
+                        }
+                    }    
+                section("Locks", hideWhenEmpty: true) {
+                    if (fAudioTextLocked || fAudioTextUnlocked || speech13 || music13) paragraph "Configured with Settings"
+                    input "fShowLocks", "bool", title: "Locks", default: false, submitOnChange: true
+                    if (fShowLocks) {
+                        input "fAudioTextLocked", "text", title: "Alexa says this...", description: "...when the last event was locked", required: false, capitalization: "sentences"
+                        input "fAudioTextUnlocked", "text", title: "Alexa says this...", description: "...when the last event was door unlocked", required: false, capitalization: "sentences"
+                        input "speech13", "capability.speechSynthesis", title: "Optional send Alexa Feedback to this Message Player", required: false, multiple: true, submitOnChange: true
+                        input "music13", "capability.musicPlayer", title: "Optional send Alexa Feedback to this Sonos Type Devices", required: false, multiple: true, submitOnChange: true
+                        if (music13) {
+                            input "volume13", "number", title: "Temporarily change volume", description: "0-100%", required: false
+                            input "resumePlaying13", "bool", title: "Resume currently playing music after notification", required: false, defaultValue: false
+                            }
+                        }
                     }
-                }		
+                section("Motion Sensors", hideWhenEmpty: true) {
+                    if (fAudioTextActive || fAudioTextInactive || speech14 || music14) paragraph "Configured with Settings"
+                    input "fShowMotion", "bool", title: "Motion Sensors", default: false,  submitOnChange: true
+                    if (fShowMotion) {
+                        input "fAudioTextActive", "text", title: "Alexa says this...", description: "...when the last motion event was active", required: false, capitalization: "sentences"
+                        input "fAudioTextInactive", "text", title: "Alexa says this...", description: "...when the last motion event was inactive", required: false, capitalization: "sentences"
+                        input "speech14", "capability.speechSynthesis", title: "Optional send Alexa Feedback to this Message Player", required: false, multiple: true, submitOnChange: true
+                        input "music14", "capability.musicPlayer", title: "Optional send Alexa Feedback to this Sonos Type Devices", required: false, multiple: true, submitOnChange: true
+                        if (music14) {
+                            input "volume14", "number", title: "Temporarily change volume", description: "0-100%", required: false
+                            input "resumePlaying14", "bool", title: "Resume currently playing music after notification", required: false, defaultValue: false
+                            }
+                        }
+                    }        
+                section("Presence Sensors", hideWhenEmpty: true) {
+                    if (fAudioTextPresent || fAudioTextNotPresent || speech15 || music15) paragraph "Configured with Settings"
+                    input "fShowPresence", "bool", title: "Presence Sensors", default: false, submitOnChange: true
+                    if (fShowPresence) {
+                        input "fAudioTextPresent", "text", title: "Alexa says this...", description: "...when the last event was arrived", required: false, capitalization: "sentences"
+                        input "fAudioTextNotPresent", "text", title: "Alexa says this...", description: "...when the last event was not home", required: false, capitalization: "sentences"
+                        input "speech15", "capability.speechSynthesis", title: "Optional send Alexa Feedback to this Message Player", required: false, multiple: true, submitOnChange: true
+                        input "music15", "capability.musicPlayer", title: "Optional send Alexa Feedback to this Sonos Type Devices", required: false, multiple: true, submitOnChange: true
+                        if (music15) {
+                            input "volume15", "number", title: "Temporarily change volume", description: "0-100%", required: false
+                            input "resumePlaying15", "bool", title: "Resume currently playing music after notification", required: false, defaultValue: false
+                            }
+                        }
+                    }   
+                 section("Thermostats", hideWhenEmpty: true) {
+                    if (fAudioTextHeating || fAudioTextCooling || speech18 || music18) paragraph "Configured with Settings"
+                        input "fShowTstat", "bool", title: "Thermostats", default: false, submitOnChange: true
+                    if (fShowTstat) {
+                        input "fAudioTextHeating", "text", title: "Alexa says this...", description: "Message to play when the Heating Set Point Changes", required: false, capitalization: "sentences"
+                        input "fAudioTextCooling", "text", title: "Alexa says this...", description: "Message to play when the Cooling Set Point Changes", required: false, capitalization: "sentences" 
+                        input "speech18", "capability.speechSynthesis", title: "Optional send Alexa Feedback to this Message Player", required: false, multiple: true, submitOnChange: true
+                        input "music18", "capability.musicPlayer", title: "Optional send Alexa Feedback to this Sonos Type Devices", required: false, multiple: true, submitOnChange: true
+                        if (music18) {
+                            input "volume18", "number", title: "Temporarily change volume", description: "0-100%", required: false
+                            input "resumePlaying18", "bool", title: "Resume currently playing music after notification", required: false, defaultValue: false
+                        }
+                    }
+                 }		
+                 section("Weather", hideWhenEmpty: true) {
+                    if (fAudioTextWeather || speech19 || music19) paragraph "Configured with Settings"
+                        input "fShowWeather", "bool", title: "Weather Alerts", default: false, submitOnChange: true
+                    if (fShowWeather) {
+                        input "fAudioTextWeather", "text", title: "Alexa says this...", description: "When a Weather Alert is in effect", required: false, capitalization: "sentences"
+                        input "speech19", "capability.speechSynthesis", title: "Optional send Alexa Feedback to this Message Player", required: false, multiple: true, submitOnChange: true
+                        input "music19", "capability.musicPlayer", title: "Optional send Alexa Feedback to this Sonos Type Devices", required: false, multiple: true, submitOnChange: true
+                        if (music19) {
+                            input "volume19", "number", title: "Temporarily change volume", description: "0-100%", required: false
+                            input "resumePlaying19", "bool", title: "Resume currently playing music after notification", required: false, defaultValue: false
+                        }
+                    }		
+                } 
             }
-         section("Weather", hideWhenEmpty: true) {
-        	if (fAudioTextWeather || speech19 || music19) paragraph "Configured with Settings"
-            if (fWeather) {
-            input "fShowWeather", "bool", title: "Weather Alerts", default: false, submitOnChange: true
-            if (fShowWeather) {
-                input "fAudioTextWeather", "text", title: "Alexa says this...", description: "When a Weather Alert is in effect", required: false, capitalization: "sentences"
-                input "speech19", "capability.speechSynthesis", title: "Message Player", required: false, multiple: true, submitOnChange: true
-                input "music19", "capability.musicPlayer", title: "On this Sonos Type Devices", required: false, multiple: true, submitOnChange: true
-                if (music19) {
-                    input "volume19", "number", title: "Temporarily change volume", description: "0-100%", required: false
-                    input "resumePlaying19", "bool", title: "Resume currently playing music after notification", required: false, defaultValue: false
-                	}
-                //input "sendMsg19", "bool", title: "Send Push and/or Notifications", default: false, submitOnChange: true
-                //	if (sendMsg8) {
-                //	input "push8", "bool", title: "Send Push Notification (optional)", required: false, defaultValue: false, submitOnChange: true
-            	//	input "notify8", "bool", title: "Send message to Mobile App Notifications Tab (optional)", required: false, defaultValue: false, submitOnChange: true
-                //    }}
-                }		
-            } 
         }
-    }
-}
-}
-page name: "chooseFeedbackPage"    
-    def chooseFeedbackPage(){
-        dynamicPage(name: "chooseFeedbackPage", title: "Choose from the available Notifications",install: false, uninstall: false) {
-            section ("Activate/DeActivate Feedback", hideWhenEmpty: true){
-            paragraph "To mute a notification, disable its toggle \n" +
-            "To mute all feedbacks, disable the All Feedbacks toggle"
-            input "fAllNotifications", "bool", title: "Turn on to Activate the Notifications Section", default: false, submitOnChange: true
-            input "fSwitchesAndDimmers", "bool", title: "Switches and Dimmers", default: false, submitOnChange: true
-            input "fDoorsAndWindows", "bool", title: "Doors and Windows", default: false, submitOnChange: true
-            input "fLocks", "bool", title: "Locks", default: false, submitOnChange: true
-            input "fMotion", "bool", title: "Motion Sensors", default: false, submitOnChange: true
-            input "fPresence", "bool", title: "Presence Sensors", default: false, submitOnChange: true
-            input "fTStats", "bool", title: "Thermostats", default: false, submitOnChange: true
-            input "fWeather", "bool", title: "Weather Alerts", default: false, submitOnChange: true
-		}
-    }
-}
-page name: "deviceControlPage"
-	def deviceControlPage(){
-    		dynamicPage(name: "deviceControlPage", title: " 'Alexa Feelings' and Device Control", uninstall: false){
-				section ("") {            
-                    paragraph ("Define Variables for Voice Controlled Devices (for increase/decrease commands)")
-                    input "cLevel", "number", title: "Alexa Automatically Adjusts Light Levels by using a scale of 1-10 (default is +/-3)", defaultValue: 3, required: false
-                    input "fLevel", "number", title: "Alexa Automatically Adjusts Ceiling Fans by this percentage (default is 33%) when using commands 'speed up & slow down'", defaultValue: 33, required: false
-                    input "cTemperature", "number", title: "Alexa Automatically Adjusts temperature by using a scale of 1-10 (default is +/-1)", defaultValue: 1, required: false
-//                    input "cPIN", "number", title: "Set a PIN number to prevent unathorized use of Voice Control", default: false, required: false
-					}
-                section ("Custom Devices") {
-				href "devicesControlCustom", title: "Create custom names for your devices", description: ParConDescr() , state: completeParCon(),
-                    image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_devices.png"            			
-				}
-			}
-		}
-page name: "integrationsPage"
-	def integrationsPage(){
-    		dynamicPage(name: "integrationsPage", title: " 3rd Party integrations and Special Features", uninstall: false) {
-                section ("CoRE Integration") { 
-					href "CoRE", title: "Tap to read about CoRe Integration..." ,
-                	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_CoRE.png"
-            		}
-                section ("Alexa Feelings") {    
-					href "alexaFeelngsPage", title: "Tap to read learn about the 'Alexa Feelings' special feature..." , 
-                	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Rest.png"
-            		}
-                }    
-           }
-			
-page name: "CoRE"
-    def CoRE(){
-            dynamicPage(name: "CoRE", uninstall: false) {
-                section ("Welcome to the CoRE integration page"){
-                    paragraph "This integration is in place to enhance the"+
-                    "communication abilities of EchoSistant and your SmartThings Home Automation Project, allowing you more control and flexibility.\n"+
-                    "CoRE integration is currently one way only. You can NOT trigger profiles from within CoRE."+
-                    "CoRE listens for a profile execution and then performs the programmed tasks.\n"+
-                    "Configuration is simple. In EchoSistant create your profile. Then open CoRE and create a new piston. In the condition section choose 'EchoSistant Profile'"+
-                    "as the trigger. Choose the appropriate profile and then finish configuring the piston.\n"+
-                    "When the profile is executed the CoRE piston will also execute."
-                    href url:"http://thingsthataresmart.wiki/index.php?title=EchoSistant#CoRE_Integration", title: "Tap here for more information", description: none
-                 	}   
-            	}
-        	} 
-page name: "alexaFeelngsPage"
-	def alexaFeelngsPage(){
-        dynamicPage(name: "alexaFeelngsPage", title: "What are 'Alexa Feelings?'", uninstall: false) {
-        	section("What are 'Alexa Feelings'?"){
-            paragraph "Alexa Feelings offers users a better way of controlling certain lights or group of lights. You may have tried to tell Alexa "+ 
-            "that it is too bright in the living room, and watched Alexa making your lights, well...brighter. With EchoSistant, if you say to "+ 
-            "the light or group of lights it is too bright, it will actually dim your lights. You can also say, it is not dark enough or simply "+ 
-            "say, make it darker, and your lights will dim the way you want them to.\n"+ 
-			" \n" +
-			"You may have tried to tell Alexa to dim your group of lights and watched Alexa dimming only the first light on the list. "+
-            "With EchoSistants ability to dim the group ensures that each dimmer in the group is adjusted according to individual light levels./n" +
-			" \n" +
-			"EchoSistant gives users a quick way of controlling multiple media devices in one Room. Have the TV on, a connected speaker on, and other " +
-            "media devices making noise in one area when an important call comes through? Just tell Echosistant to mute the first floor* and " +
-            "the noise stops so you can pick up the call.\n" +
-            " \n" +
-            "*Assumes you have named your devices appropriately\n" +
-            " \n" +
-            "Do you have a connected Thermostat?  Ever tried to tell Alexa to adjust the temperature only to be told that your device can not " +
-            "be found in your account?  Well, now you just tell Alexa that it's too cold or that it's too hot, and your thermostat will take the " +
-            "appropriate actions to ensure you're comfortable. \n" +
-            " \n" 
-            href url:" http://thingsthataresmart.wiki/index.php?title=EchoSistant#Officially_Supported_Commands_Listing", title: "Tap here for a list of 'Alexa Feelings Commands", description: none
-            	}
-            }
-		}            
-page name: "profilesPage"
-    def profilesPage() {
-            dynamicPage (name: "profilesPage", title: "", install: false, uninstall: false) {
+    page name: "mDefaults"
+        def mDefaults(){
+                dynamicPage(name: "mDefaults", title: "", uninstall: false){
+                    section ("General Defaults") {            
+                        input "cLevel", "number", title: "Alexa Adjusts Light Levels by using a scale of 1-10 (default is +/-3)", defaultValue: 3, required: false
+                        input "cVolLevel", "number", title: "Alexa Adjusts the Volume Level by using a scale of 1-10 (default is +/-2)", defaultValue: 3, required: false
+                        input "cTemperature", "number", title: "Alexa Automatically Adjusts temperature by using a scale of 1-10 (default is +/-1)", defaultValue: 1, required: false
+                    }
+                     section ("Fan Control") {            
+                        input "cHigh", "number", title: "Alexa Adjusts High Level to 99% by default", defaultValue: 99, required: false
+                        input "cMedium", "number", title: "Alexa Adjusts Medium Level to 66% by default", defaultValue: 66, required: false
+                        input "cLow", "number", title: "Alexa Adjusts Low Level to 33% by default", defaultValue: 33, required: false
+                        input "cFanLevel", "number", title: "Alexa Automatically Adjusts Ceiling Fans by using a scale of 1-100 (default is +/-33%)", defaultValue: 33, required: false
+                     }
+                     section ("Security") {  
+                        input "cPIN", "password", title: "Set a PIN number to prevent unathorized use of Voice Control", default: false, required: false
+                    }
+                }
+	        }
+page name: "mProfiles"
+    def mProfiles() {
+            dynamicPage (name: "mProfiles", title: "", install: false, uninstall: false) {
             if (childApps.size()) { 
                     section(childApps.size()==1 ? "One Profile configured" : childApps.size() + " Profiles configured" )
             }
@@ -431,13 +299,24 @@ page name: "profilesPage"
             } 
         } 
     }
-page name: "generalPage"  
- def generalPage(){
-        dynamicPage(name: "generalPage", uninstall: false) {
- 				section ("Amazon AWS Skill Details") { 
+page name: "mSupport"  
+ def mSupport(){
+        dynamicPage(name: "mSupport", uninstall: false) {
+ 				section ("Developers", hideWhenEmpty: true){  
+            		paragraph ("You can reach out to the Echosistant Developers with the following information: \n" + 
+                	"Jason Headley \n"+
+                	"Forum user name @bamarayne \n" +
+                	"Bobby Dobrescu \n"+
+                	"Forum user name @SBDobrescu")
+                	}
+                section ("Amazon AWS Skill Details") {
 					href "SkillDetails", title: "Tap to view setup data for the AWS Main Intent Skill...", description: "",
                 	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/echosistant_About.png"
-            		}                
+            		}
+                section ("Directions, How-to's, and Troubleshooting") { 
+ 					href url:"http://thingsthataresmart.wiki/index.php?title=EchoSistant", title: "Tap to go to the EchoSistant Wiki", description: none,
+                	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/app-Echosistant.png"
+                	}   
             	section ("AWS Lambda website") {
             		href url:"https://aws.amazon.com/lambda/", title: "Tap to go to the AWS Lambda Website", description: none,
                 	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_aws.png"
@@ -446,6 +325,19 @@ page name: "generalPage"
    					href url:"https://developer.amazon.com/", title: "Tap to go to Amazon Developer website", description: none,
                 	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Skills.png"
 					}
+                }	            	
+            }
+page name: "mSecurity"    
+    def mSecurity(){
+        dynamicPage(name: "mSecurity", title: "View Support Information",install: false, uninstall: true) {
+                section("Debugging") {
+                    input "debug", "bool", title: "Enable Debug Logging", default: false, submitOnChange: true 
+                    }
+                section ("Apache License"){
+                    input "ShowLicense", "bool", title: "Show License", default: false, submitOnChange: true
+                    def msg = textLicense()
+                        if (ShowLicense) paragraph "${msg}"
+                    }
                 section ("Show Security Tokens") {
                 	paragraph ("Log into the IDE on your computer and navigate to the Live Logs tab. Leave that window open, come back here, and open this section")
                     input "ShowTokens", "bool", title: "Show Security Tokens", default: false, submitOnChange: true
@@ -455,31 +347,6 @@ page name: "generalPage"
                                                 "${state.accessToken}\n"+
                                                 "Application ID:\n"+
                                                 "${app.id}"
-
-                    }
-                section ("Directions, How-to's, and Troubleshooting") { 
- 					href url:"http://thingsthataresmart.wiki/index.php?title=EchoSistant", title: "Tap to go to the EchoSistant Wiki", description: none,
-                	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/app-Echosistant.png"
-                	}
-    			}	            	
-            }
-page name: "supportPage"    
-    def supportPage(){
-        dynamicPage(name: "supportPage", title: "View Support Information",install: false, uninstall: true) {
-            section ("Developers", hideWhenEmpty: true){  
-            	paragraph ("You can reach out to the Echosistant Developers with the following information: \n" + 
-                "Jason Headley \n"+
-                "Forum user name @bamarayne \n" +
-                "Bobby Dobrescu \n"+
-                "Forum user name @SBDobrescu")
-                }
-                section("Debugging") {
-                    input "debug", "bool", title: "Enable Debug Logging", default: false, submitOnChange: true 
-                    }
-                section ("Apache License"){
-                    input "ShowLicense", "bool", title: "Show License", default: false, submitOnChange: true
-                    def msg = textLicense()
-                        if (ShowLicense) paragraph "${msg}"
                     }
                section ("Revoke/Renew Access Token & Application ID"){
                     href "tokens", title: "Revoke/Reset Security Access Token", description: none
@@ -490,9 +357,23 @@ page name: "supportPage"
                 }	
 			}             
 		}
-page name: "dashboardPage"
-	def dashboardPage(){
-        dynamicPage(name: "dashboardPage", uninstall: false) {
+page name: "mBonus"    
+    def mBonus(){
+        dynamicPage(name: "mBonus", title: "EchoSistant Bonus Features",install: false, uninstall: false) {
+        section ("Home Status Dashboard") {
+        	input "activateDashboard", "bool", title: "Activate the DashBoard on the Home Page", required: false, default: false, submitOnChange: true
+        	}
+        if (activateDashboard) {
+		section ("Configure the DashBoard") {
+        	href "dashboardConfigPage", title: "Tap here to configure Dashboard", description: "", state: complete,
+            image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Routines.png"
+			}
+        }
+	}
+}        
+page name: "mDashboard"
+	def mDashboard(){
+        dynamicPage(name: "mDashboard", uninstall: false) {
         if (ActivateLocalWeather) {
         section("Today's Weather"){
         	paragraph (getWeather())
@@ -545,29 +426,8 @@ page name: "dashboardPage"
 			}
 		} 
 	} 
-page name: "bonusPage"    
-    def bonusPage(){
-        dynamicPage(name: "bonusPage", title: "EchoSistant Bonus Features",install: false, uninstall: false) {
-        section ("Home Status Dashboard") {
-        	input "activateDashboard", "bool", title: "Activate the DashBoard on the Home Page", required: false, default: false, submitOnChange: true
-        	}
-        if (activateDashboard) {
-		section ("Configure the DashBoard") {
-        	href "dashboardConfigPage", title: "Tap here to configure Dashboard", description: "", state: complete,
-            image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Routines.png"
-			}
-        }
-	}
-} 
-def weatherConfigPage() {
-	dynamicPage(name: "weatherConfigPage", title: "Weather Settings") {
-		section {
-    		input "wImperial", "bool", title: "Report Weather In Imperial Units\n(°F / MPH)", defaultValue: "true", required: "false"
-            input "wZipCode", "text", title: "Zip Code (If Location Not Set)", required: "false"
-            paragraph("Currently forecast is automatically pulled from getWeatherFeature your location must be set in your SmartThings app for this to work.")
-		}
-	}
-}
+ 
+
 page name: "dashboardConfigPage"
 	def dashboardConfigPage(){
         dynamicPage(name: "dashboardConfigPage", uninstall: false) {
@@ -594,7 +454,16 @@ page name: "dashboardConfigPage"
             //input "tempSens6", "capability.temperatureMeasurement", title: "Other Temperature Sensors (not displayed on Dashboard)", required: false, multiple: true 
         }
     }
-} 
+}
+def weatherConfigPage() {
+	dynamicPage(name: "weatherConfigPage", title: "Weather Settings") {
+		section {
+    		input "wImperial", "bool", title: "Report Weather In Imperial Units\n(°F / MPH)", defaultValue: "true", required: "false"
+            input "wZipCode", "text", title: "Zip Code (If Location Not Set)", required: "false"
+            paragraph("Currently forecast is automatically pulled from getWeatherFeature your location must be set in your SmartThings app for this to work.")
+		}
+	}
+}
 def getWeather(){
 	def result ="Today's weather is unavailable"
 	try {
@@ -663,69 +532,7 @@ page name: "DeviceDetails"
                         }
 					}
                 }    
-page name: "devicesControlCustom"    
-    def devicesControlCustom(){
-        dynamicPage(name: "devicesControlCustom", title: "Create Devices That Alexa Can Control Directly",install: false, uninstall: false) {
-            section ("Create a Device", hideWhenEmpty: true){
-                input "custSwitch1", "capability.switch", title: "Select Device...", multiple: false, required: false, submitOnChange: true
-                input "custName1", "text", title: "Name Device...", multiple: false, required: false
-				if(custSwitch1) {                           
-                        def availableCommands = custSwitch1.capabilities                      
-                    	availableCommands.sort()
-                        if (debug) log.debug "availableCommands = $availableCommands"
-                        paragraph "Add any of these commands to your LIST_OF_COMMANDS custom slot: $availableCommands"
-    			}
-            }
-            if (custSwitch1) {
-                section ("+ Create another Device", hideWhenEmpty: true){
-                    input "custSwitch2", "capability.switch", title: "Select Device...", multiple: false, required: false, submitOnChange: true
-                    input "custName2", "text", title: "Name Device...", multiple: false, required: false
-                    if(custSwitch2) {
-						def availableCommands = custSwitch2.supportedCommands                       
-                    	availableCommands.sort()
-                        if (debug) log.debug "availableCommands = $availableCommands"
-                        paragraph "Add any of these commands to your LIST_OF_COMMANDS custom slot: $availableCommands"
-    				} 
-                }
-            }
-            if (custSwitch2) {
-                section ("+ Create another Device", hideWhenEmpty: true){
-                    input "custSwitch3", "capability.switch", title: "Select Device...", multiple: false, required: false, submitOnChange: true
-                    input "custName3", "text", title: "Name Device...", multiple: false, required: false
-                    if(custSwitch3) {
-						def availableCommands = custSwitch2.supportedCommands                       
-                    	availableCommands.sort()
-                        if (debug) log.debug "availableCommands = $availableCommands"
-                        paragraph "Add any of these commands to your LIST_OF_COMMANDS custom slot: $availableCommands"
-    				}
-                }
-            }
-            if (custSwitch3) {
-                section ("+ Create another Device", hideWhenEmpty: true){
-                    input "custSwitch4", "capability.switch", title: "Select Device...", multiple: false, required: false, submitOnChange: true
-                    input "custName4", "text", title: "Name Device...", multiple: false, required: false
-                    if(custSwitch4) {
-						def availableCommands = custSwitch2.supportedCommands                       
-                    	availableCommands.sort()
-                        if (debug) log.debug "availableCommands = $availableCommands"
-                        paragraph "Add any of these commands to your LIST_OF_COMMANDS custom slot: $availableCommands"
-    				}
-                }
-            }
-            if (custSwitch4) {            
-                section ("+ Create another Device", hideWhenEmpty: true){
-                    input "custSwitch5", "capability.switch", title: "Select Device...", multiple: false, required: false, submitOnChange: true
-                    input "custName5", "text", title: "Name Device...", multiple: false, required: false
-                    if(custSwitch5) {
-						def availableCommands = custSwitch2.supportedCommands                       
-                    	availableCommands.sort()
-                        if (debug) log.debug "availableCommands = $availableCommands"
-                        paragraph "Add any of these commands to your LIST_OF_COMMANDS custom slot: $availableCommands"
-    				}
-                }
-            }
-        }
-    }    
+  
 page name: "tokens"
     def tokens(){
             dynamicPage(name: "tokens", title: "Security Tokens", uninstall: false){
@@ -781,26 +588,26 @@ page name: "pageReset"
 /***********************************************************************************************************************
     PROFILE UI CONFIGURATION
 ***********************************************************************************************************************/
-def mainProfilePage() {	///////////////////// REMOVE VER 3 PROFILE INFORMATION IN FUTURE RELEASE//////////////////////////
-    dynamicPage(name: "mainProfilePage", title:"I Want This Profile To...", install: true, uninstall: true) {
-    	section ("Choose your Profile Type") {
-           	if (!profileTypeRoom && !profileTypeTTS && !profileTypeNotify) {
-            input "profileTypeTTS", "bool", title: "I want this profile to send messages...", required: false, submitOnChange: true         
-        	input "profileTypeRoom", "bool", title: "I want this profile to be a control room...", required: false, submitOnChange: true
-            input "profileTypeNotify", "bool", title: "I want this profile to send me notifications about events...", required: false, submitOnChange: true
+def mainProfilePage() {	
+    dynamicPage(name: "mainProfilePage", title:"I want to create a...", install: true, uninstall: true) {
+    	section ("") {
+           	if (!pTypeRoom && !pTypeNotify && !pTypeFeedback) {
+            input "pTypeRoom", "bool", title: "...Control and Messaging Room", required: false, submitOnChange: true
+            input "pTypeNotify", "bool", title: "...Notifications Room", required: false, submitOnChange: true
+            input "pTypeFeedback", "bool", title: "...Custom Feedback Room", required: false, submitOnChange: true
         	}
-            if (!profileTypeRoom && profileTypeTTS && !profileTypeNotify) {
-        	input "profileTypeTTS", "bool", title: "I want this profile to send messages...", required: false, submitOnChange: true
+            if (pTypeRoom && !pTypeNotify && !pTypeFeedback) {
+        	input "pTypeRoom", "bool", title: "...Control and Messaging room", required: false, submitOnChange: true
             }
-            if (!profileTypeTTS && profileTypeRoom && !profileTypeNotify) {
-        	input "profileTypeRoom", "bool", title: "I want this profile to be a control room...", required: false, submitOnChange: true
-            }
-            if (!profileTypeRoom && !profileTypeTTS && profileTypeNotify) {
-            input "profileTypeNotify", "bool", title: "I want this profile to send me notifications about events...", required: false, submitOnChange: true
-			}            
+            if (!pTypeRoom && pTypeNotify && !pTypeFeedback) {
+            input "pTypeNotify", "bool", title: "...Notifications and Feedback room", required: false, submitOnChange: true
+			}
+            if (!pTypeRoom && !pTypeNotify && pTypeFeedback) {
+            input "pTypeFeedback", "bool", title: "...Notifications and Feedback room", required: false, submitOnChange: true
+			}
         }    
-        if (!profileTypeRoom && profileTypeTTS && !profileTypeNotify) { 
-        section ("Messaging Profile") {
+        if (pTypeRoom && !pTypeNotify && !pTypeFeedback) { 
+        section ("Control and Messaging Room") {
            	href "audioPage", title: "Send Audio Messages to these devices...", //description: AudioDescr(), state: completeAudio(),
    				image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Media.png" 
             href "smsPage", title: "Send Text & Push Messages...", //description: SMSDescr() , state: completeSMS(),
@@ -809,27 +616,45 @@ def mainProfilePage() {	///////////////////// REMOVE VER 3 PROFILE INFORMATION I
             	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_devices.png"            			
 			href "proMsgConPage", title: "With These Global Message Options...", //description: ProMsgConDescr() , state: completeProMsgCon(),
             	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Extra.png" 
-            	}
-            }
-        if (!profileTypeTTS && profileTypeRoom && !profileTypeNotify) { 
-        section ("Room Profile") {
   			href "proActionsRoomPage", title: "Execute Actions when Profile runs...", //description: ProActionsDescr(), state: completeProActions(),
             	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_devices.png"            			
   			href "proGroupsRoomPage", title: "Create Profile Device Groups...", //description: ProGroupsDescr(), state: completeProGroups(),
             	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Plus.png" 
             	}
             }
-		if (!profileTypeRoom && !profileTypeTTS && profileTypeNotify) {
-        section ("Notifications Profile") {
-            href "profileNotificationsPage", title: "Configure Notifications and Alerts...", description: AlertProDescr() , state: completeAlertPro(),
-    	        image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Config.png"
-				}
+		if (!pTypeRoom && pTypeNotify && !pTypeFeedback) {   	 
+     		section ("Notification Scene") {
+  				href "pNotifyScene", title: "View and Create Notification Scenes for this Room...", //description: ProActionsDescr(), state: completeProActions(),
+            		image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_devices.png"            			
+        			}     
+                }
+		if (!pTypeRoom && !pTypeNotify && pTypeFeedback) { 
+        	section ("Custom Feedback Scene") {
+            	href "pFeedbackScene", title: "View and Create Feedback Scenes for this Room...", //description: ProActionsDescr(), state: completeProActions(),
+            		image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_devices.png"            			
+    			}
             }
             section ("Name and/or Remove this Profile") {
- 		   	label title:"              Rename Profile ", required:false, defaultValue: "New Profile"  
-        }    
-	}
-}
+				label title:"              Rename Profile ", required:false, defaultValue: "New Profile"  
+			}   
+		}
+    }   
+		
+        
+        
+        
+/*        section ("Notifications") {
+            href "pNotifications", title: "Configure Notifications...", description: AlertProDescr() , state: completeAlertPro(),
+    	        image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Config.png"
+				}
+        section ("Feedback Configuration") {        
+            href "pFeedback", title: "Configure Custom Feedback Options...", description: AlertProDescr() , state: completeAlertPro(),
+    	        image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Config.png"            
+            }*/
+   
+		
+	
+
 /////////// START TTS MESSAGING PROFILE ///////////////
 page name: "audioPage"
     def audioPage(){
@@ -1015,15 +840,15 @@ page name: "proGroupsRoomPage"
                     	paragraph "You can now control this group by speaking commands to Alexa:  \n" +
                         " E.G: Alexa tell Main Skill, to turn on/off the lights in the Profile Name"
                     }
-            }
-      	}
-	}
+            	}
+      		}
+		}
 /////////// END ROOM CONTROL PROFILE ///////////////  
 
 /////////// START NOTIFICATIONS PROFILE ///////////
-page name: "profileChooseNotifyPage"    
-    def profileChooseNotifyPage(){
-        dynamicPage(name: "profileChooseNotifyPage", title: "Choose from the available Notifications",install: false, uninstall: false) {
+page name: "pNotifyConfig"    
+    def pNotifyConfig(){
+        dynamicPage(name: "pNotifyConfig", title: "Choose from the available Notifications",install: false, uninstall: false) {
             section ("Activate/DeActivate Notifications", hideWhenEmpty: true){
             paragraph "To mute a notification, disable its toggle \n" +
             "To mute all notifications, disable the All Notifications toggle"
@@ -1035,14 +860,26 @@ page name: "profileChooseNotifyPage"
             input "Presence", "bool", title: "Presence Sensors", default: false, submitOnChange: true
             input "TStats", "bool", title: "Thermostats", default: false, submitOnChange: true
             input "Weather", "bool", title: "Weather Alerts", default: false, submitOnChange: true
+			}
+    	}
+	}
+page name: "pNotifyScene"
+	def pNotifyScene() {
+	dynamicPage (name: "pNotifyScene", title: "", install: false, uninstall: false) {
+			if (childApps.size()) { 
+		section(childApps.size()==1 ? "One Scene configured" : childApps.size() + " Scenes configured" )
 		}
-    }
-}
-page name: "profileNotificationsPage"
-    def profileNotificationsPage() {
-        dynamicPage (name: "profileNotificationsPage", uninstall: false) {
+		section("Scenes"){
+			app(name: "scenes", appName: "Scenes", namespace: "bd", title: "Create A New Notification Scene for this Room", multiple: true,  uninstall: false)
+			} 
+		} 
+	}
+    
+page name: "pNotifications"
+    def pNotifications() {
+        dynamicPage (name: "pNotifications", uninstall: false) {
         section ("Activate and Deactivate Notifications"){
-            href "profileChooseNotifyPage", title: "Activate and Deactivate Notifications", description: none,
+            href "pNotifyConfig", title: "Activate and Deactivate Notifications", description: none,
             image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Rest.png"
         	}
         if (!allNotifications) {
@@ -1069,10 +906,10 @@ page name: "profileNotificationsPage"
                 	if (sendMsg1) {
                 	input "push1", "bool", title: "Send Push Notification (optional)", required: false, defaultValue: false, submitOnChange: true
             		input "notify1", "bool", title: "Send message to Mobile App Notifications Tab (optional)", required: false, defaultValue: false, submitOnChange: true
-            	}
-            }             
-        }
-	}        
+            		}
+            	}             
+        	}
+		}        
         section("Doors and Windows", hideWhenEmpty: true) {
             if (TheContact || audioTextOpen || audioTextClosed || speech2 || push2 || notify2 || music2) paragraph "Configured with Settings"
             if (doorsAndWindows) {
@@ -1091,10 +928,10 @@ page name: "profileNotificationsPage"
                 	if (sendMsg2) {
                 	input "push2", "bool", title: "Send Push Notification (optional)", required: false, defaultValue: false, submitOnChange: true
             		input "notify2", "bool", title: "Send message to Mobile App Notifications Tab (optional)", required: false, defaultValue: false, submitOnChange: true
+            		}
             	}
-            }
-        }
-	}     
+        	}
+		}     
         section("Locks", hideWhenEmpty: true) {
             if (TheLock || audioTextLocked || audioTextUnlocked || speech3 || push3 || notify3 || music3) paragraph "Configured with Settings"
             if (Locks) {
@@ -1113,10 +950,10 @@ page name: "profileNotificationsPage"
                 	if (sendMsg3) {
                 	input "push3", "bool", title: "Send Push Notification (optional)", required: false, defaultValue: false, submitOnChange: true
             		input "notify3", "bool", title: "Send message to Mobile App Notifications Tab (optional)", required: false, defaultValue: false, submitOnChange: true
-                }
-            }
-        }
-	}        
+                	}
+            	}
+        	}
+		}        
         section("Motion Sensors", hideWhenEmpty: true) {
             if (TheMotion || audioTextActive || audioTextInactive || speech4 || push4 || notify4 || music4) paragraph "Configured with Settings"
             if (Motion) {
@@ -1135,10 +972,10 @@ page name: "profileNotificationsPage"
                 	if (sendMsg4) {
                 	input "push4", "bool", title: "Send Push Notification (optional)", required: false, defaultValue: false, submitOnChange: true
             		input "notify4", "bool", title: "Send message to Mobile App Notifications Tab (optional)", required: false, defaultValue: false, submitOnChange: true
-                }
-            }
-        }
-	}        
+                	}	
+            	}
+        	}
+		}        
         section("Presence Sensors", hideWhenEmpty: true) {
         	if (ThePresence || audioTextPresent || audioTextNotPresent || speech5 || push5 || notify5 || music5) paragraph "Configured with Settings"
             if (Presence) {
@@ -1157,11 +994,11 @@ page name: "profileNotificationsPage"
                 	if (sendMsg5) {
                 	input "push5", "bool", title: "Send Push Notification (optional)", required: false, defaultValue: false, submitOnChange: true
             		input "notify5", "bool", title: "Send message to Mobile App Notifications Tab (optional)", required: false, defaultValue: false, submitOnChange: true
-            	}
+            		}
+				}
 			}
-		}
-	}         
-         section("Thermostats", hideWhenEmpty: true) {
+		}         
+        section("Thermostats", hideWhenEmpty: true) {
         	if (TheThermostat || audioTextHeating || audioTextCooling || speech8 || push8 || notify8 || music8) paragraph "Configured with Settings"
             if (TStats) {
             input "ShowTstat", "bool", title: "Thermostats", default: false, submitOnChange: true
@@ -1179,11 +1016,11 @@ page name: "profileNotificationsPage"
                 	if (sendMsg8) {
                 	input "push8", "bool", title: "Send Push Notification (optional)", required: false, defaultValue: false, submitOnChange: true
             		input "notify8", "bool", title: "Send message to Mobile App Notifications Tab (optional)", required: false, defaultValue: false, submitOnChange: true
-                        }
                     }
                 }
-			}                
-         section("Weather", hideWhenEmpty: true) {
+            }
+		}                
+        section("Weather", hideWhenEmpty: true) {
         	if (audioTextWeather || speech9 || push9 || notify9 || music9) paragraph "Configured with Settings"
             if (Weather) {
             	input "showWeather", "bool", title: "Weather Alerts", default: false, submitOnChange: true
@@ -1213,6 +1050,163 @@ page name: "profileNotificationsPage"
 		} 
 	}
 }
+page name: "pFeedbackScene"
+	def pFeedbackScene() {
+	dynamicPage (name: "pFeedbackScene", title: "", install: false, uninstall: false) {
+		if (childApps.size()) { 
+	section(childApps.size()==1 ? "One Scene configured" : childApps.size() + " Scenes configured" )
+		}
+	section("Scenes"){
+		app(name: "scenes", appName: "Scenes", namespace: "bd", title: "View and Create Feedback Scenes for this Room", multiple: true,  uninstall: false)
+		} 
+	} 
+} 
+
+page name: "pFeedbackConfig"    
+    def pFeedbackConfig(){
+        dynamicPage(name: "pFeedbackConfig", title: "Choose from the available Notifications",install: false, uninstall: false) {
+            section ("Activate/DeActivate Feedback", hideWhenEmpty: true){
+            paragraph "To mute a notification, disable its toggle \n" +
+            "To mute all feedbacks, disable the All Feedbacks toggle"
+            input "fallFeedback", "bool", title: "Turn on to Activate the Notifications Section", default: false, submitOnChange: true
+            input "fSwitchesAndDimmers", "bool", title: "Switches and Dimmers", default: false, submitOnChange: true
+            input "fDoorsAndWindows", "bool", title: "Doors and Windows", default: false, submitOnChange: true
+            input "fLocks", "bool", title: "Locks", default: false, submitOnChange: true
+            input "fMotion", "bool", title: "Motion Sensors", default: false, submitOnChange: true
+            input "fPresence", "bool", title: "Presence Sensors", default: false, submitOnChange: true
+            input "fTStats", "bool", title: "Thermostats", default: false, submitOnChange: true
+            input "fWeather", "bool", title: "Weather Alerts", default: false, submitOnChange: true
+		}
+    }
+}
+page name: "pFeedback"
+    def pFeedback() {
+        dynamicPage (name: "pFeedback", uninstall: false) {
+        section ("Activate and Deactivate Alexa BackTalks Messages"){
+            href "pFeedbackConfig", title: "Activate and Deactivate Alexa BackTalks Messages", description: none,
+            image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Rest.png"
+        	}
+        if (!fallFeedback) {
+        section("") {
+        paragraph ("All Custom Feedback Messages have been disabled.  Activate 'All Feedback Messages' to configure this section")
+        	}
+        }
+		if (fallFeedback) {
+        section ("Switches and Dimmers", hideWhenEmpty: true) {
+            if (faudioTextOn || faudioTextOff || speech11 || music11) paragraph "Configured with Settings"
+            if (fSwitchesAndDimmers) {
+            	input "fShowSwitches", "bool", title: "Switches and Dimmers", default: false, submitOnChange: true
+            if (fShowSwitches) {        
+                input "faudioTextOn", "text", title: "Alexa says this...", description: "...when the last event was on", required: false, capitalization: "sentences"
+                input "faudioTextOff", "text", title: "Alexa says this...", description: "...when the last event was off", required: false, capitalization: "sentences"
+                input "speech11", "capability.speechSynthesis", title: "Optional send Alexa Feedback to this Message Player", required: false, multiple: true, submitOnChange: true
+                input "music11", "capability.musicPlayer", title: "Optional send Alexa Feedback to this Sonos Type Devices", required: false, multiple: true, submitOnChange: true
+                if (music11) {
+                    input "volume11", "number", title: "Temporarily change volume", description: "0-100%", required: false
+                    input "resumePlaying11", "bool", title: "Resume currently playing music after notification", required: false, defaultValue: false
+                	}
+                }
+            }             
+        }
+        section("Doors and Windows", hideWhenEmpty: true) {
+            if (fAudioTextOpen || fAudioTextClosed || speech12 || music12) paragraph "Configured with Settings"
+            if (fDoorsAndWindows) {
+            input "fShowContacts", "bool", title: "Doors and Windows", default: false, multiple: false, submitOnChange: true
+            if (fShowContacts) {
+                input "fAudioTextOpen", "text", title: "Alexa says this...", description: "...when the last event was door opened", required: false, capitalization: "sentences"
+                input "fAudioTextClosed", "text", title: "Alexa says this...", description: "...when the last event was door closed", required: false, capitalization: "sentences"
+                input "speech12", "capability.speechSynthesis", title: "Optional send Alexa Feedback to this Message Player", required: false, multiple: true, submitOnChange: true
+                input "music12", "capability.musicPlayer", title: "Optional send Alexa Feedback to this Sonos Type Devices", required: false, multiple: true, submitOnChange: true
+                if (music12) {
+                    input "volume12", "number", title: "Temporarily change volume", description: "0-100%", required: false
+                    input "resumePlaying12", "bool", title: "Resume currently playing music after notification", required: false, defaultValue: false
+                	}
+                }
+            }
+        }       
+        section("Locks", hideWhenEmpty: true) {
+            if (fAudioTextLocked || fAudioTextUnlocked || speech13 || music13) paragraph "Configured with Settings"
+            if (fLocks) {
+            input "fShowLocks", "bool", title: "Locks", default: false, submitOnChange: true
+            if (fShowLocks) {
+                input "fAudioTextLocked", "text", title: "Alexa says this...", description: "...when the last event was locked", required: false, capitalization: "sentences"
+                input "fAudioTextUnlocked", "text", title: "Alexa says this...", description: "...when the last event was door unlocked", required: false, capitalization: "sentences"
+                input "speech13", "capability.speechSynthesis", title: "Optional send Alexa Feedback to this Message Player", required: false, multiple: true, submitOnChange: true
+                input "music13", "capability.musicPlayer", title: "Optional send Alexa Feedback to this Sonos Type Devices", required: false, multiple: true, submitOnChange: true
+                if (music13) {
+                    input "volume13", "number", title: "Temporarily change volume", description: "0-100%", required: false
+                    input "resumePlaying13", "bool", title: "Resume currently playing music after notification", required: false, defaultValue: false
+                	}
+                }
+            }
+        }       
+        section("Motion Sensors", hideWhenEmpty: true) {
+            if (fAudioTextActive || fAudioTextInactive || speech14 || music14) paragraph "Configured with Settings"
+            if (fMotion) {
+            input "fShowMotion", "bool", title: "Motion Sensors", default: false,  submitOnChange: true
+            if (fShowMotion) {
+                input "fAudioTextActive", "text", title: "Alexa says this...", description: "...when the last motion event was active", required: false, capitalization: "sentences"
+                input "fAudioTextInactive", "text", title: "Alexa says this...", description: "...when the last motion event was inactive", required: false, capitalization: "sentences"
+                input "speech14", "capability.speechSynthesis", title: "Optional send Alexa Feedback to this Message Player", required: false, multiple: true, submitOnChange: true
+                input "music14", "capability.musicPlayer", title: "Optional send Alexa Feedback to this Sonos Type Devices", required: false, multiple: true, submitOnChange: true
+                if (music14) {
+                    input "volume14", "number", title: "Temporarily change volume", description: "0-100%", required: false
+                    input "resumePlaying14", "bool", title: "Resume currently playing music after notification", required: false, defaultValue: false
+                	}
+                }
+            }
+        }        
+        section("Presence Sensors", hideWhenEmpty: true) {
+        	if (fAudioTextPresent || fAudioTextNotPresent || speech15 || music15) paragraph "Configured with Settings"
+            if (fPresence) {
+            input "fShowPresence", "bool", title: "Presence Sensors", default: false, submitOnChange: true
+            if (fShowPresence) {
+                input "fAudioTextPresent", "text", title: "Alexa says this...", description: "...when the last event was arrived", required: false, capitalization: "sentences"
+                input "fAudioTextNotPresent", "text", title: "Alexa says this...", description: "...when the last event was not home", required: false, capitalization: "sentences"
+                input "speech15", "capability.speechSynthesis", title: "Optional send Alexa Feedback to this Message Player", required: false, multiple: true, submitOnChange: true
+                input "music15", "capability.musicPlayer", title: "Optional send Alexa Feedback to this Sonos Type Devices", required: false, multiple: true, submitOnChange: true
+                if (music15) {
+                    input "volume15", "number", title: "Temporarily change volume", description: "0-100%", required: false
+                    input "resumePlaying15", "bool", title: "Resume currently playing music after notification", required: false, defaultValue: false
+                	}
+                }
+			}
+		}         
+        section("Thermostats", hideWhenEmpty: true) {
+        	if (fAudioTextHeating || fAudioTextCooling || speech18 || music18) paragraph "Configured with Settings"
+            if (fTStats) {
+            	input "fShowTstat", "bool", title: "Thermostats", default: false, submitOnChange: true
+            if (fShowTstat) {
+                input "fAudioTextHeating", "text", title: "Alexa says this...", description: "Message to play when the Heating Set Point Changes", required: false, capitalization: "sentences"
+                input "fAudioTextCooling", "text", title: "Alexa says this...", description: "Message to play when the Cooling Set Point Changes", required: false, capitalization: "sentences" 
+                input "speech18", "capability.speechSynthesis", title: "Message Player", required: false, multiple: true, submitOnChange: true
+                input "music18", "capability.musicPlayer", title: "On this Sonos Type Devices", required: false, multiple: true, submitOnChange: true
+                if (music18) {
+                    input "volume18", "number", title: "Temporarily change volume", description: "0-100%", required: false
+                    input "resumePlaying18", "bool", title: "Resume currently playing music after notification", required: false, defaultValue: false
+                	}
+                }
+			}		
+        }
+        section("Weather", hideWhenEmpty: true) {
+        	if (fAudioTextWeather || speech19 || music19) paragraph "Configured with Settings"
+            if (fWeather) {
+            input "fShowWeather", "bool", title: "Weather Alerts", default: false, submitOnChange: true
+            if (fShowWeather) {
+                input "fAudioTextWeather", "text", title: "Alexa says this...", description: "When a Weather Alert is in effect", required: false, capitalization: "sentences"
+                input "speech19", "capability.speechSynthesis", title: "Message Player", required: false, multiple: true, submitOnChange: true
+                input "music19", "capability.musicPlayer", title: "On this Sonos Type Devices", required: false, multiple: true, submitOnChange: true
+                if (music19) {
+                    input "volume19", "number", title: "Temporarily change volume", description: "0-100%", required: false
+                    input "resumePlaying19", "bool", title: "Resume currently playing music after notification", required: false, defaultValue: false
+                        }
+                    }
+                }		
+            } 
+        }
+    }
+}
+
 /////////// END NOTIFICATIONS PROFILE /////////////// 
 /*************************************************************************************************************
    CREATE INITIAL TOKEN
@@ -1396,7 +1390,7 @@ def controlDevices() {
                     if (debug) log.debug "Temperature command = '${commandLVL}'"
                 }
 	//Dimmer Commands
-                if (command == "lower" || command == "darker" || command == "darken" || command == "too bright" || command == "dim" || command == "dimmer") {
+                if (command == "set" || command == "lower" || command == "darker" || command == "darken" || command == "too bright" || command == "dim" || command == "dimmer") {
                     commandLVL = "decrease" 
                     deviceType = "cDimmers"
                     if (debug) log.debug "Light command = '${commandLVL}'"
@@ -1406,7 +1400,7 @@ def controlDevices() {
                     deviceType = "cDimmers"
                     if (debug) log.debug "Light command = '${commandLVL}'"
                 }
-        		else if (command == "raise" || "not bright enough" || command == "brighter" || command == "too dark" || command == "brighten") {
+        		else if (command == "set" || command == "raise" || "not bright enough" || command == "brighter" || command == "too dark" || command == "brighten") {
                     commandLVL = "increase" 
                     deviceType = "cDimmers"
                     if (debug) log.debug "Light command = '${commandLVL}'"                   
@@ -2257,6 +2251,14 @@ return  ProfileDetails
 }
 
 def getDeviceDetails() {
+   // getAllDevices.collect {
+
+
+//def r = ""
+//	 ([cSwitches + cDimmers + cLock])?.findAll()?.unique { it.id }{ device ->
+//    	r +=device.label +"\n" }
+   
+    
 def s = "" 
 	cSwitches.each { device -> 
 		s +=device.label +"\n" }
@@ -2280,10 +2282,15 @@ def DeviceDetails = 	" \n" +
                     " \n" +
                     "  LIST_OF_DEVICES\n" + 			
                      " \n" +    		
-                            "${s} ${d} ${G} ${L} ${t}\n" 
+                            "${s} ${d} ${G} ${L} ${t}\n" +
+                            "  Another List \n " 
+                           
+                            
                     
 return DeviceDetails
-}
+	}
+//}
+
 /***********************************************************************************************************************
     RESTRICTIONS HANDLER
 ***********************************************************************************************************************/
