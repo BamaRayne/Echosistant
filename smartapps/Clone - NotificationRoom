@@ -17,7 +17,7 @@
  *
 /**********************************************************************************************************************************************/
 definition(
-	name			: "NotificationRoom",
+	name			: "NotificationProfile",
     namespace		: "Clone",
     author			: "JH/BD",
 	description		: "EchoSistant Add-on",
@@ -35,63 +35,15 @@ preferences {
     		page name: "pNotifyScene"          
         	page name: "pNotifications"
         	page name: "pScenes"
-        	page name: "pRestrict" 
+        	page name: "pRestrict"
   			page name: "pDeviceControl"
+            page name: "pNotifyConfig"
 }
 
 //dynamic page methods
-/*def mainProfilePage() {	
-    dynamicPage(name: "mainProfilePage", title:"I Want This Profile To...", install: true, uninstall: installed) {
-        section {
-           	href "pSend", title: "Send Messages... ", 
-   				image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Media.png"   			
-			href "pConfig", title: "Audio Message Options...",
-            	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Extra.png"             
-            href "pScenes", title: "Create Scenes... ", 
-            	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Plus.png" 
-			href "pRestrict", title: "With These General Profile Restrictions", 
-            	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Extra.png" 
-		}
-        section ("Name and/or Remove this Profile") {
- 		   	label title:"              Rename Profile ", required:false, defaultValue: "New Room Profile"  
-        }    
-	}
-}*/
-page name: "mainProfilePage"    
-    def mainProfilePage(){
-        dynamicPage(name: "mainProfilePage", title: "Choose from the available Notifications",install: true, uninstall: installed) {
-            section ("Activate/DeActivate Notifications", hideWhenEmpty: true){
-            paragraph "To mute a notification, disable its toggle \n" +
-            "To mute all notifications, disable the All Notifications toggle"
-            input "allNotifications", "bool", title: "Turn on to Activate the Notifications Section", default: false, submitOnChange: true
-            input "switchesAndDimmers", "bool", title: "Switches and Dimmers", default: false, submitOnChange: true
-            input "doorsAndWindows", "bool", title: "Doors and Windows", default: false, submitOnChange: true
-            input "Locks", "bool", title: "Locks", default: false, submitOnChange: true
-            input "Motion", "bool", title: "Motion Sensors", default: false, submitOnChange: true
-            input "Presence", "bool", title: "Presence Sensors", default: false, submitOnChange: true
-            input "TStats", "bool", title: "Thermostats", default: false, submitOnChange: true
-            input "Weather", "bool", title: "Weather Alerts", default: false, submitOnChange: true
-			}
-            section ("Name and/or Remove this Profile") {
- 		   	label title:"              Rename Profile ", required:false, defaultValue: "New Room Profile"  
-        	}  
-    	}
-	}
-page name: "pNotifyScene"
-	def pNotifyScene() {
-	dynamicPage (name: "pNotifyScene", title: "", install: false, uninstall: false) {
-			if (childApps.size()) { 
-		section(childApps.size()==1 ? "One Scene configured" : childApps.size() + " Scenes configured" )
-		}
-		section("Scenes"){
-			app(name: "scenes", appName: "Scenes", namespace: "bd", title: "Create A New Notification Scene for this Room", multiple: true,  uninstall: false)
-			} 
-		} 
-	}
-    
-page name: "pNotifications"
-    def pNotifications() {
-        dynamicPage (name: "pNotifications", uninstall: false) {
+page name: "mainProfilePage"
+    def mainProfilePage() {
+        dynamicPage (name: "mainProfilePage", install: true, uninstall: true) {
         section ("Activate and Deactivate Notifications"){
             href "pNotifyConfig", title: "Activate and Deactivate Notifications", description: none,
             image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Rest.png"
@@ -260,10 +212,51 @@ page name: "pNotifications"
 						}
                     }
 				}
-			}		
+			}
+            section ("Create Profile Scenes") {
+            	href "pScenes", title: "Create Scenes... ", 
+   				image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Media.png"   			
+				}
+            section ("Using these Restrictions") {
+                href "pRestrict", title: "Use these restrictions... ", 
+   				image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Media.png"   			
+				}
+            section ("Name and/or Remove this Profile") {
+ 		   	label title:"              Rename Profile ", required:false, defaultValue: "New Notification Profile"  
+        		
+			}
 		} 
 	}
-}           
+} 
+page name: "pNotifyScene"
+	def pNotifyScene() {
+	dynamicPage (name: "pNotifyScene", title: "", install: false, uninstall: false) {
+			if (childApps.size()) { 
+		section(childApps.size()==1 ? "One Scene configured" : childApps.size() + " Scenes configured" )
+		}
+		section("Scenes"){
+			app(name: "scenes", appName: "scenes", namespace: "bd", title: "Create A New Notification Scene for this Profile", multiple: true,  uninstall: false)
+			} 
+		} 
+	}
+page name: "pNotifyConfig"    
+    def pNotifyConfig(){
+        dynamicPage(name: "pNotifyConfig", title: "Choose from the available Notifications",install: false, uninstall: false) {
+            section ("Activate/DeActivate Notifications", hideWhenEmpty: true){
+            paragraph "To mute a notification, disable its toggle \n" +
+            "To mute all notifications, disable the All Notifications toggle"
+            input "allNotifications", "bool", title: "Turn on to Activate the Notifications Section", default: false, submitOnChange: true
+            input "switchesAndDimmers", "bool", title: "Switches and Dimmers", default: false, submitOnChange: true
+            input "doorsAndWindows", "bool", title: "Doors and Windows", default: false, submitOnChange: true
+            input "Locks", "bool", title: "Locks", default: false, submitOnChange: true
+            input "Motion", "bool", title: "Motion Sensors", default: false, submitOnChange: true
+            input "Presence", "bool", title: "Presence Sensors", default: false, submitOnChange: true
+            input "TStats", "bool", title: "Thermostats", default: false, submitOnChange: true
+            input "Weather", "bool", title: "Weather Alerts", default: false, submitOnChange: true
+		}
+    }
+}    
+          
 page name: "pScenes"    
     def pScenes() {
         dynamicPage (name: "pScenes", title: "", install: true, uninstall: false) {
@@ -272,13 +265,13 @@ page name: "pScenes"
             }
             if (childApps.size()) {  
             	section("Scenes",  uninstall: false){
-                	app(name: "scenes", appName: "Scenes", namespace: "EchoLabs", title: "Create a new scene for this Profile", multiple: true,  uninstall: false)
+                	app(name: "scenes", appName: "scenes", namespace: "Clone", title: "Create a new scene for this Profile", multiple: true,  uninstall: false)
             	}
             }
             else {
             	section("Scenes",  uninstall: false){
             		paragraph "NOTE: Looks like you have no Scenes yet, please make sure you have installed the Scenes Smart App Add-on before creating a new Scene!"
-            		app(name: "scenes", appName: "Scenes", namespace: "EchoLabs", title: "Create a new scene for this Profile", multiple: true,  uninstall: false)
+            		app(name: "scenes", appName: "scenes", namespace: "Clone", title: "Create a new scene for this Profile", multiple: true,  uninstall: false)
         		}
             }
        }
