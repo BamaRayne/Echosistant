@@ -50,12 +50,9 @@ preferences {
             page name: "mSupport"
         	page name: "mSecurity"
             page name: "mDashboard"
-            page name: "mBonus"
-            	page name: "dashboardConfigPage"
-                page name: "weatherConfigPage"
-                page name: "severeWeatherAlertsPage"
-        
-
+            	page name: "mBonus"
+                      page name: "mWeatherConfig"
+      
     //Profile Pages    
     page name: "mainProfilePage"
     		page name: "audioPage"
@@ -365,7 +362,7 @@ page name: "mBonus"
         	}
         if (activateDashboard) {
 		section ("Configure the DashBoard") {
-        	href "dashboardConfigPage", title: "Tap here to configure Dashboard", description: "", state: complete,
+        	href "mDashConfig", title: "Tap here to configure Dashboard", description: "", state: complete,
             image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Routines.png"
 			}
         }
@@ -428,15 +425,15 @@ page name: "mDashboard"
 	} 
  
 
-page name: "dashboardConfigPage"
-	def dashboardConfigPage(){
-        dynamicPage(name: "dashboardConfigPage", uninstall: false) {
+page name: "mDashConfig"
+	def mDashConfig(){
+        dynamicPage(name: "mDashConfig", uninstall: false) {
         section ("Local Weather") {
         	input "ActivateLocalWeather", "bool", title: "Display local weather conditions on Dashboard", required: false, default: false, submitOnChange: true
             }
         if (ActivateLocalWeather) {
 		section ("Local Weather Information") {
-            href "weatherConfigPage", title: "Tap here to configure Weather information on Dashboard", description: "", state: complete,
+            href "mWeatherConfig", title: "Tap here to configure Weather information on Dashboard", description: "", state: complete,
             image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Routines.png"
 			}	
         }            
@@ -455,8 +452,8 @@ page name: "dashboardConfigPage"
         }
     }
 }
-def weatherConfigPage() {
-	dynamicPage(name: "weatherConfigPage", title: "Weather Settings") {
+def mWeatherConfig() {
+	dynamicPage(name: "mWeatherConfig", title: "Weather Settings") {
 		section {
     		input "wImperial", "bool", title: "Report Weather In Imperial Units\n(°F / MPH)", defaultValue: "true", required: "false"
             input "wZipCode", "text", title: "Zip Code (If Location Not Set)", required: "false"
@@ -464,7 +461,7 @@ def weatherConfigPage() {
 		}
 	}
 }
-def getWeather(){
+def mGetWeather(){
 	def result ="Today's weather is unavailable"
 	try {
     	def weather = getWeatherFeature("forecast", settings.wZipCode)
