@@ -17,7 +17,7 @@
  *
 /**********************************************************************************************************************************************/
 definition(
-	name			: "FeedbackRoom",
+	name			: "FeedbackProfile",
     namespace		: "Clone",
     author			: "JH/BD",
 	description		: "EchoSistant Add-on",
@@ -32,66 +32,17 @@ definition(
 preferences {
 
     page name: "mainProfilePage"
-    		page name: "pSend"          
-        	page name: "pGroups"
-        	page name: "pConfig"
+    		page name: "pFeedbackScene"          
+        	page name: "pFeedbackConfig"
+        	page name: "pScenes"
         	page name: "pRestrict"
-  			page name: "pDeviceControl"
+  			page name: "certainTime"
             
 }
-
-//dynamic page methods
-def mainProfilePage() {	
-    dynamicPage(name: "mainProfilePage", title:"I Want This Room To...", install: true, uninstall: installed) {
-        section {
-           	href "pSend", title: "Send Messages... ", 
-   				image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Media.png"   			
-			href "pConfig", title: "Audio Message Options...",
-            	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Extra.png"             
-            href "pScenes", title: "Create Scenes... ", 
-            	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Plus.png" 
-			href "pRestrict", title: "With These General Profile Restrictions", 
-            	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Extra.png" 
-		}
-        section ("Name and/or Remove this Room") {
- 		   	label title:"              Rename Room ", required:false, defaultValue: "New Feedback Room"  
-        }    
-	}
-}
-
-page name: "pFeedbackScene"
-	def pFeedbackScene() {
-	dynamicPage (name: "pFeedbackScene", title: "", install: false, uninstall: false) {
-		if (childApps.size()) { 
-	section(childApps.size()==1 ? "One Scene configured" : childApps.size() + " Scenes configured" )
-		}
-	section("Scenes"){
-		app(name: "scenes", appName: "Scenes", namespace: "bd", title: "View and Create Feedback Scenes for this Room", multiple: true,  uninstall: false)
-		} 
-	} 
-} 
-
-page name: "pFeedbackConfig"    
-    def pFeedbackConfig(){
-        dynamicPage(name: "pFeedbackConfig", title: "Choose from the available Notifications",install: false, uninstall: false) {
-            section ("Activate/DeActivate Feedback", hideWhenEmpty: true){
-            paragraph "To mute a notification, disable its toggle \n" +
-            "To mute all feedbacks, disable the All Feedbacks toggle"
-            input "fallFeedback", "bool", title: "Turn on to Activate the Notifications Section", default: false, submitOnChange: true
-            input "fSwitchesAndDimmers", "bool", title: "Switches and Dimmers", default: false, submitOnChange: true
-            input "fDoorsAndWindows", "bool", title: "Doors and Windows", default: false, submitOnChange: true
-            input "fLocks", "bool", title: "Locks", default: false, submitOnChange: true
-            input "fMotion", "bool", title: "Motion Sensors", default: false, submitOnChange: true
-            input "fPresence", "bool", title: "Presence Sensors", default: false, submitOnChange: true
-            input "fTStats", "bool", title: "Thermostats", default: false, submitOnChange: true
-            input "fWeather", "bool", title: "Weather Alerts", default: false, submitOnChange: true
-		}
-    }
-}
-page name: "pFeedback"
-    def pFeedback() {
-        dynamicPage (name: "pFeedback", uninstall: false) {
-        section ("Activate and Deactivate Alexa BackTalks Messages"){
+page name: "mainProfilePage"
+    def mainProfilePage() {
+        dynamicPage (name: "mainProfilePage", install: true, uninstall: true) {
+        section ("Activate and Deactivate Feedback"){
             href "pFeedbackConfig", title: "Activate and Deactivate Alexa BackTalks Messages", description: none,
             image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Rest.png"
         	}
@@ -211,10 +162,54 @@ page name: "pFeedback"
                         }
                     }
                 }		
-            } 
-        }
+            }
+            section ("Create Profile Scenes") {
+            	href "pScenes", title: "Create Scenes... ", 
+   				image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Media.png"   			
+				}
+            section ("Using these Restrictions") {
+                href "pRestrict", title: "Use these restrictions... ", 
+   				image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Media.png"   			
+				}
+            section ("Name and/or Remove this Profile") {
+ 		   	label title:"              Rename Profile ", required:false, defaultValue: "New Feedback Profile"  
+        	}
+		}
     }
-}           
+}
+
+
+page name: "pFeedbackScene"
+	def pFeedbackScene() {
+	dynamicPage (name: "pFeedbackScene", title: "", install: false, uninstall: false) {
+		if (childApps.size()) { 
+	section(childApps.size()==1 ? "One Scene configured" : childApps.size() + " Scenes configured" )
+		}
+	section("Scenes"){
+		app(name: "scenes", appName: "Scenes", namespace: "bd", title: "View and Create Feedback Scenes for this Room", multiple: true,  uninstall: false)
+		} 
+	} 
+} 
+
+page name: "pFeedbackConfig"    
+    def pFeedbackConfig(){
+        dynamicPage(name: "pFeedbackConfig", title: "Choose from the available Notifications",install: false, uninstall: false) {
+            section ("Activate/DeActivate Feedback", hideWhenEmpty: true){
+            paragraph "To mute a notification, disable its toggle \n" +
+            "To mute all feedbacks, disable the All Feedbacks toggle"
+            input "fallFeedback", "bool", title: "Turn on to Activate the Notifications Section", default: false, submitOnChange: true
+            input "fSwitchesAndDimmers", "bool", title: "Switches and Dimmers", default: false, submitOnChange: true
+            input "fDoorsAndWindows", "bool", title: "Doors and Windows", default: false, submitOnChange: true
+            input "fLocks", "bool", title: "Locks", default: false, submitOnChange: true
+            input "fMotion", "bool", title: "Motion Sensors", default: false, submitOnChange: true
+            input "fPresence", "bool", title: "Presence Sensors", default: false, submitOnChange: true
+            input "fTStats", "bool", title: "Thermostats", default: false, submitOnChange: true
+            input "fWeather", "bool", title: "Weather Alerts", default: false, submitOnChange: true
+		}
+    }
+}
+
+          
 page name: "pScenes"    
     def pScenes() {
         dynamicPage (name: "pScenes", title: "", install: true, uninstall: false) {
@@ -223,17 +218,16 @@ page name: "pScenes"
             }
             if (childApps.size()) {  
             	section("Scenes",  uninstall: false){
-                	app(name: "scenes", appName: "Scenes", namespace: "EchoLabs", title: "Create a new scene for this Profile", multiple: true,  uninstall: false)
+                	app(name: "scenes", appName: "scenes", namespace: "Clone", title: "Create a new scene for this Profile", multiple: true,  uninstall: false)
             	}
             }
             else {
             	section("Scenes",  uninstall: false){
             		paragraph "NOTE: Looks like you have no Scenes yet, please make sure you have installed the Scenes Smart App Add-on before creating a new Scene!"
-            		app(name: "scenes", appName: "Scenes", namespace: "EchoLabs", title: "Create a new scene for this Profile", multiple: true,  uninstall: false)
+            		app(name: "scenes", appName: "scenes", namespace: "Clone", title: "Create a new scene for this Profile", multiple: true,  uninstall: false)
         		}
             }
        }
- 
 }
 page name: "pRestrict"
     def pRestrict(){
