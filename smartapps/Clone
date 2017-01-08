@@ -46,6 +46,8 @@ preferences {
             	page name: "mDevices"
                 page name: "mFeedback"
                 page name: "mDefaults"
+                page name: "customSounds"
+                page name: "alerts"
             page name: "mNotifyProfile"
             page name: "mFeedbackProfile"
             page name: "mSupport"
@@ -112,10 +114,42 @@ page name: "mIntent"
 			section ("... control my devices using these settings") {
                 href "mDefaults", title: "Default control options...", //: ParConDescr() , state: completeParCon(), 
                 image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Config.png" 
-    	}
-    }            
+    		}
+            section ("This section is for Testing") {
+            	href "customSounds", title: "Testing Custom Sound Notifications", description: none,
+                image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Routines.png"
+            }
+     }            
 }
-    page name: "mDevices"    
+page name: "customSounds"
+	def customSounds() {
+    	dynamicPage(name: "customSounds", title: "Play custom sounds", uninstall: false) {
+        section ("Choose a switch") {
+        	input "mySwitch", "capability.switch", title: "Choose Switches...", required: false, multiple: true, submitOnChange: true
+			}
+        section ("") {
+        input "actionType", "enum", title: "Action?", required: true, defaultValue: "Bell 1", options: [
+				"Custom Message",
+				"Bell 1",
+				"Bell 2",
+				"Dogs Barking",
+				"Fire Alarm",
+				"The mail has arrived",
+				"A door opened",
+				"There is motion",
+				"Smartthings detected a flood",
+				"Smartthings detected smoke",
+				"Someone is arriving",
+				"Piano",
+				"Lightsaber"]
+			input "message","text",title:"Play this message", required:false, multiple: false
+		}
+		section {
+			input "sonos", "capability.musicPlayer", title: "On this Speaker player", required: false
+		}
+	}
+}
+page name: "mDevices"    
         def mDevices(){
             dynamicPage(name: "mDevices", title: "",install: false, uninstall: false) {
                 section ("Select devices", hideWhenEmpty: true){ }
@@ -861,6 +895,7 @@ mappings {
 ************************************************************************************************************/
 def installed() {
 	if (debug) log.debug "Installed with settings: ${settings}"
+	initialize()
 }
 def updated() { 
 	if (debug) log.debug "Updated with settings: ${settings}"
@@ -868,6 +903,7 @@ def updated() {
     initialize()
 }
 def initialize() {
+ 	subscribeToEvents()
         sendLocationEvent(name: "echoSistant", value: "refresh", data: [profiles: getProfileList()] , isStateChange: true, descriptionText: "echoSistant Profile list refresh")
     	state.lastMessage = null
 		state.lastIntent  = null
@@ -890,6 +926,16 @@ def initialize() {
                 OAuthToken()
 			}
 	}
+/***********************************************
+   SUBSCRIPTIONS
+***********************************************/
+def subscribeToEvents() {
+        loadText()
+        log.debug "this is being loaded now from loadText '${loadText()}'"	 
+	
+    	if (actionType) {subscribe(mySwitch, "switch.on", alertsHandler)}
+     	log.debug "Subscribing to custom sound switch '${mySwitch}'"
+}     
 /************************************************************************************************************
 		CoRE Integration
 ************************************************************************************************************/
@@ -1738,8 +1784,13 @@ def text = " Copyright © 2016 Jason Headley  \n " +
 /************************************************************************************************************
    Pre-set SOUNDS
 ************************************************************************************************************/
+private takeAction(evt) {
+if (mySwitch) {
+    	sonos?.playSoundAndTrack(state.sound.uri, state.sound.duration, state.selectedSong, volume)
+		}
+    }
 private loadText() {
-		switch ( actionType) {
+	switch ( actionType) {
 		case "Bell 1":
 			state.sound = [uri: "http://s3.amazonaws.com/smartapp-media/sonos/bell1.mp3", duration: "10"]
 			break;
@@ -1752,14 +1803,50 @@ private loadText() {
 		case "Fire Alarm":
 			state.sound = [uri: "http://s3.amazonaws.com/smartapp-media/sonos/alarm.mp3", duration: "17"]
 			break;
+		case "The mail has arrived":
+			state.sound = [uri: "http://s3.amazonaws.com/smartapp-media/sonos/the+mail+has+arrived.mp3", duration: "1"]
+			break;
+		case "A door opened":
+			state.sound = [uri: "http://s3.amazonaws.com/smartapp-media/sonos/a+door+opened.mp3", duration: "1"]
+			break;
+		case "There is motion":
+			state.sound = [uri: "http://s3.amazonaws.com/smartapp-media/sonos/there+is+motion.mp3", duration: "1"]
+			break;
+		case "Smartthings detected a flood":
+			state.sound = [uri: "http://s3.amazonaws.com/smartapp-media/sonos/smartthings+detected+a+flood.mp3", duration: "2"]
+			break;
+		case "Smartthings detected smoke":
+			state.sound = [uri: "http://s3.amazonaws.com/smartapp-media/sonos/smartthings+detected+smoke.mp3", duration: "1"]
+			break;
+		case "Someone is arriving":
+			state.sound = [uri: "http://s3.amazonaws.com/smartapp-media/sonos/someone+is+arriving.mp3", duration: "1"]
+			break;
 		case "Piano":
 			state.sound = [uri: "http://s3.amazonaws.com/smartapp-media/sonos/piano2.mp3", duration: "10"]
 			break;
 		case "Lightsaber":
 			state.sound = [uri: "http://s3.amazonaws.com/smartapp-media/sonos/lightsaber.mp3", duration: "10"]
 			break;
+		case "Custom Message":
+			if (message) {
+				state.sound = textToSpeech(message instanceof List ? message[0] : message) // not sure why this is (sometimes) needed)
+			}
+			else {
+				state.sound = textToSpeech("You selected the custom message option but did not enter a message in the $app.label Smart App")
+			}
+			break;
 		default:
 			state.sound = [uri: "http://s3.amazonaws.com/smartapp-media/sonos/bell1.mp3", duration: "10"]
 			break;
-        }
+	}
 }
+
+def alertsHandler(evt) {
+	def eVal = evt.value
+    if (debug) log.debug "Received event name ${evt.name} with value:  ${evt.value}, from: ${evt.device}"
+	if (eVal == "on") { 
+        		if (mySwitch) {
+                    takeAction(evt)
+                    }
+            	}
+        	}
