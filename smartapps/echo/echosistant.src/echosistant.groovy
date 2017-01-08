@@ -1817,7 +1817,7 @@ def profileEvaluate(params) {
 									            def currVolLevel = sonosDevice.latestValue("level")
                     						
 									if (parent.debug) log.debug "Current volume level is: '${currVolLevel}'"
-									def newVolLevel = volume-(volume*10/100)
+									def newVolLevel = volume//-(volume*10/100)
 									if (parent.debug) log.debug "Attempting to set volume to 10% less than selected volume '${newVolLevel}'"
 										sonosDevice.setLevel(newVolLevel)
 										sonosDevice.playTrackAndResume(state.sound.uri, state.sound.duration, volume)
