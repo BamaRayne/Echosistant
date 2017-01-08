@@ -700,6 +700,10 @@ page name: "MsgPro"
                 input "sonosDevice", "capability.musicPlayer", title: "On this Sonos Type Devices", required: false, multiple: true, submitOnChange: true,
                     image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Media.png"
                 if (sonosDevice) {
+                        def availableCommands = sonosDevice.capabilities                      
+                    	availableCommands.sort()
+                        if (parent.debug) log.info "availableCommands = $availableCommands"
+
                     input "volume", "number", title: "Temporarily change volume", description: "0-100%", required: false
                     input "resumePlaying", "bool", title: "Resume currently playing music after notification", required: false, defaultValue: false
                 }
@@ -1810,6 +1814,12 @@ def profileEvaluate(params) {
                                         if (parent.debug) log.debug "You selected the custom message option but did not enter a message"
 									}
 								if (sonosDevice) {
+									            def currVolLevel = sonosDevice.latestValue("level")
+                    						
+									if (parent.debug) log.debug "Current volume level is: '${currVolLevel}'"
+									def newVolLevel = volume-(volume*10/100)
+									if (parent.debug) log.debug "Attempting to set volume to 10% less than selected volume '${newVolLevel}'"
+										sonosDevice.setLevel(newVolLevel)
 										sonosDevice.playTrackAndResume(state.sound.uri, state.sound.duration, volume)
                     						if (parent.debug) log.debug "Sending message to Sonos Devices"
                                             }
