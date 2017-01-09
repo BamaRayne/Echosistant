@@ -751,7 +751,9 @@ page name: "DevPro"
                     actions.sort()
                     if (parent.debug) log.info actions
             	}                
-                input "runRoutine", "enum", title: "Select a Routine(s) to execute", required: false, options: actions, multiple: true, 
+                input "runRoutine", "enum", title: "Select Routine(s) to execute", required: false, options: actions, multiple: true, 
+                image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Routines.png"
+                input "appLink", "enum", title: "Trigger These appLink Actions", required: false, multiple: true, options: parent.appLinkHandler(value: "list"),
                 image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Routines.png"
             }
         }
@@ -901,6 +903,7 @@ mappings {
 	path("/b") { action: [GET: "processBegin"] }
 	path("/c") { action: [GET: "controlDevices"] }
     path("/t") {action: [GET: "processTts"]}
+    path("/m") { action: [GET: "messengerGetHandler", POST: "messengerPostHandler"] }
 }
 /************************************************************************************************************
 		Base Process
@@ -937,18 +940,13 @@ def initialize() {
         subscribeToEvents()
 	}
 	else{
-        unschedule()
-    }
-    if (parent) {
         if (parent.debug) log.debug "Initializing Child app"
         state.lastMessage = null
     	state.lastTime  = null
         state.recording = null
         subscribeChildToEvents()
-     }
-     else{
         unschedule()
-	}
+     }
 }
 /************************************************************************************************************
 		Subscriptions
@@ -964,6 +962,7 @@ def subscribeChildToEvents() {
     }
 
 def subscribeToEvents() {
+	subscribe(location, "appLink", appLinkHandler) //listen for appLink capable apps
 	if (allNotifications) {
     	if (debug) log.debug "Subscribing Parent app to events"
     	if (switchesAndDimmers) {
@@ -1789,6 +1788,7 @@ def profileEvaluate(params) {
         if (intent.toLowerCase() == childName.toLowerCase()){
         	sendLocationEvent(name: "echoSistantProfile", value: app.label, data: data, displayed: true, isStateChange: true, descriptionText: "EchoSistant activated '${app.label}' profile.")
       		if (parent.debug) log.debug "sendNotificationEvent sent to CoRE was '${app.label}' from the TTS process section"
+            if(settings?.appLink){ appLink.each { app -> parent.appLinkHandler(value: "run", data: app) } }
             if (!disableTts){
         			if (PreMsg) 
         				tts = PreMsg + tts
@@ -2622,3 +2622,71 @@ private def textCurrentMode() {
 	def text = "                     The current Mode is \n" +
     "                            '${location.currentMode}'"
 }
+
+/*****************************************************************
+ appLink
+*****************************************************************/
+
+// appLink core code: This should be included in every appLink compatible app, and not customised.
+def appLinkHandler(evt){
+    if(!state.appLink) state.appLink = [:]
+    switch(evt.value) { //[appLink V0.0.2 2016-12-08]
+   		case "add":	state.appLink << evt.jsonData;	break;
+        case "del":	state.appLink.remove(evt.jsonData.app);	break;             
+        case "list":	def list = [:];	state.appLink.each {key, value -> value.each{skey, svalue -> list << ["${key}:${skey}" : "[${key}] ${svalue}"]}};
+        	return list.sort { a, b -> a.value.toLowerCase() <=> b.value.toLowerCase() };	break;
+        case "run":	sendLocationEvent(name: "${evt.data.split(":")[0]}", value: evt.data.split(":")[1] , isStateChange: true, descriptionText: "appLink run"); break;
+    }
+    state.appLink.remove("$app.name") // removes this app from list
+}
+
+/*****************************************************************
+ Facebook Messenger
+*****************************************************************/
+
+def messengerGetHandler(){
+    if (params.hub.mode == 'subscribe' && params.hub.verify_token == settings.verifyToken) {
+        log.debug "Validating webhook"
+        render contentType: "text/html", data: params.hub.challenge, status: 200
+    } else {
+        log.debug "Failed validation. Make sure the Verify Tokens match."
+        render contentType: "text/html", data: params.hub.challenge, status: 403        
+    }
+}
+
+def messengerPostHandler(){
+    def fbJSON = request.JSON
+    def responseTxt = "Sorry I don't know you."
+    if (debug) log.debug "FB MESSENGER POST EVENT - MESSAGE:  ${fbJSON.entry.messaging.message.text[0][0]}"
+    if (debug) log.debug "FB MESSENGER POST EVENT - SENDER_ID:  ${fbJSON.entry.messaging.sender.id[0][0]}"
+	if(fbAllowedUsers != null && fbAllowedUsers.indexOf("${fbJSON.entry.messaging.sender.id[0][0]}") >= 0){ 
+    	//responseTxt = actionCommand(fbJSON.entry.messaging.message.text[0][0]) as String
+        // The above is my code so wont work for you you will need to set response Txt whatever value you want to return in the FB chat in response to a message
+    }
+    fbSendMessage(fbJSON.entry.messaging.sender.id[0][0], responseTxt)
+}
+
+def fbSendMessage(userid, message){
+	// Send a message to FB
+    def params = [
+        uri: "https://graph.facebook.com/v2.6/me/messages?access_token=$fbAccessToken",
+        body: [recipient: [id: userid], message: [text: message] ]
+    ]
+    try { httpPostJson(params) { resp ->
+    	resp.headers.each { if (debug) log.debug "${it.name} : ${it.value}" }
+        if (debug) log.debug "response contentType: ${resp.contentType}"
+    } } catch (e) { if (debug) log.debug "something went wrong: $e" }
+}
+
+/*
+		// This is used for linking to FB messenger and setting valid users
+		section ("Facebook Messenger Settings") { 
+            input "verifyToken", "password", title: "Verify Token", description:"", required: false
+            input "fbAccessToken", "password", title: "FB Page Access Token", description:"", required: false
+            input "fbAllowedUsers", "text", title: "Allowed User IDs", description:"", required: false
+            paragraph "Verify Token: Used to setup link to FB bot (You make up this value)\nAccess Token: To allow ST to send messages via FB Messenger (From developers.facebook.com)\nAllowed Users: These are the Facebook user IDs, seperated by commas (You can get this in the debug logging)"
+        }
+        
+        // This you should put in the same method you use for returning the app ID and OAuth 
+        log.trace "URL FOR USE AT DEVELOPERS.FACEBOOK.COM:\n${getApiServerUrl()}/api/smartapps/installations/${app.id}/m?access_token=${state.accessToken}"
+*/
