@@ -1,4 +1,5 @@
 
+ /**
  *  EchoSistant - Lambda Code
  *
  *  Version 4.0.1 - 11/29/2016 Copyright © 2016 Jason Headley
@@ -117,26 +118,26 @@ exports.handler = function( event, context ) {
                         var pTryAgain = resJSON.pTryAgain;
                         var pPIN = resJSON.pPIN;
                         var speechText = resJSON.outputTxt;
-                        if (pTryAgain === true)
+                        if (pContCmds === true && pContCmdsR == "profile" ) { 
+                            areWeDone=false;
+                            speechText = speechText + ', send another message to ' + intentName;
+                            return output(speechText, context, cardName, areWeDone);
+                        }
+                        else if (pTryAgain === true)
                             alexaContResp ("Try Again", speechText, context, areWeDone);
+                        else if (pContCmdsR == "filters")
+                            areWeDone=false;
                         else if (pPIN === true)
                             areWeDone=false;
-                            //alexaContResp ("PIN", speechText, context, areWeDone);
-                        else if (pContCmds === true && pContCmdsR === false ) { 
-                            areWeDone=false;
-                            speechText = speechText + ', send another message to ' + intentName; 
+                        else if (pContCmds === true && pContCmdsR == "no") {
+                            alexaContResp ("Short Answer", speechText, context, areWeDone);
                         }
-                        else if (pContCmds === false && pContCmdsR === true) {
-                            speechText = speechText + ',  would you like anything else? ';                            
-                            areWeDone=false;
+                        else if (pContCmds === true && pContCmdsR == "yes") {
+                            alexaContResp ("Long Answer", speechText, context, areWeDone);
                         }
-                        else if (pContCmds === true && pContCmdsR === true) {
-                            speechText = speechText + ',  anything else? ';                            
-                            areWeDone=false;
-                        }
-                        else if (pContCmds === false && pContCmdsR === false){
+                        else if (pContCmds === false && pContCmdsR == "no"){
                             areWeDone=true;
-                        } 
+                        }
                         output(speechText, context, cardName, areWeDone);
                         } );
                     } );
@@ -165,7 +166,7 @@ function alexaResp(type, context, cardName, areWeDone){
     }
 }
 function alexaContResp(type, text , context, areWeDone){
-    var speechText = text
+    var speechText = text;
     if (type == "Try Again" ) { 
         speechText = speechText + ',  would you like to try again? '; 
         areWeDone=false;
@@ -173,7 +174,17 @@ function alexaContResp(type, text , context, areWeDone){
     }
     else if (type == "PIN") { 
         areWeDone=false;
-        speechText = "Pin number, please"
+        speechText = "Pin number, please";
+        output(speechText, context, "EchoSistant Stop", areWeDone);
+    }
+    else if (type == "Short Answer") { 
+        areWeDone=false;
+        speechText = speechText + ' , anything else';
+        output(speechText, context, "EchoSistant Stop", areWeDone);
+    }
+    else if (type == "Long Answer") { 
+        areWeDone=false;
+        speechText = " , anything else";
         output(speechText, context, "EchoSistant Stop", areWeDone);
     }
 }
