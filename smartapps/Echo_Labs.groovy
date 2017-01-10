@@ -1,8 +1,8 @@
 /* 
  * EchoSistant - The Ultimate Voice and Text Messaging Assistant Using Your Alexa Enabled Device.
  *
- *		12/31/2016		Release 4.1.1	New features: status updates, custom commands, weather alerts, message reminders 
- *										Improvements: streamlined UI and processing
+ *		12/31/2016		Version:4.0 R.4.1.1	New features: status updates, custom commands, weather alerts, message reminders 
+ *											Improvements: streamlined UI and processing
  *
  *  Copyright 2016 Jason Headley & Bobby Dobrescu
  *
@@ -98,6 +98,7 @@ page name: "mIntent"
                 }
                 section ("Media" , hideWhenEmpty: true){
                     input "cSpeaker", "capability.musicPlayer", title: "Allow These Media Player Type Device(s)...", required: false, multiple: true
+                    input "cSynth", "capability.speechSynthesis", title: "Allow These Speech Synthesis Capable Device(s)", multiple: true, required: false
                 } 
                 section ("Batteries", hideWhenEmpty: true ){
                     input "cBattery", "capability.battery", title: "Allow These Device(s) with Batteries...", required: false, multiple: true
@@ -227,16 +228,21 @@ page name: "mIntent"
     page name: "mDefaults"
         def mDefaults(){
                 dynamicPage(name: "mDefaults", title: "", uninstall: false){
-                    section ("General Defaults") {            
+                    section ("General Control") {            
                         input "cLevel", "number", title: "Alexa Adjusts Light Levels by using a scale of 1-10 (default is +/-3)", defaultValue: 3, required: false
                         input "cVolLevel", "number", title: "Alexa Adjusts the Volume Level by using a scale of 1-10 (default is +/-2)", defaultValue: 3, required: false
                         input "cTemperature", "number", title: "Alexa Automatically Adjusts temperature by using a scale of 1-10 (default is +/-1)", defaultValue: 1, required: false
+						input "cFilterReplacement", "number", title: "Alexa Automatically Schedules HVAC Filter Replacement in this number of days (default is 90 days)", defaultValue: 1, required: false                    
                     }
-                     section ("Fan Control") {            
+                    section ("Fan Control") {            
                         input "cHigh", "number", title: "Alexa Adjusts High Level to 99% by default", defaultValue: 99, required: false
                         input "cMedium", "number", title: "Alexa Adjusts Medium Level to 66% by default", defaultValue: 66, required: false
                         input "cLow", "number", title: "Alexa Adjusts Low Level to 33% by default", defaultValue: 33, required: false
                         input "cFanLevel", "number", title: "Alexa Automatically Adjusts Ceiling Fans by using a scale of 1-100 (default is +/-33%)", defaultValue: 33, required: false
+                    }
+                    section ("Activity Defaults") {            
+                        input "cLowBattery", "number", title: "Alexa Provides Low Battery Feddback when the Bettery Level falls below (default is 25%)", defaultValue: 25, required: false
+                        input "cInactiveDev", "number", title: "Alexa Provides Inactive Device Feddback when No Activity was Detected for (default is 24 hours) ", defaultValue: 24, required: false
                      }
                      section ("Security") {  
                         input "cPIN", "password", title: "Set a PIN number to prevent unathorized use of Voice Control", default: false, required: false
@@ -408,26 +414,35 @@ def updated() {
 }
 def initialize() {
         sendLocationEvent(name: "echoSistant", value: "refresh", data: [profiles: getProfileList()] , isStateChange: true, descriptionText: "echoSistant Profile list refresh")
-    	state.lastMessage = null
-		state.lastIntent  = null
-    	state.lastTime  = null
-        state.lambdaReleaseTxt = "Not Set"
-        state.lambdaReleaseDt = "Not Set" 
-		state.lambdatextVersion = "Not Set"
-    	state.weatherAlert = "There are no weather alerts for your area"
-        state.disableConv = false
-        state.pContCmds = true
-        state.pContCmdsR = true
-		state.usePIN_T = false
-		state.usePIN_L = false
-		state.usePIN_D = false
-        state.savedPINdata
         def children = getChildApps()
     	if (debug) log.debug "Refreshing Profiles for CoRE, ${getChildApps()*.label}"
 		if (!state.accessToken) {
         	if (debug) log.error "Access token not defined. Attempting to refresh. Ensure OAuth is enabled in the SmartThings IDE."
                 OAuthToken()
 			}
+		//State Vriables            
+            state.lastMessage = null
+            state.lastIntent  = null
+            state.lastTime  = null
+            state.lambdaReleaseTxt = "Not Set"
+            state.lambdaReleaseDt = "Not Set" 
+            state.lambdatextVersion = "Not Set"
+            state.weatherAlert = "There are no weather alerts for your area"
+        //Continued Resp ALL Modules
+			state.disableConv = false
+        //Continued Resp on Device Control
+        	state.pContCmds = true
+        //Continued Resp on Alexa Feedback
+			state.pContCmdsR = true        
+        //PIN Settings
+            state.usePIN_T = false
+            state.usePIN_L = false
+            state.usePIN_D = false
+            state.savedPINdata = null
+            state.pinTry = null
+        //Other Settings
+			state.changedFilters
+            state.scheduledHandler
 	}
 /************************************************************************************************************
 		CoRE Integration
@@ -444,19 +459,16 @@ def childUninstalled() {
 		Begining Process - Lambda via page b
 ************************************************************************************************************/
 def processBegin(){
-    if (debug) log.debug "^^^^____Initial Commands Received from Lambda___^^^^"
-    
+    if (debug) log.debug "^^^^____Initial Commands Received from Lambda___^^^^"  
     def versionTxt  = params.versionTxt 		
     def versionDate = params.versionDate
     def releaseTxt = params.releaseTxt
         state.lambdaReleaseTxt = releaseTxt
         state.lambdaReleaseDt = versionDate
         state.lambdatextVersion = versionTxt
-        
     def versionSTtxt = textVersion()
-	def pContinue
-    if (state.disableConv) {pContinue = state.disableConv}
-    
+	def pContinue = false
+    if (state.disableConv) {pContinue = state.disableConv}  
     if (debug){
         log.debug "Message received from Lambda with: (ver) = '${versionTxt}', (date) = '${versionDate}', (release) = '${releaseTxt}'"+ 
         ". And sent to Lambda: pContinue = '${pContinue}', versionSTtxt = '${versionSTtxt}'"
@@ -475,117 +487,76 @@ def controlDevices() {
         def ctGroup = params.cGroup       
 		def pintentName = params.intentName
 
-        def outputTxt = "I wish I could help, but EchoSistant couldn't find the device or the command is not supported, TOP"
-        def pTryAgain = false
+        def String outputTxt = (String) null 
+        //this is used to activate Lambda "Try Again" response
 		def pPIN = false
-        def deviceType = " "
-        def command = " "
-		def numText = " "
-        def result = " "
+        def pTryAgain = false
+        def String deviceType = (String) null
+        def String command = (String) null
+		def String numText = (String) null
+        def String result = (String) null
         def delay = false
         def data
-    if (debug) log.debug	"Received Lambda request to control devices with settings:" +
-        					  	" (ctCommand)= ${ctCommand}',(ctNum) = '${ctNum}', (ctPIN) = '${ctPIN}', (ctDevice) = '${ctDevice}', (ctUnit) = '${ctUnit}', (ctGroup) = '${ctGroup}', (pintentName) = '${pintentName}'"   
-        
-    if (ctNum == "undefined" || ctNum =="?") {ctNum = 0 as int } 
+    	if (debug) log.debug "Received Lambda request to control devices with settings:" +
+        					 " (ctCommand)= ${ctCommand}',(ctNum) = '${ctNum}', (ctPIN) = '${ctPIN}', "+
+                             "(ctDevice) = '${ctDevice}', (ctUnit) = '${ctUnit}', (ctGroup) = '${ctGroup}', (pintentName) = '${pintentName}'"
 
-    if (pintentName == "main") {
-        if (ctCommand == "repeat") {
-            if (debug) log.debug "Processing repeat last message delivered to any of the Profiles"
-                outputTxt = getLastMessageMain()
-                if (debug) log.debug "Received message: '${outputTxt}' ; sending to Lambda with pContCmds = '${state.pContCmds}' and  pContCmdsR = '${state.pContCmdsR}'"
-                return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]
-        }
+/*  FOR SCHEDULES  
+    def rowDate = new Date(now())
+    def cDay = rowDate.date
+    def cHour= rowDate.hours
+	def cMin = rowDate.minutes   
+*/  
+  	if (pintentName == "main") {	
+        if (ctNum == "undefined" || ctNum =="?") {ctNum = 0 } 
+        if (ctCommand =="?") {ctCommand = "undefined"} 
+
+			ctNum = ctNum as int
+        if (ctUnit =="?" || ctUnit == "undefined") {
+			def String unit =  (String) "undefined"
+        }    
         else {
-            if (ctCommand == "cancel") {
-                if (debug) log.debug "Canceling timmer!"
-                    unschedule()
-                    outputTxt = "Ok, canceling timer"
-                if (debug) log.debug "Cancel message received; sending '${outputTxt}' to Lambda with pContCmds = '${state.pContCmds}' and  pContCmdsR = '${state.pContCmdsR}'" 
-                return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]
-            }
-            if (ctCommand == "stop" && ctUnit == "conversation") {
-                if (debug) log.debug "Stopping Continuation Responses!"
-                    state.disableConv = true
-                    state.pContCmds = false
-                    state.pContCmdsR = false
-                    outputTxt = "Really? So, you don't like me to talk back to you. That's ok, if you change your mind, just say, start conversation"
-                return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]
-            }
-            if (ctCommand == "start" && ctUnit == "conversation") {
-                if (debug) log.debug "Starting Continuation Responses!"
-                    state.disableConv = true
-                    state.pContCmds = true
-                    state.pContCmdsR = true
-                    outputTxt = "Great! I will talk back to you every time you give me a new command. If you get tired of me promting for more commands, just say stop the conversation"
-                	return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]
-            }
-             if (ctGroup != "undefined" && ctUnit != "undefined") {    
-                if (ctCommand == "enable" || ctCommand == "activate") {
-                    if (debug) log.debug "Activating PIN"
-                    if (ctGroup == "thermostats"  && ctUnit == "pin number") {state.usePIN_T = true}
-                    else if (ctGroup == "locks"  && ctUnit == "pin number") {state.usePIN_L = true}
-                    else if (ctGroup == "doors"  && ctUnit == "pin number") {state.usePIN_D = true}
-                    else if (ctUnit == "pin number"){
-                    	if (debug) log.debug "usePIN_T = '${state.usePIN_T}', usePIN_L = '${state.usePIN_L}', usePIN_D = '${state.usePIN_D}' "
-                    	pPIN = true
-                    	outputTxt = "Ok, the pin has been activated for " + ctGroup + ".  To disable, just say disable the PIN for " + ctGroup
-                    	return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]          
-                	}
-                }
-                if (ctCommand == "disable" || ctCommand == "deactivate") {
-                    if (ctGroup == "thermostats"  && ctUnit == "pin number") {state.usePIN_T = false}
-                    else if (ctGroup == "locks"  && ctUnit == "pin number") {state.usePIN_L = false}
-                    else if (ctGroup == "doors"  && ctUnit == "pin number") {state.usePIN_D = false}
-                    else if (ctUnit == "pin"){
-                    	if (debug) log.debug "usePIN_T = '${state.usePIN_T}', usePIN_L = '${state.usePIN_L}', usePIN_D = '${state.usePIN_D}'"
-                    	outputTxt = "Ok, I will no longer ask you for the pin number when controlling the " + ctGroup + ".  If you want to enable, just say enable the PIN for " + ctGroup
-						return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]
-                    }
-                }
-            }
-            else {
-                if (ctNum > 0 && ctDevice != "undefined" && ctCommand == "undefined") {
-            		ctCommand = "set"
-                }
-                if (ctPIN == cPIN) {
-					data = state.savedPINdata
-                	if (debug) log.debug "PIN Matched! Preparing data: '${data}' "
-                	outputTxt = controlHandler(data)
-					return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]
-                }
-                if (ctPIN != cPIN && ctPIN != "undefined" ) {
-                	if (debug) log.debug "PIN NOT Matched! PIN = '${cPIN}', ctPIN= '${ctPIN}', ctCommand ='${ctCommand}' "
-                }
-                if (ctCommand != "undefined") {
-                	if (debug) log.debug "Fetching command and device type"           
-                    def  getCMD = getCommand(ctCommand, ctUnit) 
-                    deviceType = getCMD.deviceType
-                    command = getCMD.command
-                    if (debug) log.debug "Received command data: deviceType= '${deviceType}', command= '${command}', STARTING MAIN PROCESS"
-                }
-            }
+        	if (ctNum>0){
+            	def getTxt = getUnitText(ctUnit, ctNum)     
+        		numText = getTxt.text
+        		ctUnit = getTxt.unit
+        	}
         }
-    // Units/Text Conversions	
-        if (ctUnit =="?") {ctUnit = "undefined"}
-        if (ctUnit == "minute" || ctUnit == "minutes" || ctUnit.contains ("minutes") || ctUnit.contains ("minute")) {
-            ctUnit = "minutes"
-            numText = ctNum == 1 ? ctNum + " minute" : ctNum + " minutes" 
-        }      
-        else if (ctUnit == "degrees") {
-        	int ctN = ctNum
-            numText = ctN + " degrees"
+        if (ctNum > 0 && ctDevice != "undefined" && ctCommand == "undefined") {
+            ctCommand = "set"
         }
-        else if (ctUnit == "percent") {
-            numText = ctNum + " percent"    
+        if (state.pinTry != null) {
+        	outputTxt = pinHandler(ctPIN, ctCommand)
+        	return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]
         }
-        else if (ctUnit != "degrees" || ctUnit != "minutes") {numText = "by " + cLevel*10 + " percent"}       
 
-        if (deviceType == "temp") {def numTxtTMP = cTemperature == 1 ? cTemperature + " degree" : cTemperature + " degrees" }
-    // Units/Text Conversions Ends 
-        
+        if (ctCommand != "undefined") {
+        	outputTxt = getCustomCmd(ctCommand, ctUnit, ctGroup)  
+        	if (outputTxt!= null ) {
+            		if (ctUnit == "pin number") {
+						if (ctGroup == "thermostats" || ctGroup == "locks" || ctGroup == "doors") {
+                        	pTryAgain = false
+                        	state.pContCmds = false
+                        	state.pContCmdsR = false
+                        }
+                        else {
+                            pTryAgain = true
+                        	state.pContCmds = false
+                        	state.pContCmdsR = false
+                        }
+            		}     
+            return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]
+			}
+            else {
+        		if (debug) log.debug "Fetching command and device type"           
+            	def  getCMD = getCommand(ctCommand, ctUnit) 
+            	deviceType = getCMD.deviceType
+            	command = getCMD.command
+            	if (debug) log.debug "Received command data: deviceType= '${deviceType}', command= '${command}' _____>>>>> STARTING MAIN PROCESS <<<<<< ______"
+        	}
+		}
         if (deviceType == "light" || deviceType == "general" ) {
-            if (cSwitch) {
+            if (settings.cSwitch.size() > 0 && state.pinTry == null) {
                 if (debug) log.debug "Searching for a switch named '${ctDevice}'"
                 def deviceMatch = cSwitch.find {s -> s.label.toLowerCase() == ctDevice.toLowerCase()}             
                 if (deviceMatch) {
@@ -613,30 +584,28 @@ def controlDevices() {
         			pTryAgain = false
         		}
         		else pTryAgain = true
-                outputTxt = "I wish I could help, but EchoSistant couldn't find the device or the command is not supported yet, "
+                outputTxt = "I wish I could help, but EchoSistant couldn't find the device '${ctDevice}' or the command ${ctCommand}' is not supported "
             }
         }
         else if (deviceType == "temp") {
-                if (cTstat) {           
+                if (settings.cTstat.size() > 0) {           
                     if (debug) log.debug "Searching for a thermostat named '${ctDevice}'"
                     def deviceMatch = cTstat.find {t -> t.label.toLowerCase() == ctDevice.toLowerCase()}
                     if (deviceMatch) {
  						device = deviceMatch 
-                        if (debug) log.debug "Found a device: '${deviceMatch}'"
-                                 	
+                        if (debug) log.debug "Found a device: '${deviceMatch}'"        	
                         if(state.usePIN_T == true) {
             				if (debug) log.debug "PIN protected device type - '${deviceType}'"
-                			delay = true
-                            data = [type: "cTstat", command: command, device: device, unit: ctUnit, num: ctNum]
-                			//state.
-                            state.savedPINdata = evt.jsonData && evt.jsonData?.data ? evt.jsonData.data : []
-                            def savedPINdata = data
+                			delay = false
+                            data = ["type": "cTstat", "command": command , "device": ctDevice, "unit": ctUnit, "num": ctNum, delay: delay]
+                            state.savedPINdata = data
                 			outputTxt = "Pin number please"
                 			pPIN = true
+                            state.pinTry = 0
+                            if (debug) log.debug "PIN response pending - '${state.pinTry}'"
                 			return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]
             			}
-                        else {
-                       
+                        else {                       
                             if (ctNum && ctUnit == "minutes") {
                                 delay = true
                                 data = [type: "cTstat", command: command, device: device, unit: ctUnit, num: ctNum, delay: delay]
@@ -656,33 +625,46 @@ def controlDevices() {
                 }
          }
         else if (deviceType == "lock") {
-            if (cLock) {   
+            if (settings.cLock.size()>0) {   
                 if (debug) log.debug "Searching for a lock named '${ctDevice}'"
                 def deviceMatch = cLock.find {l -> l.label.toLowerCase() == ctDevice.toLowerCase()}             
                 if (deviceMatch) {
                     if (debug) log.debug "Found a device: '${deviceMatch}'"
                     device = deviceMatch
-                    if (ctNum > 0 && ctUnit == "minutes") {
-                        device = device.label
-                        delay = true
-                        data = [type: "cLock", command: command, device: device, unit: ctUnit, num: ctNum, delay: delay]
-                        runIn(ctNum*60, controlHandler, [data: data])
-                        if (command == "lock") {outputTxt = "Ok, locking the " + ctDevice + " in " + numText}
-                        else if (command == "unlock") {outputTxt = "Ok, unlocking the " + ctDevice + " in " + numText}
-						return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]
-                    }
-                    else {
+					if(state.usePIN_L == true) {
+            			if (debug) log.debug "PIN protected device type - '${deviceType}'"               		
                         delay = false
-                        data = [type: "cLock", command: command, device: device, unit: ctUnit, num: ctNum, delay: delay]
-                        outputTxt = controlHandler(data)
-						return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]
+	                    data = [type: "cLock", "command": command , "device": ctDevice, "unit": ctUnit, "num": ctNum, delay: delay]
+                        state.savedPINdata = data
+                		outputTxt = "Pin number please"
+                		pPIN = true
+                        state.pinTry = 0
+                        if (debug) log.debug "PIN response pending - '${state.pinTry}'"
+                		return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]
+            		}
+                    else {
+                        if (ctNum > 0 && ctUnit == "minutes") {
+                            device = device.label
+                            delay = true
+                            data = [type: "cLock", command: command, device: device, unit: ctUnit, num: ctNum, delay: delay]
+                            runIn(ctNum*60, controlHandler, [data: data])
+                            if (command == "lock") {outputTxt = "Ok, locking the " + ctDevice + " in " + numText}
+                            else if (command == "unlock") {outputTxt = "Ok, unlocking the " + ctDevice + " in " + numText}
+                            return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]
+                        }
+                        else {
+                            delay = false
+                            data = [type: "cLock", command: command, device: device, unit: ctUnit, num: ctNum, delay: delay]
+                            outputTxt = controlHandler(data)
+                            return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]
+                        }
                     }
                 }
             }
         }
         else if (deviceType == "volume") {      
             if (debug) log.debug "Searching for a volume control device named '${ctDevice}'"     
-                if (cSpeaker) {
+                if (settings.cSpeaker.size()>0) {
                     def deviceMatch = cSpeaker.find {s -> s.label.toLowerCase() == ctDevice.toLowerCase()}
                     if (deviceMatch) {
                         if (debug) log.debug "Found a device: '${deviceMatch}'"
@@ -695,7 +677,7 @@ def controlDevices() {
                 }  
         }
         else if (deviceType == "fan") {
-            if (cFan) {     
+            if (settings.cFan.size()>0) {     
                 if (debug) log.debug "Searching for a fan named '${ctDevice}'"
                 def deviceMatch = cFan.find {f -> f.label.toLowerCase() == ctDevice.toLowerCase()}
                 if (deviceMatch) {
@@ -719,12 +701,24 @@ def controlDevices() {
             }
         }
         else if (deviceType == "door") {
-            if (cDoor) {          
+            if (settings.cDoor.size()>0) {          
                 if (debug) log.debug "Searching for a door named '${ctDevice}'"
                 def deviceMatch = cDoor.find {d -> d.label.toLowerCase() == ctDevice.toLowerCase()}
                 if (deviceMatch) {
                     if (debug) log.debug "Found a device: '${deviceMatch}'"
                         device = deviceMatch
+					if(state.usePIN_D == true) {
+            			if (debug) log.debug "PIN protected device type - '${deviceType}'"
+                		delay = false
+	                    data = [type: "cDoor", "command": command , "device": ctDevice, "unit": ctUnit, "num": ctNum, delay: delay]
+                        state.savedPINdata = data
+                		outputTxt = "Pin number please"
+                		pPIN = true
+                        state.pinTry = 0
+                        if (debug) log.debug "PIN response pending - '${state.pinTry}'"
+                		return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]
+            		}
+                    else {                 
                         if (ctNum && ctUnit == "minutes") {
                             delay = true
                             data = [type: "cDoor", command: command, device: device, unit: ctUnit, num: ctNum, delay: delay]
@@ -739,10 +733,11 @@ def controlDevices() {
                             outputTxt = controlHandler(data)
 							return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]
                         }
+                	}
                 }
                 else {
                     //this is needed for Garage Doors that are set up as relays
-                    if (cSwitch) {
+                    if (settings.cSwitch.size()>0) {
                     if (debug) log.debug "Searching for a relay named '${ctDevice}'"
                         deviceMatch = cSwitch.find {s -> s.label.toLowerCase() == ctDevice.toLowerCase()}             
                         if (deviceMatch) {
@@ -768,7 +763,7 @@ def controlDevices() {
                                 }
                        }
                     }
-                    else if (cVents) {
+                    else if (settings.cVents.size()>0) {
                         if (debug) log.debug "Searching for a vent named '${ctDevice}'"
                         deviceMatch = cVents.find {s -> s.label.toLowerCase() == ctDevice.toLowerCase()}             
                         if (deviceMatch) {
@@ -798,34 +793,136 @@ def controlDevices() {
                 }
             }
         }
-        if (debug) log.debug "Sending response to Alexa with settings BOTTOM: pContCmds = ${state.pContCmds}, pContCmdsR = ${state.pContCmdsR}, message:'${outputTxt}'"               
-		/*
+        if (debug) log.debug "DeviceHandler data (bottom): pContCmds = ${state.pContCmds}, pContCmdsR = ${state.pContCmdsR}, message:'${outputTxt}',device: '${ctDevice}' , command: ${ctCommand}' "               
+        outputTxt = "I wish I could help, but EchoSistant couldn't find the device named '${ctDevice}' or the command ${ctCommand}', is not supported."
+
         if (state.pContCmds == true || state.pContCmds == true) {
         	pTryAgain = false
         }
         else pTryAgain = true
-        	return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]
-        */
-        
-        return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]
+       
+       return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]
    }
 }
-
-def getPIN(data){
-    def deviceType = data.type
-    def deviceCommand = data.command
-   	def deviceD = data.device
-    def unitU = data.unit
-    def numN = data.num
-    def delayD = data.delay
-	def result = " "
-        if (debug) log.debug 	"Received PIN Protected data with settings: " +
-        					" (deviceType)= ${deviceType}',(deviceCommand) = '${deviceCommand}', (deviceD) = '${deviceD}', " +
-                            "(unitU) = '${unitU}', (numN) = '${numN}', (delayD) = '${delayD}'" 
-                            
+/************************************************************************************************************
+	UNIT CONVERSIONS
+************************************************************************************************************/ 
+private getUnitText (unit, num) {     
+    def String text = (String) null
+    def String nUnit = (String) null
+    if (unit == "minute" || unit == "minutes" || unit.contains ("minutes") || unit.contains ("minute")) {
+    	nUnit = "minutes"
+        text = num == 1 ? num + " minute" : num + " minutes" 
+        return ["text": text, "unit": nUnit]
+    } 
+	if (unit == "degrees"  || unit.contains ("degrees")) {
+		nUnit = "degrees"
+        int tNum = num
+        text = tNum + " degrees"
+        return ["text":text, "unit":nUnit]
+    }             
+	if (unit == "percent" || unit.contains ("percent")) {
+		nUnit = "percent"
+		text = num + " percent" 
+        return ["text":text, "unit":nUnit]
+    } 
+}    
+/************************************************************************************************************
+	CUSTOM COMMANDS
+************************************************************************************************************/ 
+private getCustomCmd(command, unit, group) {
+    def result
+    //def command = params.cmmand
+	if (command == "repeat") {
+		result = getLastMessageMain()
+		return result
+    }
+    if (command == "cancel" || command == "stop" || command == "disable" || command == "deactivate" || command == "unschedule") {
+    	if (unit == "reminder" || unit == "reminders" || unit == "timer" || unit == "timers" || unit.contains ("reminder") || unit.contains ("timer") ) {
+        	if (state.scheduledHandler == "reminder") {
+            	unschedule(scheduleReminder)
+                result = "Ok, canceling reminder"
+				return result
+            }
+            else {
+               	unschedule(controlHandler)
+               	result = "Ok, canceling timer"
+				return result
+            }
+		}
+		if (unit == "conversation" || unit.contains ("conversation")) {
+			state.disableConv = true
+			state.pContCmds = false
+            state.pContCmdsR = false
+            result = "Ok, disabling conversational features. To activate just say, start the conversation"
+			return result
+        }
+		if (unit == "pin number") {
+			if (group == "thermostats") {state.usePIN_T = false}
+			if (group == "locks") {state.usePIN_L = false}
+			if (group == "doors") {state.usePIN_D = false}
+            //def pPIN = false
+            result = "Ok, pin number for " + group + " has been disabled.  To activate it again, just say enable the PIN number for " + group
+			return result
+        }
+    }
+	if (command == "start" || command == "enable" || command == "activate" || command == "schedule") {
+		if (unit == "reminder" || unit == "reminders" || unit == "timer" || unit == "timers" || unit.contains ("reminder") || unit.contains ("timer") ) {
+        	state.scheduledHandler = "reminder"
+            result = "Ok, reminder scheduled"
+           	return result
+    	}
+		if (unit == "conversation" || unit.contains ("conversation")) {
+			state.disableConv = true
+			state.pContCmds = true
+			state.pContCmdsR = true
+            result = "Ok, activating conversational features. To disable just say, stop the conversation"
+            return result
+        }
+		if (unit == "pin number") {
+			if (group == "thermostats" || group == "locks" || group == "doors") {
+            	if (group == "thermostats") {state.usePIN_T = true}
+            	if (group == "locks") {state.usePIN_L = true}
+            	if (group == "doors") {state.usePIN_D = true}
+            	if (debug) log.debug "Group:'${group}' PIN: T- '${state.usePIN_T}', L-'${state.usePIN_L}', D-'${state.usePIN_D}' "
+            	result = "Ok, the pin has been activated for " + group + ".  To disable, just say disable the PIN for " + group
+            	return result
+            }
+            else {
+            	result = "Sorry, the pin number cannot be enabled for this group "
+            	return result
+            }
+        }
+	}
+} 
+/************************************************************************************************************
+	PIN HANDLER
+************************************************************************************************************/ 
+private pinHandler(pin, command) {
+	def result
+	if (pin == cPIN || command == cPIN) {
+		def data = state.savedPINdata
+		if (debug) log.debug "PIN Matched! Preparing data: '${data}' "
+		result = controlHandler(data)
+        return result
+	}
+	else {
+		state.pinTry = state.pinTry + 1
+			if (state.pinTry < 4){
+				result = "I'm sorry, that is incorrect. Please try again"
+				if (debug) log.debug "PIN NOT Matched! PIN = '${cPIN}', ctPIN= '${ctPIN}', ctCommand ='${command}', try# ='${state.pinTry}'"
+				state.pContCmds = false
+				state.pContCmdsR = false
+                return result
+			}
+			else { 
+				state.pinTry = null
+                state.savedPINdata = null
+				result = "I'm sorry, that is incorrect. Please check your pin number and try again later"
+                return result
+			}
+	} 
 }
-    
-
 /************************************************************************************************************
    DEVICE CONTROL HANDLER
 ************************************************************************************************************/      
@@ -860,7 +957,7 @@ def controlHandler(data) {
         else if (deviceCommand == "offD") {
         		deviceD.off()
         }
-        else if (deviceCommand == "increase" || deviceCommand == "decrease" || deviceCommand == "setLevel") {
+        else if (deviceCommand == "increase" || deviceCommand == "decrease" || deviceCommand == "setLevel" || deviceCommand == "set") {
  			if (delayD == true) {  
                 deviceD = cSwitch.find {s -> s.label == deviceD}   
             }
@@ -908,14 +1005,15 @@ def controlHandler(data) {
     	}
 	}
 	else if (deviceType == "cTstat") {
- 		if (delayD == true) {  
-                deviceD = cTstat.find {t -> t.label == deviceD}   
-        }    
+ 		if (delayD == true || state.pinTry != null) {  
+                deviceD = cTstat.find {t -> t.label.toLowerCase() == deviceD.toLowerCase()} 
+        }
+        state.pinTry = null
     	def currentMode = deviceD.latestValue("thermostatMode")
     	def currentHSP = deviceD.latestValue("heatingSetpoint") 
         def currentCSP = deviceD.latestValue("coolingSetpoint") 
     	def currentTMP = deviceD.latestValue("temperature") 
-    	def newSetPoint = currentTMP           
+    	def newSetPoint = currentTMP
 		numN = numN < 60 ? 60 : numN >85 ? 85 : numN
         if (unitU == "degrees") {
     		newSetPoint = numN
@@ -930,7 +1028,11 @@ def controlHandler(data) {
 				deviceD?.setHeatingSetpoint(newSetPoint)
 				if (debug) log.debug "Adjusting Heating Set Point to '${newSetPoint}' because requested temperature is greater than current temperature of '${currentTMP}'"
                 result = "Ok, setting " + deviceD + " heating to " + cNewSetPoint 
-            	if (delayD == false) { return result }
+                	if (debug) log.debug "delay = '${newSetPoint}'"
+                    if (delayD == false) { 
+                    	state.pinTry = null
+                    	return result 
+                    }
             }
  			else if (newSetPoint < currentTMP) {
 				if (currentMode == "heat" || currentMode == "off") {
@@ -940,10 +1042,14 @@ def controlHandler(data) {
 				deviceTMatch?.setCoolingSetpoint(newSetPoint)                 
 				if (debug) log.debug "Adjusting Cooling Set Point to '${newSetPoint}' because requested temperature is less than current temperature of '${currentTMP}'"
                 result = "Ok, setting " + deviceD + " cooling to " + cNewSetPoint + " degrees "
-            		if (delayD == false) { return result }                        
+                    if (delayD == false) { 
+                    	return result 
+                    }                       
             }
             else result = "Your room temperature is already " + cNewSetPoint + " degrees "
-            		if (delayD == false) { return result }                        
+                    if (delayD == false) { 
+                    	return result 
+                    }                       
             
 		}
 		if (deviceCommand == "increase") {
@@ -952,6 +1058,7 @@ def controlHandler(data) {
             int cNewSetPoint = newSetPoint
 			if (currentMode == "cool" || currentMode == "off") {
 				deviceD?."heat"()
+                deviceD?.setHeatingSetpoint(newSetPoint)
 				if (debug) log.debug "Turning heat on because requested command asked for heat to be set to '${newSetPoint}'" 
 			}
 			else {
@@ -960,12 +1067,16 @@ def controlHandler(data) {
 					thermostat?.poll()
 					if (debug) log.debug "Adjusting Heating Set Point to '${newSetPoint}'"
                     result = "Ok, setting " + deviceD + " heating to " + cNewSetPoint + " degrees "
-            		if (delayD == false) { return result }     
+                        if (delayD == false) { 
+                            return result 
+                        }    
                 }
                 else {
                    	if (debug) log.debug "Not taking action because heating is already set to '${currentHSP}', which is higher than '${newSetPoint}'" 
                     result = "Your heating set point is already higher than  " + cNewSetPoint + " degrees "
-            		if (delayD == false) { return result }     
+                    if (delayD == false) { 
+                    	return result 
+                    }    
                	}  
             }
        	}
@@ -975,6 +1086,7 @@ def controlHandler(data) {
             int cNewSetPoint = newSetPoint
             if (currentMode == "heat" || currentMode == "off") {
         		deviceD?."cool"()
+                deviceD?.setCoolingSetpoint(newSetPoint)
         		if (debug) log.debug "Turning AC on because requested command asked for cooling to be set to '${newSetPoint}'"     
         	}   	
         	else {
@@ -983,31 +1095,31 @@ def controlHandler(data) {
         			thermostat?.poll()
         			if (debug) log.debug "Adjusting Cooling Set Point to '${newSetPoint}'"
         			result = "Ok, setting " + deviceD + " cooling to " + cNewSetPoint + " degrees "
-            		if (delayD == false) { return result } 
+                    if (delayD == false) { 
+                    	return result 
+                    }
                 }
         		else {
         			if (debug) log.debug "Not taking action because cooling is already set to '${currentCSP}', which is lower than '${newSetPoint}'"  
                     result = "Your cooling set point is already lower than  " + cNewSetPoint + " degrees "
-            		if (delayD == false) { return result }
+                    if (delayD == false) { 
+                    	return result 
+                    }
                 } 
         	}  
         }
     }
 	else if (deviceType == "cLock") {
-   		if (deviceCommand == "lock" || deviceCommand == "unlock") {
-            if (delayD == false) {
-                deviceD."${deviceCommand}"()
-            	if (deviceCommand == "lock") result = "Ok, locking " + deviceD
-                else if (deviceCommand == "unlock") result = "Ok, unlocking the  " + deviceD
-                return result
-            }
-            else {
-            	deviceD = cLock.find {l -> l.label == deviceD}   
-            	deviceD."${deviceCommand}"()
-            }  
-        }     
-    }
-	else if (deviceType == "cVolume") {
+    	if (delayD == true || state.pinTry != null) {  
+        	deviceD = cLock.find {l -> l.label.toLowerCase() == deviceD.toLowerCase()} 
+        }
+        state.pinTry = null
+   		deviceD."${deviceCommand}"()
+        if (deviceCommand == "lock") result = "Ok, locking " + deviceD
+        else if (deviceCommand == "unlock") result = "Ok, unlocking the  " + deviceD                    
+        if (delayD == false) {return result}  
+	}
+	else if (deviceType == "cVolume" ) {
    		if (deviceCommand == "increase" || deviceCommand == "decrease" || deviceCommand == "setLevel") {
             def currLevel = deviceD.latestValue("level")
             def currState = deviceD.latestValue("switch")
@@ -1058,18 +1170,16 @@ def controlHandler(data) {
             return result
        }
     }
-	else if (deviceType == "cDoor") {
-            if (delayD == false) {
-                deviceD."${deviceCommand}"()
-            	if (deviceCommand == "open") result = "Ok, opening " + deviceD
-                else if (deviceCommand == "close") result = "Ok, closing " + deviceD
-                return result
-            }
-            else {
-            	deviceD = cDoor.find {v -> v.label == deviceD}   
-            	deviceD."${deviceCommand}"()
-            }  
-    }               
+    else if (deviceType == "cDoor") {
+    	if (delayD == true || state.pinTry != null) {  
+            	deviceD = cDoor.find {d -> d.label.toLowerCase() == deviceD.toLowerCase()}   
+        }
+        state.pinTry = null
+   		deviceD."${deviceCommand}"()
+        if (deviceCommand == "lock") result = "Ok, locking " + deviceD
+        else if (deviceCommand == "unlock") result = "Ok, unlocking the  " + deviceD                    
+        if (delayD == false) {return result}  
+	}
     else if (deviceType == "cFan") {
 		if (cHigh == null) cHigh = 99
 		if (cMedium == null) cMedium = 66
@@ -1111,6 +1221,20 @@ def getLastMessageMain() {
     return  outputTxt 
   	if (debug) log.debug "Sending last message to Lambda ${outputTxt} "
 }
+/***********************************************************************************************************************
+    SCHEDULE FILTER REPLACEMENT HANDLER
+***********************************************************************************************************************/
+//0 35 1 8 1/1 ? *     (now was - Sunday, January 8, 2017 1:35 AM)
+//0 MIN HOUR DAY 1/1 ? *
+private filtersDue (){
+
+def dueFilters = "Time to change your filter"
+
+//queue message: "
+//text message
+//tts message
+}
+
 /***********************************************************************************************************************
  		SKILL DETAILS
  ***********************************************************************************************************************/
@@ -1197,9 +1321,9 @@ private getCommand(command, unit) {
             }
             deviceType = "temp"
         }
-        else if (unit.contains("degrees") ||  unit.contains("heat") ||  unit.contains("AC")) {
+        else if (unit=="degrees" || unit.contains("degrees") ||  unit.contains("heat") ||  unit.contains("AC")) {
            deviceType = "temp"    
-       }       
+        }       
     //case "Dimmer Commands":
         if (command == "darker" || command == "too bright" || command == "dim" || command == "dimmer") {
             command = "decrease" 
@@ -1217,11 +1341,11 @@ private getCommand(command, unit) {
         if  (command == "mute" || command == "quiet" || command == "unmute" ) {
             deviceType = "volume" 
         }
-        if  (command == "too loud") {
+        else if  (command == "too loud" || command == "down" ) {
             command = "decrease"
             deviceType = "volume" 
         }
-        if  (command == "not loud enough" || command == "too quiet") {
+        else if  (command == "not loud enough" || command == "too quiet" || command == "up") {
             command = "increase"
             deviceType = "volume"
         }
@@ -1230,18 +1354,18 @@ private getCommand(command, unit) {
             command = "decrease"
             deviceType = "fan" 
         }
-        if  (command == "speed up" || command == "too slow") {
+        else if  (command == "speed up" || command == "too slow") {
             command = "increase"
             deviceType = "fan" 
         }
-		if (command == "high" || command == "medium"|| command == "low") {
+		else if (command == "high" || command == "medium"|| command == "low") {
 			deviceType = "fan"                  
 		}
     //case "Other Commands":           
         if (command == "lock" || command == "unlock") {
 			deviceType = "lock"                  
 		}
-        if (command == "open" || command == "close") {
+        else if (command == "open" || command == "close") {
 			deviceType = "door"                  
 		}
     }
@@ -1261,7 +1385,7 @@ private def textVersion() {
    Pre-set SOUNDS
 ************************************************************************************************************/
 private loadText() {
-		switch ( actionType) {
+		switch (actionType) {
 		case "Bell 1":
 			state.sound = [uri: "http://s3.amazonaws.com/smartapp-media/sonos/bell1.mp3", duration: "10"]
 			break;
@@ -1285,3 +1409,44 @@ private loadText() {
 			break;
         }
 }
+
+
+def testSwitch(val) {
+    def result
+    switch (val) {
+        case ~/^Switch.*Groovy$/:
+            result = 'Pattern match'
+            break
+        case BigInteger:
+            result = 'Class isInstance'
+            break
+        case 60..90:
+            result = 'Range contains'
+            break
+        case [21, 'test', 9.12]:
+            result = 'List contains'
+            break
+        case 1005 : //42.056:
+            result = 'Object equals'
+            break
+        case { it instanceof Integer && it < 50 }:
+            result = 'Closure boolean'
+            break
+        default:
+            
+            result = 'Default'
+            break
+    }   
+    log.debug "result = ${result}"
+    result
+}
+/*
+ 'Pattern match' == testSwitch("Switch to Groovy")
+ 'Class isInstance' == testSwitch(42G)
+ 'Range contains' == testSwitch(70)
+ 'List contains' == testSwitch('test')
+ 'Object equals' == testSwitch(42.056)
+ 'Closure boolean' == testSwitch(20)
+ 'Default' == testSwitch('default')
+ 
+ */
