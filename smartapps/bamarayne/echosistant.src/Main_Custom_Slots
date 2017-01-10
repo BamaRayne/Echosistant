@@ -52,6 +52,9 @@ high
 low
 medium
 activate
+deactivate
+replace
+replaced
 
 LIST OF OPERANDS
 temperature
@@ -59,6 +62,8 @@ lights
 mode
 feed
 fed
+text
+audio
 
 LIST_OF_UNITS
 
@@ -75,6 +80,10 @@ cooling
 heating
 filters
 timer
+reminder
+flash
+audio
+text
 
 
 LIST OF GROUPS
