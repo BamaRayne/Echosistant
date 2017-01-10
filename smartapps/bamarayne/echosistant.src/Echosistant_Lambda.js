@@ -1,4 +1,4 @@
-/**
+
  *  EchoSistant - Lambda Code
  *
  *  Version 4.0.1 - 11/29/2016 Copyright © 2016 Jason Headley
@@ -25,8 +25,8 @@
 exports.handler = function( event, context ) {
     var https = require( 'https' );
     // Paste app code here between the breaks------------------------------------------------
-    var STappID = '765bbc1d-b898-4547-88b0-7bd442b00c75';
-    var STtoken = '0e1feb04-76f1-47f8-83d2-2e77d0543418';
+    var STappID = '2e23954f-6bc8-4a44-b0d5-7b0a24582af1';
+    var STtoken = '02c45ffe-9a66-43a6-ba67-8c6940e06117';
     var url='https://graph.api.smartthings.com:443/api/smartapps/installations/' + STappID + '/' ;
         //---------------------------------------------------------------------------------------
         var cardName ="";
@@ -114,18 +114,23 @@ exports.handler = function( event, context ) {
                         var resJSON = JSON.parse(data);
                         var pContCmds = resJSON.pContCmds;
                         var pContCmdsR = resJSON.pContCmdsR;
+                        var pTryAgain = resJSON.pTryAgain;
+                        var pPIN = resJSON.pPIN;
                         var speechText = resJSON.outputTxt;
-                        if (pContCmds === true && pContCmdsR === false ) { 
+                        if (pTryAgain === true)
+                            alexaContResp ("Try Again", speechText, context, areWeDone);
+                        else if (pPIN === true)
+                            areWeDone=false;
+                            //alexaContResp ("PIN", speechText, context, areWeDone);
+                        else if (pContCmds === true && pContCmdsR === false ) { 
                             areWeDone=false;
                             speechText = speechText + ', send another message to ' + intentName; 
                         }
                         else if (pContCmds === false && pContCmdsR === true) {
-                            areWeDone=false;
                             speechText = speechText + ',  would you like anything else? ';                            
                             areWeDone=false;
                         }
                         else if (pContCmds === true && pContCmdsR === true) {
-                            areWeDone=false;
                             speechText = speechText + ',  anything else? ';                            
                             areWeDone=false;
                         }
@@ -159,6 +164,19 @@ function alexaResp(type, context, cardName, areWeDone){
         output(" Cancelling. Goodbye ", context, "EchoSistant Cancel", areWeDone);
     }
 }
+function alexaContResp(type, text , context, areWeDone){
+    var speechText = text
+    if (type == "Try Again" ) { 
+        speechText = speechText + ',  would you like to try again? '; 
+        areWeDone=false;
+        output(speechText, context, "EchoSistant Try Again", areWeDone);
+    }
+    else if (type == "PIN") { 
+        areWeDone=false;
+        speechText = "Pin number, please"
+        output(speechText, context, "EchoSistant Stop", areWeDone);
+    }
+}
 function output( text, context, cardName, areWeDone) {
         var response = {
              outputSpeech: {
@@ -173,5 +191,4 @@ function output( text, context, cardName, areWeDone) {
         shouldEndSession: areWeDone
         };
         context.succeed( { response: response } );
-  }
   }
