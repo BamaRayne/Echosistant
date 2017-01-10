@@ -230,9 +230,9 @@ page name: "mIntent"
                 dynamicPage(name: "mDefaults", title: "", uninstall: false){
                     section ("General Control") {            
                         input "cLevel", "number", title: "Alexa Adjusts Light Levels by using a scale of 1-10 (default is +/-3)", defaultValue: 3, required: false
-                        input "cVolLevel", "number", title: "Alexa Adjusts the Volume Level by using a scale of 1-10 (default is +/-2)", defaultValue: 3, required: false
+                        input "cVolLevel", "number", title: "Alexa Adjusts the Volume Level by using a scale of 1-10 (default is +/-2)", defaultValue: 2, required: false
                         input "cTemperature", "number", title: "Alexa Automatically Adjusts temperature by using a scale of 1-10 (default is +/-1)", defaultValue: 1, required: false
-						input "cFilterReplacement", "number", title: "Alexa Automatically Schedules HVAC Filter Replacement in this number of days (default is 90 days)", defaultValue: 1, required: false                    
+						input "cFilterReplacement", "number", title: "Alexa Automatically Schedules HVAC Filter Replacement in this number of days (default is 90 days)", defaultValue: 90, required: false                    
                     }
                     section ("Fan Control") {            
                         input "cHigh", "number", title: "Alexa Adjusts High Level to 99% by default", defaultValue: 99, required: false
@@ -433,7 +433,7 @@ def initialize() {
         //Continued Resp on Device Control
         	state.pContCmds = true
         //Continued Resp on Alexa Feedback
-			state.pContCmdsR = true        
+			state.pContCmdsR        
         //PIN Settings
             state.usePIN_T = false
             state.usePIN_L = false
@@ -443,6 +443,7 @@ def initialize() {
         //Other Settings
 			state.changedFilters
             state.scheduledHandler
+            state.filterNotif
 	}
 /************************************************************************************************************
 		CoRE Integration
@@ -500,13 +501,6 @@ def controlDevices() {
     	if (debug) log.debug "Received Lambda request to control devices with settings:" +
         					 " (ctCommand)= ${ctCommand}',(ctNum) = '${ctNum}', (ctPIN) = '${ctPIN}', "+
                              "(ctDevice) = '${ctDevice}', (ctUnit) = '${ctUnit}', (ctGroup) = '${ctGroup}', (pintentName) = '${pintentName}'"
-
-/*  FOR SCHEDULES  
-    def rowDate = new Date(now())
-    def cDay = rowDate.date
-    def cHour= rowDate.hours
-	def cMin = rowDate.minutes   
-*/  
   	if (pintentName == "main") {	
         if (ctNum == "undefined" || ctNum =="?") {ctNum = 0 } 
         if (ctCommand =="?") {ctCommand = "undefined"} 
@@ -522,6 +516,15 @@ def controlDevices() {
         		ctUnit = getTxt.unit
         	}
         }
+        if (ctUnit == "flash" || ctUnit == "text" || ctUnit == "audio") {
+			if (state.scheduledHandler == "filters" && state.pContCmdsR == "filters") {
+            	state.filterNotif = ctUnit
+                def getTxt = getUnitText(ctUnit, ctNum)  
+                outputTxt = "Ok, when you need to change your filters, I will " + getTxt.text
+                state.pContCmdsR = "no"
+         		return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]               
+            }
+        }
         if (ctNum > 0 && ctDevice != "undefined" && ctCommand == "undefined") {
             ctCommand = "set"
         }
@@ -529,7 +532,6 @@ def controlDevices() {
         	outputTxt = pinHandler(ctPIN, ctCommand)
         	return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]
         }
-
         if (ctCommand != "undefined") {
         	outputTxt = getCustomCmd(ctCommand, ctUnit, ctGroup)  
         	if (outputTxt!= null ) {
@@ -537,12 +539,12 @@ def controlDevices() {
 						if (ctGroup == "thermostats" || ctGroup == "locks" || ctGroup == "doors") {
                         	pTryAgain = false
                         	state.pContCmds = false
-                        	state.pContCmdsR = false
+                        	state.pContCmdsR = "no"
                         }
                         else {
                             pTryAgain = true
                         	state.pContCmds = false
-                        	state.pContCmdsR = false
+                        	state.pContCmdsR = "no"
                         }
             		}     
             return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]
@@ -762,44 +764,49 @@ def controlDevices() {
 								return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]
                                 }
                        }
-                    }
-                    else if (settings.cVents.size()>0) {
-                        if (debug) log.debug "Searching for a vent named '${ctDevice}'"
-                        deviceMatch = cVents.find {s -> s.label.toLowerCase() == ctDevice.toLowerCase()}             
-                        if (deviceMatch) {
-                            if (debug) log.debug "Found a device: '${deviceMatch}'"
-                                if (command == "open") {command = "onD"}
-                                if (command == "close") {command = "offD"}
-                                device = deviceMatch
-                                if (ctNum > 0 && ctUnit == "minutes") {
-                                    device = device.label
-                                    delay = true
-                                    data = [type: "cSwitch", command: command, device: device, unit: ctUnit, num: ctNum, delay: delay]
-                                    runIn(ctNum*60, controlHandler, [data: data])
-                                    if (ctCommand == "open") {outputTxt = "Ok, opening the " + ctDevice + " in " + numText}
-                                    else if (command == "close") {outputTxt = "Ok, closing the " + ctDevice + " in " + numText}
-								return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]
-                                }
-                                else {
-                                    delay = false
-                                    data = [type: "cSwitch", command: command, device: device, unit: ctUnit, num: ctNum, delay: delay]
-                                    controlHandler(data)
-                                    if (ctCommand == "open") {outputTxt = "Ok, opening the " + ctDevice}
-                                    else if (ctCommand == "close") {outputTxt = "Ok, closing the " + ctDevice}
-								return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]
-                                }
-                       }
+                       else {
+                    	if (settings.cVent.size()>0) {
+                            if (debug) log.debug "Searching for a vent named '${ctDevice}'"
+                            deviceMatch = cVent.find {s -> s.label.toLowerCase() == ctDevice.toLowerCase()}             
+                            if (deviceMatch) {
+                                if (debug) log.debug "Found a device: '${deviceMatch}'"
+                                    if (command == "open") {command = "onD"}
+                                    if (command == "close") {command = "offD"}
+                                    device = deviceMatch
+                                    if (ctNum > 0 && ctUnit == "minutes") {
+                                        device = device.label
+                                        delay = true
+                                        data = [type: "cSwitch", command: command, device: device, unit: ctUnit, num: ctNum, delay: delay]
+                                        runIn(ctNum*60, controlHandler, [data: data])
+                                        if (ctCommand == "open") {outputTxt = "Ok, opening the " + ctDevice + " in " + numText}
+                                        else if (command == "close") {outputTxt = "Ok, closing the " + ctDevice + " in " + numText}
+                                    return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]
+                                    }
+                                    else {
+                                        delay = false
+                                        data = [type: "cSwitch", command: command, device: device, unit: ctUnit, num: ctNum, delay: delay]
+                                        controlHandler(data)
+                                        if (ctCommand == "open") {outputTxt = "Ok, opening the " + ctDevice}
+                                        else if (ctCommand == "close") {outputTxt = "Ok, closing the " + ctDevice}
+                                    return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]
+                                    }
+                       		}
+                    	}
                     }
                 }
             }
         }
+      }
         if (debug) log.debug "DeviceHandler data (bottom): pContCmds = ${state.pContCmds}, pContCmdsR = ${state.pContCmdsR}, message:'${outputTxt}',device: '${ctDevice}' , command: ${ctCommand}' "               
-        outputTxt = "I wish I could help, but EchoSistant couldn't find the device named '${ctDevice}' or the command ${ctCommand}', is not supported."
-
-        if (state.pContCmds == true || state.pContCmds == true) {
-        	pTryAgain = false
-        }
-        else pTryAgain = true
+        outputTxt = "I wish I could help, but EchoSistant couldn't find the device named '${ctDevice}' or the command may not be supported."
+		
+        if (state.pContCmds == true) {
+        	state.pContCmdsR = "yes"
+            pTryAgain = false
+         }
+         else {
+         	pTryAgain = true
+		}
        
        return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]
    }
@@ -825,10 +832,14 @@ private getUnitText (unit, num) {
 		nUnit = "percent"
 		text = num + " percent" 
         return ["text":text, "unit":nUnit]
-    } 
-}    
+    }
+    if (unit == "flash" || unit.contains ("flash")) {text = "flash your lights"}
+   	if (unit == "text" || unit.contains ("text")) {text = "send you a text"}
+    if (unit == "audio" || unit.contains ("audio")){text = "play a message"}
+    	return ["text":text, "unit":nUnit]
+}   
 /************************************************************************************************************
-	CUSTOM COMMANDS
+	CUSTOM CONTROL COMMANDS
 ************************************************************************************************************/ 
 private getCustomCmd(command, unit, group) {
     def result
@@ -837,23 +848,32 @@ private getCustomCmd(command, unit, group) {
 		result = getLastMessageMain()
 		return result
     }
+	if (command == "change" || command == "changed" || command == "replace" || command == "replaced") {
+		if (unit=="filters") {
+        result = scheduleHandler(unit)
+      	}
+		return result
+    }
     if (command == "cancel" || command == "stop" || command == "disable" || command == "deactivate" || command == "unschedule") {
     	if (unit == "reminder" || unit == "reminders" || unit == "timer" || unit == "timers" || unit.contains ("reminder") || unit.contains ("timer") ) {
-        	if (state.scheduledHandler == "reminder") {
-            	unschedule(scheduleReminder)
-                result = "Ok, canceling reminder"
+        	if (state.scheduledHandler == "filters") {
+            	//unschedule() cancel ALL
+                unschedule(filtersHandler)
+                state.scheduledHandler = null
+                result = "Ok, canceling reminder to replace filters"
 				return result
             }
             else {
                	unschedule(controlHandler)
-               	result = "Ok, canceling timer"
+               	//unschedule() cancel ALL
+                result = "Ok, canceling timer"
 				return result
             }
 		}
 		if (unit == "conversation" || unit.contains ("conversation")) {
 			state.disableConv = true
 			state.pContCmds = false
-            state.pContCmdsR = false
+            state.pContCmdsR = "no"
             result = "Ok, disabling conversational features. To activate just say, start the conversation"
 			return result
         }
@@ -875,7 +895,7 @@ private getCustomCmd(command, unit, group) {
 		if (unit == "conversation" || unit.contains ("conversation")) {
 			state.disableConv = true
 			state.pContCmds = true
-			state.pContCmdsR = true
+			//state.pContCmdsR = "yes"
             result = "Ok, activating conversational features. To disable just say, stop the conversation"
             return result
         }
@@ -912,7 +932,7 @@ private pinHandler(pin, command) {
 				result = "I'm sorry, that is incorrect. Please try again"
 				if (debug) log.debug "PIN NOT Matched! PIN = '${cPIN}', ctPIN= '${ctPIN}', ctCommand ='${command}', try# ='${state.pinTry}'"
 				state.pContCmds = false
-				state.pContCmdsR = false
+				state.pContCmdsR = "no"
                 return result
 			}
 			else { 
@@ -1222,18 +1242,113 @@ def getLastMessageMain() {
   	if (debug) log.debug "Sending last message to Lambda ${outputTxt} "
 }
 /***********************************************************************************************************************
-    SCHEDULE FILTER REPLACEMENT HANDLER
+    SCHEDULE HANDLER
 ***********************************************************************************************************************/
-//0 35 1 8 1/1 ? *     (now was - Sunday, January 8, 2017 1:35 AM)
-//0 MIN HOUR DAY 1/1 ? *
-private filtersDue (){
-
-def dueFilters = "Time to change your filter"
-
-//queue message: "
-//text message
-//tts message
+private scheduleHandler(unit) {
+    def rowDate = new Date(now())
+    def cDay = rowDate.date
+    def cHour= rowDate.hours
+	def cMin = rowDate.minutes   
+    if (debug) log.debug "Received filter replacement request, scheduler data MIN = ${cMin} , HOUR = ${cHour}, DAY = ${cDay}   "
+    
+    if (unit == "filters") {
+    	if (debug) log.debug "Received filter replacement request"
+        state.scheduledHandler = "filters"
+		cDay = cDay-1
+        def cronData = "0 ${cMin} ${cHour} ${cDay} 1/1 ? *"
+        def xDays = settings.cFilterReplacement
+        
+        if (debug) log.debug "Scheduling Reminder:  cron: ${cronData} "
+			//schedule(cronData, "filtersHandler")
+        	//runOnce(new Date() + xDays , "filtersHandler")
+        		runIn(120 , "filtersHandler")
+        def result = 	"Ok, I have scheduled a reminder to replace the filters in " + settings.cFilterReplacement + " days."+
+        				" How would you like me to notify you when it's time to change your filters?"+
+        				" You could say, text, audio or flash."
+        if (debug) log.debug result
+        state.pContCmds = false
+        state.pContCmdsR = "filters"
+    	return result
+    }
+/*    
+        if (unit == "trash") {
+    	if (debug) log.debug "Received trash reminder"
+        state.scheduledHandler = "trash"
+		cDay = cDay-1
+        def cronData = "0 ${cMin} ${cHour} ${cDay} 1/1 ? *"
+        if (debug) log.debug "Scheduling Reminder:  cron: ${cronData} "
+			schedule(cronData, "filtersHandler")
+        def result = 	"Ok, I have scheduled a reminder to notify you in " + settings.cFilterReplacement + " days to replace them."+
+        				" How would you like me to notify you when it's time to change them?"+
+        				" You could say, text, audio or flash."
+        if (debug) log.debug result
+        state.pContCmds = false
+        state.pContCmdsR = "filters"
+    	return result
+    }
+*/
 }
+/* NOTES BOBBY DO NOT REMOVE
+Recurring
+Every 7 DAYS0 MIN HOUR 1/7 * ? *
+Every 2 MONTHS 0 MIN HOUR DAY 1/2 ? *
+One Time
+// execute tomorrow at the current time
+In x days runOnce(new Date() + , handler)
+
+*/
+
+def filtersHandler() {
+    def result
+    def val = state.filterNotif
+    switch (val) {
+        case "flash":
+            result = 'Matched flash'
+            break
+        case "text":
+            result = 'Matched text'
+            break
+        case "audio":
+            result = 'Matched audio'
+            break
+    }   
+    log.debug " Filter Notification Executed - result = ${result}"
+    result
+
+}
+/***********************************************************************************************************************
+ 		FUTURE CRON SCHEDULER DO NO REMOVE
+ ***********************************************************************************************************************/
+def getCronData() {
+	def cOrderDay = ["Sunday" : "SUN", "Monday" : "MON", "Tuesday" : "TUE", "Wednesday" : "WED", "Thursday" : "THU", "Friday" : "FRI", "Saturday" : "SAT"]
+    def cOrderMonth = ["January" : 1, "February" : 2, "March" : 3, "April" : 4, "May" : 5, "June" : 6, "July" : 7, "August" : 8, "September" : 9, "October" : 10, "November" : 11, "December" : 12]
+    def cOrderWeek = ["First" : 1, "Second" : 2, "Third" : 3, "Fourth" : 4]
+	def result
+    
+    switch(state.filterNotif) {
+		case "Minutes": 
+        	result
+            break
+		case "Hourly": 
+			result
+            break
+		case "Daily":
+        	result
+            break
+        case "Weekly":
+        	result
+            break
+        case "Monthly":  
+        	result
+            break
+        case "Yearly":
+			result
+        	break
+	}
+    return result + " *"
+}
+
+
 
 /***********************************************************************************************************************
  		SKILL DETAILS
@@ -1246,7 +1361,6 @@ private getProfileDetails() {
 	def ProfileDetails = "${c}" 
     	return  ProfileDetails
 }
-
 private getDeviceDetails() {
     def s = "" 
         cSwitch.each { device -> 
@@ -1371,7 +1485,6 @@ private getCommand(command, unit) {
     }
     return ["deviceType":deviceType, "command":command ]                          
 }
-
 /************************************************************************************************************
    Version/Copyright/Information/Help
 ************************************************************************************************************/
@@ -1382,7 +1495,7 @@ private def textVersion() {
 	def text = "4.0"
 }
 /************************************************************************************************************
-   Pre-set SOUNDS
+   SOUNDS
 ************************************************************************************************************/
 private loadText() {
 		switch (actionType) {
@@ -1409,44 +1522,3 @@ private loadText() {
 			break;
         }
 }
-
-
-def testSwitch(val) {
-    def result
-    switch (val) {
-        case ~/^Switch.*Groovy$/:
-            result = 'Pattern match'
-            break
-        case BigInteger:
-            result = 'Class isInstance'
-            break
-        case 60..90:
-            result = 'Range contains'
-            break
-        case [21, 'test', 9.12]:
-            result = 'List contains'
-            break
-        case 1005 : //42.056:
-            result = 'Object equals'
-            break
-        case { it instanceof Integer && it < 50 }:
-            result = 'Closure boolean'
-            break
-        default:
-            
-            result = 'Default'
-            break
-    }   
-    log.debug "result = ${result}"
-    result
-}
-/*
- 'Pattern match' == testSwitch("Switch to Groovy")
- 'Class isInstance' == testSwitch(42G)
- 'Range contains' == testSwitch(70)
- 'List contains' == testSwitch('test')
- 'Object equals' == testSwitch(42.056)
- 'Closure boolean' == testSwitch(20)
- 'Default' == testSwitch('default')
- 
- */
