@@ -72,6 +72,7 @@ preferences {
     		page name: "pSend"
         	page name: "pActions"
         	page name: "pConfig"
+            page name: "pRestrict"
             	page name: "certainTime"            
         	page name: "pScenes"
 }
@@ -700,15 +701,15 @@ page name: "MainProfiles"
 def mainProfilePage() {	
     dynamicPage(name: "mainProfilePage", title:"I Want This Room To...", install: true, uninstall: true, multiple: true) {
         section {
-           	href "pSend", title: "Send Messages... ", 
+           	href "pSend", title: "Send Messages... ", description: pSendComplete(), state: pSendSettings(),
    				image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Media.png"   			
-			href "pConfig", title: "Audio Message Options...",
+			href "pConfig", title: "Audio Message Options...", description: pConfigComplete(), state: pConfigSettings(),
             	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Extra.png"             
-            href "pScenes", title: "Create Scenes... ", 
+            href "pScenes", title: "Create Scenes... ", description: pScenesComplete(), state: pScenesSettings(),
             	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Plus.png" 
-			href "pActions", title: "Execute Actions when Profile runs...", //description: DevProDescr(), state: completeDevPro(),
+			href "pActions", title: "Execute Actions when Profile runs...", description: pActionsComplete(), state: pActionsSettings(),
             	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_devices.png"            			
-            href "pRestrict", title: "With These General Profile Restrictions", 
+            href "pRestrict", title: "With These General Profile Restrictions", description: pRestrictComplete(), state: pRestrictSettings(),
             	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Extra.png" 
 		}
         section ("Name and/or Remove this Profile") {
@@ -748,7 +749,6 @@ page name: "pSend"
             }        
     	}                 
     } 
-
 page name: "pActions"
     def pActions() {
             dynamicPage(name: "pActions", title: "Select Devices to use with this profile",install: false, uninstall: false) {
@@ -800,17 +800,6 @@ page name: "pActions"
 					input "offFor", "number", title: "Off for (default 1 second)", required: false, submitOnChange:true
 					}
                 }
-                section ("Set modes and run Routines") {
-                input "newMode", "enum", title: "Choose Mode to change to...", options: location.modes.name.sort(), multiple: false, required: false, submitOnChange: true, 
-					image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Routines.png"
-				def actions = location.helloHome?.getPhrases()*.label 
-                if (actions) {
-                    actions.sort()
-                    if (parent.debug) log.info actions
-            	}                
-                input "runRoutine", "enum", title: "Select a Routine(s) to execute", required: false, options: actions, multiple: true, 
-                image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Routines.png"
-				}
 			}
         }
 page name: "pConfig"
@@ -837,7 +826,12 @@ page name: "pConfig"
                     input "ContCmdsR", "bool", title: "Allow Alexa to prompt for additional commands after Repeat command is given...", defaultValue: false, submitOnChange: true
                     }
                 }            	
-            section ("Mode Restrictions") {
+	        }
+    	}
+page name: "pRestrict"
+	def pRestrict() {
+    	dynamicPage(name:"pRestrict", title: "Using these General Profile Restrictions", uninstall: false) {
+        	 section ("Mode Restrictions") {
                 input "modes", "mode", title: "Only when mode is", multiple: true, required: false, submitOnChange: true,
                 image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Extra.png"
                 }        
@@ -849,9 +843,9 @@ page name: "pConfig"
             section ("Time - Audio only during these times"){
                 href "certainTime", title: "Only during a certain time", description: timeIntervalLabel ?: "Tap to set", state: timeIntervalLabel ? "complete" : null,
                 image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Extra.png"
-                }   
-	        }
-    	}
+                }
+			}
+		}         
 page name: "certainTime"
     def certainTime() {
         dynamicPage(name:"certainTime",title: "Only during a certain time", uninstall: false) {
@@ -2147,3 +2141,84 @@ def dashboardComplete(){
     result = "complete"	
     }
     result
+// CONTROL PROFILE
+def pSendSettings(){
+    def result = ""
+    if (synthDevice || sonosDevice || sendContactText ||sendText || push || notify) {
+    	result = "complete"	
+    }
+    result
+}
+def pSendComplete() {
+    def text = "Tap here to configure settings" 
+    if (synthDevice || sonosDevice || sendContactText ||sendText || push || notify) {
+    	text = "Configured"
+    }
+    else text = "Tap to Show"
+	text	
+}
+def pConfigSettings(){
+    def result = ""
+    if (ShowPreMsg || Acustom || Arepeat ||AfeedBack || ContCmds || ContCmdsR) {
+    	result = "complete"	
+    }
+    result
+}
+def pConfigComplete() {
+    def text = "Tap here to configure settings" 
+    if (ShowPreMsg || Acustom || Arepeat ||AfeedBack || ContCmds || ContCmdsR) {
+    	text = "Configured"
+    }
+    else text = "Tap to Show"
+	text	
+}
+def pScenesComplete() {
+    def text = "No Scene have been configured. Tap here to begin"
+    def ch = childApps.size()     
+    if (ch == 1) {
+        text = "One Scene has been configured. Tap here to view and change"
+    }
+    else {
+    	if (ch > 1) {
+        text = "${ch} Scenes have been created"
+     	}
+    }
+    text
+}
+def pScenesSettings(){
+    def result = ""
+    if (childApps.size()) {
+    	result = "complete"	
+    }
+    result
+}
+def pActionsSettings(){
+    def result = ""
+    if (switches || otherSwitch || hues ||dimmers || otherDimmers || flashSwitches || newMode || runRoutine) {
+    	result = "complete"	
+    }
+    result
+}
+def pActionsComplete() {
+    def text = "Tap here to configure settings" 
+    if (switches || otherSwitch || hues ||dimmers || otherDimmers || flashSwitches || newMode || runRoutine) {
+    	text = "Configured"
+    }
+    else text = "Tap to Show"
+	text	
+}
+def pRestrictSettings(){
+    def result = ""
+    if (modes || runDay || hues ||startingX || endingX) {
+    	result = "complete"	
+    }
+    result
+}
+def pRestrictComplete() {
+    def text = "Tap here to configure settings" 
+    if (modes || runDay || hues ||startingX || endingX) {
+    	text = "Configured"
+    }
+    else text = "Tap to Show"
+	text	
+}
