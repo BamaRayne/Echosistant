@@ -1988,237 +1988,135 @@ private def textHelp() {
    Page status and descriptions 
 ************************************************************************************************************/       
 // MAIN PARENT PAGE
-def mIntentComplete(){  //main page
-    def result = ""
+def mIntentComplete(){def result = ""
     if (mDevicesComplete() || mFeedbackComplete()) {
-    	result = "complete"	
-    }
-    result
-}
-def mIntentSettings() {  //main page
-    def text = "Tap here to configure" 
-		if (mDevicesComplete() || mFeedbackComplete()) {
-    	text = "Configured"
-    }
-    else text = "Tap here to configure"
-	text	
-}
-def mCreateComplete(){  //main page
-    def result = ""
+    	result = "complete"}
+    	result}
+def mIntentSettings() {def text = "Tap here to configure" 
+	if (mDevicesComplete() || mFeedbackComplete()) {
+    	text = "Configured"}
+        else text = "Tap here to configure"
+		text}
+def mCreateComplete(){def result = ""
     if (cCreateComplete()) {
-    	result = "Control Profiles Created"	
-    }
-    result
-}
-def mCreateSettings() {  //main page
-    def text = "No Profiles have been configured. Tap here to begin"
+    	result = "Control Profiles Created"}
+    	result}
+def mCreateSettings() { def text = "No Profiles have been configured. Tap here to begin"
     if (cCreateComplete()) {
-        text = "One profile has been configured. Tap here to view and change"
-    }
-    text
-}
+        text = "One profile has been configured. Tap here to view and change"}
+        text}
 // MAIN INTENT PAGE
-def mDevicesComplete(){
-    def result = ""
+def mDevicesComplete(){def result = ""
     if (cSwitch || cVent || cFan || cStat || cDoor || cLock || cMotion || cContact || cPresence || cSpeaker || cBattery || cWeather) {
-    	result = "complete"	
-    }
-    result
-}
-def mDevicesSettings() {
-    def text = "Tap here to configure settings" 
+    	result = "complete"	}
+   		result}
+def mDevicesSettings() {def text = "Tap here to configure settings" 
     if (cSwitch || cVent || cFan || cStat || cDoor || cLock || cMotion || cContact || cPresence || cSpeaker || cBattery || cWeather) {
-    	text = "Configured"
-    }
-    else text = "Tap here to choose devices"
-	text	
-}
-def mFeedbackComplete(){
-    def result = ""
+    	text = "Configured"}
+    	else text = "Tap here to choose devices"
+		text}
+def mFeedbackComplete(){def result = ""
     if (fShowSwitches || fShowContacts || fShowLocks || fShowMotion || fShowPresence || fShowTstat || fShowWeather) {
-    	result = "complete"	
-    }
-    result
-}
-def mFeedbackSettings() {
-    def text = ""
+    	result = "complete"}
+    	result}
+def mFeedbackSettings() {def text = ""
     if (fShowSwitches || fShowContacts || fShowLocks || fShowMotion || fShowPresence || fShowTstat || fShowWeather) {
-    	text = "Configured"
-    }
-    else text = "Tap here to configure Feedback"
-	text	
-}
-def mDefaultsComplete(){
-    def result = ""
+    	text = "Configured"}
+    	else text = "Tap here to configure Feedback"
+		text}
+def mDefaultsComplete(){def result = ""
     if ("cLevel || cVolLevel || cTemperature || cFilterReplacement || cHigh || cMedium || cLow || cLowBattery || cFanLevel || cInactiveDev || cPIN") {
-    	result = "complete"	
-    }
-    result
-}
-def mDefaultsSettings() {
-    def text = "" 
+    	result = "complete"}
+    	result}
+def mDefaultsSettings() {def text = "" 
     if ("cLevel || cVolLevel || cTemperature || cFilterReplacement || cHigh || cMedium || cLow || cLowBattery || cFanLevel || cInactiveDev || cPIN") {
-    	text = "Defaults are Configured"
-    }
-    else text = "Tap here to configure Defaults"
-	text	
-}
+    	text = "Defaults are Configured"}
+    	else text = "Tap here to configure Defaults"
+		text}
 // VIEW AND CREATE PROFILES PAGE
-def cCreateComplete(){
-    def result = ""
+def cCreateComplete(){def result = ""
     if (childApps.size()) {
-    	result = "complete"	
-    }
-    result
-}
-def cCreateSettings() {
-    def text = "No Profiles have been configured. Tap here to begin"
+    	result = "complete"}
+    	result}
+def cCreateSettings() {def text = "No Profiles have been configured. Tap here to begin"
     def ch = childApps.size()     
-    if (ch == 1) {
-        text = "One Profile has been configured. Tap here to view and change"
-    }
-    else {
-    	if (ch > 1) {
-        text = "${ch} Profiles have been created"
-     	}
-    }
-    text
-}
-def pCreateComplete(){  // Profiles
-    def result = ""
+   		if (ch == 1) {text = "One Profile has been configured. Tap here to view and change"}
+    	else {if (ch > 1) { text = "${ch} Profiles have been created"}}
+    	text}
+def pCreateComplete(){ def result = ""
     if (childApps.size()) {
-    	result = "complete"	
-    }
-    result
-}
-def pCreateSettings() {  //Profiles
-    def text = "No Profiles have been configured. Tap here to begin"
+    	result = "complete"}
+    	result}
+def pCreateSettings() { def text = "No Profiles have been configured. Tap here to begin"
     def ch = childApps.size()     
-    if (ch > 0) {
-        text = "Profiles have been configured. Tap here to view and change"
-    }
-    text
-}    
+    	if (ch > 0) {text = "Profiles have been configured. Tap here to view and change"}
+    	text}    
 // INSTALL AND SUPPORT PAGE
-def mSupportComplete(){
-    def result = ""
+def mSupportComplete(){def result = ""
     if (notifyOn || feedbackOn) {
-    	result = "complete"	
-    }
-    result
-}
-def mSupportSettings() {
-    def text = "Tap here to configure settings" 
-    if (notifyOn || feedbackOn) {
-    	text = "Installed modules are active"
-    }
-    else text = "There are no Activated Modules"
-	text	
-}
+    	result = "complete"	}
+    	result}
+def mSupportSettings() {def text = "Tap here to configure settings" 
+    if (notifyOn || feedbackOn) {text = "Installed modules are active"}
+    	else text = "There are no Activated Modules"
+		text}
 // SECURITY DATA PAGE
-def mSecurityComplete(){
-    def result = ""
+def mSecurityComplete(){def result = ""
     if (debug || ShowLicense || ShowTokens) {
-    	result = "complete"	
-    }
-    result
-}
-def mSecuritySettings() {
-    def text = "Tap here to configure settings" 
+    	result = "complete"}
+    	result}
+def mSecuritySettings() {def text = "Tap here to configure settings" 
     if (debug || ShowLicense || ShowTokens) {
-    	text = "Configured - Information is now displayed in the IDE Live Logs"
-    }
-    else text = "Configure"
-	text	
-}
+    	text = "Configured - Information is now displayed in the IDE Live Logs"}
+    	else text = "Configure"text	}
 // SECURITY DATA PAGE
-def dashboardSettings() {
-    def text = "Tap here to view Dashboard" 
-    	text	
-}
-def dashboardComplete(){
-    def result = ""
-    result = "complete"	
-    }
+def dashboardSettings() { def text = "Tap here to view Dashboard" 
+    	text}
+def dashboardComplete(){def result = ""
+    result = "complete"	}
     result
 // CONTROL PROFILE
-def pSendSettings(){
-    def result = ""
+def pSendSettings(){def result = ""
     if (synthDevice || sonosDevice || sendContactText ||sendText || push || notify) {
-    	result = "complete"	
-    }
-    result
-}
-def pSendComplete() {
-    def text = "Tap here to configure settings" 
+    	result = "complete"}
+   		result}
+def pSendComplete() {def text = "Tap here to configure settings" 
     if (synthDevice || sonosDevice || sendContactText ||sendText || push || notify) {
-    	text = "Configured"
-    }
-    else text = "Tap to Show"
-	text	
-}
-def pConfigSettings(){
-    def result = ""
+    	text = "Configured"}
+    	else text = "Tap to Show"
+		text}
+def pConfigSettings(){def result = ""
     if (ShowPreMsg || Acustom || Arepeat ||AfeedBack || ContCmds || ContCmdsR) {
-    	result = "complete"	
-    }
-    result
-}
-def pConfigComplete() {
-    def text = "Tap here to configure settings" 
+    	result = "complete"}
+    	result}
+def pConfigComplete() {def text = "Tap here to configure settings" 
     if (ShowPreMsg || Acustom || Arepeat ||AfeedBack || ContCmds || ContCmdsR) {
-    	text = "Configured"
-    }
-    else text = "Tap to Show"
-	text	
-}
-def pScenesComplete() {
-    def text = "No Scene have been configured. Tap here to begin"
+    	text = "Configured"}
+    	else text = "Tap to Show"
+		text}
+def pScenesComplete() {def text = "No Scene have been configured. Tap here to begin"
     def ch = childApps.size()     
-    if (ch == 1) {
-        text = "One Scene has been configured. Tap here to view and change"
-    }
-    else {
-    	if (ch > 1) {
-        text = "${ch} Scenes have been created"
-     	}
-    }
-    text
-}
-def pScenesSettings(){
-    def result = ""
+    if (ch == 1) {text = "One Scene has been configured. Tap here to view and change"}
+    else {if (ch > 1) {text = "${ch} Scenes have been created"}}
+    text}
+def pScenesSettings(){def result = ""
     if (childApps.size()) {
-    	result = "complete"	
-    }
-    result
-}
-def pActionsSettings(){
-    def result = ""
+    	result = "complete"}
+    	result}
+def pActionsSettings(){def result = ""
     if (switches || otherSwitch || hues ||dimmers || otherDimmers || flashSwitches || newMode || runRoutine) {
-    	result = "complete"	
-    }
-    result
-}
-def pActionsComplete() {
-    def text = "Tap here to configure settings" 
-    if (switches || otherSwitch || hues ||dimmers || otherDimmers || flashSwitches || newMode || runRoutine) {
-    	text = "Configured"
-    }
-    else text = "Tap to Show"
-	text	
-}
-def pRestrictSettings(){
-    def result = ""
+    	result = "complete"}
+    	result}
+def pActionsComplete() {def text = "Tap here to configure settings" 
+    if (switches || otherSwitch || hues ||dimmers || otherDimmers || flashSwitches || newMode || runRoutine) {text = "Configured"}
+    	else text = "Tap to Show"
+        text}
+def pRestrictSettings(){ def result = "" 
+	if (modes || runDay || hues ||startingX || endingX) {
+    	result = "complete"}
+        result}
+def pRestrictComplete() {def text = "Tap here to configure settings" 
     if (modes || runDay || hues ||startingX || endingX) {
-    	result = "complete"	
-    }
-    result
-}
-def pRestrictComplete() {
-    def text = "Tap here to configure settings" 
-    if (modes || runDay || hues ||startingX || endingX) {
-    	text = "Configured"
-    }
-    else text = "Tap to Show"
-	text	
-}
+    	text = "Configured"}
+    	else text = "Tap to Show"
+        text}
