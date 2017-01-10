@@ -1,10 +1,16 @@
 main is {cCommand} {cDevice}
+main I {cCommand} {cUnit}
+main I {cCommand} the {cUnit}
+main I {cCommand} the HVAC {cUnit}
 main the {cDevice} is {cCommand} 
 main to set the {cDevice} to {cNum}
 main to set {cDevice} to {cNum}
 main to set the {cDevice} to {cNum} {cUnit}
 main to set {cDevice} to {cNum} {cUnit}
-
+main set the {cDevice} to {cNum}
+main set {cDevice} to {cNum}
+main set the {cDevice} to {cNum} {cUnit}
+main set {cDevice} to {cNum} {cUnit}
 main turn the {cDevice} {cCommand}
 main turn {cCommand} the {cDevice}
 main turn {cCommand} the {cUnit} {cDevice}
@@ -67,3 +73,5 @@ feedback {fQuery} {fOperand} are on in {pProfile}
 feedback to tell me {fQuery} {pProfile}
 feedback to tell me {fQuery} the {pProfile}
 feedback to {fQuery} me the status of {pProfile}
+
+main {cPIN}
