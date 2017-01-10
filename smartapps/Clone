@@ -55,6 +55,7 @@ preferences {
             page name: "mBonus"
             	page name: "mDashboard"
                 	page name: "mDashConfig"
+                    page name: "pageTwo"
                     page name: "mWeatherConfig"
                     page name: "severeWeatherAlertsPage"   
         	page name: "SkillDetails"
@@ -86,17 +87,17 @@ page name: "mainParentPage"
                     image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/app-Echosistant%402x.png"                
 				href "pCreate", title: "View and Create Profiles", description: cCreateSettings(), state: cCreateComplete(),
                     image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Config.png"    
-				href "mSupport", title: "Install and Support",// description: supportDescrL(), state: completeProfiles(),
+				href "mSupport", title: "Install and Support", description: mSupportSettings(), state: mSupportComplete(),
                     image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Config.png"                               
-				href "mSecurity", title: "Security Data",// description: supportDescrL(), state: completeProfiles(),
+				href "mSecurity", title: "Security Data", description: mSecuritySettings(), state: mSecurityComplete(),
                     image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Amazon_alexa.png"                               
             	if (activateDashboard) {
-                	 href "mDashboard", title: " Dashboard ",
+                	 href "mDashboard", title: "Dashboard", description: dashboardSettings(), state: dashboardComplete(),
                      image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Config.png"
                      }
                 href "mBonus", title: "                    The Current Mode is \n" +
-                	"					                            ${location.currentMode}"
-                     }
+                	"					                            ${location.currentMode}", description: ""
+                    }
                 }
 			}
 page name: "mIntent"
@@ -660,18 +661,18 @@ page name: "pageReset"
 def pCreate() {	
     dynamicPage(name: "pCreate", title:"I want to create a...", install: true, uninstall: false) {
         section ("Control and Messaging Profile") {
-			href "MainProfiles", title: "View and Create Control and Messaging Profiles...", description: cCreateSettings(), state: cCreateComplete(),
+			href "MainProfiles", title: "View and Create Control and Messaging Profiles...", description: pCreateSettings(), state: pCreateComplete(),
             image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_devices.png"            			
             }
      	if (notifyOn) {
         section ("Notifications Profile") {
-  			href "mNotifyProfile", title: "View and Create Notification Profiles...", description: cCreateSettings(), state: cCreateComplete(),
+  			href "mNotifyProfile", title: "View and Create Notification Profiles...", description: pCreateSettings(), state: pCreateComplete(),
             image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_devices.png"            			
 			}
 		}
         if (feedbackOn) {
         section ("FeedBack Profile") {
-			href "mFeedbackProfile", title: "View and Create Feedback Profiles..", description: cCreateSettings(), state: cCreateComplete(),
+			href "mFeedbackProfile", title: "View and Create Feedback Profiles..", description: pCreateSettings(), state: pCreateComplete(),
             image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_devices.png"            			
 			}
         }
@@ -705,7 +706,9 @@ def mainProfilePage() {
             	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Extra.png"             
             href "pScenes", title: "Create Scenes... ", 
             	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Plus.png" 
-			href "pRestrict", title: "With These General Profile Restrictions", 
+			href "pActions", title: "Execute Actions when Profile runs...", //description: DevProDescr(), state: completeDevPro(),
+            	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_devices.png"            			
+            href "pRestrict", title: "With These General Profile Restrictions", 
             	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Extra.png" 
 		}
         section ("Name and/or Remove this Profile") {
@@ -797,8 +800,19 @@ page name: "pActions"
 					input "offFor", "number", title: "Off for (default 1 second)", required: false, submitOnChange:true
 					}
                 }
+                section ("Set modes and run Routines") {
+                input "newMode", "enum", title: "Choose Mode to change to...", options: location.modes.name.sort(), multiple: false, required: false, submitOnChange: true, 
+					image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Routines.png"
+				def actions = location.helloHome?.getPhrases()*.label 
+                if (actions) {
+                    actions.sort()
+                    if (parent.debug) log.info actions
+            	}                
+                input "runRoutine", "enum", title: "Select a Routine(s) to execute", required: false, options: actions, multiple: true, 
+                image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Routines.png"
+				}
 			}
-		}
+        }
 page name: "pConfig"
     def pConfig(){
         dynamicPage(name: "pConfig", title: "Configure Global Profile Options...", uninstall: false) {
@@ -877,8 +891,8 @@ page name: "pScenes"
         		}
             }
        }
- 
 }
+
 /*************************************************************************************************************
    CREATE INITIAL TOKEN
 ************************************************************************************************************/
@@ -2007,7 +2021,6 @@ def mCreateSettings() {  //main page
     if (cCreateComplete()) {
         text = "One profile has been configured. Tap here to view and change"
     }
-    
     text
 }
 // MAIN INTENT PAGE
@@ -2043,14 +2056,14 @@ def mFeedbackSettings() {
 }
 def mDefaultsComplete(){
     def result = ""
-    if ("cLevel || cVolLevel || cTemperature || cHigh || cMedium || cLow || cFanLevel || cPIN") {
+    if ("cLevel || cVolLevel || cTemperature || cFilterReplacement || cHigh || cMedium || cLow || cLowBattery || cFanLevel || cInactiveDev || cPIN") {
     	result = "complete"	
     }
     result
 }
 def mDefaultsSettings() {
     def text = "" 
-    if ("cLevel || cVolLevel || cTemperature || cHigh || cMedium || cLow || cFanLevel || cPIN") {
+    if ("cLevel || cVolLevel || cTemperature || cFilterReplacement || cHigh || cMedium || cLow || cLowBattery || cFanLevel || cInactiveDev || cPIN") {
     	text = "Defaults are Configured"
     }
     else text = "Tap here to configure Defaults"
@@ -2072,44 +2085,65 @@ def cCreateSettings() {
     }
     else {
     	if (ch > 1) {
-        text = "${ch} Profiles have been configured. Tap here to view and change"
+        text = "${ch} Profiles have been created"
      	}
     }
     text
 }
 def pCreateComplete(){  // Profiles
     def result = ""
-    if (cProfileComplete()) {
-    	result = "Profiles Created"	
-    }
-    result
-}
-def pCreateSettings() {  //Profiles
-    def text = "No Profiles have been configured. Tap here to begin"
-    if (cProfileComplete()) {
-        text = "One Profile has been configured. Tap here to view and change"
-    }
-    
-    text
-}
-
-def cProfileComplete(){
-    def result = ""
     if (childApps.size()) {
     	result = "complete"	
     }
     result
 }
-def cProfileSettings() {
+def pCreateSettings() {  //Profiles
     def text = "No Profiles have been configured. Tap here to begin"
     def ch = childApps.size()     
-    if (ch == 1) {
-        text = "One Profile has been configured. Tap here to view and change"
-    }
-    else {
-    	if (ch > 1) {
-        text = "${ch} Profiles have been configured. Tap here to view and change"
-     	}
+    if (ch > 0) {
+        text = "Profiles have been configured. Tap here to view and change"
     }
     text
+}    
+// INSTALL AND SUPPORT PAGE
+def mSupportComplete(){
+    def result = ""
+    if (notifyOn || feedbackOn) {
+    	result = "complete"	
+    }
+    result
 }
+def mSupportSettings() {
+    def text = "Tap here to configure settings" 
+    if (notifyOn || feedbackOn) {
+    	text = "Installed modules are active"
+    }
+    else text = "There are no Activated Modules"
+	text	
+}
+// SECURITY DATA PAGE
+def mSecurityComplete(){
+    def result = ""
+    if (debug || ShowLicense || ShowTokens) {
+    	result = "complete"	
+    }
+    result
+}
+def mSecuritySettings() {
+    def text = "Tap here to configure settings" 
+    if (debug || ShowLicense || ShowTokens) {
+    	text = "Configured - Information is now displayed in the IDE Live Logs"
+    }
+    else text = "Configure"
+	text	
+}
+// SECURITY DATA PAGE
+def dashboardSettings() {
+    def text = "Tap here to view Dashboard" 
+    	text	
+}
+def dashboardComplete(){
+    def result = ""
+    result = "complete"	
+    }
+    result
