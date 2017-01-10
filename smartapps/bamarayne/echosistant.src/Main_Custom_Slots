@@ -52,14 +52,11 @@ high
 low
 medium
 activate
-deactivate
 
 LIST OF OPERANDS
 temperature
 lights
 mode
-change
-changed
 feed
 fed
 
@@ -70,11 +67,15 @@ minutes
 percent
 degrees
 pin
+pin number
 conversation
 heat
 AC
 cooling
 heating
+filters
+timer
+
 
 LIST OF GROUPS
 
