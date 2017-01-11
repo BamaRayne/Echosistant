@@ -1,7 +1,7 @@
 /* 
  * EchoSistant - The Ultimate Voice and Text Messaging Assistant Using Your Alexa Enabled Device.
  *
- *		12/31/2016		Version:4.0 R.4.1.1	New features: status updates, custom commands, weather alerts, message reminders 
+ *		1/11/2017		Version:4.0 R.4.1.3	New features: status updates, custom commands, weather alerts, message reminders 
  *											Improvements: streamlined UI and processing
  *
  *  Copyright 2016 Jason Headley & Bobby Dobrescu
