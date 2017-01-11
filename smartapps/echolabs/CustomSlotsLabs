@@ -1,0 +1,98 @@
+LIST_OF_COMMANDS
+
+brighter
+colder
+cooler
+darker
+hotter
+down
+freezing
+not bright enough
+not cold enough
+not dark enough
+not hot enough
+not loud enough
+off
+on
+repeat
+too bright
+too chilly
+too cold
+too dark
+too hot
+too loud
+too warm
+too fast
+too slow
+too quiet
+up
+warmer
+increase
+decrease
+dim
+brighten
+mute
+unmute
+quiet
+cancel
+run
+change
+changed
+open
+close
+lock
+unlock
+speed up
+slow down
+stop
+disable
+enable
+start
+high
+low
+medium
+activate
+deactivate
+replace
+replaced
+
+LIST OF OPERANDS
+temperature
+lights
+mode
+feed
+fed
+text
+audio
+
+LIST_OF_UNITS
+
+minute
+minutes
+percent
+degrees
+pin
+pin number
+conversation
+heat
+AC
+cooling
+heating
+filters
+timer
+reminder
+flash
+audio
+text
+
+
+LIST OF GROUPS
+
+lights
+vents
+doors
+batteries
+devices
+fans
+thermostats
+locks
