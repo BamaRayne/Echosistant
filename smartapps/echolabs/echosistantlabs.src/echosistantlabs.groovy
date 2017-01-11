@@ -1,8 +1,11 @@
 /* 
  * EchoSistant - The Ultimate Voice and Text Messaging Assistant Using Your Alexa Enabled Device.
  *
- *		1/11/2017		Version:4.0 R.4.1.3	New features: status updates, custom commands, weather alerts, message reminders 
- *											Improvements: streamlined UI and processing
+ *		1/11/2017		Version:4.0 R.4.2.1	New features: HVAC filters reminders 
+ *											Improvements: Alexa responses
+ *	
+ *		12/31/2016		Version:4.0 R.4.1.1	New features: status updates, custom commands, weather alerts, message reminders 
+ *											Improvements: streamlined UI and processing 
  *
  *  Copyright 2016 Jason Headley & Bobby Dobrescu
  *
@@ -83,13 +86,10 @@ page name: "mIntent"
                     input "cVent", "capability.switchLevel", title: "Allow These Smart Vent(s)...", multiple: true, required: false
                     input "cFan", "capability.switchLevel", title: "Allow These Fan(s)...", multiple: true, required: false
                 }
-                section ("PIN Protected Devices (Voice Enabled Setting)" , hideWhenEmpty: true) {
+                section ("PIN Protected Devices (Voice Activated Setting)" , hideWhenEmpty: true) {
                     input "cTstat", "capability.thermostat", title: "Allow These Thermostat(s)...", multiple: true, required: false, submitOnChange: true
-                    	if (cTstat) {input "usePIN_T", "bool", title: "Use PIN to control Thermostats?", default: false}
                     input "cDoor", "capability.garageDoorControl", title: "Allow These Garage Door(s)...", multiple: true, required: false, submitOnChange: true
-                    	if (cDoor) {input "usePIN_D", "bool", title: "Use PIN to control Doors?", default: false}  
                     input "cLock", "capability.lock", title: "Allow These Lock(s)...", multiple: true, required: false, submitOnChange: true
-                    	if (cLock) {input "usePIN_L", "bool", title: "Use PIN to control Locks?", default: false}
                 } 
                 section ("Sensors", hideWhenEmpty: true) {
                  	input "cMotion", "capability.motionSensor", title: "Allow These Motion Sensor(s)...", multiple: true, required: false
@@ -223,8 +223,7 @@ page name: "mIntent"
                     }		
                 } 
             }
-        }
-    
+        }    
     page name: "mDefaults"
         def mDefaults(){
                 dynamicPage(name: "mDefaults", title: "", uninstall: false){
@@ -473,6 +472,25 @@ def processBegin(){
     	state.pTryAgain = false
         return ["pContinue":state.pContCmds, "versionSTtxt":versionSTtxt]
 }   
+/************************************************************************************************************
+		FEEDBACK HANDLER - from Lambda via page f
+************************************************************************************************************/
+def feedbackHandler() {
+	def outputTxt = "Sorry, the feedback module is not ready. If you believe this was not a feedback request, please open a trouble ticket. Thank you for your help, "
+	def pPIN = false
+    state.pTryAgain = true
+    return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
+}
+/************************************************************************************************************
+		FEEDBACK HANDLER - from Lambda via page f
+************************************************************************************************************/
+def controlProfiles() {
+	def outputTxt = "Sorry, the group control module is not ready. If you believe this was not a request to control a Profile group, please open a trouble ticket. Thank you for your help, "
+	def pPIN = false
+    state.pTryAgain = true
+    return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
+}
+
 /************************************************************************************************************
    CONTROL DEVICES - from Lambda via page c
 ************************************************************************************************************/
@@ -851,7 +869,18 @@ private getCustomCmd(command, unit, group) {
 			return result
         }
 		if (unit == "pin number" || unit == "pin") {
-			if (group == "thermostats") {state.usePIN_T = false}
+			if(state.usePIN_D == true || state.usePIN_T == true || state.usePIN_L == true) {
+        		outputTxt = "Pin number please"
+        		pPIN = true
+        		state.pinTry = 0
+        		if (debug) log.debug "PIN response pending - '${state.pinTry}'"
+        		return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
+			}
+
+
+            
+            
+            if (group == "thermostats") {state.usePIN_T = false}
 			if (group == "locks") {state.usePIN_L = false}
 			if (group == "doors") {state.usePIN_D = false}
 			state.pContCmds = true
@@ -896,7 +925,7 @@ private getCustomCmd(command, unit, group) {
 ************************************************************************************************************/ 
 private pinHandler(pin, command) {
 	def result
-	if (pin == cPIN || command == cPIN) {
+	if (pin == cPIN || command == cPIN) {      
 		def data = state.savedPINdata
 		if (debug) log.debug "PIN Matched! Preparing data: '${data}' "
 		result = controlHandler(data)
@@ -905,7 +934,7 @@ private pinHandler(pin, command) {
 	else {
 		state.pinTry = state.pinTry + 1
 			if (state.pinTry < 4){
-				result = "I'm sorry, that is incorrect. Please try again"
+				result = "I'm sorry, that is incorrect, "
 				if (debug) log.debug "PIN NOT Matched! PIN = '${cPIN}', ctPIN= '${ctPIN}', ctCommand ='${command}', try# ='${state.pinTry}'"
 				state.pTryAgain = true
                 return result
@@ -1407,3 +1436,4 @@ private loadText() {
 			break;
         }
 }
+
