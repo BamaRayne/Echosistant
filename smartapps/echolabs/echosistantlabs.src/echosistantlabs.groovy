@@ -430,6 +430,7 @@ def initialize() {
         //Alexa Responses
 			state.pTryAgain = false
         	state.pContCmds = true
+            state.pMuteAlexa = false
 			state.pContCmdsR        
         //PIN Settings
             state.usePIN_T = false
@@ -470,7 +471,7 @@ def processBegin(){
         ". And sent to Lambda: pContinue = '${state.pContCmds}', versionSTtxt = '${versionSTtxt}'"
 	}
     	state.pTryAgain = false
-        return ["pContinue":state.pContCmds, "versionSTtxt":versionSTtxt]
+        return ["pContinue":state.pMuteAlexa, "versionSTtxt":versionSTtxt]
 }   
 /************************************************************************************************************
 		FEEDBACK HANDLER - from Lambda via page f
@@ -482,7 +483,7 @@ def feedbackHandler() {
     return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
 }
 /************************************************************************************************************
-		FEEDBACK HANDLER - from Lambda via page f
+		GROUP CONTROL HANDLER - from Lambda via page p
 ************************************************************************************************************/
 def controlProfiles() {
 	def outputTxt = "Sorry, the group control module is not ready. If you believe this was not a request to control a Profile group, please open a trouble ticket. Thank you for your help, "
@@ -528,7 +529,7 @@ def controlDevices() {
         		numText = getTxt.text
         		ctUnit = getTxt.unit
         	}
-        }
+        }   
         if (ctUnit == "flash" || ctUnit == "text" || ctUnit == "audio") {
 			if (state.scheduledHandler == "filters" && state.pContCmdsR == "filters") {
             	state.filterNotif = ctUnit
@@ -541,7 +542,8 @@ def controlDevices() {
         if (ctNum > 0 && ctDevice != "undefined" && ctCommand == "undefined") {
             ctCommand = "set"
         }
-        if (state.pinTry != null ) {      		
+        if (state.pinTry != null ) {
+        //need a way to restrict if someone gives up before trying the PIN for 3 consecutive times
         	outputTxt = pinHandler(ctPIN, ctCommand)
         	return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
         }
@@ -555,7 +557,8 @@ def controlDevices() {
                         else {
                             state.pTryAgain = true
                         }
-            		}     
+            		}
+                    if (outputTxt == "Pin number please") {pPIN = true}
             return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
 			}
             else {
@@ -768,7 +771,8 @@ def controlDevices() {
                                 }
                        }
                        else {
-                    	if (settings.cVent?.size()>0) {
+                    	//this is needed to enable open/close command for Vents group
+                        if (settings.cVent?.size()>0) {
                             if (debug) log.debug "Searching for a vent named '${ctDevice}'"
                             deviceMatch = cVent.find {s -> s.label.toLowerCase() == ctDevice.toLowerCase()}             
                             if (deviceMatch) {
@@ -870,16 +874,13 @@ private getCustomCmd(command, unit, group) {
         }
 		if (unit == "pin number" || unit == "pin") {
 			if(state.usePIN_D == true || state.usePIN_T == true || state.usePIN_L == true) {
-        		outputTxt = "Pin number please"
-        		pPIN = true
+        		result = "Pin number please"
         		state.pinTry = 0
-        		if (debug) log.debug "PIN response pending - '${state.pinTry}'"
-        		return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
+                state.savedPINdata = "disable"
+        		if (debug) log.debug "PIN response pending to disable pin number - '${state.pinTry}'"
+        		return result
 			}
-
-
-            
-            
+/*            
             if (group == "thermostats") {state.usePIN_T = false}
 			if (group == "locks") {state.usePIN_L = false}
 			if (group == "doors") {state.usePIN_D = false}
@@ -887,7 +888,13 @@ private getCustomCmd(command, unit, group) {
             state.pContCmdsR = "no"            
             result = "Ok, pin number for " + group + " has been disabled.  To activate it again, just say enable the PIN number for " + group
 			return result
-        }
+*/
+		}
+         if (unit == "feedback") {
+        	state.pMuteAlexa = true
+            result = "Ok, disabling Alexa feedback. To activate just say, activate the feedback"
+            return result
+		}
     }
 	if (command == "start" || command == "enable" || command == "activate" || command == "schedule") {
 		if (unit == "reminder" || unit == "reminders" || unit == "timer" || unit == "timers" || unit.contains ("reminder") || unit.contains ("timer") ) {
@@ -918,6 +925,11 @@ private getCustomCmd(command, unit, group) {
             	return result
             }
         }
+        if (unit == "feedback") {
+        	state.pMuteAlexa = false
+            result = "Ok, activating Alexa feedback. To disable just say, stop the feedback"
+            return result
+		}
 	}
 } 
 /************************************************************************************************************
@@ -1265,6 +1277,19 @@ private scheduleHandler(unit) {
     	return result
     }
 }
+
+/***********************************************************************************************************************
+    FILTERS REMINDER
+***********************************************************************************************************************/
+private filtersHandler() {
+def text = "It's time to replace your HVAC filters" 
+
+//NEED A SWITCH FOR THIS
+if (state.filterNotif == "flash") {text = "flashing lights"}
+if(state.filterNotif == "text")  {text = "sending text"}
+if(state.filterNotif == "audio")  {text = "pushed audio message"}
+}
+
 /***********************************************************************************************************************
  		SKILL DETAILS
  ***********************************************************************************************************************/
