@@ -398,6 +398,7 @@ mappings {
 	path("/c") { action: [GET: "controlDevices"] }
 	path("/f") { action: [GET: "feedbackHandler"] }
     path("/p") { action: [GET: "controlProfiles"] }
+    path("/r") { action: [GET: "incomingResponse"] }    
 	path("/t") { action: [GET: "processTts"] }
 }
 /************************************************************************************************************
@@ -457,22 +458,39 @@ def childUninstalled() {
 /************************************************************************************************************
 		Begining Process - Lambda via page b
 ************************************************************************************************************/
+def incomingResponse(){
+    if (debug) log.debug "^^^^____Received Response from Lambda___^^^^"  
+    def rNO  = params.rNO 		 
+    if (debug) log.debug "Response received from Lambda with: (rNO) = '${rNO}'"
+    	state.pTryAgain = false
+    return ["pContinue":state.pMuteAlexa, "versionSTtxt":versionSTtxt]    
+}  
+/************************************************************************************************************
+		Begining Process - Lambda via page b
+************************************************************************************************************/
 def processBegin(){
     if (debug) log.debug "^^^^____Initial Commands Received from Lambda___^^^^"  
     def versionTxt  = params.versionTxt 		
     def versionDate = params.versionDate
     def releaseTxt = params.releaseTxt
+    def event = params.intentResp
         state.lambdaReleaseTxt = releaseTxt
         state.lambdaReleaseDt = versionDate
         state.lambdatextVersion = versionTxt
     def versionSTtxt = textVersion() 
     if (debug){
-        log.debug "Message received from Lambda with: (ver) = '${versionTxt}', (date) = '${versionDate}', (release) = '${releaseTxt}'"+ 
+        log.debug "Message received from Lambda with: (event) = '${event}', (ver) = '${versionTxt}', (date) = '${versionDate}', (release) = '${releaseTxt}'"+ 
         ". And sent to Lambda: pContinue = '${state.pContCmds}', versionSTtxt = '${versionSTtxt}'"
 	}
-    	state.pTryAgain = false
+    
+    if (event == "AMAZON.NoIntent") {
+    	state.pinTry = null
+        state.savedPINdata = null
+    }
+    state.pTryAgain = false
         return ["pContinue":state.pMuteAlexa, "versionSTtxt":versionSTtxt]
 }   
+
 /************************************************************************************************************
 		FEEDBACK HANDLER - from Lambda via page f
 ************************************************************************************************************/
@@ -876,19 +894,10 @@ private getCustomCmd(command, unit, group) {
 			if(state.usePIN_D == true || state.usePIN_T == true || state.usePIN_L == true) {
         		result = "Pin number please"
         		state.pinTry = 0
-                state.savedPINdata = "disable"
+                state.savedPINdata = "disable" + group
         		if (debug) log.debug "PIN response pending to disable pin number - '${state.pinTry}'"
         		return result
 			}
-/*            
-            if (group == "thermostats") {state.usePIN_T = false}
-			if (group == "locks") {state.usePIN_L = false}
-			if (group == "doors") {state.usePIN_D = false}
-			state.pContCmds = true
-            state.pContCmdsR = "no"            
-            result = "Ok, pin number for " + group + " has been disabled.  To activate it again, just say enable the PIN number for " + group
-			return result
-*/
 		}
          if (unit == "feedback") {
         	state.pMuteAlexa = true
@@ -903,9 +912,9 @@ private getCustomCmd(command, unit, group) {
            	return result
     	}
 		if (unit == "conversation" || unit.contains ("conversation")) {
-			state.pContCmds = true
-            state.pContCmdsR = "no"
-            result = "Ok, activating conversational features. To disable just say, stop the conversation"
+           state.pContCmds = true
+           state.pContCmdsR = "no"           
+           result = "Ok, activating conversational features. To disable just say, stop the conversation"
             return result
         }
 		if (unit == "pin number" || unit == "pin") {
@@ -914,13 +923,10 @@ private getCustomCmd(command, unit, group) {
             	if (group == "locks") {state.usePIN_L = true}
             	if (group == "doors") {state.usePIN_D = true}
             	if (debug) log.debug "Group:'${group}' PIN: T- '${state.usePIN_T}', L-'${state.usePIN_L}', D-'${state.usePIN_D}' "
-            	state.pContCmds = true
-            	state.pContCmdsR = "no"
                 result = "Ok, the pin has been activated for " + group + ".  To disable, just say disable the PIN for " + group
             	return result
             }
             else {
-            	
                 result = "Sorry, the pin number cannot be enabled for this group "
             	return result
             }
@@ -937,11 +943,20 @@ private getCustomCmd(command, unit, group) {
 ************************************************************************************************************/ 
 private pinHandler(pin, command) {
 	def result
-	if (pin == cPIN || command == cPIN) {      
+	if (pin == cPIN || command == cPIN) {
 		def data = state.savedPINdata
-		if (debug) log.debug "PIN Matched! Preparing data: '${data}' "
-		result = controlHandler(data)
-        return result
+            if (data.contains("disable")){ 
+                if (data == "disablelocks"){state.usePIN_L = false}
+                if (data == "disablethermostats") {state.usePIN_T = false}
+                if (data == "disabledoors") {state.usePIN_D = false}  
+                result = "Ok, pin number for " + data.replace("disable", "") + " has been disabled.  To activate it again, just say enable the PIN number for " + data.replace("disable", "")
+            }
+            else {
+            result = controlHandler(data)
+            }
+            state.pinTry = null
+            state.savedPINdata = null  
+            return result
 	}
 	else {
 		state.pinTry = state.pinTry + 1
