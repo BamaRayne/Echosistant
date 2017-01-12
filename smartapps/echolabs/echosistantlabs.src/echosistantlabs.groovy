@@ -474,8 +474,7 @@ def processBegin(){
         log.debug "Message received from Lambda with: (event) = '${event}', (ver) = '${versionTxt}', (date) = '${versionDate}', (release) = '${releaseTxt}'"+ 
         ". And sent to Lambda: pContinue = '${state.pContCmds}', versionSTtxt = '${versionSTtxt}'"
 	}
-    if (state.pContCmds == true) {state.pContCmdsR = "yes"}
-    if (event == "AMAZON.NoIntent") {
+    if (event == "AMAZON.NoIntent" || event == "noAction") {
     	state.pinTry = null
         state.savedPINdata = null
     }
@@ -544,7 +543,6 @@ def controlDevices() {
             	state.filterNotif = ctUnit
                 def getTxt = getUnitText(ctUnit, ctNum)  
                 outputTxt = "Ok, when you need to change your filters, I will " + getTxt.text
-                state.pContCmdsR = "no"
          		return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]               
             }
         }
@@ -553,7 +551,7 @@ def controlDevices() {
         }
         if (state.pinTry != null ) {
         	log.debug "Pin try is not null"
-        	outputTxt = pinHandler(ctPIN, ctCommand, ctNum)
+            outputTxt = pinHandler(ctPIN, ctCommand, ctNum)
         	return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
         }
         if (ctCommand != "undefined") {
@@ -601,6 +599,7 @@ def controlDevices() {
                         delay = false
                         data = [type: "cSwitch", command: command, device: device, unit: ctUnit, num: ctNum, delay: delay]
                         outputTxt = controlHandler(data)
+                        if (debug) log.debug "Sending params to Lambda: pContCmds: '${state.pContCmds}', pContCmdsR: '${state.pContCmdsR}', pTryAgain: '${state.pTryAgain}' "
 						return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
                     }
                 }
