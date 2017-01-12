@@ -1,6 +1,7 @@
 /* 
  * EchoSistant - The Ultimate Voice and Text Messaging Assistant Using Your Alexa Enabled Device.
  *
+ *		1/12/2017		Version:4.0 R.4.2.3	Bug fixes: pin requests
  *		1/12/2017		Version:4.0 R.4.2.2	Bug fixes: fans, pin,  and non dimmer switches 
  *		1/11/2017		Version:4.0 R.4.2.1	New features: HVAC filters reminders 
  *											Improvements: Alexa responses
@@ -455,17 +456,7 @@ def getProfileList(){
 def childUninstalled() {
 	if (debug) log.debug "Profile has been deleted, refreshing Profiles for CoRE, ${getChildApps()*.label}"
     sendLocationEvent(name: "echoSistant", value: "refresh", data: [profiles: getProfileList()] , isStateChange: true, descriptionText: "echoSistant Profile list refresh")
-}
-/************************************************************************************************************
-		Begining Process - Lambda via page b
-************************************************************************************************************/
-def incomingResponse(){
-    if (debug) log.debug "^^^^____Received Response from Lambda___^^^^"  
-    def rNO  = params.rNO 		 
-    if (debug) log.debug "Response received from Lambda with: (rNO) = '${rNO}'"
-    	state.pTryAgain = false
-    return ["pContinue":state.pMuteAlexa, "versionSTtxt":versionSTtxt]    
-}  
+} 
 /************************************************************************************************************
 		Begining Process - Lambda via page b
 ************************************************************************************************************/
@@ -561,6 +552,7 @@ def controlDevices() {
             ctCommand = "set"
         }
         if (state.pinTry != null ) {
+        	log.debug "Pin try is not null"
         	outputTxt = pinHandler(ctPIN, ctCommand, ctNum)
         	return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
         }
@@ -586,6 +578,8 @@ def controlDevices() {
             	if (debug) log.debug "Received command data: deviceType= '${deviceType}', command= '${command}' _____>>>>> STARTING MAIN PROCESS <<<<<< ______"
         	}
 		}
+        
+        
         if (deviceType == "light" || deviceType == "general" ) {
             if (settings.cSwitch?.size() > 0 && state.pinTry == null) {
                 if (debug) log.debug "Searching for a switch named '${ctDevice}'"
@@ -911,8 +905,7 @@ private getCustomCmd(command, unit, group) {
            	return result
     	}
 		if (unit == "conversation" || unit.contains ("conversation")) {
-           state.pContCmds = true
-           state.pContCmdsR = "no"           
+           state.pContCmds = true        
            result = "Ok, activating conversational features. To disable just say, stop the conversation"
             return result
         }
@@ -928,7 +921,7 @@ private getCustomCmd(command, unit, group) {
             else {
                 result = "Sorry, the pin number cannot be enabled for this group "
             	return result
-            }
+            }         
         }
         if (unit == "feedback") {
         	state.pMuteAlexa = false
@@ -944,11 +937,11 @@ private pinHandler(pin, command, num) {
 	def result
 	if (pin == cPIN || command == cPIN || num == cPIN) {
 		def data = state.savedPINdata
-            if (data.contains("disable")){ 
+            if (data == "disablelocks" || data == "disablethermostats" || data == "disabledoors"){ 
                 if (data == "disablelocks"){state.usePIN_L = false}
-                if (data == "disablethermostats") {state.usePIN_T = false}
-                if (data == "disabledoors") {state.usePIN_D = false}  
-                result = "Ok, pin number for " + data.replace("disable", "") + " has been disabled.  To activate it again, just say enable the PIN number for " + data.replace("disable", "")
+                else if (data == "disablethermostats") {state.usePIN_T = false}
+                else if (data == "disabledoors") {state.usePIN_D = false}  
+                result = "Ok, pin number for " + data.replace("disable", "") + " has been disabled.  To activate it again, just say enable the PIN number for " + data.replace("disable", "")   
             }
             else {
             result = controlHandler(data)
