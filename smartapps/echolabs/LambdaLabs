@@ -1,8 +1,7 @@
-
- /**
+/**
  *  EchoSistant - Lambda Code
  *
- *
+ *  Version 4.1.2 - 1/11/2016 Workflow and response fixes
  *  Version 4.1.1 - 1/11/2016 Bug Fixes
  *  Version 4.0.1 - 11/29/2016 Bug Fixes
  *  Version 3.0.0 - 11/21/2016 Major Rework
@@ -38,7 +37,7 @@ exports.handler = function( event, context ) {
         var versionTxt = '4.0';
         var versionDate= '12/29/2016';
         var releaseTxt = "4.0.0";
-        var intentResp = "action";
+        var intentResp = "noAction";
         if (event.request.type == "IntentRequest"){
             intentResp = event.request.intent.name;
         }
@@ -69,10 +68,6 @@ exports.handler = function( event, context ) {
                 if (intentName.startsWith("AMAZON") && intentName.endsWith("Intent")) { 
                     alexaResp (intentName, context, "Amazon Intent", areWeDone); 
                 }
-                //if (intentName == "AMAZON.StopIntent" || intentName == "AMAZON.NoIntent") {
-                //    var rResponse = intentName;
-                //    url += 'r?rResponse=' + rResponse;
-                //}                
 //-------- Devicce Control Type Request------------------------------------------------------------------
                 else if (intentName == "main"){           
                     var cCommand = event.request.intent.slots.cCommand.value;
@@ -128,7 +123,11 @@ exports.handler = function( event, context ) {
                         var pTryAgain = resJSON.pTryAgain;
                         var pPIN = resJSON.pPIN;
                         var speechText = resJSON.outputTxt;
-                        if (pMuteAlexa === true) {
+                        if (pPIN === true){
+                            //just wait
+                            areWeDone=false;
+                        }
+                        else if (pMuteAlexa === true && pTryAgain !== true) {
                             areWeDone=true;
                             return output("", context, cardName, areWeDone);
                         }    
@@ -148,11 +147,8 @@ exports.handler = function( event, context ) {
                             //just wait
                             areWeDone=false;
                         }
-                        else if (pContCmds === true && pContCmdsR == "no") {
-                            alexaContResp ("Short Answer", speechText, context, areWeDone);
-                        }
-                        else if (pContCmds === true && pContCmdsR == "yes") {
-                            alexaContResp ("Long Answer", speechText, context, areWeDone);
+                        else if (pContCmds === true) {
+                            alexaContResp ("Response", speechText, context, areWeDone);
                         }
                         else if (pContCmds === false){
                             //no sound
@@ -166,7 +162,6 @@ exports.handler = function( event, context ) {
         } );
     } );
 };
-    
 function alexaResp(type, context, cardName, areWeDone){
     if (type == "AMAZON.YesIntent") { 
         areWeDone=false;
@@ -197,14 +192,9 @@ function alexaContResp(type, text , context, areWeDone){
         speechText = "Pin number, please";
         output(speechText, context, "EchoSistant Stop", areWeDone);
     }
-    else if (type == "Short Answer") { 
+    else if (type == "Response") { 
         areWeDone=false;
-        speechText = speechText + ' , anything else';
-        output(speechText, context, "EchoSistant Stop", areWeDone);
-    }
-    else if (type == "Long Answer") { 
-        areWeDone=false;
-        speechText = " , anything else";
+        speechText =speechText + " , would you like anything else";
         output(speechText, context, "EchoSistant Stop", areWeDone);
     }
 }
