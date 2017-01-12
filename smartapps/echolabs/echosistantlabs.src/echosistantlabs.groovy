@@ -1242,12 +1242,14 @@ def controlHandler(data) {
         	if (deviceCommand == "increase") {
             	newLevel =  currLevel + newLevel
             	newLevel = newLevel < 0 ? 0 : newLevel >100 ? 100 : newLevel
+                deviceD.setLevel(newLevel)
                 result = "Ok, increasing  " + deviceD + " to " + newLevel + " percent"
        				if (delayD == false) { return result }
             }
             else if (deviceCommand == "decrease") {
                	newLevel =  currLevel - newLevel
             	newLevel = newLevel < 0 ? 0 : newLevel >100 ? 100 : newLevel
+                deviceD.setLevel(newLevel)
                 result = "Ok, decreasing  " + deviceD + " to " + newLevel + " percent"
        				if (delayD == false) { return result }        
             }
@@ -1258,7 +1260,7 @@ def controlHandler(data) {
                     deviceD.setLevel(newLevel)
                     result = "Ok, setting  " + deviceD + " to " + newLevel + " percent"
                     if (delayD == false) {return result} 
-           }
+           }           
 	}
 }
 /***********************************************************************************************************************
