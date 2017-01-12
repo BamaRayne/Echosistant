@@ -1,6 +1,7 @@
 /* 
  * EchoSistant - The Ultimate Voice and Text Messaging Assistant Using Your Alexa Enabled Device.
  *
+ *		1/12/2017		Version:4.0 R.4.2.2	Bug fixes: fans, pin,  and non dimmer switches 
  *		1/11/2017		Version:4.0 R.4.2.1	New features: HVAC filters reminders 
  *											Improvements: Alexa responses
  *	
@@ -482,7 +483,7 @@ def processBegin(){
         log.debug "Message received from Lambda with: (event) = '${event}', (ver) = '${versionTxt}', (date) = '${versionDate}', (release) = '${releaseTxt}'"+ 
         ". And sent to Lambda: pContinue = '${state.pContCmds}', versionSTtxt = '${versionSTtxt}'"
 	}
-    
+    if (state.pContCmds == true) {state.pContCmdsR = "yes"}
     if (event == "AMAZON.NoIntent") {
     	state.pinTry = null
         state.savedPINdata = null
@@ -521,7 +522,6 @@ def controlDevices() {
         def ctUnit = params.cUnit
         def ctGroup = params.cGroup       
 		def pintentName = params.intentName
-
         def String outputTxt = (String) null 
         //this is used to activate Lambda "Try Again" response
 		def pPIN = false
@@ -561,8 +561,7 @@ def controlDevices() {
             ctCommand = "set"
         }
         if (state.pinTry != null ) {
-        //need a way to restrict if someone gives up before trying the PIN for 3 consecutive times
-        	outputTxt = pinHandler(ctPIN, ctCommand)
+        	outputTxt = pinHandler(ctPIN, ctCommand, ctNum)
         	return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
         }
         if (ctCommand != "undefined") {
@@ -941,9 +940,9 @@ private getCustomCmd(command, unit, group) {
 /************************************************************************************************************
 	PIN HANDLER
 ************************************************************************************************************/ 
-private pinHandler(pin, command) {
+private pinHandler(pin, command, num) {
 	def result
-	if (pin == cPIN || command == cPIN) {
+	if (pin == cPIN || command == cPIN || num == cPIN) {
 		def data = state.savedPINdata
             if (data.contains("disable")){ 
                 if (data == "disablelocks"){state.usePIN_L = false}
@@ -1019,17 +1018,31 @@ def controlHandler(data) {
                 	newLevel = numN
                 }   
                 else {
+                	if (currLevel == null){
+                    deviceD.on()
+                    result = "Ok, turning " + deviceD + " on"
+            		return result    
+                    }
+                    else {
                 	newLevel =  currLevel + newLevel
             		newLevel = newLevel < 0 ? 0 : newLevel >100 ? 100 : newLevel
-            	}
+            		}
+                }
             }
             if (deviceCommand == "decrease") {
             	if (unitU == "percent") {
                 	newLevel = numN
                 }   
                 else {
+                	if (currLevel == null) {
+                    deviceD.off()
+                    result = "Ok, turning " + deviceD + " off"
+            		return result                    
+                    }
+                    else {
                 	newLevel =  currLevel - newLevel
             		newLevel = newLevel < 0 ? 0 : newLevel >100 ? 100 : newLevel
+                    }
                 }            
             }
             if (deviceCommand == "setLevel") {
@@ -1049,7 +1062,7 @@ def controlHandler(data) {
             	if (newLevel == 0 && currState == "on") {deviceD.off()}
                 else {deviceD.setLevel(newLevel)}
             } 
-            result = "Ok, setting  " + deviceD + " to " + newLevel + " percent"
+            result = "Ok, setting  " + deviceD + " to " + newLevel + " percent"            
             if (delayD == false) { return result } 
     	}
 	}
