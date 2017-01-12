@@ -1,7 +1,7 @@
 
- /**
  *  EchoSistant - Lambda Code
  *
+ *  Version 4.1.1 - 1/12/2017 Bug Fixes
  *  Version 4.0.1 - 11/29/2016 Copyright © 2016 Jason Headley
  *  Version 3.0.0 - 11/21/2016 Copyright © 2016 Jason Headley
  *  Special thanks for Michael Struck @MichaelS (Developer of AskAlexa) for allowing me
@@ -26,8 +26,8 @@
 exports.handler = function( event, context ) {
     var https = require( 'https' );
     // Paste app code here between the breaks------------------------------------------------
-    var STappID = '2e23954f-6bc8-4a44-b0d5-7b0a24582af1';
-    var STtoken = '02c45ffe-9a66-43a6-ba67-8c6940e06117';
+    var STappID = '0ae736f9-51c0-439d-9cab-32c460b5febb';
+    var STtoken = '21c78384-1323-40d9-aae7-da2d09537a96';
     var url='https://graph.api.smartthings.com:443/api/smartapps/installations/' + STappID + '/' ;
         //---------------------------------------------------------------------------------------
         var cardName ="";
@@ -36,11 +36,15 @@ exports.handler = function( event, context ) {
         var versionTxt = '4.0';
         var versionDate= '12/29/2016';
         var releaseTxt = "4.0.0";
-        var beginURL = url + 'b?&versionTxt=' + versionTxt + '&versionDate=' + versionDate + '&releaseTxt=' + releaseTxt + '&access_token=' + STtoken;
+        var intentResp = "action";
+        if (event.request.type == "IntentRequest"){
+            intentResp = event.request.intent.name;
+        }
+        var beginURL = url + 'b?&versionTxt=' + versionTxt + '&intentResp=' + intentResp + '&versionDate=' + versionDate + '&releaseTxt=' + releaseTxt + '&access_token=' + STtoken;
         https.get( beginURL, function( response ) {
         response.on( 'data', function( data ) {
             var startJSON = JSON.parse(data);
-            var contOptions = startJSON.pContinue; //setting global variable if continuation is allowed for either control or tts
+            var pMuteAlexa = startJSON.pContinue; //setting global variable if continuation is allowed for either control or tts
             var verST = startJSON.versionSTtxt;
 //-------- Error trapping--------------------------------------------------------------------
             if (startJSON.error) { 
@@ -63,6 +67,10 @@ exports.handler = function( event, context ) {
                 if (intentName.startsWith("AMAZON") && intentName.endsWith("Intent")) { 
                     alexaResp (intentName, context, "Amazon Intent", areWeDone); 
                 }
+                //if (intentName == "AMAZON.StopIntent" || intentName == "AMAZON.NoIntent") {
+                //    var rResponse = intentName;
+                //    url += 'r?rResponse=' + rResponse;
+                //}                
 //-------- Devicce Control Type Request------------------------------------------------------------------
                 else if (intentName == "main"){           
                     var cCommand = event.request.intent.slots.cCommand.value;
@@ -107,7 +115,7 @@ exports.handler = function( event, context ) {
 //-------- General Response------------------------------------------------------------------
                 if (!process) {
                     output("I am not sure what you are asking. Please try again", context, areWeDone); 
-                }                                        
+                }
                 else {
                     url += '&access_token=' + STtoken;
                     https.get( url, function( response ) {
@@ -118,24 +126,34 @@ exports.handler = function( event, context ) {
                         var pTryAgain = resJSON.pTryAgain;
                         var pPIN = resJSON.pPIN;
                         var speechText = resJSON.outputTxt;
-                        if (pContCmds === true && pContCmdsR == "profile" ) { 
+                        if (pMuteAlexa === true) {
+                            areWeDone=true;
+                            return output("", context, cardName, areWeDone);
+                        }    
+                        else if (pContCmds === true && pContCmdsR == "profile" ) { 
                             areWeDone=false;
                             speechText = speechText + ', send another message to ' + intentName;
                             return output(speechText, context, cardName, areWeDone);
                         }
-                        else if (pTryAgain === true)
+                        else if (pTryAgain === true){
                             alexaContResp ("Try Again", speechText, context, areWeDone);
-                        else if (pContCmdsR == "filters")
+                        }
+                        else if (pContCmdsR == "filters"){
+                            //just wait
                             areWeDone=false;
-                        else if (pPIN === true)
+                        }
+                        else if (pPIN === true){
+                            //just wait
                             areWeDone=false;
+                        }
                         else if (pContCmds === true && pContCmdsR == "no") {
                             alexaContResp ("Short Answer", speechText, context, areWeDone);
                         }
                         else if (pContCmds === true && pContCmdsR == "yes") {
                             alexaContResp ("Long Answer", speechText, context, areWeDone);
                         }
-                        else if (pContCmds === false && pContCmdsR == "no"){
+                        else if (pContCmds === false){
+                            //no sound
                             areWeDone=true;
                         }
                         output(speechText, context, cardName, areWeDone);
@@ -184,7 +202,7 @@ function alexaContResp(type, text , context, areWeDone){
     }
     else if (type == "Long Answer") { 
         areWeDone=false;
-        speechText = " , anything else";
+        speechText = speechText + ' , would you like anything else';
         output(speechText, context, "EchoSistant Stop", areWeDone);
     }
 }
