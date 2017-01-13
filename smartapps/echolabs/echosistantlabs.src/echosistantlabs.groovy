@@ -486,13 +486,66 @@ def processBegin(){
 		FEEDBACK HANDLER - from Lambda via page f
 ************************************************************************************************************/
 def feedbackHandler() {
+
+    def fProfile = params.fProfile
+    def fDevice = params.fDevice
+   	def fQuery = params.fQuery
+    def fOperand = params.fOperand 
+
 	def outputTxt = "Sorry, the feedback module is not ready. If you believe this was not a feedback request, please open a trouble ticket. Thank you for your help, "
 	def pPIN = false
     state.pTryAgain = true
+    if (debug){
+        log.debug "Message received from Lambda with: (fProfile) = '${fProfile}', (fDevice) = '${fDevice}', (fQuery) = '${fQuery}', (fOperand) = '${fOperand}'"
+	}
+	def evtLog=[]
+    def lastEvent
+	 def deviceMatch = cSwitch.find {s -> s.label.toLowerCase() == fDevice.toLowerCase()}  
+    def searchVal = "on"
+    lastEvent= deviceMatch.events()
+		lastEvent.each { if (it.value && it.value==searchVal) evtLog << [device: deviceName, time: it.date.getTime(), desc: it.descriptionText] }		
+        
+        log.debug "Feedback device last events:  (lastEvent) = '${lastEvent.value}', evtLog = '${evtLog}' "
+
+
+    def lastNewEvt= deviceMatch.events(), eDate, eDesc, today, eventDay, voiceDay, i , evtCount = 0, result = ""
+    
+    for( i = 0 ; i < 10 ; i++ ) {
+        eDate = lastNewEvt.date[i].getTime()
+        eDesc = lastNewEvt.descriptionText[i]
+    	if (eDesc) {
+        	today = new Date(now()).format("EEEE, MMMM dd, yyyy", location.timeZone)
+    		eventDay = new Date(eDate).format("EEEE, MMMM dd, yyyy", location.timeZone)
+    		voiceDay = today == eventDay ? "Today" : "On " + eventDay
+    		result += voiceDay + " at " + new Date(eDate).format("h:mm aa", location.timeZone) + " the event was: " + eDesc + ". "
+   	 		evtCount ++
+            if (evtCount == count) break
+        }
+	}
+
+ log.debug "Feedback device last events:  (result) = '${result}'"
+
+/*
+lastEvent.each { if (it.value && it.value==searchVal) evtLog << [device: deviceName, time: it.date.getTime(), desc: it.descriptionText] }
+	} 
+    if (evt.size()>0){
+        evtLog.sort({it.time})
+        evtLog.reverse(true)
+        def today = new Date(now()).format("EEEE, MMMM d, yyyy", location.timeZone)
+        def eventDay = new Date(evtLog.time[0]).format("EEEE, MMMM d, yyyy", location.timeZone)
+        def voiceDay = today == eventDay ? "today" : "On " + eventDay  
+        def evtTime = new Date(evtLog.time[0]).format("h:mm aa", location.timeZone)
+        if (voiceEvtTimeDate && parent.getAdvEnabled()) lastEvt = "${voiceDay} at ${evtTime}. "
+    }    
+    return lastEvt
+}
+
+*/
+
     return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
 }
 /************************************************************************************************************
-		GROUP CONTROL HANDLER - from Lambda via page p
+		PROFILE CONTROL HANDLER - from Lambda via page p
 ************************************************************************************************************/
 def controlProfiles() {
 	def outputTxt = "Sorry, the group control module is not ready. If you believe this was not a request to control a Profile group, please open a trouble ticket. Thank you for your help, "
@@ -953,7 +1006,7 @@ private pinHandler(pin, command, num) {
 		state.pinTry = state.pinTry + 1
 			if (state.pinTry < 4){
 				result = "I'm sorry, that is incorrect, "
-				if (debug) log.debug "PIN NOT Matched! PIN = '${cPIN}', ctPIN= '${ctPIN}', ctCommand ='${command}', try# ='${state.pinTry}'"
+				if (debug) log.debug "PIN NOT Matched! PIN = '${cPIN}', ctPIN= '${ctPIN}', ctNum= '${num}', ctCommand ='${command}', try# ='${state.pinTry}'"
 				state.pTryAgain = true
                 return result
 			}
@@ -1112,7 +1165,9 @@ def controlHandler(data) {
 			if (currentMode == "cool" || currentMode == "off") {
 				deviceD?."heat"()
                 deviceD?.setHeatingSetpoint(newSetPoint)
-				if (debug) log.debug "Turning heat on because requested command asked for heat to be set to '${newSetPoint}'" 
+                if (debug) log.debug "Turning heat on because requested command asked for heat to be set to '${newSetPoint}'"
+                result = "Ok, turning the heat mode on " + deviceD + " and setting heating to " + cNewSetPoint + " degrees "
+                return result 
 			}
 			else {
 				if  (currentHSP < newSetPoint) {
@@ -1140,7 +1195,9 @@ def controlHandler(data) {
             if (currentMode == "heat" || currentMode == "off") {
         		deviceD?."cool"()
                 deviceD?.setCoolingSetpoint(newSetPoint)
-        		if (debug) log.debug "Turning AC on because requested command asked for cooling to be set to '${newSetPoint}'"     
+        		if (debug) log.debug "Turning AC on because requested command asked for cooling to be set to '${newSetPoint}'"
+                result = "Ok, turning the AC mode on " + deviceD + " and setting cooling to " + cNewSetPoint + " degrees "
+                return result                 
         	}   	
         	else {
         		if (currentCSP > newSetPoint) {
