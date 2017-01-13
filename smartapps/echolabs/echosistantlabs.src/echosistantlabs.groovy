@@ -1,6 +1,7 @@
 /* 
  * EchoSistant - The Ultimate Voice and Text Messaging Assistant Using Your Alexa Enabled Device.
  *
+ *		1/12/2017		Version:4.0 R.4.2.4	Bug fixes: scheduling process
  *		1/12/2017		Version:4.0 R.4.2.3	Bug fixes: pin requests
  *		1/12/2017		Version:4.0 R.4.2.2	Bug fixes: fans, pin,  and non dimmer switches 
  *		1/11/2017		Version:4.0 R.4.2.1	New features: HVAC filters reminders 
@@ -916,20 +917,25 @@ private getCustomCmd(command, unit, group) {
     }
     if (command == "cancel" || command == "stop" || command == "disable" || command == "deactivate" || command == "unschedule") {
     	if (unit == "reminder" || unit == "reminders" || unit == "timer" || unit == "timers" || unit.contains ("reminder") || unit.contains ("timer") ) {
-        	if (state.scheduledHandler == "filters") {
-            	//unschedule() cancel ALL
-                unschedule(filtersHandler)
-                state.scheduledHandler = null
-                result = "Ok, canceling reminder to replace filters"
-				return result
+        	if (unit.contains ("reminder")) {
+            	if (state.scheduledHandler != null) {
+                	def reminderHandler = state.scheduledHandler == "filters"+"Handler"
+                	unschedule("${reminderHandler}")
+                result = "Ok, canceling reminder for " + state.scheduledHandler
+            	}
+                else {
+                result = "Sorry, I couldn't find any scheduled reminders"// for " + state.scheduledHandler
+                }
+                return result
             }
             else {
-               	unschedule(controlHandler)
-               	//unschedule() cancel ALL
-                result = "Ok, canceling timer"
-				return result
+                if (unit.contains ("timer")) {
+                    unschedule(controlHandler)
+                    result = "Ok, canceling timer"
+                    return result
+                }
             }
-		}
+        }
 		if (unit == "conversation" || unit.contains ("conversation")) {
 			state.pContCmds = false
             result = "Ok, disabling conversational features. To activate just say, start the conversation"
