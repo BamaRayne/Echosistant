@@ -1,6 +1,7 @@
 /* 
  * EchoSistant - The Ultimate Voice and Text Messaging Assistant Using Your Alexa Enabled Device.
  *
+ *		1/13/2017		Version:4.0 R.4.2.5	Feature: First Alexa Thinks
  *		1/12/2017		Version:4.0 R.4.2.4	Bug fixes: scheduling process
  *		1/12/2017		Version:4.0 R.4.2.3	Bug fixes: pin requests
  *		1/12/2017		Version:4.0 R.4.2.2	Bug fixes: fans, pin,  and non dimmer switches 
@@ -446,6 +447,7 @@ def initialize() {
 			state.changedFilters
             state.scheduledHandler
             state.filterNotif
+            state.lastAction = null
 	}
 /************************************************************************************************************
 		CoRE Integration
@@ -478,6 +480,10 @@ def processBegin(){
     if (event == "AMAZON.NoIntent" || event == "noAction") {
     	state.pinTry = null
         state.savedPINdata = null
+    }
+    if (event == "AMAZON.YesIntent" || event == "noAction") {
+    	state.pContCmdsR = null
+        state.lastAction = null
     }
     state.pTryAgain = false
         return ["pContinue":state.pMuteAlexa, "versionSTtxt":versionSTtxt]
@@ -546,6 +552,15 @@ lastEvent.each { if (it.value && it.value==searchVal) evtLog << [device: deviceN
     return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
 }
 /************************************************************************************************************
+   ALEXA THINKS HANDLER 
+************************************************************************************************************/
+def alexaThinks() {
+	def outputTxt = "Sorry, the group control module is not ready. If you believe this was not a request to control a Profile group, please open a trouble ticket. Thank you for your help, "
+	def pPIN = false
+    state.pTryAgain = true
+    
+}
+/************************************************************************************************************
 		PROFILE CONTROL HANDLER - from Lambda via page p
 ************************************************************************************************************/
 def controlProfiles() {
@@ -609,8 +624,14 @@ def controlDevices() {
         	return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
         }
         if (ctCommand != "undefined") {
-        	outputTxt = getCustomCmd(ctCommand, ctUnit, ctGroup)  
-        	if (outputTxt!= null ) {
+        	if (ctCommand.contains ("try again")) {
+                	def savedData = state.lastAction
+                    outputTxt = controlHandler(savedData)
+            }       
+            else {
+            outputTxt = getCustomCmd(ctCommand, ctUnit, ctGroup)  
+        	}
+            if (outputTxt!= null ) {
             		if (ctUnit == "pin number" || ctUnit == "pin") {
 						if (ctGroup == "thermostats" || ctGroup == "locks" || ctGroup == "doors") {
                         	state.pTryAgain = false
@@ -653,6 +674,7 @@ def controlDevices() {
                         delay = false
                         data = [type: "cSwitch", command: command, device: device, unit: ctUnit, num: ctNum, delay: delay]
                         outputTxt = controlHandler(data)
+                        if (command == "decrease" || command == "increase" ) {state.pContCmdsR = "level"}
                         if (debug) log.debug "Sending params to Lambda: pContCmds: '${state.pContCmds}', pContCmdsR: '${state.pContCmdsR}', pTryAgain: '${state.pTryAgain}' "
 						return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
                     }
@@ -1035,6 +1057,7 @@ def controlHandler(data) {
     def numN = data.num
     def delayD = data.delay
 	def result = " "
+    def actionData
     if (debug) log.debug 	"Received device control handler data: " +
         					" (deviceType)= ${deviceType}',(deviceCommand) = '${deviceCommand}', (deviceD) = '${deviceD}', " +
                             "(unitU) = '${unitU}', (numN) = '${numN}', (delayD) = '${delayD}'"  
@@ -1042,7 +1065,10 @@ def controlHandler(data) {
     	if (deviceCommand == "on" || deviceCommand == "off") {
             if (delayD == false) {
                 deviceD."${deviceCommand}"()
-            	result = "Ok, turning " + deviceD + " " + deviceCommand 
+            	def device = deviceD.label
+                actionData = ["type": deviceType, "command": deviceCommand , "device": device, "unit": unitU, "num": numN, delay: delayD]
+                state.lastAction = actionData
+                result = "Ok, turning " + deviceD + " " + deviceCommand 
                 return result
             }
             else {
@@ -1057,13 +1083,14 @@ def controlHandler(data) {
         		deviceD.off()
         }
         else if (deviceCommand == "increase" || deviceCommand == "decrease" || deviceCommand == "setLevel" || deviceCommand == "set") {
- 			if (delayD == true) {  
-                deviceD = cSwitch.find {s -> s.label == deviceD}   
+ 			if (delayD == true || state.pContCmdsR == "level") {  
+                deviceD = cSwitch.find {s -> s.label.toLowerCase() == deviceD.toLowerCase()}
+                if (debug) log.debug "Matched device control (deviceD)= ${deviceD.label}"
             }
             def currLevel = deviceD.latestValue("level")
             def currState = deviceD.latestValue("switch")
             def newLevel = cLevel*10
-			if (unitU == "percent") newLevel = numN      
+            if (unitU == "percent") newLevel = numN      
             if (deviceCommand == "increase") {
             	if (unitU == "percent") {
                 	newLevel = numN
@@ -1113,6 +1140,9 @@ def controlHandler(data) {
             	if (newLevel == 0 && currState == "on") {deviceD.off()}
                 else {deviceD.setLevel(newLevel)}
             } 
+            def device = deviceD.label
+            actionData = ["type": deviceType, "command": deviceCommand , "device": device, "unit": unitU, "num": newLevel, delay: delayD]
+            state.lastAction = actionData
             result = "Ok, setting  " + deviceD + " to " + newLevel + " percent"            
             if (delayD == false) { return result } 
     	}
@@ -1292,8 +1322,8 @@ def controlHandler(data) {
         }
         state.pinTry = null
    		deviceD."${deviceCommand}"()
-        if (deviceCommand == "lock") result = "Ok, locking " + deviceD
-        else if (deviceCommand == "unlock") result = "Ok, unlocking the  " + deviceD                    
+        if (deviceCommand == "open") {result = "Ok, opening the " + deviceD}
+        if (deviceCommand == "close") {result = "Ok, closing the  " + deviceD}                   
         if (delayD == false) {return result}  
 	}
     else if (deviceType == "cFan") {
