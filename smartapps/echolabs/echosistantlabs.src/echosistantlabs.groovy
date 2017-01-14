@@ -639,7 +639,8 @@ def controlDevices() {
         def String result = (String) null
         def delay = false
         def data
-    	if (debug) log.debug "Received Lambda request to control devices with settings:" +
+    	state.pContCmdsR == "undefined"
+        if (debug) log.debug "Received Lambda request to control devices with settings:" +
         					 " (ctCommand)= ${ctCommand}',(ctNum) = '${ctNum}', (ctPIN) = '${ctPIN}', "+
                              "(ctDevice) = '${ctDevice}', (ctUnit) = '${ctUnit}', (ctGroup) = '${ctGroup}', (pintentName) = '${pintentName}'"
   	if (pintentName == "main") {	
@@ -1135,7 +1136,8 @@ def controlHandler(data) {
         }
         else if (deviceCommand == "increase" || deviceCommand == "decrease" || deviceCommand == "setLevel" || deviceCommand == "set") {
  			if (delayD == true || state.pContCmdsR == "level") {  
-                deviceD = cSwitch.find {s -> s.label.toLowerCase() == deviceD.toLowerCase()}
+                deviceD = cSwitch.find {s -> s.label.toLowerCase() == deviceD.toLowerCase()} 
+                state.pContCmdsR == null
                 if (debug) log.debug "Matched device control (deviceD)= ${deviceD.label}"
             }
             def currLevel = deviceD.latestValue("level")
