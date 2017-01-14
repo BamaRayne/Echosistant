@@ -58,6 +58,10 @@
           "type" : "LIST_OF_PROFILES"
         },
         {
+          "name" : "cCommand",
+          "type" : "LIST_OF_COMMANDS"
+        },
+        {
           "name" : "fOperand",
           "type" : "LIST_OF_OPERANDS"
         },
