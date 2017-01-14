@@ -484,6 +484,8 @@ def processBegin(){
     if (event == "AMAZON.NoIntent" || event == "noAction") {
     	state.pinTry = null
         state.savedPINdata = null
+        state.pContCmdsR = null
+
     }
     if (event == "AMAZON.YesIntent" || event == "noAction") {
     	state.pContCmdsR = null
@@ -1137,9 +1139,9 @@ def controlHandler(data) {
         else if (deviceCommand == "increase" || deviceCommand == "decrease" || deviceCommand == "setLevel" || deviceCommand == "set") {
  			if (delayD == true || state.pContCmdsR == "level") {  
                 deviceD = cSwitch.find {s -> s.label.toLowerCase() == deviceD.toLowerCase()} 
-                state.pContCmdsR == null
                 if (debug) log.debug "Matched device control (deviceD)= ${deviceD.label}"
             }
+            state.pContCmdsR == null
             def currLevel = deviceD.latestValue("level")
             def currState = deviceD.latestValue("switch")
             def newLevel = cLevel*10
