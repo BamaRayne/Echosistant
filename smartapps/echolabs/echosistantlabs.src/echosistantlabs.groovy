@@ -1,6 +1,7 @@
 /* 
  * EchoSistant - The Ultimate Voice and Text Messaging Assistant Using Your Alexa Enabled Device.
  *
+ *		1/14/2017		Version:4.0 R.4.2.6	Bug fixes: for try again module 
  *		1/13/2017		Version:4.0 R.4.2.6	Feature Added: Alexa Feedback and device status 
  *		1/13/2017		Version:4.0 R.4.2.5	Feature: First Alexa Thinks
  *		1/12/2017		Version:4.0 R.4.2.4	Bug fixes: scheduling process
@@ -477,22 +478,36 @@ def processBegin(){
         state.lambdaReleaseDt = versionDate
         state.lambdatextVersion = versionTxt
     def versionSTtxt = textVersion() 
-    if (debug){
-        log.debug "Initial data: (event) = '${event}', (ver) = '${versionTxt}', (date) = '${versionDate}', (release) = '${releaseTxt}'"+ 
-        ". And sent to Lambda: pContinue = '${state.pContCmds}', versionSTtxt = '${versionSTtxt}'"
-	}
+    def pPendingAns = false    
+    def String outputTxt = (String) null 
     if (event == "AMAZON.NoIntent" || event == "noAction") {
     	state.pinTry = null
         state.savedPINdata = null
-        state.pContCmdsR = null
-
     }
-    if (event == "AMAZON.YesIntent" || event == "noAction") {
+    if (event == "AMAZON.NoIntent" && state.pContCmdsR == "level"){
+    	if (state.lastAction != null) {
+        	def savedData = state.lastAction
+            outputTxt = controlHandler(savedData) 
+            pPendingAns = true
+        }
+        else {
+        	state.pContCmdsR = null
+        	pPendingAns = true
+		}
+    }
+    if (event == "AMAZON.YesIntent" && state.pContCmdsR == "level") {
     	state.pContCmdsR = null
         state.lastAction = null
+        pPendingAns = true
     }
     state.pTryAgain = false
-        return ["pContinue":state.pMuteAlexa, "versionSTtxt":versionSTtxt]
+    //state.pContCmdsR = null
+    //state.lastAction = null
+	   if (debug){log.debug "Initial data received: (event) = '${event}', (ver) = '${versionTxt}', (date) = '${versionDate}', (release) = '${releaseTxt}'"+ 
+        "; data sent: pContinue = '${state.pContCmds}', pPendingAns = '${pPendingAns}', versionSTtxt = '${versionSTtxt}'; other data: pContCmdsR = '${state.pContCmdsR}', pinTry'=${state.pinTry}' "
+	}
+
+        return ["outputTxt":outputTxt, "pContinue":state.pMuteAlexa, "pPendingAns":pPendingAns, "versionSTtxt":versionSTtxt]
 }   
 
 /************************************************************************************************************
@@ -676,12 +691,13 @@ def controlDevices() {
         	return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
         }
         if (ctCommand != "undefined") {
-        	if (ctCommand.contains ("try again")) {
+        	if (ctCommand.contains ("try again") && state.lastAction != null) {
                 	def savedData = state.lastAction
                     outputTxt = controlHandler(savedData)
             }       
             else {
-            outputTxt = getCustomCmd(ctCommand, ctUnit, ctGroup)  
+            outputTxt = getCustomCmd(ctCommand, ctUnit, ctGroup)
+            state.pContCmdsR = "clear"
         	}
             if (outputTxt!= null ) {
             		if (ctUnit == "pin number" || ctUnit == "pin") {
@@ -1137,7 +1153,8 @@ def controlHandler(data) {
         		deviceD.off()
         }
         else if (deviceCommand == "increase" || deviceCommand == "decrease" || deviceCommand == "setLevel" || deviceCommand == "set") {
- 			if (delayD == true || state.pContCmdsR == "level") {  
+ 			if (delayD == true || state.pContCmdsR == "level") {
+                 if (debug) log.debug "Found level adjustment pending, this is a continuation command"  
                 deviceD = cSwitch.find {s -> s.label.toLowerCase() == deviceD.toLowerCase()} 
                 if (debug) log.debug "Matched device control (deviceD)= ${deviceD.label}"
             }
