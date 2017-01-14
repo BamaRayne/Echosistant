@@ -1,6 +1,6 @@
-/**
  *  EchoSistant - Lambda Code
  *
+ *  Version 4.1.4 - 1/14/2017 More response fixes
  *  Version 4.1.3 - 1/13/2017 Workflow and response fixes
  *  Version 4.1.2 - 1/11/2017 Workflow and response fixes
  *  Version 4.1.1 - 1/11/2017 Bug Fixes
@@ -28,8 +28,8 @@
 exports.handler = function( event, context ) {
     var https = require( 'https' );
     // Paste app code here between the breaks------------------------------------------------
-    var STappID = '0ae736f9-51c0-439d-9cab-XXXXX';
-    var STtoken = '21c78384-1323-40d9-aae7-XXXXX';
+    var STappID = '0ae736f9-51c0-439d-9cab-32c460b5febb';
+    var STtoken = '21c78384-1323-40d9-aae7-da2d09537a96';
     var url='https://graph.api.smartthings.com:443/api/smartapps/installations/' + STappID + '/' ;
         //---------------------------------------------------------------------------------------
         var cardName ="";
@@ -48,6 +48,8 @@ exports.handler = function( event, context ) {
             var startJSON = JSON.parse(data);
             var pMuteAlexa = startJSON.pContinue; //setting global variable if continuation is allowed for either control or tts
             var verST = startJSON.versionSTtxt;
+            var pPendingAns = startJSON.pPendingAns;
+            var text = startJSON.outputTxt;
 //-------- Error trapping--------------------------------------------------------------------
             if (startJSON.error) { 
                 output("There was an error. If this continues to happen, please reach out for help", context, "Lambda Error", areWeDone); 
@@ -66,7 +68,15 @@ exports.handler = function( event, context ) {
             else if (event.request.type == "IntentRequest") {
                 var process = false;
                 var intentName = event.request.intent.name;
-                if (intentName.startsWith("AMAZON") && intentName.endsWith("Intent")) { 
+                if (intentName == "AMAZON.YesIntent" && pPendingAns === true) {
+                    alexaResp ("Pending Yes Answer", context, "Amazon Intent", areWeDone); 
+                }                
+                else if (intentName == "AMAZON.NoIntent" && pPendingAns === true) {
+                    areWeDone=false;
+                    text = text + ', is it better?';
+                    return output(text, context, cardName, areWeDone);
+                }
+                else if (intentName.startsWith("AMAZON") && intentName.endsWith("Intent")) { 
                     alexaResp (intentName, context, "Amazon Intent", areWeDone); 
                 }
 //-------- Devicce Control Type Request------------------------------------------------------------------
@@ -98,8 +108,9 @@ exports.handler = function( event, context ) {
                     var fDevice = event.request.intent.slots.cDevice.value;
                     var fQuery = event.request.intent.slots.fQuery.value;
                     var fOperand = event.request.intent.slots.fOperand.value;
+                    var fCommand = event.request.intent.slots.cCommand.value;
 
-                    url += 'f?fProfile=' + fProfile + '&fDevice=' + fDevice + '&fQuery=' + fQuery + '&fOperand=' + fOperand + '&intentName=' + intentName;
+                    url += 'f?fProfile=' + fProfile + '&fDevice=' + fDevice + '&fCommand=' + fCommand + '&fQuery=' + fQuery + '&fOperand=' + fOperand + '&intentName=' + intentName;
                     process = true;
                     cardName = "EchoSistant Feedback";
                 }
@@ -171,7 +182,7 @@ exports.handler = function( event, context ) {
 function alexaResp(type, context, cardName, areWeDone){
     if (type == "AMAZON.YesIntent") { 
         areWeDone=false;
-        output("Ok ", context, "EchoSistant Stop", areWeDone);
+        output("Please continue, ", context, "EchoSistant Stop", areWeDone);
     }
     else if (type == "AMAZON.NoIntent") { 
         areWeDone=true;
@@ -185,6 +196,17 @@ function alexaResp(type, context, cardName, areWeDone){
         areWeDone=true;
         output(" Cancelling. Goodbye ", context, "EchoSistant Cancel", areWeDone);
     }
+    else if (type == "Pending Yes Answer"){
+        areWeDone=true;
+        output(" Great, I am here if you need me.", context, "EchoSistant Cancel", areWeDone);
+
+    }
+    else if (type == "Pending No Answer"){
+        areWeDone=true;
+        output(" Ok,", context, "EchoSistant Cancel", areWeDone);
+
+    }
+
 }
 function alexaContResp(type, text , context, areWeDone){
     var speechText = text;
