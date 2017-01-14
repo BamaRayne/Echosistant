@@ -696,8 +696,14 @@ def controlDevices() {
                     outputTxt = controlHandler(savedData)
             }       
             else {
-            outputTxt = getCustomCmd(ctCommand, ctUnit, ctGroup)
-            state.pContCmdsR = "clear"
+            	outputTxt = getCustomCmd(ctCommand, ctUnit, ctGroup)
+            	if (ctCommand.contains ("try again")) {
+                	state.pContCmdsR = "clear"
+                    state.savedPINdata = null
+                    state.pinTry = null
+                    outputTxt = " I am sorry for the trouble. I am getting my act together now, so you can continue enjoing your Echosistant app"
+                    return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
+                    }
         	}
             if (outputTxt!= null ) {
             		if (ctUnit == "pin number" || ctUnit == "pin") {
@@ -870,7 +876,8 @@ def controlDevices() {
                     if (debug) log.debug "Found a device: '${deviceMatch}'"
                         device = deviceMatch
 					if(state.usePIN_D == true) {
-            			if (debug) log.debug "PIN protected device type - '${deviceType}'"
+     					//PIN VALIDATION PROCESS
+                        if (debug) log.debug "PIN protected device type - '${deviceType}'"
                 		delay = false
 	                    data = [type: "cDoor", "command": command , "device": ctDevice, "unit": ctUnit, "num": ctNum, delay: delay]
                         state.savedPINdata = data
@@ -906,6 +913,20 @@ def controlDevices() {
                             if (debug) log.debug "Found a device: '${deviceMatch}'"
                                 command = "onD"
                                 device = deviceMatch
+                             //PIN VALIDATION PROCESS
+							if(state.usePIN_D == true) {
+                                if (debug) log.debug "PIN protected device type - '${deviceType}'"
+                                delay = false
+                                data = [type: "cSwitch", "command": "on" , "device": ctDevice, "unit": ctUnit, "num": ctNum, delay: delay]
+                                state.savedPINdata = data
+                                outputTxt = "Pin number please"
+                                pPIN = true
+                                state.pinTry = 0
+                                if (debug) log.debug "PIN response pending - '${state.pinTry}'"
+                                return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
+                            }
+                            else {                 
+                                //END PIN VALIDATION                                       
                                 if (ctNum > 0 && ctUnit == "minutes") {
                                     device = device.label
                                     delay = true
@@ -913,16 +934,17 @@ def controlDevices() {
                                     runIn(ctNum*60, controlHandler, [data: data])
                                     if (ctCommand == "open") {outputTxt = "Ok, opening the " + ctDevice + " in " + numText}
                                     else if (command == "close") {outputTxt = "Ok, closing the " + ctDevice + " in " + numText}
-								return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
-                                }
-                                else {
+                                    return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
+                                 }
+                                 else {
                                     delay = false
                                     data = [type: "cSwitch", command: command, device: device, unit: ctUnit, num: ctNum, delay: delay]
                                     controlHandler(data)
                                     if (ctCommand == "open") {outputTxt = "Ok, opening the " + ctDevice}
                                     else if (ctCommand == "close") {outputTxt = "Ok, closing the " + ctDevice}
-								return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
-                                }
+                                    return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
+                                 }
+                             }
                        }
                        else {
                     	//this is needed to enable open/close command for Vents group
@@ -1133,17 +1155,19 @@ def controlHandler(data) {
                             "(unitU) = '${unitU}', (numN) = '${numN}', (delayD) = '${delayD}'"  
     if (deviceType == "cSwitch") {
     	if (deviceCommand == "on" || deviceCommand == "off") {
-            if (delayD == false) {
-                deviceD."${deviceCommand}"()
+            if (delayD == true || state.pinTry != null) {
+                deviceD = cSwitch.find {s -> s.label.toLowerCase() == deviceD.toLowerCase()}   
+            	deviceD."${deviceCommand}"()
+			result  = "ok"
+			if (state.pinTry != null) { return result } 
+            }
+            else {
+            	deviceD."${deviceCommand}"()
             	def device = deviceD.label
                 actionData = ["type": deviceType, "command": deviceCommand , "device": device, "unit": unitU, "num": numN, delay: delayD]
                 state.lastAction = actionData
                 result = "Ok, turning " + deviceD + " " + deviceCommand 
                 return result
-            }
-            else {
-            	deviceD = cSwitch.find {s -> s.label == deviceD}   
-            	deviceD."${deviceCommand}"()
             }  
         }
         else if (deviceCommand == "onD") {
