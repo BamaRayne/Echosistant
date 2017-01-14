@@ -1,3 +1,5 @@
+main {cPIN}
+main {cUnit}
 main is {cCommand} {cDevice}
 main I {cCommand} {cUnit}
 main I {cCommand} the {cUnit}
@@ -73,5 +75,4 @@ feedback {fQuery} {fOperand} are on in {pProfile}
 feedback to tell me {fQuery} {pProfile}
 feedback to tell me {fQuery} the {pProfile}
 feedback to {fQuery} me the status of {pProfile}
-
-main {cPIN}
+feedback to {fQuery} many {fOperand} are {cCommand}
