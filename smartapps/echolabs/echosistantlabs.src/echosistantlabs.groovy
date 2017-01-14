@@ -1,8 +1,8 @@
 /* 
  * EchoSistant - The Ultimate Voice and Text Messaging Assistant Using Your Alexa Enabled Device.
  *
- *		1/14/2017		Version:4.0 R.4.2.6	Bug fixes: for try again module 
- *		1/13/2017		Version:4.0 R.4.2.6	Feature Added: Alexa Feedback and device status 
+ *		1/14/2017		Version:4.0 R.4.2.8	Bug fixes: for try again module 
+ *		1/13/2017		Version:4.0 R.4.2.7	Feature Added: Alexa Feedback and device status 
  *		1/13/2017		Version:4.0 R.4.2.5	Feature: First Alexa Thinks
  *		1/12/2017		Version:4.0 R.4.2.4	Bug fixes: scheduling process
  *		1/12/2017		Version:4.0 R.4.2.3	Bug fixes: pin requests
