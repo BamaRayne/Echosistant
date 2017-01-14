@@ -1,6 +1,7 @@
 /* 
  * EchoSistant - The Ultimate Voice and Text Messaging Assistant Using Your Alexa Enabled Device.
  *
+ *		1/13/2017		Version:4.0 R.4.2.6	Feature Added: Alexa Feedback and device status 
  *		1/13/2017		Version:4.0 R.4.2.5	Feature: First Alexa Thinks
  *		1/12/2017		Version:4.0 R.4.2.4	Bug fixes: scheduling process
  *		1/12/2017		Version:4.0 R.4.2.3	Bug fixes: pin requests
@@ -92,8 +93,11 @@ page name: "mIntent"
                 }
                 section ("PIN Protected Devices (Voice Activated Setting)" , hideWhenEmpty: true) {
                     input "cTstat", "capability.thermostat", title: "Allow These Thermostat(s)...", multiple: true, required: false, submitOnChange: true
+                    if (cTstat) {input "uPIN_T", "bool", title: "Use PIN to control Thermostats?", default: false}
                     input "cDoor", "capability.garageDoorControl", title: "Allow These Garage Door(s)...", multiple: true, required: false, submitOnChange: true
+                    if (cDoor) {input "uPIN_D", "bool", title: "Use PIN to control Doors?", default: false}  
                     input "cLock", "capability.lock", title: "Allow These Lock(s)...", multiple: true, required: false, submitOnChange: true
+                    if (cLock) {input "uPIN_L", "bool", title: "Use PIN to control Locks?", default: false}
                 } 
                 section ("Sensors", hideWhenEmpty: true) {
                  	input "cMotion", "capability.motionSensor", title: "Allow These Motion Sensor(s)...", multiple: true, required: false
@@ -438,9 +442,9 @@ def initialize() {
             state.pMuteAlexa = false
 			state.pContCmdsR        
         //PIN Settings
-            state.usePIN_T = false
-            state.usePIN_L = false
-            state.usePIN_D = false
+            state.usePIN_T = settings.uPIN_T
+            state.usePIN_L = settings.uPIN_L
+            state.usePIN_D = settings.uPIN_D
             state.savedPINdata = null
             state.pinTry = null
         //Other Settings
@@ -474,7 +478,7 @@ def processBegin(){
         state.lambdatextVersion = versionTxt
     def versionSTtxt = textVersion() 
     if (debug){
-        log.debug "Message received from Lambda with: (event) = '${event}', (ver) = '${versionTxt}', (date) = '${versionDate}', (release) = '${releaseTxt}'"+ 
+        log.debug "Initial data: (event) = '${event}', (ver) = '${versionTxt}', (date) = '${versionDate}', (release) = '${releaseTxt}'"+ 
         ". And sent to Lambda: pContinue = '${state.pContCmds}', versionSTtxt = '${versionSTtxt}'"
 	}
     if (event == "AMAZON.NoIntent" || event == "noAction") {
@@ -498,14 +502,19 @@ def feedbackHandler() {
     def fDevice = params.fDevice
    	def fQuery = params.fQuery
     def fOperand = params.fOperand 
-
-	def outputTxt = "Sorry, the feedback module is not ready. If you believe this was not a feedback request, please open a trouble ticket. Thank you for your help, "
+    def fCommand = params.fCommand 
 	def pPIN = false
     state.pTryAgain = true
+    def String outputTxt = (String) null
+
     if (debug){
-        log.debug "Message received from Lambda with: (fProfile) = '${fProfile}', (fDevice) = '${fDevice}', (fQuery) = '${fQuery}', (fOperand) = '${fOperand}'"
+        log.debug "Feedback data: (fProfile) = '${fProfile}', (fDevice) = '${fDevice}', (fQuery) = '${fQuery}', (fOperand) = '${fOperand}', (fCommand) = '${fCommand}' "
 	}
-	def evtLog=[]
+
+
+//SEARCHING EVENTS HISTORY
+/*
+def evtLog=[]
     def lastEvent
 	 def deviceMatch = cSwitch.find {s -> s.label.toLowerCase() == fDevice.toLowerCase()}  
     def searchVal = "on"
@@ -529,9 +538,49 @@ def feedbackHandler() {
             if (evtCount == count) break
         }
 	}
-
  log.debug "Feedback device last events:  (result) = '${result}'"
 
+*/
+
+//QUERYING FOR CURRENT STATE
+def deviceMatchS = cSwitch.find {s -> s.label.toLowerCase() == fDevice.toLowerCase()} 
+def	deviceMatchT = cTstat.find {t -> t.label.toLowerCase() == fDevice.toLowerCase()}
+ if (debug) log.debug "Feedback device: '${result}'"
+ 	
+    		if (deviceMatchS != null) {
+			//switches
+            def currSwitchState = deviceMatch.latestValue("switch")
+            outputTxt = fDevice + "is currently" + currSwitchState
+    		//thermostats
+            }
+            if (deviceMatchT != null) {
+            def currentMode = deviceMatchT.latestValue("thermostatMode")
+    		def currentHSP = deviceMatchT.latestValue("heatingSetpoint") 
+        	def currentCSP = deviceMatchT.latestValue("coolingSetpoint") 
+    		def currentTMP = deviceMatchT.latestValue("temperature") 
+            //def currentDate = currentTMP.date
+			outputTxt = fDevice + " is in " + currentMode + " mode, and the current temperature is " + currentTMP + " since " //+ currentDate
+            }
+     
+     
+     //def currentState = tempSensor.currentState("temperature")
+    //log.debug "temperature value as a string: ${currentState.value}"
+    //log.debug "time this temperature record was created: ${currentState.date}"
+
+    if (fOperand == "lights") {
+    
+    def currSwitches = settings.cSwitch.currentSwitch
+    def onSwitches = currSwitches.findAll { switchVal ->
+        switchVal == fCommand ? true : false
+    }
+    log.debug " currSwitches: ${currSwitches}, on: ${onSwitches}"
+    if (onSwitches.size() > 0) {
+            log.debug "${onSwitches.size()} out of ${currSwitches.size()} switches are on"
+            outputTxt = "There are " + onSwitches.size() + " out of " + currSwitches.size() + " switches that are currently on"
+           return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
+        }
+    }
+//log.debug "${onSwitches.size() out of ${switches.size()} switches are on"
 /*
 lastEvent.each { if (it.value && it.value==searchVal) evtLog << [device: deviceName, time: it.date.getTime(), desc: it.descriptionText] }
 	} 
@@ -1015,7 +1064,9 @@ private getCustomCmd(command, unit, group) {
 ************************************************************************************************************/ 
 private pinHandler(pin, command, num) {
 	def result
-	if (pin == cPIN || command == cPIN || num == cPIN) {
+        def String pinNum = (String) null
+		pinNum = num
+	if (pin == cPIN || command == cPIN || pinNum == cPIN) {
 		def data = state.savedPINdata
             if (data == "disablelocks" || data == "disablethermostats" || data == "disabledoors"){ 
                 if (data == "disablelocks"){state.usePIN_L = false}
