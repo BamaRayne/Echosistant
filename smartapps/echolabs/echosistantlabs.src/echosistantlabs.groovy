@@ -1,7 +1,8 @@
 /* 
  * EchoSistant - The Ultimate Voice and Text Messaging Assistant Using Your Alexa Enabled Device.
  *
- *		1/14/2017		Version:4.0 R.4.2.8	Bug fixes: for try again module 
+ *		1/14/2017		Version:4.0 R.4.2.9	Feature: added garage door relay control 
+ *		1/14/2017		Version:4.0 R.4.2.8	Bug fixes: for try again module; added PIN cycle for relays 
  *		1/13/2017		Version:4.0 R.4.2.7	Feature Added: Alexa Feedback and device status 
  *		1/13/2017		Version:4.0 R.4.2.5	Feature: First Alexa Thinks
  *		1/12/2017		Version:4.0 R.4.2.4	Bug fixes: scheduling process
@@ -96,7 +97,9 @@ page name: "mIntent"
                     input "cTstat", "capability.thermostat", title: "Allow These Thermostat(s)...", multiple: true, required: false, submitOnChange: true
                     if (cTstat) {input "uPIN_T", "bool", title: "Use PIN to control Thermostats?", default: false}
                     input "cDoor", "capability.garageDoorControl", title: "Allow These Garage Door(s)...", multiple: true, required: false, submitOnChange: true
-                    if (cDoor) {input "uPIN_D", "bool", title: "Use PIN to control Doors?", default: false}  
+                    input "cRelay", "capability.switch", title: "Allow These Garage Door Relay(s)...", multiple: false, required: false, submitOnChange: true
+                    if (cRelay) input "cContactRelay", "capability.contactSensor", title: "Allow This Contact Sensor to Monitor the Garage Door Relay(s)...", multiple: false, required: false
+                    if (cDoor || cRelay) {input "uPIN_D", "bool", title: "Use PIN to control Doors?", default: false}  
                     input "cLock", "capability.lock", title: "Allow These Lock(s)...", multiple: true, required: false, submitOnChange: true
                     if (cLock) {input "uPIN_L", "bool", title: "Use PIN to control Locks?", default: false}
                 } 
@@ -108,6 +111,7 @@ page name: "mIntent"
                 section ("Media" , hideWhenEmpty: true){
                     input "cSpeaker", "capability.musicPlayer", title: "Allow These Media Player Type Device(s)...", required: false, multiple: true
                     input "cSynth", "capability.speechSynthesis", title: "Allow These Speech Synthesis Capable Device(s)", multiple: true, required: false
+                    input "cMedia", "capability.mediaController", title: "Allow These Media Controller(s)", multiple: true, required: false
                 } 
                 section ("Batteries", hideWhenEmpty: true ){
                     input "cBattery", "capability.battery", title: "Allow These Device(s) with Batteries...", required: false, multiple: true
@@ -441,7 +445,7 @@ def initialize() {
 			state.pTryAgain = false
         	state.pContCmds = true
             state.pMuteAlexa = false
-			state.pContCmdsR        
+			state.pContCmdsR = "init"       
         //PIN Settings
             state.usePIN_T = settings.uPIN_T
             state.usePIN_L = settings.uPIN_L
@@ -484,23 +488,44 @@ def processBegin(){
     	state.pinTry = null
         state.savedPINdata = null
     }
-    if (event == "AMAZON.NoIntent" && state.pContCmdsR == "level"){
-    	if (state.lastAction != null) {
-        	def savedData = state.lastAction
-            outputTxt = controlHandler(savedData) 
-            pPendingAns = true
+    if (event == "AMAZON.NoIntent"){
+    	if( state.pContCmdsR == "level"){
+            if (state.lastAction != null) {
+                def savedData = state.lastAction
+                outputTxt = controlHandler(savedData) 
+                pPendingAns = "level"
+            }
+            else {
+                state.pContCmdsR = null
+                pPendingAns = null
+            }
+        }
+        if( state.pContCmdsR == "door"){
+            if (state.lastAction != null) {
+                state.lastAction = null
+                state.pContCmdsR = null 
+                pPendingAns = "door"
+            }
+        }   
+    }
+    if (event == "AMAZON.YesIntent") {
+        if (state.pContCmdsR == "level") {
+            state.pContCmdsR = null
+            state.lastAction = null
+            pPendingAns = "level"
         }
         else {
-        	state.pContCmdsR = null
-        	pPendingAns = true
-		}
-    }
-    if (event == "AMAZON.YesIntent" && state.pContCmdsR == "level") {
-    	state.pContCmdsR = null
-        state.lastAction = null
-        pPendingAns = true
-    }
-    state.pTryAgain = false
+        	state.pTryAgain = false
+        }
+        if( state.pContCmdsR == "door"){
+            if (state.lastAction != null) {
+                def savedData = state.lastAction
+                outputTxt = controlHandler(savedData) 
+                pPendingAns = "door"
+            }
+        }           
+     }   
+        
     //state.pContCmdsR = null
     //state.lastAction = null
 	   if (debug){log.debug "Initial data received: (event) = '${event}', (ver) = '${versionTxt}', (date) = '${versionDate}', (release) = '${releaseTxt}'"+ 
@@ -523,10 +548,15 @@ def feedbackHandler() {
 	def pPIN = false
     state.pTryAgain = true
     def String outputTxt = (String) null
+    def response = []
 
     if (debug){
         log.debug "Feedback data: (fProfile) = '${fProfile}', (fDevice) = '${fDevice}', (fQuery) = '${fQuery}', (fOperand) = '${fOperand}', (fCommand) = '${fCommand}' "
 	}
+
+	contact.each {
+      response << [name: it.displayName, value: it.currentValue("contact"), deviceId: it.id, type: "contact"]
+    }
 
 
 //SEARCHING EVENTS HISTORY
@@ -560,16 +590,73 @@ def evtLog=[]
 */
 
 //QUERYING FOR CURRENT STATE
-def deviceMatchS = cSwitch.find {s -> s.label.toLowerCase() == fDevice.toLowerCase()} 
-def	deviceMatchT = cTstat.find {t -> t.label.toLowerCase() == fDevice.toLowerCase()}
- if (debug) log.debug "Feedback device: '${result}'"
+	def deviceMatchS = cSwitch.find {s -> s.label.toLowerCase() == fDevice.toLowerCase()} 
+	def	deviceMatchT = cTstat.find {t -> t.label.toLowerCase() == fDevice.toLowerCase()}
+ 	def deviceMatchC = cContactRelay.find {c -> c.label.toLowerCase() == fDevice.toLowerCase()}
+ 	def deviceMatchG = cRelay.find {g -> g.label.toLowerCase() == fDevice.toLowerCase()}
+    if (deviceMatchG) {deviceMatchG = cContactRelay}
+    
+    if (debug) log.debug "Feedback device: '${result}'"
  	
     		if (deviceMatchS != null) {
 			//switches
-            def currSwitchState = deviceMatch.latestValue("switch")
-            outputTxt = fDevice + "is currently" + currSwitchState
-    		//thermostats
-            }
+            def fValue = deviceMatchS.latestValue("switch")
+    		def fState = deviceMatchS.switchState //("switch")
+ 			def fDate = fState.date
+ 			def fName = fState.name
+ 			def fCurrValue = fState.value
+            def stateDate = deviceMatchS?.currentState("switch").date
+			//value, date
+            if (debug) log.debug "Feedback device: latestState: cval: '${fCurrValue}', cname.'${fName}', fDate: '${fDate}'"
+           def today = new Date(now()).format("EEEE, MMMM dd, yyyy", location.timeZone)
+    		//def eventDay = new Date(fDate).format("EEEE, MMMM dd, yyyy", location.timeZone)
+        	def eventDay = new Date(fDate.time[0]).format("EEEE, MMMM d, yyyy", location.timeZone)
+
+            if (debug) log.debug "Feedback device: latestState: '${fValue}', fState.'${fState.value}', fDate: '${fDate}'"
+           
+           	outputTxt = fDevice + "is currently " + fCurrValue + " since " + eventDay
+			}
+           if (deviceMatchG != null){
+    cContactRelay.each {
+      response << [name: it.displayName, value: it.currentValue("contact"), deviceId: it.id, type: "contact"]
+    }
+
+    cContactRelay.each {
+      response << [name: it.displayName, value: it.currentValue("contact"), deviceId: it.id, type: "contact"]
+    }
+def status = response.value.replaceAll("[ ]", "") 
+
+
+                      if (debug) log.debug "Feedback contactrelays: '${response}', '${status}' "
+
+          
+          def fState = deviceMatchG.contactState
+           def currentState = fState.value //("contact")
+           def gState = deviceMatchG.latestValue("contact")
+           	//if (gState == "open") gState.toString()
+            currentState = gState.replaceAll("[ ]", "") //replaceAll("[^a-zA-Z0-9 ]"
+           			//outputTxt = fDevice + " is '${gState}' " + gState.value // + " mode, and the current temperature is " + currentTMP + " since " //+ currentDate
+			}
+           
+                   if (deviceList.latestValue(type).contains("active")) {
+        	deviceList.each { deviceName->
+            	//if (deviceName.latestValue(type)=="active") result += "The ${type} device, '${deviceName}', is reading motion. "
+    		}}
+
+   /*
+   
+   def doorWindowReport(){
+	def countOpened = 0, countOpenedDoor = 0, countUnlocked = 0, listOpened = "", listUnlocked = ""
+    String result = ""   
+    if (voiceDoorSensors && voiceDoorSensors.latestValue("contact").contains("open")){  
+        listOpened = voiceDoorSensors.findAll{it.latestValue("contact")=="open"}
+        countOpened = listOpened.size()
+	}
+
+   
+   */
+           
+           //thermostats
             if (deviceMatchT != null) {
             def currentMode = deviceMatchT.latestValue("thermostatMode")
     		def currentHSP = deviceMatchT.latestValue("heatingSetpoint") 
@@ -691,7 +778,7 @@ def controlDevices() {
         	return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
         }
         if (ctCommand != "undefined") {
-        	if (ctCommand.contains ("try again") && state.lastAction != null) {
+        	if (ctCommand.contains ("try again") && state.lastAction != null ) {
                 	def savedData = state.lastAction
                     outputTxt = controlHandler(savedData)
             }       
@@ -906,18 +993,17 @@ def controlDevices() {
                 }
                 else {
                     //this is needed for Garage Doors that are set up as relays
-                    if (settings.cSwitch?.size()>0) {
+                    if (cRelay) {
                     if (debug) log.debug "Searching for a relay named '${ctDevice}'"
-                        deviceMatch = cSwitch.find {s -> s.label.toLowerCase() == ctDevice.toLowerCase()}             
-                        if (deviceMatch) {
+                        deviceMatch = cRelay.find {s -> s.label.toLowerCase() == ctDevice.toLowerCase()}             
+						if (deviceMatch) {
                             if (debug) log.debug "Found a device: '${deviceMatch}'"
-                                command = "onD"
                                 device = deviceMatch
                              //PIN VALIDATION PROCESS
 							if(state.usePIN_D == true) {
                                 if (debug) log.debug "PIN protected device type - '${deviceType}'"
                                 delay = false
-                                data = [type: "cSwitch", "command": "on" , "device": ctDevice, "unit": ctUnit, "num": ctNum, delay: delay]
+                                data = [type: "cRelay", "command": command , "device": ctDevice, "unit": ctUnit, "num": ctNum, delay: delay]
                                 state.savedPINdata = data
                                 outputTxt = "Pin number please"
                                 pPIN = true
@@ -930,7 +1016,7 @@ def controlDevices() {
                                 if (ctNum > 0 && ctUnit == "minutes") {
                                     device = device.label
                                     delay = true
-                                    data = [type: "cSwitch", command: command, device: device, unit: ctUnit, num: ctNum, delay: delay]
+                                    data = [type: "cRelay", command: command, device: device, unit: ctUnit, num: ctNum, delay: delay]
                                     runIn(ctNum*60, controlHandler, [data: data])
                                     if (ctCommand == "open") {outputTxt = "Ok, opening the " + ctDevice + " in " + numText}
                                     else if (command == "close") {outputTxt = "Ok, closing the " + ctDevice + " in " + numText}
@@ -938,10 +1024,8 @@ def controlDevices() {
                                  }
                                  else {
                                     delay = false
-                                    data = [type: "cSwitch", command: command, device: device, unit: ctUnit, num: ctNum, delay: delay]
-                                    controlHandler(data)
-                                    if (ctCommand == "open") {outputTxt = "Ok, opening the " + ctDevice}
-                                    else if (ctCommand == "close") {outputTxt = "Ok, closing the " + ctDevice}
+                                    data = [type: "cRelay", "command": command, "device": device, unit: ctUnit, num: ctNum, delay: delay]
+                                    outputTxt = controlHandler(data)
                                     return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
                                  }
                              }
@@ -1017,7 +1101,9 @@ private getUnitText (unit, num) {
 ************************************************************************************************************/ 
 private getCustomCmd(command, unit, group) {
     def result
-	if (command == "repeat") {
+//[attribute: "currentActivity",	commands: ["startActivity", "getAllActivities", "getCurrentActivity"]              
+   
+    if (command == "repeat") {
 		result = getLastMessageMain()
 		return result
     }
@@ -1155,26 +1241,20 @@ def controlHandler(data) {
                             "(unitU) = '${unitU}', (numN) = '${numN}', (delayD) = '${delayD}'"  
     if (deviceType == "cSwitch") {
     	if (deviceCommand == "on" || deviceCommand == "off") {
-            if (delayD == true || state.pinTry != null) {
+            if (delayD == true) {
                 deviceD = cSwitch.find {s -> s.label.toLowerCase() == deviceD.toLowerCase()}   
             	deviceD."${deviceCommand}"()
-			result  = "ok"
-			if (state.pinTry != null) { return result } 
             }
             else {
             	deviceD."${deviceCommand}"()
             	def device = deviceD.label
+            	//saving last action 1, why??????                
                 actionData = ["type": deviceType, "command": deviceCommand , "device": device, "unit": unitU, "num": numN, delay: delayD]
                 state.lastAction = actionData
+                if (debug) log.debug "Saved last action for level switch true (1)!"  
                 result = "Ok, turning " + deviceD + " " + deviceCommand 
                 return result
-            }  
-        }
-        else if (deviceCommand == "onD") {
-        		deviceD.on()
-        }
-        else if (deviceCommand == "offD") {
-        		deviceD.off()
+            }
         }
         else if (deviceCommand == "increase" || deviceCommand == "decrease" || deviceCommand == "setLevel" || deviceCommand == "set") {
  			if (delayD == true || state.pContCmdsR == "level") {
@@ -1237,8 +1317,10 @@ def controlHandler(data) {
                 else {deviceD.setLevel(newLevel)}
             } 
             def device = deviceD.label
+            //saving last action 2, why??????
             actionData = ["type": deviceType, "command": deviceCommand , "device": device, "unit": unitU, "num": newLevel, delay: delayD]
             state.lastAction = actionData
+            if (debug) log.debug "Saved last action for level switch true (2)!"  
             result = "Ok, setting  " + deviceD + " to " + newLevel + " percent"            
             if (delayD == false) { return result } 
     	}
@@ -1412,12 +1494,40 @@ def controlHandler(data) {
             return result
        }
     }
-    else if (deviceType == "cDoor") {
-    	if (delayD == true || state.pinTry != null) {  
-            	deviceD = cDoor.find {d -> d.label.toLowerCase() == deviceD.toLowerCase()}   
+    else if (deviceType == "cDoor" || deviceType == "cRelay" ) {
+    	def cmd = deviceCommand
+        if (delayD == true || state.pinTry != null || state.pContCmdsR == "door" ) {  
+            def deviceR = cRelay.find {r -> r.label.toLowerCase() == deviceD.toLowerCase()}
+			deviceD = cDoor.find {d -> d.label.toLowerCase() == deviceD.toLowerCase()}   
+            if (deviceR) {deviceD = deviceR}
+        }
+        if (deviceType == "cRelay") {
+		     cmd = "on"
+             def deviceR = deviceD.label
+             //get garage contact status
+             if (cContactRelay) {
+             def cCRelayValue = cContactRelay.contactState.value
+             	if (deviceCommand == "open" && cCRelayValue == "open") {
+                	result = "The " + deviceD + " is already open, would you like to close it instead?"
+                    state.pContCmdsR = "door"
+		            actionData = ["type": deviceType, "command": "close" , "device": deviceR, "unit": unitU, "num": newLevel, delay: delayD]
+		        	state.lastAction = actionData
+		        	if (debug) log.debug "Saved last action for door relay ('open') reversing command to close"
+                    return result
+                }
+                if (deviceCommand == "close" && cCRelayValue =="closed") {
+                    result = "The " + deviceD + " is already closed, would you like to open it instead? "
+                    state.pContCmdsR = "door"
+		            actionData = ["type": deviceType, "command": "open" , "device": deviceR, "unit": unitU, "num": newLevel, delay: delayD]
+		        	state.lastAction = actionData
+		        	if (debug) log.debug "Saved last action for door relay ('closed') reversing command to 'open'"
+					return result             
+                 }
+             }
         }
         state.pinTry = null
-   		deviceD."${deviceCommand}"()
+   		deviceD."${cmd}"()
+        state.pContCmdsR = null //"reverse"
         if (deviceCommand == "open") {result = "Ok, opening the " + deviceD}
         if (deviceCommand == "close") {result = "Ok, closing the  " + deviceD}                   
         if (delayD == false) {return result}  
