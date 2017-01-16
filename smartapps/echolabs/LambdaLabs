@@ -1,6 +1,7 @@
- /*
+/** 
  *  EchoSistant - Lambda Code
  *
+ *  Version 4.1.5 - 1/15/2017 Added responses for pending relay action
  *  Version 4.1.4 - 1/14/2017 More response fixes
  *  Version 4.1.3 - 1/13/2017 Workflow and response fixes
  *  Version 4.1.2 - 1/11/2017 Workflow and response fixes
@@ -29,8 +30,8 @@
 exports.handler = function( event, context ) {
     var https = require( 'https' );
     // Paste app code here between the breaks------------------------------------------------
-    var STappID = '0ae736f9-51c0-439d-9cab-xxx';
-    var STtoken = '21c78384-1323-40d9-aae7-xxx';
+    var STappID = '0ae736f9-51c0-439d-9cab-32c460b5febb';
+    var STtoken = '21c78384-1323-40d9-aae7-da2d09537a96';
     var url='https://graph.api.smartthings.com:443/api/smartapps/installations/' + STappID + '/' ;
         //---------------------------------------------------------------------------------------
         var cardName ="";
@@ -69,10 +70,14 @@ exports.handler = function( event, context ) {
             else if (event.request.type == "IntentRequest") {
                 var process = false;
                 var intentName = event.request.intent.name;
-                if (intentName == "AMAZON.YesIntent" && pPendingAns === true) {
-                    alexaResp ("Pending Yes Answer", context, "Amazon Intent", areWeDone); 
-                }                
-                else if (intentName == "AMAZON.NoIntent" && pPendingAns === true) {
+                if (intentName == "AMAZON.YesIntent" && pPendingAns == "level") {
+                    alexaResp ("Pending Yes Level", context, "Amazon Intent", areWeDone); 
+                }
+                else if (intentName == "AMAZON.YesIntent" && pPendingAns == "door") {
+                    areWeDone=true;
+                    return output(text, context, cardName, areWeDone);
+                }
+                else if (intentName == "AMAZON.NoIntent" && pPendingAns == "level") {
                     areWeDone=false;
                     text = text + ', is it better?';
                     return output(text, context, cardName, areWeDone);
@@ -154,6 +159,11 @@ exports.handler = function( event, context ) {
                             speechText = speechText + ', is it better?';
                             return output(speechText, context, cardName, areWeDone);
                         }
+                        else if (pContCmds === true && pContCmdsR == "door" ) { 
+                            areWeDone=false;
+                            //speechText = speechText + ', is it better?';
+                            return output(speechText, context, cardName, areWeDone);
+                        }
                         else if (pTryAgain === true){
                             alexaContResp ("Try Again", speechText, context, areWeDone);
                         }
@@ -197,17 +207,18 @@ function alexaResp(type, context, cardName, areWeDone){
         areWeDone=true;
         output(" Cancelling. Goodbye ", context, "EchoSistant Cancel", areWeDone);
     }
-    else if (type == "Pending Yes Answer"){
+    else if (type == "Pending Yes Level"){
         areWeDone=true;
         output(" Great, I am here if you need me.", context, "EchoSistant Cancel", areWeDone);
-
     }
-    else if (type == "Pending No Answer"){
+//    else if (type == "Pending No Level"){
+ //       areWeDone=true;
+  //      output(" Ok,", context, "EchoSistant Cancel", areWeDone);
+    //}
+    else if (type == "Pending Yes Door"){
         areWeDone=true;
         output(" Ok,", context, "EchoSistant Cancel", areWeDone);
-
     }
-
 }
 function alexaContResp(type, text , context, areWeDone){
     var speechText = text;
