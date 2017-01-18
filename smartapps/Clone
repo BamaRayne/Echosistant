@@ -46,6 +46,7 @@ preferences {
             	page name: "mDevices"
                 page name: "mFeedback"
                 page name: "mDefaults"
+                page name: "mSHMSec"
                 page name: "customSounds"
                 page name: "alerts"
             page name: "mNotifyProfile"
@@ -90,14 +91,16 @@ page name: "mainParentPage"
                     image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Config.png"    
 				href "mSupport", title: "Install and Support", description: mSupportSettings(), state: mSupportComplete(),
                     image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Config.png"                               
-				href "mSecurity", title: "Security Data", description: mSecuritySettings(), state: mSecurityComplete(),
+				href "mSecurity", title: "App Information Data", description: mSecuritySettings(), state: mSecurityComplete(),
                     image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Amazon_alexa.png"                               
             	if (activateDashboard) {
                 	 href "mDashboard", title: "Dashboard", description: dashboardSettings(), state: dashboardComplete(),
                      image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Config.png"
                      }
                 href "mBonus", title: "                    The Current Mode is \n" +
-                	"					                            ${location.currentMode}", description: ""
+                	"					                            ${location.currentMode} \n" +
+                     
+					"       Smart Home Monitor Status is: ${location.currentState("alarmSystemStatus")?.value}", description: ""
                     }
                 }
 			}
@@ -109,14 +112,18 @@ page name: "mIntent"
 	            href "mDevices", title: "Select devices...", description: mDevicesSettings(), state: mDevicesComplete(),
     	        image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Config.png"
 				}
-			section("... give me feedback about my home") {
-	            href "mFeedback", title: "Smart Feedback Options", description: mFeedbackSettings(), state: mFeedbackComplete(),
-                image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Routines.png"
-			}                
+//			section("... give me feedback about my home") {
+//	            href "mFeedback", title: "Smart Feedback Options", description: mFeedbackSettings(), state: mFeedbackComplete(),
+//                image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Routines.png"
+//			}                
 			section ("... control my devices using these settings") {
                 href "mDefaults", title: "Default control options...", description: mDefaultsSettings(), state: mDefaultsComplete(), 
                 image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Config.png" 
     		}
+            section ("...secure my home") {
+            	href "mSHMSec", title: "Home Security control options...", description: mSHMSecSettings(), state: mSHMSecComplete(),
+                image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Config.png"
+            }                
             section ("This section is for Testing") {
             	href "customSounds", title: "Testing Custom Sound Notifications", description: none,
                 image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Routines.png"
@@ -167,7 +174,7 @@ page name: "mDevices"
                     	if (cDoor) {input "usePIN_D", "bool", title: "Use PIN to control Doors?", default: false}  
                     input "cLock", "capability.lock", title: "Allow These Lock(s)...", multiple: true, required: false, submitOnChange: true
                     	if (cLock) {input "usePIN_L", "bool", title: "Use PIN to control Locks?", default: false}
-                } 
+                }
                 section ("Sensors", hideWhenEmpty: true) {
                  	input "cMotion", "capability.motionSensor", title: "Allow These Motion Sensor(s)...", multiple: true, required: false
                     input "cContact", "capability.contactSensor", title: "Allow These Contact Sensor(s)...", multiple: true, required: false      
@@ -198,108 +205,6 @@ page name: "mDevices"
                  }
             }
         }   
-    page name: "mFeedback"
-        def mFeedback() {
-            dynamicPage (name: "mFeedback", uninstall: false) {
-                section ("Switches and Dimmers", hideWhenEmpty: true) {
-                    if (faudioTextOn || faudioTextOff || speech11 || music11) paragraph "Configured with Settings"
-                        input "fShowSwitches", "bool", title: "Switches and Dimmers", default: false, submitOnChange: true
-                    if (fShowSwitches) {        
-                        input "faudioTextOn", "text", title: "Alexa says this...", description: "...when the last event was on", required: false, capitalization: "sentences"
-                        input "faudioTextOff", "text", title: "Alexa says this...", description: "...when the last event was off", required: false, capitalization: "sentences"
-                        input "speech11", "capability.speechSynthesis", title: "Optional send Alexa Feedback to this Message Player", required: false, multiple: true, submitOnChange: true
-                        input "music11", "capability.musicPlayer", title: "Optional send Alexa Feedback to this Sonos Type Devices", required: false, multiple: true, submitOnChange: true
-                        if (music11) {
-                            input "volume11", "number", title: "Temporarily change volume", description: "0-100%", required: false
-                            input "resumePlaying11", "bool", title: "Resume currently playing music after notification", required: false, defaultValue: false
-                            }
-                    }             
-                }
-                section("Doors and Windows", hideWhenEmpty: true) {
-                    if (fAudioTextOpen || fAudioTextClosed || speech12 || music12) paragraph "Configured with Settings"
-                    input "fShowContacts", "bool", title: "Doors and Windows", default: false, multiple: false, submitOnChange: true
-                    if (fShowContacts) {
-                        input "fAudioTextOpen", "text", title: "Alexa says this...", description: "...when the last event was door opened", required: false, capitalization: "sentences"
-                        input "fAudioTextClosed", "text", title: "Alexa says this...", description: "...when the last event was door closed", required: false, capitalization: "sentences"
-                        input "speech12", "capability.speechSynthesis", title: "Optional send Alexa Feedback to this Message Player", required: false, multiple: true, submitOnChange: true
-                        input "music12", "capability.musicPlayer", title: "Optional send Alexa Feedback to this Sonos Type Devices", required: false, multiple: true, submitOnChange: true
-                        if (music12) {
-                            input "volume12", "number", title: "Temporarily change volume", description: "0-100%", required: false
-                            input "resumePlaying12", "bool", title: "Resume currently playing music after notification", required: false, defaultValue: false
-                            }
-                        }
-                    }    
-                section("Locks", hideWhenEmpty: true) {
-                    if (fAudioTextLocked || fAudioTextUnlocked || speech13 || music13) paragraph "Configured with Settings"
-                    input "fShowLocks", "bool", title: "Locks", default: false, submitOnChange: true
-                    if (fShowLocks) {
-                        input "fAudioTextLocked", "text", title: "Alexa says this...", description: "...when the last event was locked", required: false, capitalization: "sentences"
-                        input "fAudioTextUnlocked", "text", title: "Alexa says this...", description: "...when the last event was door unlocked", required: false, capitalization: "sentences"
-                        input "speech13", "capability.speechSynthesis", title: "Optional send Alexa Feedback to this Message Player", required: false, multiple: true, submitOnChange: true
-                        input "music13", "capability.musicPlayer", title: "Optional send Alexa Feedback to this Sonos Type Devices", required: false, multiple: true, submitOnChange: true
-                        if (music13) {
-                            input "volume13", "number", title: "Temporarily change volume", description: "0-100%", required: false
-                            input "resumePlaying13", "bool", title: "Resume currently playing music after notification", required: false, defaultValue: false
-                            }
-                        }
-                    }
-                section("Motion Sensors", hideWhenEmpty: true) {
-                    if (fAudioTextActive || fAudioTextInactive || speech14 || music14) paragraph "Configured with Settings"
-                    input "fShowMotion", "bool", title: "Motion Sensors", default: false,  submitOnChange: true
-                    if (fShowMotion) {
-                        input "fAudioTextActive", "text", title: "Alexa says this...", description: "...when the last motion event was active", required: false, capitalization: "sentences"
-                        input "fAudioTextInactive", "text", title: "Alexa says this...", description: "...when the last motion event was inactive", required: false, capitalization: "sentences"
-                        input "speech14", "capability.speechSynthesis", title: "Optional send Alexa Feedback to this Message Player", required: false, multiple: true, submitOnChange: true
-                        input "music14", "capability.musicPlayer", title: "Optional send Alexa Feedback to this Sonos Type Devices", required: false, multiple: true, submitOnChange: true
-                        if (music14) {
-                            input "volume14", "number", title: "Temporarily change volume", description: "0-100%", required: false
-                            input "resumePlaying14", "bool", title: "Resume currently playing music after notification", required: false, defaultValue: false
-                            }
-                        }
-                    }        
-                section("Presence Sensors", hideWhenEmpty: true) {
-                    if (fAudioTextPresent || fAudioTextNotPresent || speech15 || music15) paragraph "Configured with Settings"
-                    input "fShowPresence", "bool", title: "Presence Sensors", default: false, submitOnChange: true
-                    if (fShowPresence) {
-                        input "fAudioTextPresent", "text", title: "Alexa says this...", description: "...when the last event was arrived", required: false, capitalization: "sentences"
-                        input "fAudioTextNotPresent", "text", title: "Alexa says this...", description: "...when the last event was not home", required: false, capitalization: "sentences"
-                        input "speech15", "capability.speechSynthesis", title: "Optional send Alexa Feedback to this Message Player", required: false, multiple: true, submitOnChange: true
-                        input "music15", "capability.musicPlayer", title: "Optional send Alexa Feedback to this Sonos Type Devices", required: false, multiple: true, submitOnChange: true
-                        if (music15) {
-                            input "volume15", "number", title: "Temporarily change volume", description: "0-100%", required: false
-                            input "resumePlaying15", "bool", title: "Resume currently playing music after notification", required: false, defaultValue: false
-                            }
-                        }
-                    }   
-                 section("Thermostats", hideWhenEmpty: true) {
-                    if (fAudioTextHeating || fAudioTextCooling || speech18 || music18) paragraph "Configured with Settings"
-                        input "fShowTstat", "bool", title: "Thermostats", default: false, submitOnChange: true
-                    if (fShowTstat) {
-                        input "fAudioTextHeating", "text", title: "Alexa says this...", description: "Message to play when the Heating Set Point Changes", required: false, capitalization: "sentences"
-                        input "fAudioTextCooling", "text", title: "Alexa says this...", description: "Message to play when the Cooling Set Point Changes", required: false, capitalization: "sentences" 
-                        input "speech18", "capability.speechSynthesis", title: "Optional send Alexa Feedback to this Message Player", required: false, multiple: true, submitOnChange: true
-                        input "music18", "capability.musicPlayer", title: "Optional send Alexa Feedback to this Sonos Type Devices", required: false, multiple: true, submitOnChange: true
-                        if (music18) {
-                            input "volume18", "number", title: "Temporarily change volume", description: "0-100%", required: false
-                            input "resumePlaying18", "bool", title: "Resume currently playing music after notification", required: false, defaultValue: false
-                        }
-                    }
-                 }		
-                 section("Weather", hideWhenEmpty: true) {
-                    if (fAudioTextWeather || speech19 || music19) paragraph "Configured with Settings"
-                        input "fShowWeather", "bool", title: "Weather Alerts", default: false, submitOnChange: true
-                    if (fShowWeather) {
-                        input "fAudioTextWeather", "text", title: "Alexa says this...", description: "When a Weather Alert is in effect", required: false, capitalization: "sentences"
-                        input "speech19", "capability.speechSynthesis", title: "Optional send Alexa Feedback to this Message Player", required: false, multiple: true, submitOnChange: true
-                        input "music19", "capability.musicPlayer", title: "Optional send Alexa Feedback to this Sonos Type Devices", required: false, multiple: true, submitOnChange: true
-                        if (music19) {
-                            input "volume19", "number", title: "Temporarily change volume", description: "0-100%", required: false
-                            input "resumePlaying19", "bool", title: "Resume currently playing music after notification", required: false, defaultValue: false
-                        }
-                    }		
-                } 
-            }
-        }
 	page name: "mDefaults"
         def mDefaults(){
                 dynamicPage(name: "mDefaults", title: "", uninstall: false){
@@ -319,11 +224,37 @@ page name: "mDevices"
                         input "cLowBattery", "number", title: "Alexa Provides Low Battery Feddback when the Bettery Level falls below (default is 25%)", defaultValue: 25, required: false
                         input "cInactiveDev", "number", title: "Alexa Provides Inactive Device Feddback when No Activity was Detected for (default is 24 hours) ", defaultValue: 24, required: false
                      }
-                     section ("Security") {  
-                        input "cPIN", "password", title: "Set a PIN number to prevent unathorized use of Voice Control", default: false, required: false
-                    }
+                     
                 }
         }
+page name: "mSHMSec"    
+    def mSHMSec(){
+        dynamicPage(name: "mSHMSec", title: "Home Security Information",install: false, uninstall: false) {
+        section ("Control SHM Security Arming and Disarming") {
+        	input "cSec", "capability.relaySwitch", title: "Select switch for SHM arm & disarm...", multiple: false, required: false, submitOnChange: true
+		input "cPIN", "password", title: "Set PIN for ALL Home Security options", default: false, required: false	
+            }
+        section ("Smart Home Monitor Status Change Feedback") {
+			input "fSecFeed", "bool", title: "Activate SHM status change announcements.", default: false, submitOnChange: true
+			if (fSecFeed) {    
+				input "shmSynthDevice", "capability.speechSynthesis", title: "On this Speech Synthesis Type Devices", multiple: true, required: false,
+				image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Media.png"
+				input "shmSonosDevice", "capability.musicPlayer", title: "On this Sonos Type Devices", required: false, multiple: true, submitOnChange: true,    
+				image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Media.png"
+				}
+            if (fSecFeed) {
+				input "volume", "number", title: "Temporarily change volume", description: "0-100%", required: false
+				input "resumePlaying", "bool", title: "Resume currently playing music after notification", required: false, defaultValue: false
+				}
+           }
+        section ("Other Home Security Features") {
+            input "mSecSwitch", "capability.switch", title: "These switches will be PIN protected...", multiple: true, required: false, submitOnChange: true
+           	if (mSecSwitch) {
+            	input "uPIN_SW", "bool", title: "Activate PIN for selected switches?", default: false
+                }
+            }			
+        }
+    }                        
 page name: "mNotifyProfile"    
     def mNotifyProfile() {
         dynamicPage (name: "mNotifyProfile", title: "", install: true, uninstall: false) {
@@ -397,7 +328,7 @@ page name: "mSupport"
             }
 page name: "mSecurity"    
     def mSecurity(){
-        dynamicPage(name: "mSecurity", title: "View Support Information",install: false, uninstall: true) {
+        dynamicPage(name: "mSecurity", title: "View Apllication Information",install: false, uninstall: true) {
                 section("Debugging") {
                     input "debug", "bool", title: "Enable Debug Logging", default: false, submitOnChange: true 
                     }
@@ -603,9 +534,8 @@ page name: "DeviceDetails"
                         }
 					}
                 }    
-  
 page name: "tokens"
-    def tokens(){
+	def tokens(){
             dynamicPage(name: "tokens", title: "Security Tokens", uninstall: false){
                 section(""){
                     paragraph "Tap below to Reset/Renew the Security Token. You must log in to the IDE and open the Live Logs tab before tapping here. "+
@@ -655,7 +585,6 @@ page name: "pageReset"
                     }
                 }
             } 
-
 /***********************************************************************************************************************
     PROFILE UI CONFIGURATION
 ***********************************************************************************************************************/
@@ -884,8 +813,8 @@ page name: "pScenes"
             		app(name: "scenes", appName: "Scenes", namespace: "Clone", title: "Create a new scene for this Profile", multiple: true,  uninstall: false)
         		}
             }
-       }
-}
+		}
+	}
 
 /*************************************************************************************************************
    CREATE INITIAL TOKEN
@@ -921,6 +850,11 @@ def updated() {
     initialize()
 }
 def initialize() {
+		//SHM status change
+		if (fSecFeed) {
+        subscribe(location, "alarmSystemStatus", alarmStatusHandler, [filterEvents:false])
+        }
+        // Other stuff
         sendLocationEvent(name: "echoSistant", value: "refresh", data: [profiles: getProfileList()] , isStateChange: true, descriptionText: "echoSistant Profile list refresh")
         def children = getChildApps()
     	if (debug) log.debug "Refreshing Profiles for CoRE, ${getChildApps()*.label}"
@@ -928,7 +862,7 @@ def initialize() {
         	if (debug) log.error "Access token not defined. Attempting to refresh. Ensure OAuth is enabled in the SmartThings IDE."
                 OAuthToken()
 			}
-		//State Vriables            
+		//State Variables            
             state.lastMessage = null
             state.lastIntent  = null
             state.lastTime  = null
@@ -942,15 +876,17 @@ def initialize() {
             state.pMuteAlexa = false
 			state.pContCmdsR        
         //PIN Settings
-            state.usePIN_T = false
-            state.usePIN_L = false
-            state.usePIN_D = false
+            state.usePIN_T = settings.uPIN_T
+            state.usePIN_L = settings.uPIN_L
+            state.usePIN_D = settings.uPIN_D
+            state.usePin_S = settings.uPin_S
             state.savedPINdata = null
             state.pinTry = null
         //Other Settings
 			state.changedFilters
             state.scheduledHandler
             state.filterNotif
+            state.lastAction = null
 	}
 /************************************************************************************************************
 		CoRE Integration
@@ -977,28 +913,165 @@ def processBegin(){
         state.lambdatextVersion = versionTxt
     def versionSTtxt = textVersion() 
     if (debug){
-        log.debug "Message received from Lambda with: (event) = '${event}', (ver) = '${versionTxt}', (date) = '${versionDate}', (release) = '${releaseTxt}'"+ 
+        log.debug "Initial data: (event) = '${event}', (ver) = '${versionTxt}', (date) = '${versionDate}', (release) = '${releaseTxt}'"+ 
         ". And sent to Lambda: pContinue = '${state.pContCmds}', versionSTtxt = '${versionSTtxt}'"
 	}
     if (event == "AMAZON.NoIntent" || event == "noAction") {
     	state.pinTry = null
         state.savedPINdata = null
+        state.pContCmdsR = null
+
+    }
+    if (event == "AMAZON.YesIntent" || event == "noAction") {
+    	state.pContCmdsR = null
+        state.lastAction = null
     }
     state.pTryAgain = false
         return ["pContinue":state.pMuteAlexa, "versionSTtxt":versionSTtxt]
 }   
-
+/***********************************************************************************************************
+		SMART HOME MONITOR STATUS HANDLER
+***********************************************************************************************************/
+def alarmStatusHandler(evt) {
+	def curEvtValue = evt.value
+	log.info "Smart Home Monitor status changed to: ${curEvtValue}"
+		if (shmSynthDevice || shmSonosDevice) {
+			if (evt.value == "away") { 
+               	if(shmSynthDevice) shmSynthDevice?.speak("Attention, The alarm system has changed status to armed '${curEvtValue}'")
+            	if (shmSonosDevice) 
+             	shmSonosDevice?.playTextAndRestore("Attention, The alarm system has changed status to armed '${curEvtValue}'")
+            	}
+                else if (evt.value == "stay") {
+                	if(shmSynthDevice) shmSynthDevice?.speak("Attention, The alarm system has changed status to armed '${curEvtValue}'")
+            		if (shmSonosDevice) 
+             		shmSonosDevice?.playTextAndRestore("Attention, The alarm system has changed status to armed '${curEvtValue}'")
+            		}
+                    else if(evt.value == "off") {
+                    	if(shmSynthDevice) shmSynthDevice?.speak("Attention, The alarm system has changed status to disarmed")
+            			if (shmSonosDevice) 
+             			shmSonosDevice?.playTextAndRestore("Attention, The alarm system has changed status to disarmed")
+            			}
+					}
+       			}
 /************************************************************************************************************
 		FEEDBACK HANDLER - from Lambda via page f
 ************************************************************************************************************/
 def feedbackHandler() {
-	def outputTxt = "Sorry, the feedback module is not ready. If you believe this was not a feedback request, please open a trouble ticket. Thank you for your help, "
+
+    def fProfile = params.fProfile
+    def fDevice = params.fDevice
+   	def fQuery = params.fQuery
+    def fOperand = params.fOperand 
+    def fCommand = params.fCommand 
 	def pPIN = false
     state.pTryAgain = true
+    def String outputTxt = (String) null
+
+    if (debug){
+        log.debug "Feedback data: (fProfile) = '${fProfile}', (fDevice) = '${fDevice}', (fQuery) = '${fQuery}', (fOperand) = '${fOperand}', (fCommand) = '${fCommand}' "
+	}
+
+
+//SEARCHING EVENTS HISTORY
+/*
+def evtLog=[]
+    def lastEvent
+	 def deviceMatch = cSwitch.find {s -> s.label.toLowerCase() == fDevice.toLowerCase()}  
+    def searchVal = "on"
+    lastEvent= deviceMatch.events()
+		lastEvent.each { if (it.value && it.value==searchVal) evtLog << [device: deviceName, time: it.date.getTime(), desc: it.descriptionText] }		
+        
+        log.debug "Feedback device last events:  (lastEvent) = '${lastEvent.value}', evtLog = '${evtLog}' "
+
+
+    def lastNewEvt= deviceMatch.events(), eDate, eDesc, today, eventDay, voiceDay, i , evtCount = 0, result = ""
+    
+    for( i = 0 ; i < 10 ; i++ ) {
+        eDate = lastNewEvt.date[i].getTime()
+        eDesc = lastNewEvt.descriptionText[i]
+    	if (eDesc) {
+        	today = new Date(now()).format("EEEE, MMMM dd, yyyy", location.timeZone)
+    		eventDay = new Date(eDate).format("EEEE, MMMM dd, yyyy", location.timeZone)
+    		voiceDay = today == eventDay ? "Today" : "On " + eventDay
+    		result += voiceDay + " at " + new Date(eDate).format("h:mm aa", location.timeZone) + " the event was: " + eDesc + ". "
+   	 		evtCount ++
+            if (evtCount == count) break
+        }
+	}
+ log.debug "Feedback device last events:  (result) = '${result}'"
+
+*/
+
+//QUERYING FOR CURRENT STATE
+def deviceMatchS = cSwitch.find {s -> s.label.toLowerCase() == fDevice.toLowerCase()} 
+def	deviceMatchT = cTstat.find {t -> t.label.toLowerCase() == fDevice.toLowerCase()}
+ if (debug) log.debug "Feedback device: '${result}'"
+ 	
+    		if (deviceMatchS != null) {
+			//switches
+            def currSwitchState = deviceMatch.latestValue("switch")
+            outputTxt = fDevice + "is currently" + currSwitchState
+    		//thermostats
+            }
+            if (deviceMatchT != null) {
+            def currentMode = deviceMatchT.latestValue("thermostatMode")
+    		def currentHSP = deviceMatchT.latestValue("heatingSetpoint") 
+        	def currentCSP = deviceMatchT.latestValue("coolingSetpoint") 
+    		def currentTMP = deviceMatchT.latestValue("temperature") 
+            def currentCycle = deviceMatchT.latestValue("thermostatOperatingState")
+            //def currentDate = currentTMP.date
+			outputTxt = fDevice + " is in " + currentMode + " mode, is currently " + currentCycle + " and the current temperature is " + currentTMP  + " degrees" //since " //+ currentDate
+            }
+     
+     
+     //def currentState = tempSensor.currentState("temperature")
+    //log.debug "temperature value as a string: ${currentState.value}"
+    //log.debug "time this temperature record was created: ${currentState.date}"
+
+    if (fOperand == "lights") {
+    
+    def currSwitches = settings.cSwitch.currentSwitch
+    def onSwitches = currSwitches.findAll { switchVal ->
+        switchVal == fCommand ? true : false
+    }
+    log.debug " currSwitches: ${currSwitches}, on: ${onSwitches}"
+    if (onSwitches.size() > 0) {
+            log.debug "${onSwitches.size()} out of ${currSwitches.size()} switches are on"
+            outputTxt = "There are " + onSwitches.size() + " out of " + currSwitches.size() + " switches that are currently on"
+           return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
+        }
+    }
+//log.debug "${onSwitches.size() out of ${switches.size()} switches are on"
+/*
+lastEvent.each { if (it.value && it.value==searchVal) evtLog << [device: deviceName, time: it.date.getTime(), desc: it.descriptionText] }
+	} 
+    if (evt.size()>0){
+        evtLog.sort({it.time})
+        evtLog.reverse(true)
+        def today = new Date(now()).format("EEEE, MMMM d, yyyy", location.timeZone)
+        def eventDay = new Date(evtLog.time[0]).format("EEEE, MMMM d, yyyy", location.timeZone)
+        def voiceDay = today == eventDay ? "today" : "On " + eventDay  
+        def evtTime = new Date(evtLog.time[0]).format("h:mm aa", location.timeZone)
+        if (voiceEvtTimeDate && parent.getAdvEnabled()) lastEvt = "${voiceDay} at ${evtTime}. "
+    }    
+    return lastEvt
+}
+
+*/
+
     return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
 }
 /************************************************************************************************************
-		GROUP CONTROL HANDLER - from Lambda via page p
+   ALEXA THINKS HANDLER 
+************************************************************************************************************/
+def alexaThinks() {
+	def outputTxt = "Sorry, the group control module is not ready. If you believe this was not a request to control a Profile group, please open a trouble ticket. Thank you for your help, "
+	def pPIN = false
+    state.pTryAgain = true
+    
+}
+/************************************************************************************************************
+		PROFILE CONTROL HANDLER - from Lambda via page p
 ************************************************************************************************************/
 def controlProfiles() {
 	def outputTxt = "Sorry, the group control module is not ready. If you believe this was not a request to control a Profile group, please open a trouble ticket. Thank you for your help, "
@@ -1006,6 +1079,12 @@ def controlProfiles() {
     state.pTryAgain = true
     return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
 }
+
+def subscribeToEvents() {
+	subscribe (location.onSecurityEnable("alarmSystemStatus")?.value)
+    log.info "The SHM has changed status to '${alarmSystemStatus}'"
+    }
+
 
 /************************************************************************************************************
    CONTROL DEVICES - from Lambda via page c
@@ -1027,7 +1106,8 @@ def controlDevices() {
         def String result = (String) null
         def delay = false
         def data
-    	if (debug) log.debug "Received Lambda request to control devices with settings:" +
+    	state.pContCmdsR == "undefined"
+        if (debug) log.debug "Received Lambda request to control devices with settings:" +
         					 " (ctCommand)= ${ctCommand}',(ctNum) = '${ctNum}', (ctPIN) = '${ctPIN}', "+
                              "(ctDevice) = '${ctDevice}', (ctUnit) = '${ctUnit}', (ctGroup) = '${ctGroup}', (pintentName) = '${pintentName}'"
   	if (pintentName == "main") {	
@@ -1061,10 +1141,16 @@ def controlDevices() {
         	return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
         }
         if (ctCommand != "undefined") {
-        	outputTxt = getCustomCmd(ctCommand, ctUnit, ctGroup)  
-        	if (outputTxt!= null ) {
+        	if (ctCommand.contains ("try again")) {
+                	def savedData = state.lastAction
+                    outputTxt = controlHandler(savedData)
+            }       
+            else {
+            outputTxt = getCustomCmd(ctCommand, ctUnit, ctGroup)  
+        	}
+            if (outputTxt!= null ) {
             		if (ctUnit == "pin number" || ctUnit == "pin") {
-						if (ctGroup == "thermostats" || ctGroup == "locks" || ctGroup == "doors") {
+						if (ctGroup == "thermostats" || ctGroup == "locks" || ctGroup == "doors" || ctGroup == "security") {
                         	state.pTryAgain = false
                         }
                         else {
@@ -1084,7 +1170,7 @@ def controlDevices() {
 		}
         
         
-        if (deviceType == "light" || deviceType == "general" ) {
+        if (deviceType == "light" || deviceType == "general") {
             if (settings.cSwitch?.size() > 0 && state.pinTry == null) {
                 if (debug) log.debug "Searching for a switch named '${ctDevice}'"
                 def deviceMatch = cSwitch.find {s -> s.label.toLowerCase() == ctDevice.toLowerCase()}             
@@ -1105,6 +1191,7 @@ def controlDevices() {
                         delay = false
                         data = [type: "cSwitch", command: command, device: device, unit: ctUnit, num: ctNum, delay: delay]
                         outputTxt = controlHandler(data)
+                        if (command == "decrease" || command == "increase" ) {state.pContCmdsR = "level"}
                         if (debug) log.debug "Sending params to Lambda: pContCmds: '${state.pContCmds}', pContCmdsR: '${state.pContCmdsR}', pTryAgain: '${state.pTryAgain}' "
 						return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
                     }
@@ -1186,6 +1273,45 @@ def controlDevices() {
                 }
             }
         }
+        else if (deviceType == "Security") {
+ //       if (settings.cLock?.size()>0) {
+                if (debug) log.debug "Searching for a security switch named '${ctDevice}'"
+                def deviceMatch = cSec.find {l -> l.label.toLowerCase() == ctDevice.toLowerCase()}             
+                if (deviceMatch) {
+                    if (debug) log.debug "Found a device: '${deviceMatch}'"
+                    device = deviceMatch
+					if(state.usePIN_S == true && command == "off") {
+            			if (debug) log.debug "PIN protected device type - '${deviceType}'"               		
+                        delay = false
+	                    data = [type: "Security", command: command , "device": ctDevice, "unit": ctUnit, "num": ctNum, delay: delay]
+                        state.savedPINdata = data
+                		outputTxt = "Pin number please"
+                		pPIN = true
+                        state.pinTry = 0
+                        if (debug) log.debug "PIN response pending - '${state.pinTry}'"
+                		return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
+            			}
+                    	
+                        if (ctNum > 0 && ctUnit == "minutes") {
+                            device = device.label
+                            delay = true
+                            data = [type: "Security", command: command, device: device, unit: ctUnit, num: ctNum, delay: delay]
+                            runIn(ctNum*60, controlHandler, [data: data])
+                            if (command == "on") {outputTxt = "Ok, arming the " + ctDevice + " system in " + numText}
+                            else if (command == "off") {outputTxt = "Ok, disarming the " + ctDevice + " system "}
+                            return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
+                        		
+                            
+                        }
+                        else if (command == "on" && ctNum == 0 || command == "off" && ctNum == 0) {
+                       		delay = false
+                            data = [type: "Security", command: command, device: device, unit: ctUnit, num: ctNum, delay: delay]
+                            outputTxt = controlHandler(data)
+                            return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
+                    		}
+                        }   
+                    }
+          //      }      
         else if (deviceType == "volume") {      
             if (debug) log.debug "Searching for a volume control device named '${ctDevice}'"     
                 if (settings.cSpeaker?.size()>0) {
@@ -1369,27 +1495,32 @@ private getCustomCmd(command, unit, group) {
     }
     if (command == "cancel" || command == "stop" || command == "disable" || command == "deactivate" || command == "unschedule") {
     	if (unit == "reminder" || unit == "reminders" || unit == "timer" || unit == "timers" || unit.contains ("reminder") || unit.contains ("timer") ) {
-        	if (state.scheduledHandler == "filters") {
-            	//unschedule() cancel ALL
-                unschedule(filtersHandler)
-                state.scheduledHandler = null
-                result = "Ok, canceling reminder to replace filters"
-				return result
+        	if (unit.contains ("reminder")) {
+            	if (state.scheduledHandler != null) {
+                	def reminderHandler = state.scheduledHandler == "filters"+"Handler"
+                	unschedule("${reminderHandler}")
+                result = "Ok, canceling reminder for " + state.scheduledHandler
+            	}
+                else {
+                result = "Sorry, I couldn't find any scheduled reminders"// for " + state.scheduledHandler
+                }
+                return result
             }
             else {
-               	unschedule(controlHandler)
-               	//unschedule() cancel ALL
-                result = "Ok, canceling timer"
-				return result
+                if (unit.contains ("timer")) {
+                    unschedule(controlHandler)
+                    result = "Ok, canceling timer"
+                    return result
+                }
             }
-		}
+        }
 		if (unit == "conversation" || unit.contains ("conversation")) {
 			state.pContCmds = false
             result = "Ok, disabling conversational features. To activate just say, start the conversation"
 			return result
         }
 		if (unit == "pin number" || unit == "pin") {
-			if(state.usePIN_D == true || state.usePIN_T == true || state.usePIN_L == true) {
+			if(state.usePIN_D == true || state.usePIN_T == true || state.usePIN_L == true || state.usePIN_S == true) {
         		result = "Pin number please"
         		state.pinTry = 0
                 state.savedPINdata = "disable" + group
@@ -1415,11 +1546,12 @@ private getCustomCmd(command, unit, group) {
             return result
         }
 		if (unit == "pin number" || unit == "pin") {
-			if (group == "thermostats" || group == "locks" || group == "doors") {
+			if (group == "thermostats" || group == "locks" || group == "doors" || group == "security") {
             	if (group == "thermostats") {state.usePIN_T = true}
             	if (group == "locks") {state.usePIN_L = true}
             	if (group == "doors") {state.usePIN_D = true}
-            	if (debug) log.debug "Group:'${group}' PIN: T- '${state.usePIN_T}', L-'${state.usePIN_L}', D-'${state.usePIN_D}' "
+                if (group == "security") {state.usePIN_S = true}
+            	if (debug) log.debug "Group:'${group}' PIN: T- '${state.usePIN_T}', L-'${state.usePIN_L}', D-'${state.usePIN_D}', S-'${state.usePIN_S}'"
                 result = "Ok, the pin has been activated for " + group + ".  To disable, just say disable the PIN for " + group
             	return result
             }
@@ -1440,12 +1572,15 @@ private getCustomCmd(command, unit, group) {
 ************************************************************************************************************/ 
 private pinHandler(pin, command, num) {
 	def result
-	if (pin == cPIN || command == cPIN || num == cPIN) {
+        def String pinNum = (String) null
+		pinNum = num
+	if (pin == cPIN || command == cPIN || pinNum == cPIN) {
 		def data = state.savedPINdata
-            if (data == "disablelocks" || data == "disablethermostats" || data == "disabledoors"){ 
+            if (data == "disablelocks" || data == "disablethermostats" || data == "disabledoors" || data == "disablesecurity"){ 
                 if (data == "disablelocks"){state.usePIN_L = false}
                 else if (data == "disablethermostats") {state.usePIN_T = false}
                 else if (data == "disabledoors") {state.usePIN_D = false}  
+                else if (data == "disablesecurity") {state.usePIN_S = false}
                 result = "Ok, pin number for " + data.replace("disable", "") + " has been disabled.  To activate it again, just say enable the PIN number for " + data.replace("disable", "")   
             }
             else {
@@ -1459,7 +1594,7 @@ private pinHandler(pin, command, num) {
 		state.pinTry = state.pinTry + 1
 			if (state.pinTry < 4){
 				result = "I'm sorry, that is incorrect, "
-				if (debug) log.debug "PIN NOT Matched! PIN = '${cPIN}', ctPIN= '${ctPIN}', ctCommand ='${command}', try# ='${state.pinTry}'"
+				if (debug) log.debug "PIN NOT Matched! PIN = '${cPIN}', ctPIN= '${ctPIN}', ctNum= '${num}', ctCommand ='${command}', try# ='${state.pinTry}'"
 				state.pTryAgain = true
                 return result
 			}
@@ -1482,6 +1617,7 @@ def controlHandler(data) {
     def numN = data.num
     def delayD = data.delay
 	def result = " "
+    def actionData
     if (debug) log.debug 	"Received device control handler data: " +
         					" (deviceType)= ${deviceType}',(deviceCommand) = '${deviceCommand}', (deviceD) = '${deviceD}', " +
                             "(unitU) = '${unitU}', (numN) = '${numN}', (delayD) = '${delayD}'"  
@@ -1489,7 +1625,10 @@ def controlHandler(data) {
     	if (deviceCommand == "on" || deviceCommand == "off") {
             if (delayD == false) {
                 deviceD."${deviceCommand}"()
-            	result = "Ok, turning " + deviceD + " " + deviceCommand 
+            	def device = deviceD.label
+                actionData = ["type": deviceType, "command": deviceCommand , "device": device, "unit": unitU, "num": numN, delay: delayD]
+                state.lastAction = actionData
+                result = "Ok, turning " + deviceD + " " + deviceCommand 
                 return result
             }
             else {
@@ -1504,13 +1643,15 @@ def controlHandler(data) {
         		deviceD.off()
         }
         else if (deviceCommand == "increase" || deviceCommand == "decrease" || deviceCommand == "setLevel" || deviceCommand == "set") {
- 			if (delayD == true) {  
-                deviceD = cSwitch.find {s -> s.label == deviceD}   
+ 			if (delayD == true || state.pContCmdsR == "level") {  
+                deviceD = cSwitch.find {s -> s.label.toLowerCase() == deviceD.toLowerCase()} 
+                if (debug) log.debug "Matched device control (deviceD)= ${deviceD.label}"
             }
+            state.pContCmdsR == null
             def currLevel = deviceD.latestValue("level")
             def currState = deviceD.latestValue("switch")
             def newLevel = cLevel*10
-			if (unitU == "percent") newLevel = numN      
+            if (unitU == "percent") newLevel = numN      
             if (deviceCommand == "increase") {
             	if (unitU == "percent") {
                 	newLevel = numN
@@ -1560,6 +1701,9 @@ def controlHandler(data) {
             	if (newLevel == 0 && currState == "on") {deviceD.off()}
                 else {deviceD.setLevel(newLevel)}
             } 
+            def device = deviceD.label
+            actionData = ["type": deviceType, "command": deviceCommand , "device": device, "unit": unitU, "num": newLevel, delay: delayD]
+            state.lastAction = actionData
             result = "Ok, setting  " + deviceD + " to " + newLevel + " percent"            
             if (delayD == false) { return result } 
     	}
@@ -1618,7 +1762,9 @@ def controlHandler(data) {
 			if (currentMode == "cool" || currentMode == "off") {
 				deviceD?."heat"()
                 deviceD?.setHeatingSetpoint(newSetPoint)
-				if (debug) log.debug "Turning heat on because requested command asked for heat to be set to '${newSetPoint}'" 
+                if (debug) log.debug "Turning heat on because requested command asked for heat to be set to '${newSetPoint}'"
+                result = "Ok, turning the heat mode on " + deviceD + " and setting heating to " + cNewSetPoint + " degrees "
+                return result 
 			}
 			else {
 				if  (currentHSP < newSetPoint) {
@@ -1646,7 +1792,9 @@ def controlHandler(data) {
             if (currentMode == "heat" || currentMode == "off") {
         		deviceD?."cool"()
                 deviceD?.setCoolingSetpoint(newSetPoint)
-        		if (debug) log.debug "Turning AC on because requested command asked for cooling to be set to '${newSetPoint}'"     
+        		if (debug) log.debug "Turning AC on because requested command asked for cooling to be set to '${newSetPoint}'"
+                result = "Ok, turning the AC mode on " + deviceD + " and setting cooling to " + cNewSetPoint + " degrees "
+                return result                 
         	}   	
         	else {
         		if (currentCSP > newSetPoint) {
@@ -1678,6 +1826,17 @@ def controlHandler(data) {
         else if (deviceCommand == "unlock") result = "Ok, unlocking the  " + deviceD                    
         if (delayD == false) {return result}  
 	}
+	else if (deviceType == "Security") {
+    	if (delayD == true || state.pinTry != null) {  
+        	deviceD = cSec.find {l -> l.label.toLowerCase() == deviceD.toLowerCase()} 
+        }
+        state.pinTry = null
+   		deviceD."${deviceCommand}"()
+        if (deviceCommand == "on") result = "Ok, arming the " + deviceD + " system"
+        else if (deviceCommand == "off") result = "Ok, disarming the " + deviceD + " system"                  
+        if (delayD == false) {return result}  
+	}  
+ 
 	else if (deviceType == "cVolume" ) {
    		if (deviceCommand == "increase" || deviceCommand == "decrease" || deviceCommand == "setLevel") {
             def currLevel = deviceD.latestValue("level")
@@ -1729,14 +1888,14 @@ def controlHandler(data) {
             return result
        }
     }
-    else if (deviceType == "cDoor") {
+    else if (deviceType == "cDoor" || deviceType == "cVent") {
     	if (delayD == true || state.pinTry != null) {  
             	deviceD = cDoor.find {d -> d.label.toLowerCase() == deviceD.toLowerCase()}   
         }
         state.pinTry = null
    		deviceD."${deviceCommand}"()
-        if (deviceCommand == "lock") result = "Ok, locking " + deviceD
-        else if (deviceCommand == "unlock") result = "Ok, unlocking the  " + deviceD                    
+        if (deviceCommand == "open") {result = "Ok, opening the " + deviceD}
+        if (deviceCommand == "close") {result = "Ok, closing the  " + deviceD}                   
         if (delayD == false) {return result}  
 	}
     else if (deviceType == "cFan") {
@@ -1830,38 +1989,21 @@ private getProfileDetails() {
     	return  ProfileDetails
 }
 private getDeviceDetails() {
-    def s = "" 
-        cSwitch.each { device -> 
-            s +=device.label +"\n" }
-    def t = "" 
-        cTstat.each { device -> 
-            t +=device.label +"\n" }
-    def l = "" 
-        cLock.each { device -> 
-            l +=device.label +"\n" }        
-    def m = "" 
-        cMotion.each { device -> 
-            m +=device.label +"\n" }   
-    def c = "" 
-        cContact.each { device -> 
-            c +=device.label +"\n" } 
-    def p = "" 
-        cPresence.each { device -> 
-            p +=device.label +"\n" } 
-    def d = "" 
-        cDoor.each { device -> 
-            d +=device.label +"\n" } 
-    def sp = "" 
-        cSpeaker.each { device -> 
-            sp +=device.label +"\n" } 
-    def v = "" 
-        cVent.each { device -> 
-            v +=device.label +"\n" }
-    def f = "" 
-        cFan.each { device -> 
-            f +=device.label +"\n" } 
-	def DeviceDetails = "${s}"+"${t}"+"${l}"+"${m}"+"${c}"+ "${p}"+"${d}"+"${v}"+"${f}"+"${sp}" 
-    	return DeviceDetails
+def DeviceDetails = [] 
+    cSwitch.each 	{DeviceDetails << it.displayName +"\n"}
+    cTstat.each 	{DeviceDetails << it.displayName +"\n"}
+    cLock.each 		{DeviceDetails << it.displayName +"\n"}     
+    cMotion.each 	{DeviceDetails << it.displayName +"\n"}
+    cContact.each 	{DeviceDetails << it.displayName +"\n"}
+    cPresence.each 	{DeviceDetails << it.displayName +"\n"}
+    cDoor.each 		{DeviceDetails << it.displayName +"\n"}
+    cSpeaker.each 	{DeviceDetails << it.displayName +"\n"}
+    cVent.each 		{DeviceDetails << it.displayName +"\n"}
+    cFan.each 		{DeviceDetails << it.displayName +"\n"}
+	def dUniqueList = DeviceDetails.unique (false)
+    dUniqueList = dUniqueList.sort()
+    def asString = dUniqueList.join("")
+    return asString
 }
 /***********************************************************************************************************************
     COMMANDS HANDLER
@@ -1949,6 +2091,15 @@ private getCommand(command, unit) {
         else if (command == "open" || command == "close") {
 			deviceType = "door"                  
 		}
+        if (command == "arm" || command == "disarm") {
+			deviceType = "Security"
+            if (command == "arm") {
+            command = "on"
+            }
+            if (command == "disarm") {
+            command = "off"
+            }
+        }
     }
     return ["deviceType":deviceType, "command":command ]                          
 }
@@ -2015,11 +2166,11 @@ def mDevicesSettings() {def text = "Tap here to configure settings"
     	else text = "Tap here to choose devices"
 		text}
 def mFeedbackComplete(){def result = ""
-    if (fShowSwitches || fShowContacts || fShowLocks || fShowMotion || fShowPresence || fShowTstat || fShowWeather) {
+    if (fShowSwitches || fShowContacts || fShowLocks || fShowMotion || fShowPresence || fShowTstat || fShowWeather || fSecFeed) {
     	result = "complete"}
     	result}
 def mFeedbackSettings() {def text = ""
-    if (fShowSwitches || fShowContacts || fShowLocks || fShowMotion || fShowPresence || fShowTstat || fShowWeather) {
+    if (fShowSwitches || fShowContacts || fShowLocks || fShowMotion || fShowPresence || fShowTstat || fShowWeather || fSecFeed) {
     	text = "Configured"}
     	else text = "Tap here to configure Feedback"
 		text}
@@ -2032,6 +2183,15 @@ def mDefaultsSettings() {def text = ""
     	text = "Defaults are Configured"}
     	else text = "Tap here to configure Defaults"
 		text}
+def mSHMSecComplete(){def result = ""
+    if ("fSecFeed") {
+    	result = "complete"}
+    	result}
+def mSHMSecSettings() {def text = "" 
+    if ("fSecFeed") {
+    	text = "Home Security options configured"}
+    	else text = "Tap here to configure Defaults"
+		text}        
 // VIEW AND CREATE PROFILES PAGE
 def cCreateComplete(){def result = ""
     if (childApps.size()) {
@@ -2068,7 +2228,6 @@ def mSecuritySettings() {def text = "Tap here to configure settings"
     if (debug || ShowLicense || ShowTokens) {
     	text = "Configured - Information is now displayed in the IDE Live Logs"}
     	else text = "Configure"text	}
-// SECURITY DATA PAGE
 def dashboardSettings() { def text = "Tap here to view Dashboard" 
     	text}
 def dashboardComplete(){def result = ""
