@@ -174,6 +174,8 @@ page name: "mDevices"
                     	if (cDoor) {input "usePIN_D", "bool", title: "Use PIN to control Doors?", default: false}  
                     input "cLock", "capability.lock", title: "Allow These Lock(s)...", multiple: true, required: false, submitOnChange: true
                     	if (cLock) {input "usePIN_L", "bool", title: "Use PIN to control Locks?", default: false}
+                	input "cMiscDev", "capability.switch", title: "Allow these Misc. Switches...", multiple: true, required: false, submitOnChange: true
+                    	if (cMiscDev) paragraph "All devices chosen here require PIN for all operations"
                 }
                 section ("Sensors", hideWhenEmpty: true) {
                  	input "cMotion", "capability.motionSensor", title: "Allow These Motion Sensor(s)...", multiple: true, required: false
@@ -231,7 +233,7 @@ page name: "mSHMSec"
     def mSHMSec(){
         dynamicPage(name: "mSHMSec", title: "Home Security Information",install: false, uninstall: false) {
         section ("Control SHM Security Arming and Disarming") {
-        	input "cSec", "capability.relaySwitch", title: "Select switch for SHM arm & disarm...", multiple: false, required: false, submitOnChange: true
+        	input "cSec", "capability.relaySwitch", title: "Select switch for SHM arm & disarm...", multiple: true, required: false, submitOnChange: true
 		input "cPIN", "password", title: "Set PIN for ALL Home Security options", default: false, required: false	
             }
         section ("Smart Home Monitor Status Change Feedback") {
@@ -880,6 +882,7 @@ def initialize() {
             state.usePIN_L = settings.uPIN_L
             state.usePIN_D = settings.uPIN_D
             state.usePin_S = settings.uPin_S
+            state.usePin_M = settings.uPin_M
             state.savedPINdata = null
             state.pinTry = null
         //Other Settings
@@ -1150,7 +1153,7 @@ def controlDevices() {
         	}
             if (outputTxt!= null ) {
             		if (ctUnit == "pin number" || ctUnit == "pin") {
-						if (ctGroup == "thermostats" || ctGroup == "locks" || ctGroup == "doors" || ctGroup == "security") {
+						if (ctGroup == "thermostats" || ctGroup == "locks" || ctGroup == "doors" || ctGroup == "security" || ctGroup == "miscDevices") {
                         	state.pTryAgain = false
                         }
                         else {
@@ -1236,45 +1239,40 @@ def controlDevices() {
                 }
          }
         else if (deviceType == "lock") {
-            if (settings.cLock?.size()>0) {   
-                if (debug) log.debug "Searching for a lock named '${ctDevice}'"
+                if (debug) log.debug "Searching for a security switch named '${ctDevice}'"
                 def deviceMatch = cLock.find {l -> l.label.toLowerCase() == ctDevice.toLowerCase()}             
                 if (deviceMatch) {
                     if (debug) log.debug "Found a device: '${deviceMatch}'"
                     device = deviceMatch
-					if(state.usePIN_L == true) {
+					if(state.usePIN_L == true && command == "unlock") {
             			if (debug) log.debug "PIN protected device type - '${deviceType}'"               		
                         delay = false
-	                    data = [type: "cLock", "command": command , "device": ctDevice, "unit": ctUnit, "num": ctNum, delay: delay]
+	                    data = [type: "cLock", command: command , "device": ctDevice, "unit": ctUnit, "num": ctNum, delay: delay]
                         state.savedPINdata = data
                 		outputTxt = "Pin number please"
                 		pPIN = true
                         state.pinTry = 0
                         if (debug) log.debug "PIN response pending - '${state.pinTry}'"
                 		return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
-            		}
-                    else {
-                        if (ctNum > 0 && ctUnit == "minutes") {
+            			}
+                    	if (ctNum > 0 && ctUnit == "minutes") {
                             device = device.label
                             delay = true
                             data = [type: "cLock", command: command, device: device, unit: ctUnit, num: ctNum, delay: delay]
                             runIn(ctNum*60, controlHandler, [data: data])
-                            if (command == "lock") {outputTxt = "Ok, locking the " + ctDevice + " in " + numText}
-                            else if (command == "unlock") {outputTxt = "Ok, unlocking the " + ctDevice + " in " + numText}
+                            if (command == "lock") {outputTxt = "Ok, locking the " + ctDevice + " system in " + numText}
+                            else if (command == "unlock") {outputTxt = "Ok, unlock the " + ctDevice + " system "}
                             return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
-                        }
-                        else {
-                            delay = false
+                        	}
+                        else if (command == "lock" && ctNum == 0 || command == "unlock" && ctNum == 0) {
+                       		delay = false
                             data = [type: "cLock", command: command, device: device, unit: ctUnit, num: ctNum, delay: delay]
                             outputTxt = controlHandler(data)
                             return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
-                        }
+                    		}
+                        }   
                     }
-                }
-            }
-        }
         else if (deviceType == "Security") {
- //       if (settings.cLock?.size()>0) {
                 if (debug) log.debug "Searching for a security switch named '${ctDevice}'"
                 def deviceMatch = cSec.find {l -> l.label.toLowerCase() == ctDevice.toLowerCase()}             
                 if (deviceMatch) {
@@ -1291,8 +1289,7 @@ def controlDevices() {
                         if (debug) log.debug "PIN response pending - '${state.pinTry}'"
                 		return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
             			}
-                    	
-                        if (ctNum > 0 && ctUnit == "minutes") {
+                    	if (ctNum > 0 && ctUnit == "minutes") {
                             device = device.label
                             delay = true
                             data = [type: "Security", command: command, device: device, unit: ctUnit, num: ctNum, delay: delay]
@@ -1300,9 +1297,7 @@ def controlDevices() {
                             if (command == "on") {outputTxt = "Ok, arming the " + ctDevice + " system in " + numText}
                             else if (command == "off") {outputTxt = "Ok, disarming the " + ctDevice + " system "}
                             return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
-                        		
-                            
-                        }
+                        	}
                         else if (command == "on" && ctNum == 0 || command == "off" && ctNum == 0) {
                        		delay = false
                             data = [type: "Security", command: command, device: device, unit: ctUnit, num: ctNum, delay: delay]
@@ -1311,8 +1306,42 @@ def controlDevices() {
                     		}
                         }   
                     }
-          //      }      
-        else if (deviceType == "volume") {      
+        else if (deviceType == "miscDevices") {
+                if (debug) log.debug "Searching for a pin protected device named '${ctDevice}'"
+                def deviceMatch = cMiscDev.find {l -> l.label.toLowerCase() == ctDevice.toLowerCase()}             
+                if (deviceMatch) {
+                    if (debug) log.debug "Found a device: '${deviceMatch}'"
+                    device = deviceMatch
+						if (debug) log.debug "PIN protected device type - '${deviceType}'"               		
+                        delay = false
+	                    data = [type: "cMiscDev", command: command , "device": ctDevice, "unit": ctUnit, "num": ctNum, delay: delay]
+                        state.savedPINdata = data
+                		outputTxt = "Pin number please"
+                		pPIN = true
+                        state.pinTry = 0
+                        if (debug) log.debug "PIN response pending - '${state.pinTry}'"
+                        if (command == "activate") {outputTxt = "Ok, activating " + ctDevice}
+                        else if (command == "deactivate") {outputTxt = "Ok, deactivating" + ctDevice}
+                		return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
+            			}
+                    	if (ctNum > 0 && ctUnit == "minutes") {
+                            device = device.label
+                            delay = true
+                            data = [type: "cMiscDev", command: command, device: device, unit: ctUnit, num: ctNum, delay: delay]
+                            runIn(ctNum*60, controlHandler, [data: data])
+                            if (command == "activate") {outputTxt = "Ok, activating the " + ctDevice + " system in " + numText}
+                            else if (command == "deactivate") {outputTxt = "Ok, deactivating the " + ctDevice + " system "}
+                            return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
+                        	}
+                        else if (command == "activate" && ctNum == 0 || command == "deactivate" && ctNum == 0) {
+                       		delay = false
+                            data = [type: "cMiscDev", command: command, device: device, unit: ctUnit, num: ctNum, delay: delay]
+                            outputTxt = controlHandler(data)
+                            return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
+                    	
+                        }   
+                    }                    
+  		else if (deviceType == "volume") {      
             if (debug) log.debug "Searching for a volume control device named '${ctDevice}'"     
                 if (settings.cSpeaker?.size()>0) {
                     def deviceMatch = cSpeaker.find {s -> s.label.toLowerCase() == ctDevice.toLowerCase()}
@@ -1520,7 +1549,7 @@ private getCustomCmd(command, unit, group) {
 			return result
         }
 		if (unit == "pin number" || unit == "pin") {
-			if(state.usePIN_D == true || state.usePIN_T == true || state.usePIN_L == true || state.usePIN_S == true) {
+			if(state.usePIN_D == true || state.usePIN_T == true || state.usePIN_L == true || state.usePIN_S == true || state.usePIN_M == true) {
         		result = "Pin number please"
         		state.pinTry = 0
                 state.savedPINdata = "disable" + group
@@ -1546,12 +1575,13 @@ private getCustomCmd(command, unit, group) {
             return result
         }
 		if (unit == "pin number" || unit == "pin") {
-			if (group == "thermostats" || group == "locks" || group == "doors" || group == "security") {
+			if (group == "thermostats" || group == "locks" || group == "doors" || group == "security" || group == "miscDevices") {
             	if (group == "thermostats") {state.usePIN_T = true}
             	if (group == "locks") {state.usePIN_L = true}
             	if (group == "doors") {state.usePIN_D = true}
                 if (group == "security") {state.usePIN_S = true}
-            	if (debug) log.debug "Group:'${group}' PIN: T- '${state.usePIN_T}', L-'${state.usePIN_L}', D-'${state.usePIN_D}', S-'${state.usePIN_S}'"
+                if (group == "miscDevices") {state.usePIN_M = true}
+            	if (debug) log.debug "Group:'${group}' PIN: T- '${state.usePIN_T}', L-'${state.usePIN_L}', D-'${state.usePIN_D}', S-'${state.usePIN_S}', M-'${state.usePIN_M}'"
                 result = "Ok, the pin has been activated for " + group + ".  To disable, just say disable the PIN for " + group
             	return result
             }
@@ -1576,11 +1606,12 @@ private pinHandler(pin, command, num) {
 		pinNum = num
 	if (pin == cPIN || command == cPIN || pinNum == cPIN) {
 		def data = state.savedPINdata
-            if (data == "disablelocks" || data == "disablethermostats" || data == "disabledoors" || data == "disablesecurity"){ 
+            if (data == "disablelocks" || data == "disablethermostats" || data == "disabledoors" || data == "disablesecurity" || data == "disabledevices"){ 
                 if (data == "disablelocks"){state.usePIN_L = false}
                 else if (data == "disablethermostats") {state.usePIN_T = false}
                 else if (data == "disabledoors") {state.usePIN_D = false}  
                 else if (data == "disablesecurity") {state.usePIN_S = false}
+                else if (date == "disabledevices") {state.usePIN_M = false}
                 result = "Ok, pin number for " + data.replace("disable", "") + " has been disabled.  To activate it again, just say enable the PIN number for " + data.replace("disable", "")   
             }
             else {
@@ -1644,7 +1675,7 @@ def controlHandler(data) {
         }
         else if (deviceCommand == "increase" || deviceCommand == "decrease" || deviceCommand == "setLevel" || deviceCommand == "set") {
  			if (delayD == true || state.pContCmdsR == "level") {  
-                deviceD = cSwitch.find {s -> s.label.toLowerCase() == deviceD.toLowerCase()} 
+//               deviceD = cSwitches.find {s -> s.deviceLabel.toLowerCase() == deviceD.toLowerCase()} 
                 if (debug) log.debug "Matched device control (deviceD)= ${deviceD.label}"
             }
             state.pContCmdsR == null
@@ -1816,6 +1847,16 @@ def controlHandler(data) {
         	}  
         }
     }
+	else if (deviceType == "cMiscDev") {
+    	if (delayD == true || state.pinTry != null) {  
+        	deviceD = cMiscDev.find {l -> l.label.toLowerCase() == deviceD.toLowerCase()} 
+        }
+        state.pinTry = null
+   		deviceD?."${deviceCommand}"()
+        if (deviceCommand == "activate") result = "Ok, turning on " + deviceD
+        else if (deviceCommand == "deactivate") result = "Ok, turning off the  " + deviceD                    
+        if (delayD == false) {return result}  
+	}
 	else if (deviceType == "cLock") {
     	if (delayD == true || state.pinTry != null) {  
         	deviceD = cLock.find {l -> l.label.toLowerCase() == deviceD.toLowerCase()} 
@@ -2000,6 +2041,7 @@ def DeviceDetails = []
     cSpeaker.each 	{DeviceDetails << it.displayName +"\n"}
     cVent.each 		{DeviceDetails << it.displayName +"\n"}
     cFan.each 		{DeviceDetails << it.displayName +"\n"}
+    cMiscDev.each	{DeviceDetails << it.displayName +"\n"}
 	def dUniqueList = DeviceDetails.unique (false)
     dUniqueList = dUniqueList.sort()
     def asString = dUniqueList.join("")
@@ -2084,8 +2126,17 @@ private getCommand(command, unit) {
 		else if (command == "high" || command == "medium"|| command == "low") {
 			deviceType = "fan"                  
 		}
-    //case "Other Commands":           
-        if (command == "lock" || command == "unlock") {
+    //case "Other Commands":
+    	if (command == "activate" || command == "deactivate") {
+        	deviceType = "miscDevices"
+            if (command == "activate") {
+            	command = "on"
+                }
+                if (command == "deactivate") {
+                	command = "off"
+                    }
+        		}
+   		if (command == "lock" || command == "unlock") {
 			deviceType = "lock"                  
 		}
         else if (command == "open" || command == "close") {
