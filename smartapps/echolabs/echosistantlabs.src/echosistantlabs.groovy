@@ -1,14 +1,15 @@
 /* 
  * EchoSistant - The Ultimate Voice and Text Messaging Assistant Using Your Alexa Enabled Device.
  *
- *		1/14/2017		Version:4.0 R.4.2.10	Feature: added garage door relay control 
- *		1/14/2017		Version:4.0 R.4.2.8		Bug fixes: for try again module; added PIN cycle for relays 
- *		1/13/2017		Version:4.0 R.4.2.7		Feature Added: Alexa Feedback and device status 
- *		1/13/2017		Version:4.0 R.4.2.5		Feature: First Alexa Thinks
- *		1/12/2017		Version:4.0 R.4.2.4		Bug fixes: scheduling process
- *		1/12/2017		Version:4.0 R.4.2.3		Bug fixes: pin requests
- *		1/12/2017		Version:4.0 R.4.2.2		Bug fixes: fans, pin,  and non dimmer switches 
- *		1/11/2017		Version:4.0 R.4.2.1		New features: HVAC filters reminders 
+ *		1/20/2017		Version:4.0 R.4.2.11		Feature: completed Phase 2 - Basic Device Feedback
+ *		1/14/2017		Version:4.0 R.4.2.10		Feature: added garage door relay control 
+ *		1/14/2017		Version:4.0 R.4.2.08		Bug fixes: for try again module; added PIN cycle for relays 
+ *		1/13/2017		Version:4.0 R.4.2.07		Feature Added: Alexa Feedback and device status 
+ *		1/13/2017		Version:4.0 R.4.2.05		Feature: First Alexa Thinks
+ *		1/12/2017		Version:4.0 R.4.2.04		Bug fixes: scheduling process
+ *		1/12/2017		Version:4.0 R.4.2.03		Bug fixes: pin requests
+ *		1/12/2017		Version:4.0 R.4.2.02		Bug fixes: fans, pin,  and non dimmer switches 
+ *		1/11/2017		Version:4.0 R.4.2.01		New features: HVAC filters reminders 
  *												Improvements: Alexa responses
  *		12/31/2016		Version:4.0 R.4.1.1		New features: status updates, custom commands, weather alerts, message reminders 
  *												Improvements: streamlined UI and processing 
@@ -23,6 +24,14 @@
  *  Unless required by applicable law or agreed to in writing, software distributed under the License is distributed
  *  on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License
  *  for the specific language governing permissions and limitations under the License.
+ *
+ * Phase 1 - Device Control Module - status COMPLETED
+ * Phase 2 - Feedback Module (same app) - status COMPLETED
+ * Phase 3 - Text to Speech Module (new add-on app Profile) - in PROGRESS
+ * Phase 4 - Scenes Labs (new add-on app Scenes) - not STARTED
+ * Phase 5 - Security Module - Parent App - not STARTED
+ * Phase 6 - Adding UI (review and test final product)
+ *
  *
 /**********************************************************************************************************************************************/
 definition(
@@ -86,6 +95,7 @@ page name: "mIntent"
     page name: "mDevices"    
         def mDevices(){
             dynamicPage(name: "mDevices", title: "",install: false, uninstall: false) {
+                // DEVICE categories 
                 section ("Select devices", hideWhenEmpty: true){ }
                 section ("Lights and Switches", hideWhenEmpty: true){  
                     input "cSwitch", "capability.switch", title: "Allow These Switch(es)...", multiple: true, required: false, submitOnChange: true
@@ -95,7 +105,7 @@ page name: "mIntent"
                 section ("PIN Protected Devices (Voice Activated Setting)" , hideWhenEmpty: true) {
                     input "cTstat", "capability.thermostat", title: "Allow These Thermostat(s)...", multiple: true, required: false, submitOnChange: true
                     if (cTstat) {input "uPIN_T", "bool", title: "Use PIN to control Thermostats?", default: false}
-                    //input "cDoor", "capability.garageDoorControl", title: "Allow These Garage Door(s)...", multiple: true, required: false, submitOnChange: true
+                    input "cDoor", "capability.garageDoorControl", title: "Allow These Garage Door(s)...", multiple: true, required: false, submitOnChange: true
                     input "cRelay", "capability.switch", title: "Allow These Garage Door Relay(s)...", multiple: false, required: false, submitOnChange: true
                     if (cRelay) input "cContactRelay", "capability.contactSensor", title: "Allow This Contact Sensor to Monitor the Garage Door Relay(s)...", multiple: false, required: false
                     if (cDoor || cRelay) {input "uPIN_D", "bool", title: "Use PIN to control Doors?", default: false}  
@@ -137,105 +147,31 @@ page name: "mIntent"
     page name: "mFeedback"
         def mFeedback() {
             dynamicPage (name: "mFeedback", uninstall: false) {
-                section ("Switches and Dimmers", hideWhenEmpty: true) {
-                    if (faudioTextOn || faudioTextOff || speech11 || music11) paragraph "Configured with Settings"
-                        input "fShowSwitches", "bool", title: "Switches and Dimmers", default: false, submitOnChange: true
-                    if (fShowSwitches) {        
-                        input "faudioTextOn", "text", title: "Alexa says this...", description: "...when the last event was on", required: false, capitalization: "sentences"
-                        input "faudioTextOff", "text", title: "Alexa says this...", description: "...when the last event was off", required: false, capitalization: "sentences"
-                        input "speech11", "capability.speechSynthesis", title: "Optional send Alexa Feedback to this Message Player", required: false, multiple: true, submitOnChange: true
-                        input "music11", "capability.musicPlayer", title: "Optional send Alexa Feedback to this Sonos Type Devices", required: false, multiple: true, submitOnChange: true
-                        if (music11) {
-                            input "volume11", "number", title: "Temporarily change volume", description: "0-100%", required: false
-                            input "resumePlaying11", "bool", title: "Resume currently playing music after notification", required: false, defaultValue: false
-                            }
-                    }             
-                }
-                section("Doors and Windows", hideWhenEmpty: true) {
-                    if (fAudioTextOpen || fAudioTextClosed || speech12 || music12) paragraph "Configured with Settings"
-                    input "fShowContacts", "bool", title: "Doors and Windows", default: false, multiple: false, submitOnChange: true
-                    if (fShowContacts) {
-                        input "fAudioTextOpen", "text", title: "Alexa says this...", description: "...when the last event was door opened", required: false, capitalization: "sentences"
-                        input "fAudioTextClosed", "text", title: "Alexa says this...", description: "...when the last event was door closed", required: false, capitalization: "sentences"
-                        input "speech12", "capability.speechSynthesis", title: "Optional send Alexa Feedback to this Message Player", required: false, multiple: true, submitOnChange: true
-                        input "music12", "capability.musicPlayer", title: "Optional send Alexa Feedback to this Sonos Type Devices", required: false, multiple: true, submitOnChange: true
-                        if (music12) {
-                            input "volume12", "number", title: "Temporarily change volume", description: "0-100%", required: false
-                            input "resumePlaying12", "bool", title: "Resume currently playing music after notification", required: false, defaultValue: false
-                            }
-                        }
-                    }    
-                section("Locks", hideWhenEmpty: true) {
-                    if (fAudioTextLocked || fAudioTextUnlocked || speech13 || music13) paragraph "Configured with Settings"
-                    input "fShowLocks", "bool", title: "Locks", default: false, submitOnChange: true
-                    if (fShowLocks) {
-                        input "fAudioTextLocked", "text", title: "Alexa says this...", description: "...when the last event was locked", required: false, capitalization: "sentences"
-                        input "fAudioTextUnlocked", "text", title: "Alexa says this...", description: "...when the last event was door unlocked", required: false, capitalization: "sentences"
-                        input "speech13", "capability.speechSynthesis", title: "Optional send Alexa Feedback to this Message Player", required: false, multiple: true, submitOnChange: true
-                        input "music13", "capability.musicPlayer", title: "Optional send Alexa Feedback to this Sonos Type Devices", required: false, multiple: true, submitOnChange: true
-                        if (music13) {
-                            input "volume13", "number", title: "Temporarily change volume", description: "0-100%", required: false
-                            input "resumePlaying13", "bool", title: "Resume currently playing music after notification", required: false, defaultValue: false
-                            }
-                        }
-                    }
-                section("Motion Sensors", hideWhenEmpty: true) {
-                    if (fAudioTextActive || fAudioTextInactive || speech14 || music14) paragraph "Configured with Settings"
-                    input "fShowMotion", "bool", title: "Motion Sensors", default: false,  submitOnChange: true
-                    if (fShowMotion) {
-                        input "fAudioTextActive", "text", title: "Alexa says this...", description: "...when the last motion event was active", required: false, capitalization: "sentences"
-                        input "fAudioTextInactive", "text", title: "Alexa says this...", description: "...when the last motion event was inactive", required: false, capitalization: "sentences"
-                        input "speech14", "capability.speechSynthesis", title: "Optional send Alexa Feedback to this Message Player", required: false, multiple: true, submitOnChange: true
-                        input "music14", "capability.musicPlayer", title: "Optional send Alexa Feedback to this Sonos Type Devices", required: false, multiple: true, submitOnChange: true
-                        if (music14) {
-                            input "volume14", "number", title: "Temporarily change volume", description: "0-100%", required: false
-                            input "resumePlaying14", "bool", title: "Resume currently playing music after notification", required: false, defaultValue: false
-                            }
-                        }
-                    }        
-                section("Presence Sensors", hideWhenEmpty: true) {
-                    if (fAudioTextPresent || fAudioTextNotPresent || speech15 || music15) paragraph "Configured with Settings"
-                    input "fShowPresence", "bool", title: "Presence Sensors", default: false, submitOnChange: true
-                    if (fShowPresence) {
-                        input "fAudioTextPresent", "text", title: "Alexa says this...", description: "...when the last event was arrived", required: false, capitalization: "sentences"
-                        input "fAudioTextNotPresent", "text", title: "Alexa says this...", description: "...when the last event was not home", required: false, capitalization: "sentences"
-                        input "speech15", "capability.speechSynthesis", title: "Optional send Alexa Feedback to this Message Player", required: false, multiple: true, submitOnChange: true
-                        input "music15", "capability.musicPlayer", title: "Optional send Alexa Feedback to this Sonos Type Devices", required: false, multiple: true, submitOnChange: true
-                        if (music15) {
-                            input "volume15", "number", title: "Temporarily change volume", description: "0-100%", required: false
-                            input "resumePlaying15", "bool", title: "Resume currently playing music after notification", required: false, defaultValue: false
-                            }
-                        }
-                    }   
-                 section("Thermostats", hideWhenEmpty: true) {
-                    if (fAudioTextHeating || fAudioTextCooling || speech18 || music18) paragraph "Configured with Settings"
-                        input "fShowTstat", "bool", title: "Thermostats", default: false, submitOnChange: true
-                    if (fShowTstat) {
-                        input "fAudioTextHeating", "text", title: "Alexa says this...", description: "Message to play when the Heating Set Point Changes", required: false, capitalization: "sentences"
-                        input "fAudioTextCooling", "text", title: "Alexa says this...", description: "Message to play when the Cooling Set Point Changes", required: false, capitalization: "sentences" 
-                        input "speech18", "capability.speechSynthesis", title: "Optional send Alexa Feedback to this Message Player", required: false, multiple: true, submitOnChange: true
-                        input "music18", "capability.musicPlayer", title: "Optional send Alexa Feedback to this Sonos Type Devices", required: false, multiple: true, submitOnChange: true
-                        if (music18) {
-                            input "volume18", "number", title: "Temporarily change volume", description: "0-100%", required: false
-                            input "resumePlaying18", "bool", title: "Resume currently playing music after notification", required: false, defaultValue: false
-                        }
-                    }
-                 }		
-                 section("Weather", hideWhenEmpty: true) {
-                    if (fAudioTextWeather || speech19 || music19) paragraph "Configured with Settings"
-                        input "fShowWeather", "bool", title: "Weather Alerts", default: false, submitOnChange: true
-                    if (fShowWeather) {
-                        input "fAudioTextWeather", "text", title: "Alexa says this...", description: "When a Weather Alert is in effect", required: false, capitalization: "sentences"
-                        input "speech19", "capability.speechSynthesis", title: "Optional send Alexa Feedback to this Message Player", required: false, multiple: true, submitOnChange: true
-                        input "music19", "capability.musicPlayer", title: "Optional send Alexa Feedback to this Sonos Type Devices", required: false, multiple: true, submitOnChange: true
-                        if (music19) {
-                            input "volume19", "number", title: "Temporarily change volume", description: "0-100%", required: false
-                            input "resumePlaying19", "bool", title: "Resume currently playing music after notification", required: false, defaultValue: false
-                        }
-                    }		
-                } 
+            section ("Create a Custom Device Feedback using variables: $device, $date and $time", hideWhenEmpty: true){
+                input "custMessage1", "text", title: "Custom Message...", multiple: false, required: false
             }
-        }    
+            if (custMessage1) {
+                section ("+ Create another Custom Message", hideWhenEmpty: true){
+                    input "custMessage2", "text", title: "Custom Message...", multiple: false, required: false 
+                }
+            }
+            if (custMessage2) {
+                section ("+ Create another Custom Message", hideWhenEmpty: true){
+                    input "custMessage3", "text", title: "Custom Message..", multiple: false, required: false
+                }
+            }
+            if (custMessage3) {
+                section ("+ Create another Custom Message", hideWhenEmpty: true){
+                    input "custMessage4", "text", title: "Custom Message..", multiple: false, required: false
+                }
+            }
+            if (custMessage4) {
+                section ("+ Create another Custom Message", hideWhenEmpty: true){
+                    input "custMessage5", "text", title: "Custom Message..", multiple: false, required: false
+                }
+            }            
+        }
+    }    
     page name: "mDefaults"
         def mDefaults(){
                 dynamicPage(name: "mDefaults", title: "", uninstall: false){
@@ -486,6 +422,7 @@ def processBegin(){
     if (event == "AMAZON.NoIntent" || event == "noAction") {
     	state.pinTry = null
         state.savedPINdata = null
+        state.pContCmdsR = null // added 1/20/2017
     }
     if (event == "AMAZON.NoIntent"){
     	if( state.pContCmdsR == "level"){
@@ -503,15 +440,22 @@ def processBegin(){
             if (state.lastAction != null) {
                 state.lastAction = null
                 state.pContCmdsR = null 
-                pPendingAns = "door"
+                pPendingAns = null 
             }
-        }   
+        }
+        if( state.pContCmdsR == "feedback"){
+            if (state.lastAction != null) {
+                state.lastAction = null
+                state.pContCmdsR = null 
+                pPendingAns = null 
+            }
+        } 
     }
     if (event == "AMAZON.YesIntent") {
         if (state.pContCmdsR == "level") {
             state.pContCmdsR = null
             state.lastAction = null
-            pPendingAns = "level"
+            pPendingAns = null //= "level"
         }
         else {
         	state.pTryAgain = false
@@ -522,259 +466,579 @@ def processBegin(){
                 outputTxt = controlHandler(savedData) 
                 pPendingAns = "door"
             }
-        }           
+        }
+        if( state.pContCmdsR == "feedback"){
+            if (state.lastAction != null) {
+                def savedData = state.lastAction
+                outputTxt = getMoreFeedback(savedData) 
+                pPendingAns = "feedback"
+            }
+        }        
      }   
-        
     //state.pContCmdsR = null
     //state.lastAction = null
-	   if (debug){log.debug "Initial data received: (event) = '${event}', (ver) = '${versionTxt}', (date) = '${versionDate}', (release) = '${releaseTxt}'"+ 
-        "; data sent: pContinue = '${state.pContCmds}', pPendingAns = '${pPendingAns}', versionSTtxt = '${versionSTtxt}'; other data: pContCmdsR = '${state.pContCmdsR}', pinTry'=${state.pinTry}' "
+	  if (debug){log.debug "Initial data received: (event) = '${event}', (ver) = '${versionTxt}', (date) = '${versionDate}', (release) = '${releaseTxt}'"+ 
+      "; data sent: pContinue = '${state.pContCmds}', pPendingAns = '${pPendingAns}', versionSTtxt = '${versionSTtxt}'; other data: pContCmdsR = '${state.pContCmdsR}', pinTry'=${state.pinTry}' "
 	}
-
-        return ["outputTxt":outputTxt, "pContinue":state.pMuteAlexa, "pPendingAns":pPendingAns, "versionSTtxt":versionSTtxt]
+    return ["outputTxt":outputTxt, "pContinue":state.pMuteAlexa, "pPendingAns":pPendingAns, "versionSTtxt":versionSTtxt]
 }   
 
 /************************************************************************************************************
 		FEEDBACK HANDLER - from Lambda via page f
 ************************************************************************************************************/
 def feedbackHandler() {
-
     def fProfile = params.fProfile
     def fDevice = params.fDevice
    	def fQuery = params.fQuery
     def fOperand = params.fOperand 
-    def fCommand = params.fCommand 
-	
+    def fCommand = params.fCommand 	
     def pPIN = false
-    state.pTryAgain = true
+    state.pTryAgain = false
+    
+    def String deviceType = (String) null
     def String outputTxt = (String) null
-	def String currState = (String) null
-    def Long currDate 
-    def Long currHour
-    def response = []
+    def String deviceM = (String) null
+	def currState
+    def stateDate
+    def stateTime
+	def data = [:]
+    
     if (debug){
-        log.debug "Feedback data: (fProfile) = '${fProfile}', (fDevice) = '${fDevice}', (fQuery) = '${fQuery}', (fOperand) = '${fOperand}', (fCommand) = '${fCommand}' "
-	}
-
-	//Searching for the current state of each device and its last event date
-	cSwitch.find {s -> 
-            	if(s.label.toLowerCase() == fDevice.toLowerCase()){
-                    	currState = s?.currentState("switch").value 
-                		currDate = s?.currentState("switch").date
-                		currHour = s?.currentState("switch").date.time
-                        
-                        log.debug "Matched Feedback Switch with data: (currState) = '${currState}', (currDate) = '${currDate}', (currHour) = '${currHour}' "
-				}
-           }
-           	cContact.find {s -> 
-            	if(s.label.toLowerCase() == fDevice.toLowerCase()){
-                    	currState = s?.currentState("contact").value 
-                		currDate = s?.currentState("contact").date
-                                        		currHour = s?.currentState("contact").date.time
-                        log.debug "Matched Feedback Contact with data: (currState) = '${currState}', (currDate) = '${currDate}'"
-				}
-           }
-           	cMotion.find {s -> 
-            	if(s.label.toLowerCase() == fDevice.toLowerCase()){
-                    	currState = s?.currentState("motion").value 
-                		currDate = s?.currentState("motion").date
-                        log.debug "Matched Feedback Motion with data: (currState) = '${currState}', (currDate) = '${currDate}'"
-				}
-           }
-           //if (currDate?.size()>0) {
-           	def today = new Date(now()).format("EEEE, MMMM dd, yyyy", location.timeZone)
-            log.debug "today: '${today}'"
-            def currEvent = currDate.format("dd MMM HH:mm", location.timeZone)
-            eventDay = new Date(currDate).format("EEEE, MMMM dd, yyyy", location.timeZone)
-            currHour = new Date(eventDay).format("h:mm aa", location.timeZone)
-           def textDate = today == eventDay ? "Today" : today-1 == eventDay ? "Yesterday" : eventDay //"On " + eventDay
-           //sample text: state is "state" since today/yesterday/date at hour
-           textDate = textDate + " at " + currHour
-			//}
-log.debug "Output: (currState) = '${currState}', (currDate) = '${currDate}',(today) = '${today}',(eventDay) = '${eventDay}', (currHour) = '${currHour}',(textDate) = '${textDate}'"
-
-           
-           
-           //return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
-   }
-
-   
-/*
-    //Searching for the current state of each group and the last event date
-    def response = []
-
-    cSwitch.each {
-      response << [name: it.displayName, currValue: it.currentState("switch").value, currDate: it.currentState("switch").date, deviceId: it.id, type: "lightSwitch"]
+    	log.debug 	"Feedback data: (fProfile) = '${fProfile}', (fDevice) = '${fDevice}', "+
+    				"(fQuery) = '${fQuery}', (fOperand) = '${fOperand}', (fCommand) = '${fCommand}'"
     }
-    cContact.each {
-      response << [name: it.displayName, value: it.currentState("contact"), deviceId: it.id, type: "contact"]
-    }
-    cMotion.each {
-      response << [name: it.displayName, value: it.currentValue("motion"), deviceId: it.id, type: "motion"]
-    }
-    cPresence.each {
-	  response << [name: it.displayName, value: it.currentValue("presence"), deviceId: it.id, type: "presence"]
-    }
-    cMotion.each {
-	  response << [name: it.displayName, value: it.currentValue("temperature"), deviceId: it.id, type: "tempSensor"]
-    }
-    humidity.each {
-	  response << [name: it.displayName, value: it.currentValue("humidity"), deviceId: it.id, type: "humiditySensor"]
-    }
-    lock.each {
-	  response << [name: it.displayName, value: it.currentValue("lock"), deviceId: it.id, type: "lock"]
-    }
-    garagedoor.each {
-	  response << [name: it.displayName, value: it.currentValue("door"), deviceId: it.id, type: "garagedoor"]
-    }    
-    speechparser.each {
-	  response << [name: it.displayName, value: it.currentValue("phraseSpoken"), deviceId: it.id, type: "speechparser"]
-    }     
-    thermostat.each {
-	  response << [name: it.displayName, value: it.currentValue("thermostatMode"), deviceId: it.id, type: "thermostat"]
-    }        
-    windowshade.each {
-	  response << [name: it.displayName, value: it.currentValue("windowShade"), deviceId: it.id, type: "windowshade"]
-    }
-
-//SEARCHING EVENTS HISTORY
-
-def evtLog=[]
-    def lastEvent
-	 def deviceMatch = cSwitch.find {s -> s.label.toLowerCase() == fDevice.toLowerCase()}  
-    def searchVal = "on"
-    lastEvent= deviceMatch.events()
-		lastEvent.each { if (it.value && it.value==searchVal) evtLog << [device: deviceName, time: it.date.getTime(), desc: it.descriptionText] }		
-        
-        log.debug "Feedback device last events:  (lastEvent) = '${lastEvent.value}', evtLog = '${evtLog}' "
-
-        	today = new Date(now()).format("EEEE, MMMM dd, yyyy", location.timeZone)
-    		voiceDay = today == eventDay ? "Today" : "On " + eventDay
-    		result += voiceDay + " at " +  + " the event was: " + eDesc + ". "
-   	 		evtCount ++
-            if (evtCount == count) break
-        }
-	}
- log.debug "Feedback device last events:  (result) = '${result}'"
-
-
-//QUERYING FOR CURRENT STATE
-	def deviceMatchS = cSwitch.find {s -> s.label.toLowerCase() == fDevice.toLowerCase()} 
-	def	deviceMatchT = cTstat.find {t -> t.label.toLowerCase() == fDevice.toLowerCase()}
- 	def deviceMatchC = cContactRelay.find {c -> c.label.toLowerCase() == fDevice.toLowerCase()}
- 	def deviceMatchG = cRelay.find {g -> g.label.toLowerCase() == fDevice.toLowerCase()}
-    if (deviceMatchG) {deviceMatchG = cContactRelay}
     
-    if (debug) log.debug "Feedback device: '${result}'"
- 	
-    		if (deviceMatchS != null) {
-			//switches
-            def fValue = deviceMatchS.latestValue("switch")
-    		def fState = deviceMatchS.switchState //("switch")
- 			def fDate = fState.date
- 			def fName = fState.name
- 			def fCurrValue = fState.value
-            def stateDate = deviceMatchS?.currentState("switch").date
-			//value, date
-            if (debug) log.debug "Feedback device: latestState: cval: '${fCurrValue}', cname.'${fName}', fDate: '${fDate}'"
-           def today = new Date(now()).format("EEEE, MMMM dd, yyyy", location.timeZone)
-    		//def eventDay = new Date(fDate).format("EEEE, MMMM dd, yyyy", location.timeZone)
-        	def eventDay = new Date(fDate.time[0]).format("EEEE, MMMM d, yyyy", location.timeZone)
+    fOperand = fOperand == "switches" ? "lights" : fOperand
 
-            if (debug) log.debug "Feedback device: latestState: '${fValue}', fState.'${fState.value}', fDate: '${fDate}'"
-           
-           	outputTxt = fDevice + "is currently " + fCurrValue + " since " + eventDay
-			}
-           if (deviceMatchG != null){
-    cContactRelay.each {
-      response << [name: it.displayName, value: it.currentValue("contact"), deviceId: it.id, type: "contact"]
+
+    if (fOperand == "undefined" && fQuery == "about") {
+        if (cTstat){
+            def deviceMatch=cTstat.find {d -> d.label.toLowerCase() == fDevice.toLowerCase()}
+                if(deviceMatch)	{
+                    deviceType = "cTstat"
+                    def currentMode = deviceMatch.latestValue("thermostatMode")
+                    def currentHSP = deviceMatch.latestValue("heatingSetpoint") 
+                    def currentCSP = deviceMatch.latestValue("coolingSetpoint") 
+                    def currentTMP = deviceMatch.latestValue("temperature")
+                    int temp = currentTMP
+                    int hSP = currentHSP
+                    int cSP = currentCSP
+                    stateDate = deviceMatch.currentState("temperature").date
+                    stateTime = deviceMatch.currentState("temperature").date.time
+                    def timeText = getTimeVariable(stateTime, deviceType)            
+                    outputTxt = "The " + fDevice + " temperature is " + temp + " degrees and the current mode is " + currentMode + " , with set points of " + cSP + " for cooling and " + hSP + " for heating"
+                    return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
+                }
+                else {
+                    def rSearch = deviceMatchHandler(fDevice)
+                    deviceM = rSearch.deviceMatch
+                    outputTxt = deviceM + " has been " + rSearch.currState + " since " + rSearch.tText
+                    if (rSearch.deviceType == "cBattery") {
+                        outputTxt = "The battery level for " + deviceM + " is " + rSearch.currState + " and was last recorded " + rSearch.tText
+                    }
+                    if (rSearch.deviceType == "cMedia") {
+                        outputTxt = rSearch.currState + " since " + rSearch.tText
+                    }
+                    return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]	
+                }
+        }
     }
-
-    cContactRelay.each {
-      response << [name: it.displayName, value: it.currentValue("contact"), deviceId: it.id, type: "contact"]
-    }
-def status = response.value.replaceAll("[ ]", "") 
-
-
-                      if (debug) log.debug "Feedback contactrelays: '${response}', '${status}' "
-
-          
-          def fState = deviceMatchG.contactState
-           def currentState = fState.value //("contact")
-           def gState = deviceMatchG.latestValue("contact")
-           	//if (gState == "open") gState.toString()
-            currentState = gState.replaceAll("[ ]", "") //replaceAll("[^a-zA-Z0-9 ]"
-           			//outputTxt = fDevice + " is '${gState}' " + gState.value // + " mode, and the current temperature is " + currentTMP + " since " //+ currentDate
-			}
-           
-                   if (deviceList.latestValue(type).contains("active")) {
-        	deviceList.each { deviceName->
-            	//if (deviceName.latestValue(type)=="active") result += "The ${type} device, '${deviceName}', is reading motion. "
-    		}}
-
-   
-   def doorWindowReport(){
-	def countOpened = 0, countOpenedDoor = 0, countUnlocked = 0, listOpened = "", listUnlocked = ""
-    String result = ""   
-    if (voiceDoorSensors && voiceDoorSensors.latestValue("contact").contains("open")){  
-        listOpened = voiceDoorSensors.findAll{it.latestValue("contact")=="open"}
-        countOpened = listOpened.size()
-	}
-
-   
-           
-           //thermostats
-            if (deviceMatchT != null) {
-            def currentMode = deviceMatchT.latestValue("thermostatMode")
-    		def currentHSP = deviceMatchT.latestValue("heatingSetpoint") 
-        	def currentCSP = deviceMatchT.latestValue("coolingSetpoint") 
-    		def currentTMP = deviceMatchT.latestValue("temperature") 
-            //def currentDate = currentTMP.date
-			outputTxt = fDevice + " is in " + currentMode + " mode, and the current temperature is " + currentTMP + " since " //+ currentDate
+    else {
+        if(fOperand == "temperature") {
+            if(cTstat){
+                cTstat.find {s -> 
+                    if(s.label.toLowerCase() == fDevice.toLowerCase()){
+                        deviceType = "cTstat"
+                        def currentTMP = s.latestValue("temperature")
+                        int temp = currentTMP
+                        stateDate = s.currentState("temperature").date
+                        stateTime = s.currentState("temperature").date.time
+                        def timeText = getTimeVariable(stateTime, deviceType)            
+                        log.warn "temperature"
+                        outputTxt = "The temperature " + fDevice + " is " + temp + " degrees and was recorded " + timeText.currDate + " at " + timeText.currTime
+                    }
+                }
             }
-     
-     
-     //def currentState = tempSensor.currentState("temperature")
-    //log.debug "temperature value as a string: ${currentState.value}"
-    //log.debug "time this temperature record was created: ${currentState.date}"
-
-    if (fOperand == "lights") {
-    
-    def currSwitches = settings.cSwitch.currentSwitch
-    def onSwitches = currSwitches.findAll { switchVal ->
-        switchVal == fCommand ? true : false
-    }
-    log.debug " currSwitches: ${currSwitches}, on: ${onSwitches}"
-    if (onSwitches.size() > 0) {
-            log.debug "${onSwitches.size()} out of ${currSwitches.size()} switches are on"
-            outputTxt = "There are " + onSwitches.size() + " out of " + currSwitches.size() + " switches that are currently on"
-           return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
+            if(cMotion){
+                cMotion.find {s -> 
+                    if(s.label.toLowerCase() == fDevice.toLowerCase()){
+                        deviceType = "cTstat"
+                        def currentTMP = s.latestValue("temperature")
+                        int temp = currentTMP
+                        stateDate = s.currentState("temperature").date
+                        stateTime = s.currentState("temperature").date.time
+                        def timeText = getTimeVariable(stateTime, deviceType)            
+                        outputTxt = "The temperature " + fDevice + " is " + temp + " degrees and was recorded " + timeText.currDate + " at " + timeText.currTime
+                    }
+                }
+            }
+			if (outputTxt == null ) { outputTxt = "Device doesn't have a temperature sensor" }
+            return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]                        
         }
-    }
-//log.debug "${onSwitches.size() out of ${switches.size()} switches are on"
+        if(fOperand == "lights" && fCommand != "undefined") { 
+            if(cSwitch){
+				def devList = []
+                if (cSwitch.latestValue("switch").contains(fCommand)) {
+                    cSwitch.each { deviceName ->
+                                if (deviceName.latestValue("switch")=="${fCommand}") {
+                                    String device  = (String) deviceName
+                                    devList += device
+                                }
+                    }
+                }
+				if (fQuery == "how" || fQuery.contains ("if") || fQuery == "undefined" || fQuery == "are there") {
+                    if (devList.size() > 0) {
+                    	if (devList.size() == 1) {
+                    		outputTxt = "There is one switch " + fCommand + " , would you like to know which one"                           			
+                    	}
+                    	else {
+                    		outputTxt = "There are " + devList.size() + " switches " + fCommand + " , would you like to know which switches"
+                    	}
+                    data.devices = devList
+                    data.cmd = fCommand
+                    data.deviceType = "cSwitch"
+                    state.lastAction = data
+                    state.pContCmdsR = "feedback"
+                    return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
 
-lastEvent.each { if (it.value && it.value==searchVal) evtLog << [device: deviceName, time: it.date.getTime(), desc: it.descriptionText] }
-	} 
-    if (evt.size()>0){
-        evtLog.sort({it.time})
-        evtLog.reverse(true)
-        def today = new Date(now()).format("EEEE, MMMM d, yyyy", location.timeZone)
-        def eventDay = new Date(evtLog.time[0]).format("EEEE, MMMM d, yyyy", location.timeZone)
-        def voiceDay = today == eventDay ? "today" : "On " + eventDay  
-        def evtTime = new Date(evtLog.time[0]).format("h:mm aa", location.timeZone)
-        if (voiceEvtTimeDate && parent.getAdvEnabled()) lastEvt = "${voiceDay} at ${evtTime}. "
-    }    
-    return lastEvt
+                    }
+                    else {outputTxt = "There are no switches " + fCommand}
+                    return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
+
+				}
+				else if (fQuery.contains ("what") || fQuery.contains ("which")) {
+                	def devNames = []
+                    if (cSwitch.latestValue("switch").contains(fCommand)) {
+                    	cSwitch.each { deviceName ->
+									if (deviceName.latestValue("switch")=="${fCommand}") {
+                                    	String device  = (String) deviceName
+                                    	devNames += device
+                                	}
+                    	}
+					log.warn " list: ${devNames}"
+                    outputTxt = "The following switches are " + fCommand + "," + devNames.sort().unique()
+                    return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
+
+                	}
+                    else {outputTxt = "There are no switches " + fCommand}
+                    return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
+				}     
+            }
+        }
+		if(fOperand == "doors" && fCommand != "undefined") { 
+            if(cContact){
+				def devList = []
+                if (cContact.latestValue("contact").contains(fCommand)) {
+                    cContact.each { deviceName ->
+                                if (deviceName.latestValue("contact")=="${fCommand}") {
+                                    String device  = (String) deviceName
+                                    devList += device
+                                }
+                    }
+                }
+				if (fQuery == "how" || fQuery== "how many" || fQuery == "undefined" || fQuery == "are there") {
+                    if (devList.size() > 0) {
+                    	if (devList.size() == 1) {
+                    		outputTxt = "There is one door or window " + fCommand + " , would you like to know which one"                           			
+                    	}
+                    	else {
+                    		outputTxt = "There are " + devList.size() + " doors or windows " + fCommand + " , would you like to know which switches"
+                    	}
+                    data.devices = devList
+                    data.cmd = fCommand
+                    data.deviceType = "cContact"
+                    state.lastAction = data
+                    state.pContCmdsR = "feedback"
+                    return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
+
+                    }
+                    else {outputTxt = "There are no doors or windows " + fCommand}
+                    return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
+
+				}
+				else if (fQuery.contains ("what") || fQuery.contains ("which")) {
+                	def devNames = []
+                    if (cContact.latestValue("contact").contains(fCommand)) {
+                    	cContact.each { deviceName ->
+									if (deviceName.latestValue("contact")=="${fCommand}") {
+                                    	String device  = (String) deviceName
+                                    	devNames += device
+                                	}
+                    	}
+                    outputTxt = "The following doors or windows are " + fCommand + "," + devNames.sort().unique()
+                    return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
+
+                	}
+                    else {outputTxt = "There are no doors or windows " + fCommand}
+                    return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
+				}     
+            }
+        }
+		if(fOperand == "batteries") { 
+            if(cBattery){
+				def devList = []
+                    cBattery.each { deviceName ->
+                                if (deviceName.latestValue("battery") < settings.cLowBattery) {
+                                    String device  = (String) deviceName
+                                    devList += device
+                                }
+                    }
+				if (fQuery == "how" || fQuery== "how many" || fQuery == "undefined" || fQuery == "are there") {
+                    if (devList.size() > 0) {
+                    	if (devList.size() == 1) {
+                    		outputTxt = "There is one device with low battery level , would you like to know which one"                           			
+                    	}
+                    	else {
+                    		outputTxt = "There are " + devList.size() + " devices with low battery levels, would you like to know which switches"
+                    	}
+                    data.devices = devList
+                    data.cmd = fCommand
+                    data.deviceType = "cBattery"
+                    state.lastAction = data
+                    state.pContCmdsR = "feedback"
+                    return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
+                    }
+                    else {outputTxt = "There are no devices with low battery levels"}
+                    return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
+				}
+                else if (fQuery.contains ("what") || fQuery.contains ("which")) {
+                	def devNames = []
+                    	cBattery.each { deviceName ->
+									if (deviceName.latestValue("battery")< settings.cLowBattery) {
+                                    	String device  = (String) deviceName
+                                    	devNames += device
+                                	}
+                    	}
+                    if (devList.size() > 0) {
+                    outputTxt = "The following devices have low battery levels " + devNames.sort().unique()
+                    return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
+                	}
+                    else {outputTxt = "There are no devices with low battery levels "
+                    return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
+					} 
+            	}
+			}
+        }
+		if(fOperand == "settings") {
+  			def pCmds = state.pContCmds = true ? "enabled" : "disabled"
+            def pCmdsR = state.pContCmdsR //last continuation response
+            def pMute = state.pMuteAlexa == true ? "Alexa voice is disabled" : "Alexa voice is active"
+            //state.scheduledHandler
+            def pin_D = state.usePIN_D == true ? "active" : "inactive"
+            def pin_L = state.usePIN_L == true ? "active" : "inactive"
+            def pin_T = state.usePIN_T == true ? "active" : "inactive"
+            outputTxt = pMute + " and the conversational module is " + pCmds + ". The pin number for doors is " + pin_D + ", for locks is " + pin_L + ", and for thermostats is " + pin_T
+			return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
+		}
+        if (fQuery == "who" ) {
+			if(cPresence){
+                    def devListP = []
+                    def devListNP = []
+                    if (cPresence.latestValue("presence").contains("present")) {
+                        cPresence.each { deviceName ->
+                                    if (deviceName.latestValue("presence")=="present") {
+                                        String device  = (String) deviceName
+                                        devListP += device
+                                    }
+                        }
+                    }
+                    if (cPresence.latestValue("presence").contains("not present")) {
+                        cPresence.each { deviceName ->
+                                    if (deviceName.latestValue("presence")=="not present") {
+                                        String device  = (String) deviceName
+                                        devListNP += device
+                                    }
+                        }
+                    }
+                if (fOperand == "here" || fOperand == "at home" || fOperand == "present" || fOperand == "home" ) {
+                        if (devListP.size() > 0) {
+                            if (devListP.size() == 1) {
+                                outputTxt = "Only" + devListP + "is at home"                         			
+                            }
+                            else {
+                                outputTxt = "The following " + devListP.size() + " people are at home: " + devListP
+                            }
+
+                        }
+                        else outputTxt = "No one is home"
+                        return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
+                }
+                else if (fOperand.contains("not")) {
+                    if (devListNP.size() > 0) {
+                        if (devListNP.size() == 1) {
+                                outputTxt = "Only" + devListNP + "is not home"                         			
+                    	}
+                    	else {
+                                outputTxt = "The following " + devListNP.size() + " people are not at home: " + devListNP
+                    	}
+					}
+					else outputTxt = "Everyone is at home"
+					return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
+                }
+            }
+        }
+        if (fQuery.contains ("when")) {
+            def deviceData = deviceMatchHandler(fDevice)
+            deviceM  = deviceData.deviceMatch  
+			outputTxt = deviceM + " was last " + fOperand + " " + deviceData.tText
+            return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
+
+		}     
+	}
 }
 
-*/
+/******************************************************************************
+	 DEVICE MATCH											
+******************************************************************************/
+private deviceMatchHandler(fDevice) {
+
+    def pPIN = false
+    state.pTryAgain = false
+    def String deviceType = (String) null
+
+	def currState
+    def stateDate
+    def stateTime
+	def deviceMatch
+
+        if (cSwitch){
+		deviceMatch = cSwitch.find {d -> d.label.toLowerCase() == fDevice.toLowerCase()}
+			if(deviceMatch){
+				deviceType = "cSwitch" 
+				currState = deviceMatch.currentState("switch").value
+				stateDate = deviceMatch.currentState("switch").date
+				stateTime = deviceMatch.currentState("switch").date.time
+				def timeText = getTimeVariable(stateTime, deviceType)
+            	return ["deviceMatch" : deviceMatch, "deviceType": deviceType, "currState": currState, "tText": timeText.tText]
+        	}
+        }
+        if (cContact){
+        deviceMatch =cContact.find {d -> d.label.toLowerCase() == fDevice.toLowerCase()}
+            if(deviceMatch)	{
+                deviceType = "cContact" 
+				currState = deviceMatch.currentState("contact").value
+				stateDate = deviceMatch.currentState("contact").date
+				stateTime = deviceMatch.currentState("contact").date.time
+				def timeText = getTimeVariable(stateTime, deviceType)
+                return ["deviceMatch" : deviceMatch, "deviceType": deviceType, "currState": currState, "tText": timeText.tText]
+            }
+        }
+        if (cMotion){
+        deviceMatch =cMotion.find {d -> d.label.toLowerCase() == fDevice.toLowerCase()}
+            if(deviceMatch)	{
+                deviceType = "cMotion" 
+                currState = deviceMatch.currentState("motion").value 
+                stateDate = deviceMatch.currentState("motion").date
+                stateTime = deviceMatch.currentState("motion").date.time
+                def timeText = getTimeVariable(stateTime, deviceType)
+                return ["deviceMatch" : deviceMatch, "deviceType": deviceType, "currState": currState, "tText": timeText.tText]
+        	}
+        } 
+        if (cLock){
+        deviceMatch =cLock.find {d -> d.label.toLowerCase() == fDevice.toLowerCase()}
+            if(deviceMatch)	{
+                deviceType = "cLock"
+                currState = deviceMatch.currentState("lock").value 
+                stateDate = deviceMatch.currentState("lock").date
+                stateTime = deviceMatch.currentState("lock").date.time
+                def timeText = getTimeVariable(stateTime, deviceType)
+                return ["deviceMatch" : deviceMatch, "deviceType": deviceType, "currState": currState, "tText": timeText.tText]
+        	}
+        }        
+        if (cPresence){
+        deviceMatch =cPresence.find {d -> d.label.toLowerCase() == fDevice.toLowerCase()}
+            if(deviceMatch)	{
+                deviceType = "cPresence"
+                currState = deviceMatch.currentState("presence").value 
+                stateDate = deviceMatch.currentState("presence").date
+                stateTime = deviceMatch.currentState("presence").date.time
+                def timeText = getTimeVariable(stateTime, deviceType)
+                return ["deviceMatch" : deviceMatch, "deviceType": deviceType, "currState": currState, "tText": timeText.tText]
+        	}
+        }  
+        if (cDoor){
+        deviceMatch =cDoor.find {d -> d.label.toLowerCase() == fDevice.toLowerCase()}
+            if(deviceMatch)	{
+                deviceType = "cDoor"
+                currState = deviceMatch.currentState("door").value 
+                stateDate = deviceMatch.currentState("door").date
+                stateTime = deviceMatch.currentState("door").date.time
+                def timeText = getTimeVariable(stateTime, deviceType)
+                return ["deviceMatch" : deviceMatch, "deviceType": deviceType, "currState": currState, "tText": timeText.tText]
+        	}
+        }  
+        if (cVent){
+		deviceMatch =cVent.find {d -> d.label.toLowerCase() == fDevice.toLowerCase()}
+            if(deviceMatch)	{
+                deviceType = "cVent"
+                currState = deviceMatch.currentState("switch").value 
+                currState = currState == "on" ? "open" : currState == "off" ? "closed" : "unknown"
+                stateDate = deviceMatch.currentState("switch").date
+                stateTime = deviceMatch.currentState("switch").date.time
+                def timeText = getTimeVariable(stateTime, deviceType)
+                return ["deviceMatch" : deviceMatch, "deviceType": deviceType, "currState": currState, "tText": timeText.tText]
+        	}
+        }
+        if (cMedia){
+		deviceMatch =cMedia.find {d -> d.label.toLowerCase() == fDevice.toLowerCase()}
+            if(deviceMatch)	{
+                deviceType = "cMedia"
+                currState = deviceMatch.currentState("currentActivity").value 
+                currState = currState == "--" ? " all activities are off " : " The " + currState + " has been on"
+                stateDate = deviceMatch.currentState("currentActivity").date
+                stateTime = deviceMatch.currentState("currentActivity").date.time
+                def timeText = getTimeVariable(stateTime, deviceType)
+                return ["deviceMatch" : deviceMatch, "deviceType": deviceType, "currState": currState, "tText": timeText.tText]
+            }
+        }        
+        if (cFan){
+		deviceMatch =cFan.find {d -> d.label.toLowerCase() == fDevice.toLowerCase()}
+            if(deviceMatch)	{
+                deviceType = "cFan"
+                currState = deviceMatch.currentState("switch").value 
+                stateDate = deviceMatch.currentState("switch").date
+                stateTime = deviceMatch.currentState("switch").date.time
+                def timeText = getTimeVariable(stateTime, deviceType)
+                return ["deviceMatch" : deviceMatch, "deviceType": deviceType, "currState": currState, "tText": timeText.tText] 
+            }
+        }         
+        if (cRelay){
+		deviceMatch =cRelay.find {d -> d.label.toLowerCase() == fDevice.toLowerCase()}
+            if(deviceMatch)	{
+				deviceType == "cRelay"
+                if (cContactRelay) {
+                currState = cContactRelay.currentState("contact").value 
+                stateDate = cContactRelay.currentState("contact").date
+                stateTime = cContactRelay.currentState("contact").date.time
+                def timeText = getTimeVariable(stateTime, deviceType)
+                return ["deviceMatch" : deviceMatch, "deviceType": deviceType, "currState": currState, "tText": timeText.tText] 
+                }
+			}
+        }
+        if (cBattery){
+        deviceMatch =cBattery.find {d -> d.label.toLowerCase() == fDevice.toLowerCase()}
+            if(deviceMatch)	{
+                deviceType = "cBattery"
+                currState = cBattery.currentState("battery").value
+				stateTime = cBattery.currentState("battery").date.time
+                def timeText = getTimeVariable(stateTime, deviceType)            
+                return ["deviceMatch" : deviceMatch, "deviceType": deviceType, "currState": "", "tText": timeText.tText]
+            } 
+     	}
+		if (cSpeaker){
+        deviceMatch =cSpeaker.find {d -> d.label.toLowerCase() == fDevice.toLowerCase()} 
+			if(deviceMatch)	{
+                deviceType = "cSpeaker" 
+                currState = cSpeaker.currentState("switch").value
+                def lastTrack = cSpeaker.currentState("switch").trackDescription
+                return ["deviceMatch" : deviceMatch, "deviceType": deviceType, "currState": currState, "tText": lastTrack] 
+        	}
+   		}
+        if (cSynth){
+        deviceMatch =cSynth.find {d -> d.label.toLowerCase() == fDevice.toLowerCase()} 
+			if(deviceMatch)	{
+            	deviceType = "cSynth" 
+				stateTime = cSynth.currentState("contact").date.time
+                def timeText = getTimeVariable(stateTime, deviceType)
+            	return ["deviceMatch" : deviceMatch, "deviceType": deviceType]
+			}
+        }        
+        
+}
+/******************************************************************************
+	 ADDITIONAL FEEDBACK											
+******************************************************************************/
+def getMoreFeedback(data) {
+def devices = data.devices
+def deviceType = data.deviceType
+def command = data.cmd
+def result 
+
+	if ( deviceType == "cSwitch") {
+    	result = "The following switches are " + command + "," + devices.sort().unique()
+    }
+	if ( deviceType == "cContact") {
+    	result = "The following doors or windows are " + command + "," + devices.sort().unique()
+    }
+	
+    state.pContCmdsR == null 
+	state.lastAction = null
+	
+    return result
+}
+
+/******************************************************************************
+	 OTHER CAPABILITIES											
+******************************************************************************/
+private getCaps(device, type) {
+def deviceName = device 
+def deviceType = type 
+
+def caps = []
+log.warn "device is '${deviceName}' "
+def supportedCaps = deviceName.capabilities
+
+	supportedCaps.each { c ->
+		def capName = c.name
+        def currState = deviceName.currentValue(capName)
+        log.debug "This device:  ${deviceName} also supports: caps ${capName} capsState: ${currState}"
+        caps << [name:capName, currState:deviceName.currentValue("${caps.name}")]
+	}
+	log.debug "This device:  ${deviceName} also supports: caps ${caps.name}, capsState: ${caps.currState}"   
+}
+/******************************************************************************
+	 CUSTOM FEEDBACK MESSAGE											
+******************************************************************************/
+private txtFormat (message, eDev, eVal) {
+    def eTxt = " " 
+        if(message) {
+        	message = message.replace('$device', "${eDev}")
+        	message = message.replace('$action', "${eVal}")
+	  	    eTxt = message
+        }  	
+            if (debug) log.debug "Processed Alert: ${eTxt} "
+    		
+            return eTxt
+}
+/******************************************************************************
+	 DATE & TIME FUNCTIONS											
+******************************************************************************/
+private getTimeVariable(date, type) {
+	def currTime
+    def currDate
+    def String tText = (String) null    
+    def String duration = (String) null
+    def today = new Date(now()).format("EEEE, MMMM dd, yyyy", location.timeZone)
+    def yesterday = new Date(today -0.1).format("EEEE, MMMM dd, yyyy", location.timeZone)
+	def time = new Date(now()).format("h:mm aa", location.timeZone)
+
+    log.debug "Today's date is: ${today} and the current time is ${time}, yesterday: ${yesterday} "
+    
+    currTime = new Date(date + location.timeZone.rawOffset).format("h:mm aa")                       
+	currDate = new Date(date + location.timeZone.rawOffset).format("EEEE, MMMM d, yyyy")
+	currDate = today == currDate ? "today" : yesterday == currDate ? "yesterday" : currDate
+		def endTime = now() + location.timeZone.rawOffset
+    	def startTime = new Date(date + location.timeZone.rawOffset)
+    	startTime = startTime.getTime()
+    int hours = (int)((endTime - startTime) / (1000 * 60 * 60) )
+    int minutes = (int)((endTime - startTime) / ( 60 * 1000))
+    duration = minutes < 60 ? minutes + " minutes" : hours + " hours"
+
+    //if (type == "cSwitch" || type == "cContact" || type == "cMotion") {
+    tText = currDate + " at " + currTime
+    log.debug 	"Time Variables: type = ${type}, (currDate) = ${currDate}, (currTime) = ${currTime}, (tText) = ${tText},"+
+    			" (hours) = ${hours}, (minutes) = ${minutes}, (duration) = ${duration}"
+  	return ["currTime":currTime, "currDate":currDate, "tText":tText, "duration": duration] 
+	//}
+ 
+}
 /************************************************************************************************************
    ALEXA THINKS HANDLER 
 ************************************************************************************************************/
 def alexaThinks() {
 	def outputTxt = "Sorry, the group control module is not ready. If you believe this was not a request to control a Profile group, please open a trouble ticket. Thank you for your help, "
 	def pPIN = false
-    state.pTryAgain = true
+    state.pTryAgain = false
     
 }
 /************************************************************************************************************
@@ -885,6 +1149,8 @@ def controlDevices() {
                 if (deviceMatch) {
                     if (debug) log.debug "Found a device: '${deviceMatch}'"
                     device = deviceMatch
+                    if (command == "disable" | command == "deactivate"|| command == "stop") {command = "off"}
+                    if (command == "enable" | command == "activate"|| command == "start") {command = "on"}    
                     if (ctNum > 0 && ctUnit == "minutes") {
                         device = device.label
                         delay = true
@@ -1057,7 +1323,7 @@ def controlDevices() {
                 }
             }
 			if (cRelay !=null) {
-                    //this is needed for Garage Doors that are set up as relays
+            //this is needed for Garage Doors that are set up as relays
             	if (debug) log.debug "Searching for a relay named '${ctDevice}'"
                 def deviceMatch = cRelay.find {s -> s.label.toLowerCase() == ctDevice.toLowerCase()}             
 				if (deviceMatch) {
@@ -1129,7 +1395,6 @@ def controlDevices() {
 		return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
 	}
 }
-
 /************************************************************************************************************
 	UNIT CONVERSIONS
 ************************************************************************************************************/ 
@@ -1214,6 +1479,10 @@ private getCustomCmd(command, unit, group) {
             result = "Ok, disabling Alexa feedback. To activate just say, activate the feedback"
             return result
 		}
+         if (unit == "undefined" && group == "undefined" ) {
+            result = "Ok, I am here when you need me "
+            return result
+		}        
     }
 	if (command == "start" || command == "enable" || command == "activate" || command == "schedule") {
 		if (unit == "reminder" || unit == "reminders" || unit == "timer" || unit == "timers" || unit.contains ("reminder") || unit.contains ("timer") ) {
@@ -1308,11 +1577,12 @@ def controlHandler(data) {
             }
             else {
             	deviceD."${deviceCommand}"()
-            	def device = deviceD.label
+            	
+                //def device = deviceD.label
             	//saving last action 1, why??????                
-                actionData = ["type": deviceType, "command": deviceCommand , "device": device, "unit": unitU, "num": numN, delay: delayD]
-                state.lastAction = actionData
-                if (debug) log.debug "Saved last action for level switch true (1)!"  
+                //actionData = ["type": deviceType, "command": deviceCommand , "device": device, "unit": unitU, "num": numN, delay: delayD]
+                //state.lastAction = actionData
+                //if (debug) log.debug "Saved last action for level switch true (1)!"  
                 result = "Ok, turning " + deviceD + " " + deviceCommand 
                 return result
             }
@@ -1327,7 +1597,6 @@ def controlHandler(data) {
         }        
         else if (deviceCommand == "increase" || deviceCommand == "decrease" || deviceCommand == "setLevel" || deviceCommand == "set") {
  			if (delayD == true || state.pContCmdsR == "level") {
-                 if (debug) log.debug "Found level adjustment pending, this is a continuation command"  
                 deviceD = cSwitch.find {s -> s.label.toLowerCase() == deviceD.toLowerCase()} 
                 if (debug) log.debug "Matched device control (deviceD)= ${deviceD.label}"
             }
@@ -1667,7 +1936,6 @@ private scheduleHandler(unit) {
     	return result
     }
 }
-
 /***********************************************************************************************************************
     FILTERS REMINDER
 ***********************************************************************************************************************/
@@ -1692,39 +1960,30 @@ private getProfileDetails() {
     	return  ProfileDetails
 }
 private getDeviceDetails() {
-    def s = "" 
-        cSwitch.each { device -> 
-            s +=device.label +"\n" }
-    def t = "" 
-        cTstat.each { device -> 
-            t +=device.label +"\n" }
-    def l = "" 
-        cLock.each { device -> 
-            l +=device.label +"\n" }        
-    def m = "" 
-        cMotion.each { device -> 
-            m +=device.label +"\n" }   
-    def c = "" 
-        cContact.each { device -> 
-            c +=device.label +"\n" } 
-    def p = "" 
-        cPresence.each { device -> 
-            p +=device.label +"\n" } 
-    def d = "" 
-        cDoor.each { device -> 
-            d +=device.label +"\n" } 
-    def sp = "" 
-        cSpeaker.each { device -> 
-            sp +=device.label +"\n" } 
-    def v = "" 
-        cVent.each { device -> 
-            v +=device.label +"\n" }
-    def f = "" 
-        cFan.each { device -> 
-            f +=device.label +"\n" } 
-	def DeviceDetails = "${s}"+"${t}"+"${l}"+"${m}"+"${c}"+ "${p}"+"${d}"+"${v}"+"${f}"+"${sp}" 
-    	return DeviceDetails
+// DEVICE categories
+def DeviceDetails = [] 
+        cSwitch.each 	{DeviceDetails << it.displayName +"\n"}
+        cTstat.each 	{DeviceDetails << it.displayName +"\n"}
+        cLock.each 		{DeviceDetails << it.displayName +"\n"}     
+        cMotion.each 	{DeviceDetails << it.displayName +"\n"}
+        cContact.each 	{DeviceDetails << it.displayName +"\n"}
+        cPresence.each 	{DeviceDetails << it.displayName +"\n"}
+        cDoor.each 		{DeviceDetails << it.displayName +"\n"}
+        cSpeaker.each 	{DeviceDetails << it.displayName +"\n"}
+        cVent.each 		{DeviceDetails << it.displayName +"\n"}
+        cFan.each 		{DeviceDetails << it.displayName +"\n"}
+		cVent.each		{DeviceDetails << it.displayName +"\n"}
+    	cRelay.each		{DeviceDetails << it.displayName +"\n"}
+        cSynth.each		{DeviceDetails << it.displayName +"\n"}
+        cMedia.each		{DeviceDetails << it.displayName +"\n"}
+        cBattery.each	{DeviceDetails << it.displayName +"\n"}
+
+        def dUniqueList = DeviceDetails.unique (false)
+        dUniqueList = dUniqueList.sort()
+        def dUniqueListString = dUniqueList.join("")
+        return dUniqueListString
 }
+
 /***********************************************************************************************************************
     COMMANDS HANDLER
 ***********************************************************************************************************************/
