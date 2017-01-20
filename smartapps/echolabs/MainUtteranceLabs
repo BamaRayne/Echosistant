@@ -63,6 +63,7 @@ feedback {fQuery} is the status of {cDevice}
 feedback to tell me {fQuery} {cDevice}
 feedback to tell me {fQuery} the {cDevice}
 feedback to {fQuery} the temperature {cDevice}
+feedback {fQuery} the {fOperand} in {cDevice}
 feedback {fQuery} {fOperand} is my home
 feedback {fQuery} the {fOperand}
 feedback {fQuery} the current {fOperand}
@@ -75,4 +76,19 @@ feedback {fQuery} {fOperand} are on in {pProfile}
 feedback to tell me {fQuery} {pProfile}
 feedback to tell me {fQuery} the {pProfile}
 feedback to {fQuery} me the status of {pProfile}
-feedback to {fQuery} many {fOperand} are {cCommand}
+feedback {fQuery} many {fOperand} are {cCommand}
+feedback if {cDevice} is {cCommand}
+feedback for {fOperand} {cCommand}
+feedback for {cCommand} {fOperand}
+feedback for {fOperand} that are {cCommand}
+feedback {fOperand} are {cCommand}
+feedback {fOperand} {cDevice} left
+feedback {fQuery} is {fOperand}
+feedback how many {fOperand} are {cCommand}
+feedback {fQuery} any {fOperand} {cCommand}
+feedback {fQuery} any people {fOperand}
+feedback {fQuery} any one {fOperand}
+feedback {fQuery} any one at the {cDevice}
+feedback {fQuery} any motion at the {cDevice}
+feedback {cDevice} is {fOperand}
+feedback {fQuery} was {cDevice} last {fOperand}
