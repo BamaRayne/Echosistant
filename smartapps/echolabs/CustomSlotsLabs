@@ -55,6 +55,7 @@ activate
 deactivate
 replace
 replaced
+try again
 
 LIST OF OPERANDS
 temperature
@@ -64,6 +65,25 @@ feed
 fed
 text
 audio
+doors
+present
+here
+at home
+not here
+not present
+not home
+light
+battery
+active
+inactive
+locked
+unlocked
+open
+closed
+on
+off
+settings
+batteries
 
 LIST_OF_UNITS
 
@@ -84,6 +104,9 @@ reminder
 flash
 audio
 text
+feedback
+hour
+hours
 
 
 LIST OF GROUPS
@@ -96,3 +119,17 @@ devices
 fans
 thermostats
 locks
+
+LIST_OF_QUERIES
+
+about
+what
+who
+where
+when
+what's
+give
+which
+is there
+are there
+did I
