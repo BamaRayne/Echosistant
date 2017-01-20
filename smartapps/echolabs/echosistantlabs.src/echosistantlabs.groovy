@@ -1,6 +1,7 @@
 /* 
  * EchoSistant - The Ultimate Voice and Text Messaging Assistant Using Your Alexa Enabled Device.
  *
+ *		1/20/2017		Version:4.0 R.4.2.12		Bug fixes: minor fixes
  *		1/20/2017		Version:4.0 R.4.2.11		Feature: completed Phase 2 - Basic Device Feedback
  *		1/14/2017		Version:4.0 R.4.2.10		Feature: added garage door relay control 
  *		1/14/2017		Version:4.0 R.4.2.08		Bug fixes: for try again module; added PIN cycle for relays 
@@ -530,7 +531,13 @@ def feedbackHandler() {
                     return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
                 }
                 else {
-                    def rSearch = deviceMatchHandler(fDevice)
+                   	try {
+                    	def rSearch = deviceMatchHandler(fDevice)
+                    	if (debug) log.debug "Getting device details"
+					} catch (e) {
+					log.error "Sorry, I was unable to find any data for your requested feedback"
+                    outputTxt = "Sorry, I was unable to find any data for your requested feedback"                    
+					}                  
                     deviceM = rSearch.deviceMatch
                     outputTxt = deviceM + " has been " + rSearch.currState + " since " + rSearch.tText
                     if (rSearch.deviceType == "cBattery") {
@@ -642,7 +649,7 @@ def feedbackHandler() {
                     		outputTxt = "There is one door or window " + fCommand + " , would you like to know which one"                           			
                     	}
                     	else {
-                    		outputTxt = "There are " + devList.size() + " doors or windows " + fCommand + " , would you like to know which switches"
+                    		outputTxt = "There are " + devList.size() + " doors or windows " + fCommand + " , would you like to know which doors or windows"
                     	}
                     data.devices = devList
                     data.cmd = fCommand
@@ -720,7 +727,7 @@ def feedbackHandler() {
 			}
         }
 		if(fOperand == "settings") {
-  			def pCmds = state.pContCmds = true ? "enabled" : "disabled"
+  			def pCmds = state.pContCmds == true ? "enabled" : "disabled"
             def pCmdsR = state.pContCmdsR //last continuation response
             def pMute = state.pMuteAlexa == true ? "Alexa voice is disabled" : "Alexa voice is active"
             //state.scheduledHandler
