@@ -1,6 +1,7 @@
-/** 
+/**
  *  EchoSistant - Lambda Code
  *
+ *  Version 4.1.6 - 1/18/2017 Added responses for feedback module
  *  Version 4.1.5 - 1/15/2017 Added responses for pending relay action
  *  Version 4.1.4 - 1/14/2017 More response fixes
  *  Version 4.1.3 - 1/13/2017 Workflow and response fixes
@@ -30,8 +31,8 @@
 exports.handler = function( event, context ) {
     var https = require( 'https' );
     // Paste app code here between the breaks------------------------------------------------
-    var STappID = '0ae736f9-51c0-439d-9cab-xxxx';
-    var STtoken = '21c78384-1323-40d9-aae7-xxxxx';
+    var STappID = '0ae736f9-51c0-439d-9cab-xxx';
+    var STtoken = '21c78384-1323-40d9-aae7-xxx';
     var url='https://graph.api.smartthings.com:443/api/smartapps/installations/' + STappID + '/' ;
         //---------------------------------------------------------------------------------------
         var cardName ="";
@@ -74,6 +75,10 @@ exports.handler = function( event, context ) {
                     alexaResp ("Pending Yes Level", context, "Amazon Intent", areWeDone); 
                 }
                 else if (intentName == "AMAZON.YesIntent" && pPendingAns == "door") {
+                    areWeDone=true;
+                    return output(text, context, cardName, areWeDone);
+                }
+                else if (intentName == "AMAZON.YesIntent" && pPendingAns == "feedback") {
                     areWeDone=true;
                     return output(text, context, cardName, areWeDone);
                 }
@@ -164,6 +169,10 @@ exports.handler = function( event, context ) {
                             //speechText = speechText + ', is it better?';
                             return output(speechText, context, cardName, areWeDone);
                         }
+                        else if (pContCmds === true && pContCmdsR == "feedback"){
+                            //just wait
+                            areWeDone=false;
+                        }                        
                         else if (pTryAgain === true){
                             alexaContResp ("Try Again", speechText, context, areWeDone);
                         }
@@ -193,7 +202,7 @@ exports.handler = function( event, context ) {
 function alexaResp(type, context, cardName, areWeDone){
     if (type == "AMAZON.YesIntent") { 
         areWeDone=false;
-        output("Please continue, ", context, "EchoSistant Stop", areWeDone);
+        output("Please continue, ", context, "EchoSistant Continue", areWeDone);
     }
     else if (type == "AMAZON.NoIntent") { 
         areWeDone=true;
@@ -201,24 +210,24 @@ function alexaResp(type, context, cardName, areWeDone){
     }
     else if (type == "AMAZON.StopIntent") { 
         areWeDone=true;
-        output(" Cancelling. Goodbye ", context, "EchoSistant Cancel", areWeDone);
+        output(" Cancelling. Goodbye ", context, "EchoSistant Stop", areWeDone);
     }
     else if (type == "AMAZON.CancelIntent") { 
         areWeDone=true;
-        output(" Cancelling. Goodbye ", context, "EchoSistant Cancel", areWeDone);
+        output(" Cancelling. Goodbye ", context, "EchoSistant Stop", areWeDone);
     }
     else if (type == "Pending Yes Level"){
         areWeDone=true;
-        output(" Great, I am here if you need me.", context, "EchoSistant Cancel", areWeDone);
+        output(" Great, I am here if you need me.", context, "EchoSistant Stop", areWeDone);
     }
-//    else if (type == "Pending No Level"){
- //       areWeDone=true;
-  //      output(" Ok,", context, "EchoSistant Cancel", areWeDone);
-    //}
     else if (type == "Pending Yes Door"){
         areWeDone=true;
-        output(" Ok,", context, "EchoSistant Cancel", areWeDone);
+        output(" Ok,", context, "EchoSistant Continue", areWeDone);
     }
+    else if (type == "LaunchRequest"){
+        areWeDone=false;
+        output(" how may I help you? ", context, "EchoSistant Continue", areWeDone);
+    }    
 }
 function alexaContResp(type, text , context, areWeDone){
     var speechText = text;
@@ -230,12 +239,12 @@ function alexaContResp(type, text , context, areWeDone){
     else if (type == "PIN") { 
         areWeDone=false;
         speechText = "Pin number, please";
-        output(speechText, context, "EchoSistant Stop", areWeDone);
+        output(speechText, context, "EchoSistant Pin Request", areWeDone);
     }
     else if (type == "Response") { 
         areWeDone=false;
         speechText =speechText + " , would you like anything else";
-        output(speechText, context, "EchoSistant Stop", areWeDone);
+        output(speechText, context, "EchoSistant Continue", areWeDone);
     }
 }
 function output( text, context, cardName, areWeDone) {
