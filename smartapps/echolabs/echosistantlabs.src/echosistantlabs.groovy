@@ -1,7 +1,7 @@
 /* 
  * EchoSistant - The Ultimate Voice and Text Messaging Assistant Using Your Alexa Enabled Device.
  *
- *		1/20/2017		Version:4.0 R.4.2.12		Bug fixes: minor fixes
+ *		1/20/2017		Version:4.0 R.4.2.13		Bug fixes: minor fixes
  *		1/20/2017		Version:4.0 R.4.2.11		Feature: completed Phase 2 - Basic Device Feedback
  *		1/14/2017		Version:4.0 R.4.2.10		Feature: added garage door relay control 
  *		1/14/2017		Version:4.0 R.4.2.08		Bug fixes: for try again module; added PIN cycle for relays 
@@ -420,13 +420,15 @@ def processBegin(){
     def versionSTtxt = textVersion() 
     def pPendingAns = false    
     def String outputTxt = (String) null 
-    if (event == "AMAZON.NoIntent" || event == "noAction") {
+    
+    if (event == "noAction") {//event == "AMAZON.NoIntent" removed 1/20/17
     	state.pinTry = null
         state.savedPINdata = null
         state.pContCmdsR = null // added 1/20/2017
+        state.pTryAgain = false
     }
     if (event == "AMAZON.NoIntent"){
-    	if( state.pContCmdsR == "level"){
+    	if(state.pContCmdsR == "level"){
             if (state.lastAction != null) {
                 def savedData = state.lastAction
                 outputTxt = controlHandler(savedData) 
@@ -456,7 +458,7 @@ def processBegin(){
         if (state.pContCmdsR == "level") {
             state.pContCmdsR = null
             state.lastAction = null
-            pPendingAns = null //= "level"
+            pPendingAns = "level"
         }
         else {
         	state.pTryAgain = false
@@ -513,9 +515,8 @@ def feedbackHandler() {
 
 
     if (fOperand == "undefined" && fQuery == "about") {
-        if (cTstat){
-            def deviceMatch=cTstat.find {d -> d.label.toLowerCase() == fDevice.toLowerCase()}
-                if(deviceMatch)	{
+		def deviceMatch=cTstat.find {d -> d.label.toLowerCase() == fDevice.toLowerCase()}
+			if(deviceMatch)	{
                     deviceType = "cTstat"
                     def currentMode = deviceMatch.latestValue("thermostatMode")
                     def currentHSP = deviceMatch.latestValue("heatingSetpoint") 
@@ -529,26 +530,28 @@ def feedbackHandler() {
                     def timeText = getTimeVariable(stateTime, deviceType)            
                     outputTxt = "The " + fDevice + " temperature is " + temp + " degrees and the current mode is " + currentMode + " , with set points of " + cSP + " for cooling and " + hSP + " for heating"
                     return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
+			}
+            else {
+				def rSearch = deviceMatchHandler(fDevice)
+				if (debug) log.debug "Getting device details"
+                    if (rSearch?.deviceMatch == null) { 
+                        outputTxt = "Sorry I couldn't find any details about" + fDevice
+                        state.pTryAgain = true
+                        return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]	
+                    }
+                    else {
+                        deviceM = rSearch?.deviceMatch
+                        outputTxt = deviceM + " has been " + rSearch?.currState + " since " + rSearch?.tText
+                        return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]	
+                    }                  
+                if (rSearch.deviceType == "cBattery") {
+					outputTxt = "The battery level for " + deviceM + " is " + rSearch.currState + " and was last recorded " + rSearch.tText
+				}
+				if (rSearch.deviceType == "cMedia") {
+					outputTxt = rSearch.currState + " since " + rSearch.tText
                 }
-                else {
-                   	try {
-                    	def rSearch = deviceMatchHandler(fDevice)
-                    	if (debug) log.debug "Getting device details"
-					} catch (e) {
-					log.error "Sorry, I was unable to find any data for your requested feedback"
-                    outputTxt = "Sorry, I was unable to find any data for your requested feedback"                    
-					}                  
-                    deviceM = rSearch.deviceMatch
-                    outputTxt = deviceM + " has been " + rSearch.currState + " since " + rSearch.tText
-                    if (rSearch.deviceType == "cBattery") {
-                        outputTxt = "The battery level for " + deviceM + " is " + rSearch.currState + " and was last recorded " + rSearch.tText
-                    }
-                    if (rSearch.deviceType == "cMedia") {
-                        outputTxt = rSearch.currState + " since " + rSearch.tText
-                    }
                     return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]	
-                }
-        }
+    		}
     }
     else {
         if(fOperand == "temperature") {
@@ -579,7 +582,7 @@ def feedbackHandler() {
                     }
                 }
             }
-			if (outputTxt == null ) { outputTxt = "Device doesn't have a temperature sensor" }
+			if (outputTxt == null ) { outputTxt = "Device named " + fDevice + " doesn't have a temperature sensor" }
             return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]                        
         }
         if(fOperand == "lights" && fCommand != "undefined") { 
@@ -690,13 +693,13 @@ def feedbackHandler() {
                                     devList += device
                                 }
                     }
-				if (fQuery == "how" || fQuery== "how many" || fQuery == "undefined" || fQuery == "are there") {
+				if (fQuery == "how" || fQuery== "how many" || fQuery == "undefined" || fQuery == "are there" || fCommand == "low") {
                     if (devList.size() > 0) {
                     	if (devList.size() == 1) {
                     		outputTxt = "There is one device with low battery level , would you like to know which one"                           			
                     	}
                     	else {
-                    		outputTxt = "There are " + devList.size() + " devices with low battery levels, would you like to know which switches"
+                    		outputTxt = "There are " + devList.size() + " devices with low battery levels, would you like to know which devices"
                     	}
                     data.devices = devList
                     data.cmd = fCommand
@@ -1148,36 +1151,57 @@ def controlDevices() {
         	}
 		}
         
-        
-        if (deviceType == "light" || deviceType == "general" ) {
-            if (settings.cSwitch?.size() > 0 && state.pinTry == null) {
-                if (debug) log.debug "Searching for a switch named '${ctDevice}'"
-                def deviceMatch = cSwitch.find {s -> s.label.toLowerCase() == ctDevice.toLowerCase()}             
-                if (deviceMatch) {
-                    if (debug) log.debug "Found a device: '${deviceMatch}'"
-                    device = deviceMatch
-                    if (command == "disable" | command == "deactivate"|| command == "stop") {command = "off"}
-                    if (command == "enable" | command == "activate"|| command == "start") {command = "on"}    
-                    if (ctNum > 0 && ctUnit == "minutes") {
-                        device = device.label
-                        delay = true
-                        data = [type: "cSwitch", command: command, device: device, unit: ctUnit, num: ctNum, delay: delay]
-                        runIn(ctNum*60, controlHandler, [data: data])
-                        if (command == "on" || command == "off" ) {outputTxt = "Ok, turning " + ctDevice + " " + command + ", in " + numText}
-                        else if (command == "decrease") {outputTxt = "Ok, decreasing the " + ctDevice + " level in " + numText}
-                        else if (command == "increase") {outputTxt = "Ok, increasing the " + ctDevice + " level in " + numText}
+		log.warn "Begining searching for devices to control with : '${deviceType}', command= '${command}'"
+            if (deviceType == "volume" || deviceType == "general" || deviceType == "light") {      
+                    def deviceMatch = null
+                    def dType = null
+                        if (settings.cSpeaker?.size()>0) {
+                            deviceMatch = cSpeaker.find {s -> s.label.toLowerCase() == ctDevice.toLowerCase()}
+                        	dType = "v"
+                        }
+                        if (deviceMatch == null && settings.cSynth?.size()>0) {
+                            deviceMatch = cSynth.find {s -> s.label.toLowerCase() == ctDevice.toLowerCase()}                 
+                        	dType = "v"
+                        }
+                        if (deviceMatch == null && settings.cMedia?.size()>0) {
+                            deviceMatch = cMedia.find {s -> s.label.toLowerCase() == ctDevice.toLowerCase()}                 
+                        	dType = "v"
+                        }
+                       	if (deviceMatch == null && settings.cSwitch?.size()>0 && state.pinTry == null) {
+                            deviceMatch = cSwitch.find {s -> s.label.toLowerCase() == ctDevice.toLowerCase()}                 
+                        	dType = "s"
+                        }
+					if (deviceMatch && dType == "v") {
+						device = deviceMatch
+						delay = false
+						data = [type: "cVolume", command: command, device: device, unit: ctUnit, num: ctNum, delay: delay]
+						outputTxt = controlHandler(data)
 						return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
                     }
-                    else {
-                        delay = false
-                        data = [type: "cSwitch", command: command, device: device, unit: ctUnit, num: ctNum, delay: delay]
-                        outputTxt = controlHandler(data)
-                        if (command == "decrease" || command == "increase" ) {state.pContCmdsR = "level"}
-                        if (debug) log.debug "Sending params to Lambda: pContCmds: '${state.pContCmds}', pContCmdsR: '${state.pContCmdsR}', pTryAgain: '${state.pTryAgain}' "
-						return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
+                    if (deviceMatch && dType == "s") {
+                        if (debug) log.debug "Found a device: '${deviceMatch}'"
+                        device = deviceMatch
+                        if (command == "disable" | command == "deactivate"|| command == "stop") {command = "off"}
+                        if (command == "enable" | command == "activate"|| command == "start") {command = "on"}    
+                    	if (ctNum > 0 && ctUnit == "minutes") {
+                        	device = device.label
+                            delay = true
+                            data = [type: "cSwitch", command: command, device: device, unit: ctUnit, num: ctNum, delay: delay]
+                            runIn(ctNum*60, controlHandler, [data: data])
+                            if (command == "on" || command == "off" ) {outputTxt = "Ok, turning " + ctDevice + " " + command + ", in " + numText}
+                            else if (command == "decrease") {outputTxt = "Ok, decreasing the " + ctDevice + " level in " + numText}
+                            else if (command == "increase") {outputTxt = "Ok, increasing the " + ctDevice + " level in " + numText}
+                            return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
+                    	}
+                        else {
+                        	delay = false
+                        	data = [type: "cSwitch", command: command, device: device, unit: ctUnit, num: ctNum, delay: delay]
+                            outputTxt = controlHandler(data)
+                            if (command == "decrease" || command == "increase" ) {state.pContCmdsR = "level"}
+                            if (debug) log.debug "Sending params to Lambda: pContCmds: '${state.pContCmds}', pContCmdsR: '${state.pContCmdsR}', pTryAgain: '${state.pTryAgain}' "
+                            return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
+                  		}
                     }
-                }
-            }
         }
         else if (deviceType == "temp") {
                 if (settings.cTstat?.size() > 0) {           
@@ -1253,20 +1277,6 @@ def controlDevices() {
                     }
                 }
             }
-        }
-        else if (deviceType == "volume") {      
-            if (debug) log.debug "Searching for a volume control device named '${ctDevice}'"     
-                if (settings.cSpeaker?.size()>0) {
-                    def deviceMatch = cSpeaker.find {s -> s.label.toLowerCase() == ctDevice.toLowerCase()}
-                    if (deviceMatch) {
-                        if (debug) log.debug "Found a device: '${deviceMatch}'"
-                        device = deviceMatch
-                        delay = false
-                        data = [type: "cVolume", command: command, device: device, unit: ctUnit, num: ctNum, delay: delay]
-                        outputTxt = controlHandler(data)
-						return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
-                    }
-                }  
         }
         else if (deviceType == "fan") {
             if (settings.cFan?.size()>0) {     
@@ -1447,17 +1457,18 @@ private getCustomCmd(command, unit, group) {
 		return result
     }
     if (command == "cancel" || command == "stop" || command == "disable" || command == "deactivate" || command == "unschedule") {
-    	if (unit == "reminder" || unit == "reminders" || unit == "timer" || unit == "timers" || unit.contains ("reminder") || unit.contains ("timer") ) {
-        	if (unit.contains ("reminder")) {
+    	if (unit == "reminder" || unit == "reminders" || unit == "timer" || unit == "timers" || unit.contains ("reminder") || unit.contains ("timer") || unit.contains ("schedule") ) {
+        	if (unit.contains ("reminder") || unit.contains ("schedule")) {
             	if (state.scheduledHandler != null) {
-                	def reminderHandler = state.scheduledHandler == "filters"+"Handler"
-                	unschedule("${reminderHandler}")
-                result = "Ok, canceling reminder for " + state.scheduledHandler
+                	if (state.scheduledHandler == "filters") {
+                    	unschedule(filtersHandler)
+		                result = "Ok, canceling reminder for " + state.scheduledHandler
+                    }
+                    else {
+                    result = "Sorry, I couldn't find any scheduled reminders"// for " + state.scheduledHandler
+                    }
+                    return result
             	}
-                else {
-                result = "Sorry, I couldn't find any scheduled reminders"// for " + state.scheduledHandler
-                }
-                return result
             }
             else {
                 if (unit.contains ("timer")) {
@@ -1583,13 +1594,7 @@ def controlHandler(data) {
             	deviceD."${deviceCommand}"()
             }
             else {
-            	deviceD."${deviceCommand}"()
-            	
-                //def device = deviceD.label
-            	//saving last action 1, why??????                
-                //actionData = ["type": deviceType, "command": deviceCommand , "device": device, "unit": unitU, "num": numN, delay: delayD]
-                //state.lastAction = actionData
-                //if (debug) log.debug "Saved last action for level switch true (1)!"  
+            	deviceD."${deviceCommand}"()            	
                 result = "Ok, turning " + deviceD + " " + deviceCommand 
                 return result
             }
@@ -1607,7 +1612,7 @@ def controlHandler(data) {
                 deviceD = cSwitch.find {s -> s.label.toLowerCase() == deviceD.toLowerCase()} 
                 if (debug) log.debug "Matched device control (deviceD)= ${deviceD.label}"
             }
-            state.pContCmdsR == null
+            //state.pContCmdsR = null
             def currLevel = deviceD.latestValue("level")
             def currState = deviceD.latestValue("switch")
             def newLevel = cLevel*10
@@ -1662,7 +1667,6 @@ def controlHandler(data) {
                 else {deviceD.setLevel(newLevel)}
             } 
             def device = deviceD.label
-            //saving last action 2, why??????
             actionData = ["type": deviceType, "command": deviceCommand , "device": device, "unit": unitU, "num": newLevel, delay: delayD]
             state.lastAction = actionData
             if (debug) log.debug "Saved last action for level switch true (2)!"  
@@ -1788,57 +1792,6 @@ def controlHandler(data) {
         else if (deviceCommand == "unlock") result = "Ok, unlocking the  " + deviceD                    
         if (delayD == false) {return result}  
 	}
-	else if (deviceType == "cVolume" ) {
-   		if (deviceCommand == "increase" || deviceCommand == "decrease" || deviceCommand == "setLevel") {
-            def currLevel = deviceD.latestValue("level")
-            def currState = deviceD.latestValue("switch")
-            if (cVolLevel == null) {cVolLevel = 2}
-            def newLevel = cVolLevel*10
-			if (unitU == "percent") newLevel = numN      
-            if (deviceCommand == "increase") {
-            	if (unitU == "percent") {
-                	newLevel = numN
-                }   
-                else {
-                	newLevel =  currLevel + newLevel
-            		newLevel = newLevel < 0 ? 0 : newLevel >100 ? 100 : newLevel
-            	}
-            }
-            if (deviceCommand == "decrease") {
-            	if (unitU == "percent") {
-                	newLevel = numN
-                }   
-                else {
-                	newLevel =  currLevel - newLevel
-            		newLevel = newLevel < 0 ? 0 : newLevel >100 ? 100 : newLevel
-                }            
-            }
-            if (deviceCommand == "setLevel") {
-            	if (unitU == "percent") {
-                	newLevel = numN
-                }   
-                else {
-                	newLevel =  numN*10
-            		newLevel = newLevel < 0 ? 0 : newLevel >100 ? 100 : newLevel
-                }            
-            }
-            if (newLevel > 0 && currState == "off") {
-            	deviceD.on()
-            	deviceD.setLevel(newLevel)
-            }
-            else {                                    
-            	if (newLevel == 0 && currState == "on") {deviceD.off()}
-                else {deviceD.setLevel(newLevel)}
-            } 
-            result = "Ok, setting  " + deviceD + " volume to " + newLevel + " percent"
-            return result
-    	}
-    	else {
-        	deviceD."${deviceCommand}"()
-    		result = "Ok, adjusting the volume of your " + deviceD
-            return result
-       }
-    }
     else if (deviceType == "cDoor" || deviceType == "cRelay" ) {
     	def cmd = deviceCommand
         if (delayD == true || state.pinTry != null || state.pContCmdsR == "door" ) {  
@@ -1911,6 +1864,58 @@ def controlHandler(data) {
                     if (delayD == false) {return result} 
            }           
 	}
+	if (deviceType == "cVolume") {
+   		if (deviceCommand == "increase" || deviceCommand == "decrease" || deviceCommand == "setLevel") {
+            def currLevel = deviceD.latestValue("level")
+            def currState = deviceD.latestValue("switch")
+            if (cVolLevel == null) {cVolLevel = 2}
+            def newLevel = cVolLevel*10
+			if (unitU == "percent") newLevel = numN      
+            if (deviceCommand == "increase") {
+            	if (unitU == "percent") {
+                	newLevel = numN
+                }   
+                else {
+                	newLevel =  currLevel + newLevel
+            		newLevel = newLevel < 0 ? 0 : newLevel >100 ? 100 : newLevel
+            	}
+            }
+            if (deviceCommand == "decrease") {
+            	if (unitU == "percent") {
+                	newLevel = numN
+                }   
+                else {
+                	newLevel =  currLevel - newLevel
+            		newLevel = newLevel < 0 ? 0 : newLevel >100 ? 100 : newLevel
+                }            
+            }
+            if (deviceCommand == "setLevel") {
+            	if (unitU == "percent") {
+                	newLevel = numN
+                }   
+                else {
+                	newLevel =  numN*10
+            		newLevel = newLevel < 0 ? 0 : newLevel >100 ? 100 : newLevel
+                }            
+            }
+            if (newLevel > 0 && currState == "off") {
+            	deviceD.on()
+            	deviceD.setLevel(newLevel)
+            }
+            else {                                    
+            	if (newLevel == 0 && currState == "on") {deviceD.off()}
+                else {deviceD.setLevel(newLevel)}
+            } 
+            result = "Ok, setting  " + deviceD + " volume to " + newLevel + " percent"
+            return result
+    	}
+    	else {
+			//NEED LOGIC TO COVER HARMONY ACTIVITIES
+			deviceD."${deviceCommand}"()
+    		result = "Ok, adjusting the volume of your " + deviceD
+            return result
+       }
+    }
 }
 /***********************************************************************************************************************
     LAST MESSAGE HANDLER
