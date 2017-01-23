@@ -49,11 +49,13 @@ preferences {
                 page name: "mDefaults"
                 page name: "mCustomDevices"
                 page name: "mSHMSec"
+                	page name: "secUsers"
                 	page name: "keyPads"
                 page name: "customSounds"
                 page name: "alerts"
             page name: "mNotifyProfile"
             page name: "mFeedbackProfile"
+            page name: "mSecuritySuite"
             page name: "mSupport"
         	page name: "mSecurity"
             page name: "mBonus"
@@ -278,8 +280,10 @@ page name: "mSHMSec"
             }
         section ("Control SHM Security Arming and Disarming") {
         	input "cSec", "capability.relaySwitch", title: "Select switch(s) for SHM control(s)...", multiple: true, required: false, submitOnChange: true
-		input "cPIN", "password", title: "Set PIN for ALL Home Security options", default: false, required: false	
-            }
+			input "cPIN", "password", title: "Set PIN for ALL Home Security options", default: false, required: false
+            input "armDelay", "number", title: "Set exit delay when armed by keypads (in seconds)", default: none, required: false
+            href "secUsers", title: "Tap to enter users and individual PINS", description: ""
+        	}
         section ("Smart Home Monitor Status Change Feedback", hideable: true, hidden: true) {
 			input "fSecFeed", "bool", title: "Activate SHM status change announcements.", default: false, submitOnChange: true
 			if (fSecFeed) {    
@@ -295,25 +299,76 @@ page name: "mSHMSec"
 			}
         }
     } 
+
 page name: "keyPads"
 	def keyPads() {
  		dynamicPage(name: "keyPads",title: "Configure Security Keypad(s)") {
     section("Settings") {
-      input "keypad", "capability.lockCodes", title: "Keypad", multiple: true, required: false
-//      input "kPIN", "password", title: "PIN code", required: true
-      input "keypadStatus", "bool", title: "Send updated status to keypad?", multiple: false, required: false, defaultValue: true
+      	input "keyPad", "capability.lockCodes", title: "Keypad", multiple: true, required: false
+      	input "keypadStatus", "bool", title: "Send updated status to keypad?", multiple: false, required: false, defaultValue: true
     }
     def hhPhrases = location.getHelloHome()?.getPhrases()*.label
     hhPhrases?.sort()
     section("Routines to be processed", hideable: true, hidden: true) {
-      input(name: "armRoutine", title: "Arm/Away routine", type: "enum", options: hhPhrases, required: false)
-      input(name: "disarmRoutine", title: "Disarm routine", type: "enum", options: hhPhrases, required: false)
-      input(name: "stayRoutine", title: "Arm/Stay routine", type: "enum", options: hhPhrases, required: false)
-      input(name: "nightRoutine", title: "Arm/Night routine", type: "enum", options: hhPhrases, required: false)
-      input(name: "armDelay", title: "Arm Delay (in seconds)", type: "number", required: false)
-    }
-  }
-}   
+      	input(name: "armRoutine", title: "Arm/Away routine", type: "enum", options: hhPhrases, required: false)
+      	input(name: "disarmRoutine", title: "Disarm routine", type: "enum", options: hhPhrases, required: false)
+      	input(name: "stayRoutine", title: "Arm/Stay routine", type: "enum", options: hhPhrases, required: false)
+    	}
+  	}
+}
+page name: "secUsers"    
+    def secUsers(){
+        dynamicPage(name: "secUsers", title: "Security Sytem Users",install: false, uninstall: false) {
+        section ("Input individual user names") {
+        	input "user1", "text", title: "User One", required: false, submitOnChange: true
+            	if (user1) {
+                	input "user1Pin", "password", title: "Set PIN User One", default: false, required: false
+            		}	
+           	if (user1Pin) {
+            	input "user2", "text", title: "User two", required: false, submitOnChange: true
+            	if (user2) {
+                	input "user2Pin", "password", title: "Set PIN User two", default: false, required: false
+            		}
+            	}
+            if (user2Pin) {
+            	input "user3", "text", title: "User three", required: false, submitOnChange: true
+            	if (user3) {
+                	input "user3Pin", "password", title: "Set PIN User three", default: false, required: false
+            		}
+				}     
+            if (user3Pin) {
+            	input "user4", "text", title: "User four", required: false, submitOnChange: true
+            	if (user4) {
+                	input "user4Pin", "password", title: "Set PIN User four", default: false, required: false
+            		}    
+            	}
+            if (user4Pin) {
+            	input "user5", "text", title: "User five", required: false, submitOnChange: true
+            	if (user5) {
+                	input "user5Pin", "password", title: "Set PIN User five", default: false, required: false
+            		}    
+            	}
+            if (user5Pin) {
+            	input "user6", "text", title: "User six", required: false, submitOnChange: true
+            	if (user6) {
+                	input "user6Pin", "password", title: "Set PIN User six", default: false, required: false
+            		}
+            	}
+            if (user6Pin) {
+            	input "user7", "text", title: "User seven", required: false, submitOnChange: true
+            	if (user7) {
+                	input "user7Pin", "password", title: "Set PIN User seven", default: false, required: false
+            		}
+            	}
+            if (user7Pin) {
+            	input "user8", "text", title: "User eight", required: false, submitOnChange: true
+            	if (user8) {
+                	input "user8Pin", "password", title: "Set PIN User eight", default: false, required: false
+            		}
+            	}
+            }
+		}
+	}
 page name: "mNotifyProfile"    
     def mNotifyProfile() {
         dynamicPage (name: "mNotifyProfile", title: "", install: true, uninstall: false) {
@@ -333,6 +388,25 @@ page name: "mNotifyProfile"
             }
        }
 	}
+page name: "mSecuritySuite"    
+    def mSecuritySuite() {
+        dynamicPage (name: "mSecuritySuite", title: "", install: true, uninstall: false) {
+        	if (childApps.size()) { 
+            	section(childApps.size()==1 ? "Security configured" : childApps.size() + " Room configured" )
+            }
+            if (childApps.size()) {  
+            	section("Security Suite",  uninstall: false){
+                	app(name: "profile", appName: "SecuritySuite", namespace: "Clone", title: "Configure Security Suite", multiple: true,  uninstall: false)
+            	}
+            }
+            else {
+            	section("Profiles",  uninstall: false){
+            		paragraph "NOTE: Looks like you haven't created any Profiles yet.\n \nPlease make sure you have installed the Rooms Smart App Add-on before creating a new Room!"
+            		app(name: "profile", appName: "SecuritySuite", namespace: "Clone", title: "Configure Security Suite", multiple: false,  uninstall: false)
+        		}
+            }
+       }
+	}    
 page name: "mFeedbackProfile"    
     def mFeedbackProfile() {
         dynamicPage (name: "mFeedbackProfile", title: "", install: true, uninstall: false) {
@@ -357,8 +431,10 @@ page name: "mSupport"
         dynamicPage(name: "mSupport", uninstall: false) {
         	section ("EchoSistant Modules") {
             	paragraph "For the notifications and room feedback to be operational, they must be installed in the ST IDE and the toggles below must be activated"
-            	input "notifyOn", "bool", title: "Is the Notifications Module Installed? ", required: true, defaultValue: false
+            	input "controlOn", "bool", title: "Is the Control & Messaging Module Installed?", required: true, defaultValue: false
+                input "notifyOn", "bool", title: "Is the Notifications Module Installed? ", required: true, defaultValue: false
  				input "feedbackOn", "bool", title: "Is the Feedback Module Installed?", required: true, defaultValue: false
+                input "securityOn", "bool", title: "Is the Security Suite Module Installed?", required: true, defaultValue: false
                 }
                 section ("Developers", hideWhenEmpty: true){  
             		paragraph ("You can reach out to the Echosistant Developers with the following information: \n" + 
@@ -646,9 +722,17 @@ page name: "pageReset"
 ***********************************************************************************************************************/
 def pCreate() {	
     dynamicPage(name: "pCreate", title:"I want to create a...", install: true, uninstall: false) {
+        if (!controlOn && !notifyOn && !feedbackOn && !securityOn) {
+        section ("Where are my profiles???") {
+        paragraph "You have not installed and/or activated any of the plug in modules! \n" +
+        "Please navigate to the 'Install and Support' section on the main page to activate modules"
+        	}
+        }
+        if (controlOn) {
         section ("Control and Messaging Profile") {
 			href "MainProfiles", title: "View and Create Control and Messaging Profiles...", description: pCreateSettings(), state: pCreateComplete(),
             image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_devices.png"            			
+            	}
             }
      	if (notifyOn) {
         section ("Notifications Profile") {
@@ -661,6 +745,12 @@ def pCreate() {
 			href "mFeedbackProfile", title: "View and Create Feedback Profiles..", description: pCreateSettings(), state: pCreateComplete(),
             image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_devices.png"            			
 			}
+        }
+        if (securityOn) {
+        section ("Security Suite") {
+        	href "mSecuritySuite", title: "Plug in Module for SHM Security...", description: pCreateSettings(), state: pCreateComplete(),
+        	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_devices.png"            			
+            }
         }
     }   
 }		
@@ -737,6 +827,9 @@ page name: "pSend"
 page name: "pActions"
     def pActions() {
             dynamicPage(name: "pActions", title: "Select Devices to use with this profile",install: false, uninstall: false) {
+                 section ("AppLink actions") {
+                 	 input "appLink", "enum", title: "Trigger These appLink Actions", required: false, multiple: true, options: parent.appLinkHandler(value: "list")
+                     }
                  section ("Light Switches", hideWhenEmpty: true){
                     input "switches", "capability.switch", title: "Select Lights and Switches...", multiple: true, required: false, submitOnChange: true
                         if (switches) input "switchCmd", "enum", title: "What do you want to do with these switches?", options:["on":"Turn on","off":"Turn off","toggle":"Toggle","delay":"Delay"], multiple: false, required: false, submitOnChange:true
@@ -892,6 +985,7 @@ mappings {
     path("/p") { action: [GET: "controlProfiles"] }
     path("/r") { action: [GET: "incomingResponse"] }    
 	path("/t") { action: [GET: "processTts"] }
+    path("/m") { action: [GET: "messengerGetHandler", POST: "messengerPostHandler"] }
 }
 /************************************************************************************************************
 		Base Process
@@ -906,11 +1000,15 @@ def updated() {
 }
 def initialize() {
 	//SHM status change and keypad initialize
-	    subscribe(location,"alarmSystemStatus",alarmStatusHandler)
-	    subscribe(keypad,"codeEntered",codeEntryHandler)   
+    	subscribe(location, locationHandler)
+    	subscribe(location, "alarmSystemStatus",alarmStatusHandler)//used for ES speaker feedback
+        subscribe(keypad, "codeEntered", codeEntryHandler) //used for keypads
 		def event = [name:"alarmSystemStatus", value: location.currentState("alarmSystemStatus").value, 
 		displayed: true, description: "System Status is ${shmState}"]
-	    alarmKeypadHandler(event)
+     
+	// APPLINK INTEGRATION
+    	subscribe(location, "appLink", appLinkHandler) //listen for appLink capable apps
+        if(settings?.appLink){ appLink.each { app -> parent.appLinkHandler(value: "run", data: app) } }
 	// Other stuff
         sendLocationEvent(name: "echoSistant", value: "refresh", data: [profiles: getProfileList()] , isStateChange: true, descriptionText: "echoSistant Profile list refresh")
         def children = getChildApps()
@@ -919,7 +1017,7 @@ def initialize() {
         	if (debug) log.error "Access token not defined. Attempting to refresh. Ensure OAuth is enabled in the SmartThings IDE."
                 OAuthToken()
 			}
-		//State Vriables            
+		//State Variables            
             state.lastMessage = null
             state.lastIntent  = null
             state.lastTime  = null
@@ -957,6 +1055,71 @@ def childUninstalled() {
 	if (debug) log.debug "Profile has been deleted, refreshing Profiles for CoRE, ${getChildApps()*.label}"
     sendLocationEvent(name: "echoSistant", value: "refresh", data: [profiles: getProfileList()] , isStateChange: true, descriptionText: "echoSistant Profile list refresh")
 } 
+/*****************************************************************
+  appLink
+*****************************************************************/
+// appLink core code: This should be included in every appLink compatible app, and not customised.
+def appLinkHandler(evt){
+    if(!state.appLink) state.appLink = [:]
+    switch(evt.value) { //[appLink V0.0.2 2016-12-08]
+   		case "add":	state.appLink << evt.jsonData;	break;
+        case "del":	state.appLink.remove(evt.jsonData.app);	break;             
+        case "list":	def list = [:];	state.appLink.each {key, value -> value.each{skey, svalue -> list << ["${key}:${skey}" : "[${key}] ${svalue}"]}};
+        	return list.sort { a, b -> a.value.toLowerCase() <=> b.value.toLowerCase() };	break;
+        case "run":	sendLocationEvent(name: "${evt.data.split(":")[0]}", value: evt.data.split(":")[1] , isStateChange: true, descriptionText: "appLink run"); break;
+    }
+    state.appLink.remove("$app.name") // removes this app from list
+}
+/*****************************************************************
+  Facebook Messenger
+*****************************************************************/
+
+def messengerGetHandler(){
+    if (params.hub.mode == 'subscribe' && params.hub.verify_token == settings.verifyToken) {
+        log.debug "Validating webhook"
+        render contentType: "text/html", data: params.hub.challenge, status: 200
+    } else {
+        log.debug "Failed validation. Make sure the Verify Tokens match."
+        render contentType: "text/html", data: params.hub.challenge, status: 403        
+    }
+}
+
+def messengerPostHandler(){
+    def fbJSON = request.JSON
+    def responseTxt = "Sorry I don't know you."
+    if (debug) log.debug "FB MESSENGER POST EVENT - MESSAGE:  ${fbJSON.entry.messaging.message.text[0][0]}"
+    if (debug) log.debug "FB MESSENGER POST EVENT - SENDER_ID:  ${fbJSON.entry.messaging.sender.id[0][0]}"
+	if(fbAllowedUsers != null && fbAllowedUsers.indexOf("${fbJSON.entry.messaging.sender.id[0][0]}") >= 0){ 
+    	//responseTxt = actionCommand(fbJSON.entry.messaging.message.text[0][0]) as String
+        // The above is my code so wont work for you you will need to set response Txt whatever value you want to return in the FB chat in response to a message
+    }
+    fbSendMessage(fbJSON.entry.messaging.sender.id[0][0], responseTxt)
+}
+
+def fbSendMessage(userid, message){
+	// Send a message to FB
+    def params = [
+        uri: "https://graph.facebook.com/v2.6/me/messages?access_token=$fbAccessToken",
+        body: [recipient: [id: userid], message: [text: message] ]
+    ]
+    try { httpPostJson(params) { resp ->
+    	resp.headers.each { if (debug) log.debug "${it.name} : ${it.value}" }
+        if (debug) log.debug "response contentType: ${resp.contentType}"
+    } } catch (e) { if (debug) log.debug "something went wrong: $e" }
+}
+
+/*
+		// This is used for linking to FB messenger and setting valid users
+		section ("Facebook Messenger Settings") { 
+            input "verifyToken", "password", title: "Verify Token", description:"", required: false
+            input "fbAccessToken", "password", title: "FB Page Access Token", description:"", required: false
+            input "fbAllowedUsers", "text", title: "Allowed User IDs", description:"", required: false
+            paragraph "Verify Token: Used to setup link to FB bot (You make up this value)\nAccess Token: To allow ST to send messages via FB Messenger (From developers.facebook.com)\nAllowed Users: These are the Facebook user IDs, seperated by commas (You can get this in the debug logging)"
+        }
+        
+        // This you should put in the same method you use for returning the app ID and OAuth 
+        log.trace "URL FOR USE AT DEVELOPERS.FACEBOOK.COM:\n${getApiServerUrl()}/api/smartapps/installations/${app.id}/m?access_token=${state.accessToken}"
+*/
 /************************************************************************************************************
 		Begining Process - Lambda via page b
 ************************************************************************************************************/
@@ -1341,8 +1504,8 @@ def feedbackHandler() {
         }
         if (fQuery.contains ("when")) {
             def deviceData = deviceMatchHandler(fDevice)
-            deviceM  = deviceData.deviceMatch  
-			outputTxt = deviceM + " was last " + fOperand + " " + deviceData.tText
+            deviceM  = deviceData?.deviceMatch  
+			outputTxt = deviceM + " was last " + fOperand + " " + deviceData?.tText
             return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
 
 		}     
@@ -1703,7 +1866,7 @@ def controlDevices() {
         	}
 		}
         
-		log.warn "Begining searching for devices to control with : '${deviceType}', command= '${command}'"
+		log.warn "Beginning searching for devices to control with : '${deviceType}', command= '${command}'"
             if (deviceType == "volume" || deviceType == "general" || deviceType == "light") {      
                     def deviceMatch = null
                     def dType = null
@@ -1959,7 +2122,7 @@ def controlDevices() {
 				}
 			}
 		}
-        else if (deviceType == "Security") {
+                else if (deviceType == "Security") {
                 if (debug) log.debug "Searching for a security switch named '${ctDevice}'"
                 def deviceMatch = cSec.find {l -> l.label.toLowerCase() == ctDevice.toLowerCase()}             
                 if (deviceMatch) {
@@ -1975,7 +2138,8 @@ def controlDevices() {
                         state.pinTry = 0
                         if (debug) log.debug "PIN response pending - '${state.pinTry}'"
                 		return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
-            			}
+            			alarmKeypadHandler(event)
+                        }
                     	if (ctNum > 0 && ctUnit == "minutes") {
                             device = device.label
                             delay = true
@@ -1991,7 +2155,7 @@ def controlDevices() {
                             outputTxt = controlHandler(data)
                             return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
                     		}
-                        }   
+                        }
                     }
         else if (deviceType == "miscDevices") {
                 if (debug) log.debug "Searching for a pin protected device named '${ctDevice}'"
@@ -2026,7 +2190,7 @@ def controlDevices() {
                             outputTxt = controlHandler(data)
                             return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
                     	}   
-                    }                    
+                    }                                      
 			if (cRelay !=null) {
             //this is needed for Garage Doors that are set up as relays
             	if (debug) log.debug "Searching for a relay named '${ctDevice}'"
@@ -2473,7 +2637,7 @@ def controlHandler(data) {
         if (deviceCommand == "on") result = "Ok, arming the " + deviceD + " system"
         else if (deviceCommand == "off") result = "Ok, disarming the " + deviceD + " system"                  
         if (delayD == false) {return result}  
-	}      
+	}   
 	else if (deviceType == "cLock") {
     	if (delayD == true || state.pinTry != null) {  
         	deviceD = cLock.find {l -> l.label.toLowerCase() == deviceD.toLowerCase()} 
@@ -2622,11 +2786,13 @@ def getLastMessageMain() {
 ***********************************************************************************************************/
 // ALARM STATUS CHANGE FEEDBACK TO SPEAKERS
 def alarmStatusHandler(evt) {
+	if (fSecFeed) {
 	def curEvtValue = evt.value
 	log.info "Smart Home Monitor status changed to: ${curEvtValue}"
 		if (shmSynthDevice || shmSonosDevice) {
-			if (evt.value == "away") { 
-               	if(shmSynthDevice) shmSynthDevice?.speak("Attention, The alarm system has changed status to armed '${curEvtValue}'")
+			if (evt.value == "away") {
+            	sendAwayCommand
+            	if(shmSynthDevice) shmSynthDevice?.speak("Attention, The alarm system has changed status to armed '${curEvtValue}'")
             	if (shmSonosDevice) 
              	shmSonosDevice?.playTextAndRestore("Attention, The alarm system has changed status to armed '${curEvtValue}'")
             	}
@@ -2642,61 +2808,82 @@ def alarmStatusHandler(evt) {
             			}
 					}
        			}
-// KEYPAD EVENT TO CHANGE SHM STATUS
-def alarmKeypadHandler(event) {
-	log.debug "Keypad manager caught alarm status change: "+event.value
-    if (event.value == "off") keypad?.setDisarmed()
-    else if (event.value == "away") keypad?.setArmedAway()
-    else if (event.value == "stay") keypad?.setArmedStay()
-}
-private sendSHMEvent(String shmState){
-	def event = [name:"alarmSystemStatus", value: shmState, 
-    			displayed: true, description: "System Status is ${shmState}"]
-    sendLocationEvent(event)
-}
-/*private execRoutine(armMode) {
-	if (armMode == 'away') location.helloHome?.execute(settings.armRoutine)
-    else if (armMode == 'stay') location.helloHome?.execute(settings.stayRoutine)
-    else if (armMode == 'off') location.helloHome?.execute(settings.disarmRoutine)    
-}*/
-
+			}
+def subscribeToEvents() {
+	subscribe (location.onSecurityEnable("alarmSystemStatus")?.value)
+    log.info "The SHM security system has changed status to '${alarmSystemStatus}'"
+}    
 def codeEntryHandler(evt){
-	//do stuff
-    log.debug "Caught code entry event! ${evt.value.value}"
-    
-    def codeEntered = evt.value as String
-    def correctCode = cPIN
+   	def codeEntered = evt.value as String
+    def correctCode = (userPin1 || userPin2)
     def data = evt.data as String
+//    def secPin = (userPin1 || userPin2 || userPin3 || userPin4 || userPin5 || userPin6 || userPin7 || userPin8)
+    def secUser = (user1 || user2 || user3 || user4 || user5 || user6 || user7 || user8)
     def armMode = ''
-    
-    if (data == '0') armMode = 'off'
-    else if (data == '3') armMode = 'away'
-    else if (data == '1') armMode = 'stay'
-
-    else {
-    	log.error "${app.label}: Unexpected arm mode sent by keypad!: "+data
+    	if (data == '0') armMode = 'off'
+    	else if (data == '3') armMode = 'away'
+    	else if (data == '1') armMode = 'stay'
+    	else {
+    	log.error "Something horrible happened here... I don't know what... but it was bad"
         return []
         }
-    
     if (codeEntered == correctCode) {
-    	log.debug "Correct PIN entered. Change SHM state to ${armMode} with an exit delay of ${armDelay} seconds"
- //       keypad.acknowledgeArmRequest(data)
+        keypad.acknowledgeArmRequest(data)
         if (data == '3') {
-        runIn(armDelay, sendSHMEvent(armMode))
-        }
+            log.debug "Correct PIN entered on the ${evt.device} by ${secUser} at ${now} to change SHM state to ${armMode} with an exit delay of ${armDelay} seconds"
+            keyPad?.each() { it.setExitDelay(armDelay) }
+            runIn(armDelay,sendAwayCommand)
+			}
         if (data == '1') {
-        runIn(armDelay, sendSHMEvent(armMode))
-        }
+        	log.debug "Correct PIN entered on the ${evt.device}. Change SHM state to ${armMode} with an exit delay of ${armDelay} seconds"
+            keyPad?.each() { it.setExitDelay(armDelay) }
+            runIn(armDelay,sendStayCommand)
+        	}
         if (data == '0') {
-        runIn(0, sendSHMEvent(armMode))
+			log.debug "Correct PIN entered on the ${evt.device}. Change SHM state to ${armMode}."
+            runIn(0,sendDisarmCommand)
+        	}
+    	}
+   	 	else {
+    		log.debug "You've entered an INVALID PIN!!!  Do you even live here?  Go Away!"
+    		keypad.sendInvalidKeycodeResponse()
+    		}
+		}
+def sendStayCommand() {
+	log.debug "Sending Stay Command to the system."
+    keyPad?.each() { it.acknowledgeArmRequest(1) }
+    keyPad?.each() { it.setArmedStay() }
+    	sendSHMEvent("stay")
+        execRoutine("stay")
         }
-//		execRoutine(armMode)
-    }
-    else {
-    	log.debug "Invalid PIN"
-        //Could also call acknowledgeArmRequest() with a parameter of 4 to report invalid code. Opportunity to simplify code?
-    	keypad.sendInvalidKeycodeResponse()
-    }
+def sendAwayCommand() {        
+    log.debug "Sending Away Command to the system."
+    keyPad?.each() { it.acknowledgeArmRequest(3) }
+    keyPad?.each() { it.setArmedAway() }
+    	sendSHMEvent("away")
+        execRoutine("away")
+        }
+def sendDisarmCommand() {
+	log.debug "Sending Disarm Command to the system."
+	keyPad?.each() { it.acknowledgeArmRequest(0) }
+    keyPad?.each() { it.setDisarmed() }
+		sendSHMEvent("off")
+        execRoutine("off")
+        }
+private sendSHMEvent(String shmState){
+	def event = [name:"alarmSystemStatus", value: shmState, 
+    	displayed: true, description: "System Status is ${shmState}"]
+    	sendLocationEvent(event)
+//        log.debug "Alarm Information: '${event}'"
+}        
+private execRoutine(armMode) {
+  if (armMode == 'away') {
+    location.helloHome?.execute(settings.armRoutine)
+  } else if (armMode == 'stay') {
+    location.helloHome?.execute(settings.stayRoutine)
+  } else if (armMode == 'off') {
+    location.helloHome?.execute(settings.disarmRoutine)
+  }
 }
 /***********************************************************************************************************************
     SCHEDULE HANDLER
@@ -2863,8 +3050,8 @@ private getCommand(command, unit) {
 			deviceType = "lock"                  
 		}
         else if (command == "open" || command == "close") {
-			deviceType = "door"
-            }
+			deviceType = "door"                  
+		}
         if (command == "arm" || command == "disarm") {
 			deviceType = "Security"
             if (command == "arm") {
