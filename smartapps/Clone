@@ -131,7 +131,6 @@ page name: "mIntent"
             }
 		}            
 	}
-
 page name: "mDevices"    
         def mDevices(){
             dynamicPage(name: "mDevices", title: "",install: false, uninstall: false) {
@@ -275,14 +274,9 @@ page name: "mCustomDevices"
 page name: "mSHMSec"    
     def mSHMSec(){
         dynamicPage(name: "mSHMSec", title: "Home Security Information",install: false, uninstall: false) {
-        section ("Configure Security Keypads") {
-        	href "keyPads", title: "Tap to configure Security Keypads", description: ""
-            }
-        section ("Control SHM Security Arming and Disarming") {
+        section ("Configure Security Options for Alexa") {
         	input "cSec", "capability.relaySwitch", title: "Select switch(s) for SHM control(s)...", multiple: true, required: false, submitOnChange: true
-			input "cPIN", "password", title: "Set PIN for ALL Home Security options", default: false, required: false
-            input "armDelay", "number", title: "Set exit delay when armed by keypads (in seconds)", default: none, required: false
-            href "secUsers", title: "Tap to enter users and individual PINS", description: ""
+			input "cPIN", "password", title: "Set PIN for ALL Home Security options (While using Alexa)", default: false, required: false
         	}
         section ("Smart Home Monitor Status Change Feedback", hideable: true, hidden: true) {
 			input "fSecFeed", "bool", title: "Activate SHM status change announcements.", default: false, submitOnChange: true
@@ -299,76 +293,6 @@ page name: "mSHMSec"
 			}
         }
     } 
-
-page name: "keyPads"
-	def keyPads() {
- 		dynamicPage(name: "keyPads",title: "Configure Security Keypad(s)") {
-    section("Settings") {
-      	input "keyPad", "capability.lockCodes", title: "Keypad", multiple: true, required: false
-      	input "keypadStatus", "bool", title: "Send updated status to keypad?", multiple: false, required: false, defaultValue: true
-    }
-    def hhPhrases = location.getHelloHome()?.getPhrases()*.label
-    hhPhrases?.sort()
-    section("Routines to be processed", hideable: true, hidden: true) {
-      	input(name: "armRoutine", title: "Arm/Away routine", type: "enum", options: hhPhrases, required: false)
-      	input(name: "disarmRoutine", title: "Disarm routine", type: "enum", options: hhPhrases, required: false)
-      	input(name: "stayRoutine", title: "Arm/Stay routine", type: "enum", options: hhPhrases, required: false)
-    	}
-  	}
-}
-page name: "secUsers"    
-    def secUsers(){
-        dynamicPage(name: "secUsers", title: "Security Sytem Users",install: false, uninstall: false) {
-        section ("Input individual user names") {
-        	input "user1", "text", title: "User One", required: false, submitOnChange: true
-            	if (user1) {
-                	input "user1Pin", "password", title: "Set PIN User One", default: false, required: false
-            		}	
-           	if (user1Pin) {
-            	input "user2", "text", title: "User two", required: false, submitOnChange: true
-            	if (user2) {
-                	input "user2Pin", "password", title: "Set PIN User two", default: false, required: false
-            		}
-            	}
-            if (user2Pin) {
-            	input "user3", "text", title: "User three", required: false, submitOnChange: true
-            	if (user3) {
-                	input "user3Pin", "password", title: "Set PIN User three", default: false, required: false
-            		}
-				}     
-            if (user3Pin) {
-            	input "user4", "text", title: "User four", required: false, submitOnChange: true
-            	if (user4) {
-                	input "user4Pin", "password", title: "Set PIN User four", default: false, required: false
-            		}    
-            	}
-            if (user4Pin) {
-            	input "user5", "text", title: "User five", required: false, submitOnChange: true
-            	if (user5) {
-                	input "user5Pin", "password", title: "Set PIN User five", default: false, required: false
-            		}    
-            	}
-            if (user5Pin) {
-            	input "user6", "text", title: "User six", required: false, submitOnChange: true
-            	if (user6) {
-                	input "user6Pin", "password", title: "Set PIN User six", default: false, required: false
-            		}
-            	}
-            if (user6Pin) {
-            	input "user7", "text", title: "User seven", required: false, submitOnChange: true
-            	if (user7) {
-                	input "user7Pin", "password", title: "Set PIN User seven", default: false, required: false
-            		}
-            	}
-            if (user7Pin) {
-            	input "user8", "text", title: "User eight", required: false, submitOnChange: true
-            	if (user8) {
-                	input "user8Pin", "password", title: "Set PIN User eight", default: false, required: false
-            		}
-            	}
-            }
-		}
-	}
 page name: "mNotifyProfile"    
     def mNotifyProfile() {
         dynamicPage (name: "mNotifyProfile", title: "", install: true, uninstall: false) {
@@ -396,7 +320,7 @@ page name: "mSecuritySuite"
             }
             if (childApps.size()) {  
             	section("Security Suite",  uninstall: false){
-                	app(name: "profile", appName: "SecuritySuite", namespace: "Clone", title: "Configure Security Suite", multiple: true,  uninstall: false)
+                	app(name: "profile", appName: "SecuritySuite", namespace: "Clone", title: "Configure Security Suite", multiple: false,  uninstall: false)
             	}
             }
             else {
