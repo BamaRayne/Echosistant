@@ -1,5 +1,5 @@
 /* 
- * Rooms - EchoSistant Add-on 
+ * Profile - EchoSistant Add-on 
  *
  *		12/31/2016		Release 4.1.1	New features: status updates, custom commands, weather alerts, message reminders 
  *										Improvements: streamlined UI and processing
@@ -34,10 +34,10 @@ preferences {
     page name: "mainProfilePage"
     		page name: "pNotifyScene"          
         	page name: "pNotifications"
-        	page name: "pScenes"
         	page name: "pRestrict"
-  			page name: "pDeviceControl"
             page name: "pNotifyConfig"
+            page name: "severeWeatherAlertsPage"
+            page name: "customSounds"
 }
 
 //dynamic page methods
@@ -62,6 +62,7 @@ page name: "mainProfilePage"
                 input "TheSwitch", "capability.switch", title: "Choose Switches...", required: false, multiple: true, submitOnChange: true
 				input "audioTextOn", "audioTextOn", title: "Play this message", description: "...when the switch turns on", required: false, capitalization: "sentences"
                 input "audioTextOff", "audioTextOff", title: "Play this message", description: "...when the switch turns off", required: false, capitalization: "sentences"
+	            href "customSounds", title: "Or, play these custom sounds....", description: "", state: complete
                 input "speech1", "capability.speechSynthesis", title: "Message Player", required: false, multiple: true, submitOnChange: true
                 input "music1", "capability.musicPlayer", title: "On this Sonos Type Devices", required: false, multiple: true, submitOnChange: true
                 if (music1) {
@@ -191,8 +192,25 @@ page name: "mainProfilePage"
             if (Weather) {
             	input "showWeather", "bool", title: "Weather Alerts", default: false, submitOnChange: true
                 if (showWeather) {
+                	input "cWeather", "enum", title: "Choose Weather Alerts...", required: false, multiple: true, submitOnChange: true,
+                    options: [
+                    "TOR":	"Tornado Warning",
+                    "TOW":	"Tornado Watch",
+                    "WRN":	"Severe Thunderstorm Warning",
+                    "SEW":	"Severe Thunderstorm Watch",
+                    "WIN":	"Winter Weather Advisory",
+                    "FLO":	"Flood Warning",
+                    "WND":	"High Wind Advisoryt",
+                    "HEA":	"Heat Advisory",
+                    "FOG":	"Dense Fog Advisory",
+                    "FIR":	"Fire Weather Advisory",
+                    "VOL":	"Volcanic Activity Statement",
+                    "HWW":	"Hurricane Wind Warning"
+					]
+				}
+                if (cWeather) {
                     input "audioTextWeather", "text", title: "Play this message", description: "Message to play when a Weather Alert is Issued", required: false, capitalization: "sentences"
-                    input "actionType", "enum", title: "OR play one of these sounds", required: true, defaultValue: "Bell 1", options: [
+                    input "actionType", "enum", title: "OR play one of these sounds", required: false, defaultValue: "Bell 1", options: [
                     "Bell 1",
                     "Bell 2",
                     "Dogs Barking",
@@ -213,32 +231,45 @@ page name: "mainProfilePage"
                     }
 				}
 			}
-            section ("Create Profile Scenes") {
-            	href "pScenes", title: "Create Scenes... ", 
-   				image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Media.png"   			
-				}
             section ("Using these Restrictions") {
                 href "pRestrict", title: "Use these restrictions... ", 
    				image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Media.png"   			
 				}
             section ("Name and/or Remove this Profile") {
- 		   	label title:"              Rename Profile ", required:false, defaultValue: "New Notification Profile"  
+ 		   	label title:"              Rename Profile ", required:false, defaultValue: "Notification Profile"  
         		
 			}
 		} 
 	}
 } 
-page name: "pNotifyScene"
-	def pNotifyScene() {
-	dynamicPage (name: "pNotifyScene", title: "", install: false, uninstall: false) {
-			if (childApps.size()) { 
-		section(childApps.size()==1 ? "One Scene configured" : childApps.size() + " Scenes configured" )
+page name: "customSounds"
+	def customSounds() {
+    	dynamicPage(name: "customSounds", title: "Play custom sounds", uninstall: false) {
+        section ("Choose a switch") {
+        	input "mySwitch", "capability.switch", title: "Choose Switches...", required: false, multiple: true, submitOnChange: true
+			}
+        section ("") {
+        input "actionType", "enum", title: "Action?", required: true, defaultValue: "Bell 1", options: [
+				"Custom Message",
+				"Bell 1",
+				"Bell 2",
+				"Dogs Barking",
+				"Fire Alarm",
+				"The mail has arrived",
+				"A door opened",
+				"There is motion",
+				"Smartthings detected a flood",
+				"Smartthings detected smoke",
+				"Someone is arriving",
+				"Piano",
+				"Lightsaber"]
+			input "message","text",title:"Play this message", required:false, multiple: false
 		}
-		section("Scenes"){
-			app(name: "scenes", appName: "scenes", namespace: "bd", title: "Create A New Notification Scene for this Profile", multiple: true,  uninstall: false)
-			} 
-		} 
+		section {
+			input "sonos", "capability.musicPlayer", title: "On this Speaker player", required: false
+		}
 	}
+}
 page name: "pNotifyConfig"    
     def pNotifyConfig(){
         dynamicPage(name: "pNotifyConfig", title: "Choose from the available Notifications",install: false, uninstall: false) {
@@ -256,27 +287,6 @@ page name: "pNotifyConfig"
 		}
     }
 }    
-          
-page name: "pScenes"    
-    def pScenes() {
-        dynamicPage (name: "pScenes", title: "", install: true, uninstall: false) {
-        	if (childApps.size()) { 
-            	section(childApps.size()==1 ? "One Scene configured" : childApps.size() + " Scenes configured" )
-            }
-            if (childApps.size()) {  
-            	section("Scenes",  uninstall: false){
-                	app(name: "scenes", appName: "scenes", namespace: "Clone", title: "Create a new scene for this Profile", multiple: true,  uninstall: false)
-            	}
-            }
-            else {
-            	section("Scenes",  uninstall: false){
-            		paragraph "NOTE: Looks like you have no Scenes yet, please make sure you have installed the Scenes Smart App Add-on before creating a new Scene!"
-            		app(name: "scenes", appName: "scenes", namespace: "Clone", title: "Create a new scene for this Profile", multiple: true,  uninstall: false)
-        		}
-            }
-       }
- 
-}
 page name: "pRestrict"
     def pRestrict(){
         dynamicPage(name: "pRestrict", title: "", uninstall: false) {
@@ -316,36 +326,62 @@ page name: "certainTime"
             }
         }
     }
-    
-
+/************************************************************************************************************
+		
+************************************************************************************************************/
 def installed() {
 	log.debug "Installed with settings: ${settings}"
 }
-
-def updated() {
+def updated() { 
 	log.debug "Updated with settings: ${settings}"
-	unsubscribe()
-	initialize()
-    def cScenes = getChildApps()
-    if (parent.debug) "cScenes=${cScenes}"
+    unsubscribe()
+    initialize()
 }
-
 def initialize() {
-        state.lastMessage = null
-    	state.lastTime  = null
-        state.recording = null
-}
-
-
-
-/***********************************************************************************************************************
-    LAST MESSAGE HANDLER
-***********************************************************************************************************************/
-def getLastMessage() {
-	def cOutputTxt = "The last message sent to " + app.label + " was," + state.lastMessage + ", and it was sent at, " + state.lastTime
-	return  cOutputTxt 
-	if (parent.debug) log.debug "Sending last message to parent '${cOutputTxt}' "
-}
+    	subscribeToEvents()
+    	subscribe(location, locationHandler)
+}    
+/************************************************************************************************************
+		Subscriptions
+************************************************************************************************************/
+def subscribeToEvents() {
+	if (runModes) {
+		subscribe(runMode, location.currentMode, modeChangeHandler)
+	}
+    if (runDay) {
+   		subscribe(runDay, location.day, location.currentDay)
+	}
+    if (TheSwitch) {
+        if (audioTextOn) {subscribe(TheSwitch, "switch.on", alertsHandler)}
+        if (audioTextOff) {subscribe(TheSwitch, "switch.off", alertsHandler)}
+       }
+    if (TheContact) {
+        if (audioTextOpen) {subscribe(TheContact, "contact.open", alertsHandler)}
+        else if (audioTextClosed) {subscribe(TheContact, "contact.closed", alertsHandler)}
+        }
+    if (TheLock) {
+        if (audioTextLocked) {subscribe(TheLock, "lock.locked", alertsHandler)}
+        else if (audioTextUnlocked) {subscribe(TheLock, "lock.unlocked", alertsHandler)}
+        }
+    if (TheMotion) {
+        if (audioTextActive) {subscribe(TheMotion, "motion.active", alertsHandler)}
+        else if (audioTextInactive) {subscribe(TheMotion, "motion.inactive", alertsHandler)}
+        }
+    if (ThePresence) {
+        if (audioTextPresent || audioTextNotPresent ) {subscribe(ThePresence, "presenceSensor", alertsHandler)}
+        }
+    if (TheWater) {    
+       if (audioTextDry) {subscribe(TheWater, "water.dry", alertsHandler)}
+        else if (audioTextWet) {subscribe(TheWater, "water.wet", alertsHandler)}
+        }
+    if (TheThermostat) {    
+        if (audioTextHeating) {
+        	subscribe(TheThermostat, "heatingSetpoint", alertsHandler)}
+        else if (audioTextCooling) {subscribe(TheThermostat, "coolingSetpoint", alertsHandler)}
+        }
+//    if (cWeather) {
+//    	subscribe(audioTextWeather, "WeatherAlerts", WeatherAlerts)} 
+}    
 
 /***********************************************************************************************************************
     RESTRICTIONS HANDLER
@@ -355,7 +391,7 @@ private getAllOk() {
 }
 private getModeOk() {
     def result = !modes || modes?.contains(location.mode)
-	if(debug) log.debug "modeOk = $result"
+	log.debug "modeOk = $result"
     result
 } 
 private getDayOk() {
@@ -371,7 +407,7 @@ if (days) {
 		def day = df.format(new Date())
 		result = days.contains(day)
 	}
-	if(debug) log.debug "daysOk = $result"
+	log.debug "daysOk = $result"
 	result
 }
 private getTimeOk() {
@@ -394,6 +430,7 @@ private getTimeOk() {
 		result = start < stop ? currTime >= start && currTime <= stop : currTime <= stop || currTime >= start
 	if (parent.debug) log.trace "getTimeOk = $result."
     }
+    log.debug "timeOk = $result"
     return result
 }
 private hhmm(time, fmt = "h:mm a") {
@@ -421,7 +458,7 @@ private timeIntervalLabel() {
     SMS HANDLER
 ***********************************************************************************************************************/
 private void sendtxt(message) {
-    if (parent.debug) log.debug "Request to send sms received with message: '${message}'"
+    log.debug "Request to send sms received with message: '${message}'"
     if (sendContactText) { 
         sendNotificationToContacts(message, recipients)
             if (parent.debug) log.debug "Sending sms to selected reipients"
@@ -429,17 +466,17 @@ private void sendtxt(message) {
     else {
     	if (push) { 
     		sendPush message
-            	if (parent.debug) log.debug "Sending push message to selected reipients"
+            	log.debug "Sending push message to selected reipients"
         }
     } 
     if (notify) {
         sendNotificationEvent(message)
-             	if (parent.debug) log.debug "Sending notification to mobile app"
+             	log.debug "Sending notification to mobile app"
 
     }
     if (sms) {
         sendText(sms, message)
-        if (parent.debug) log.debug "Processing message for selected phones"
+        log.debug "Processing message for selected phones"
 	}
 }
 private void sendText(number, message) {
@@ -447,7 +484,7 @@ private void sendText(number, message) {
         def phones = sms.split("\\;")
         for (phone in phones) {
             sendSms(phone, message)
-            if (parent.debug) log.debug "Sending sms to selected phones"
+            log.debug "Sending sms to selected phones"
         }
     }
 }
@@ -458,7 +495,7 @@ private txtFormat (message, eDev, eVal) {
         	message = message.replace('$action', "${eVal}")
 	  	    eTxt = message
         }  	
-            if (debug) log.debug "Processed Alert: ${eTxt} "
+            log.debug "Processed Alert: ${eTxt} "
     		
             return eTxt
 }
@@ -468,6 +505,194 @@ private txtFormat (message, eDev, eVal) {
 def playAlert(message, speaker) {
     state.sound = textToSpeech(message instanceof List ? message[0] : message)
     speaker.playTrackAndResume(state.sound.uri, state.sound.duration, volume)
-    if (debug) log.debug "Sending message: ${message} to speaker: ${speaker}"
+    log.debug "Sending message: ${message} to speaker: ${speaker}"
 
 }
+/************************************************************************************************************
+   Alerts Handler
+************************************************************************************************************/
+def alertsHandler(evt) {
+	def eVal = evt.value
+    def eName = evt.name
+    def eDev = evt.device
+    def eTxt = " "
+    log.debug "Received event name ${evt.name} with value:  ${evt.value}, from: ${evt.device}"
+
+	if (getDayOk()==true && getModeOk()==true && getTimeOk()==true) {
+        if (eVal == "on") { 
+            	if (audioTextOn) {   
+                	eTxt = txtFormat(audioTextOn, eDev, eVal)
+                    if (parent.debug) log.debug "Received event: on, playing message:  ${eTxt}"
+                    if(speech1) speech1.speak(eTxt)
+                    if (music1) {
+                        playAlert(eTxt, music1)
+                    	}
+                    if (push1) sendPush eTxt
+					if (notify1) sendNotificationEvent (eTxt)
+                }
+        }
+        if (eVal == "off") {       
+                if (audioTextOff) {
+                eTxt = txtFormat(audioTextOff, eDev, eVal)
+                log.debug "Received event: off, playing message:  ${eTxt}"
+                speech1?.speak(eTxt)
+                    if (music1) {
+                        playAlert(eTxt, music1)
+                    }
+                }
+                    if (push1) sendPush eTxt
+					if (notify1) sendNotificationEvent (eTxt)
+             }
+        }
+        if (eVal == "open") {     
+            	if (audioTextOpen) {
+               eTxt = txtFormat(audioTextOpen, eDev, eVal)
+               log.debug "Received event:open, playing message:  ${eTxt}"
+            speech2?.speak(eTxt)
+                if (music2) {
+                playAlert(eTxt, music2)
+				}
+                    if (push2) sendPush eTxt
+					if (notify2) sendNotificationEvent (eTxt)
+					} 
+ 	           }
+            if (eVal == "closed") {           
+                	if (audioTextClosed) {
+                eTxt = txtFormat(audioTextClosed, eDev, eVal)
+                log.debug "Received event closed, playing message:  ${eTxt}"
+                speech2?.speak(eTxt)
+                if (music2) {
+                    playAlert(eTxt, music2)
+                    if (push2) sendPush eTxt
+					if (notify2) sendNotificationEvent (eTxt)
+}
+					}
+                }
+        if 	(eVal == "locked") {         
+				if (audioTextLocked) {
+                eTxt = txtFormat(audioTextLocked, eDev, eVal)
+            speech3?.speak(eTxt)
+                    if (music3) {
+                        playAlert(eTxt, music3)
+ 
+					} 
+                	if (push3) sendPush eTxt
+					if (notify3) sendNotificationEvent (eTxt)                    
+                }
+            }
+            if (eVal == "unlocked") {        
+                    if (audioTextUnlocked) {
+                        eTxt = txtFormat(audioTextUnlocked, eDev, eVal)
+                        speech3?.speak(eTxt)
+                            if (music3) {
+                                playAlert(eTxt, music3)
+                                }
+                   	if (push3) sendPush eTxt
+					if (notify3) sendNotificationEvent (eTxt)                            
+                            
+                    }
+               }
+        if (eVal == "active") {         
+				log.debug "Received Motion Event but Motion Alerts are turned off"
+            		if (audioTextActive) { 
+            			eTxt = txtFormat(audioTextActive, eDev, eVal)
+            			log.debug "Received event Active, playing message:  ${eTxt}"
+            			speech4?.speak(eTxt)
+                    		if (music4) {
+                        		playAlert(eTxt, music4)
+                    		} 
+                   	if (push4) sendPush eTxt
+					if (notify4) sendNotificationEvent (eTxt)                            
+                	}
+            }
+            if (eVal == "inactive")  {         
+				log.debug "Received Motion Event but Motion Alerts are turned off"
+					if (audioTextInactive) {
+                		eTxt = txtFormat(audioTextInactive, eDev, eVal)
+                		log.debug "Received event Inactive, playing message:  ${eTxt}"
+                			speech4?.speak(eTxt)
+                    		if (music4) {
+                        		playAlert(eTxt, music4)
+                    		} 
+                   	if (push4) sendPush eTxt
+					if (notify4) sendNotificationEvent (eTxt)                     	
+                        }
+                }
+        if (eVal == "present") {          
+				log.debug "Received Presence Event but Presence Alerts are turned off"
+				if (audioTextPresent) {
+                eTxt = txtFormat(audioTextPresent, eDev, eVal)        
+            log.debug "Received event Present, playing message:  ${eTxt}"
+            speech5?.speak(eTxt)
+                    if (music5) {
+                        playAlert(eTxt, music5)
+                    } 
+                   	if (push5) sendPush eTxt
+					if (notify5) sendNotificationEvent (eTxt) 
+}
+            }
+        if (eVal == "not present")  {        
+				log.debug "Received Presence Event but Presence Alerts are turned off"
+				if (audioTextNotPresent) {
+                eTxt = txtFormat(audioTextNotPresent, eDev, eVal)            
+                log.debug "Received event Not Present, playing message:  ${eTxt}"
+                speech5?.speak(eTxt)
+                    if (music5) {
+                        playAlert(eTxt, music5)
+                    } 
+                   	if (push5) sendPush eTxt
+					if (notify5) sendNotificationEvent (eTxt) 
+}
+                }
+        if (eName == "heatingSetpoint")  {                    
+            if (audioTextHeating) {
+            	def eTemp = eVal
+                eTemp = eTemp.replace('.0', " ")
+            	eTxt = txtFormat(audioTextHeating, eDev, eTemp)            
+            	log.debug "Received event heatingSetpoint, playing message:  ${eTxt}"
+                speech8?.speak(eTxt)
+                    if (music8) {
+                        playAlert(eTxt, music8)
+                    } 
+                    
+                     if (push8) sendPush eTxt
+					if (notify8) sendNotificationEvent (eTxt) 
+                }
+            }
+
+            if (eName == "coolingSetpoint") {
+				if (audioTextCooling) {
+            		def eTemp = eVal
+                	eTemp = eTemp.replace('.0', " ")
+                	eTxt = txtFormat(audioTextCooling, eDev, eTemp)            
+                	log.debug "Received event coolingSetpoint, playing message:  ${eTxt} "
+                	speech8?.speak(eTxt)
+                	if (music8) {
+                        playAlert(eTxt, music8)
+                    }
+                     if (push8) sendPush eTxt
+					if (notify8) sendNotificationEvent (eTxt) 
+                }
+            }  
+        } 
+/************************************************************************************************************
+   Severe Weather Alerts Handler
+************************************************************************************************************/
+def WeatherAlerts(){
+	def result ="Weather Alerts Active"
+	def WeatherAlerts =  getWeatherFeature("alerts", settings.wZipCode)
+		result = ""
+        }
+page name: "severeWeatherAlertsPage"    
+    def severeWeatherAlertsPage(){
+        dynamicPage(name: "severeWeatherAlertsPage", title: "Severe Weather Alerts",install: false, uninstall: false) {
+		section ("Weather Alerts") {
+        	input "WeatherAlertsToggle", "bool", title: "Activate severe weather alerts notifications", required: false, default: false, submitOnChange: true
+            if (WeatherAlertsToggle) {
+        	(WeatherAlerts())
+            	}
+        	}        
+        section ("Choose which Alerts to Activate and Receive") {
+		}
+	}
+} 
