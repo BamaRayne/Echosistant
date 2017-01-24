@@ -54,6 +54,11 @@ page name: "mainProfilePage"
         	}
         }
         if (allNotifications) {
+        if (customSounds) {
+        section ("Custom Sounds") {
+        	href "customSounds", title: "Play these custom sounds as Notifications....", submitOnChange: true, description: "", state: complete 
+            	}
+            }
         section ("Switches and Dimmers", hideWhenEmpty: true) {
             if (TheSwitch || audioTextOn || audioTextOff || speech1 || push1 || notify1 || music1) paragraph "Configured with Settings"
             if (switchesAndDimmers) {
@@ -62,7 +67,8 @@ page name: "mainProfilePage"
                 input "TheSwitch", "capability.switch", title: "Choose Switches...", required: false, multiple: true, submitOnChange: true
 				input "audioTextOn", "audioTextOn", title: "Play this message", description: "...when the switch turns on", required: false, capitalization: "sentences"
                 input "audioTextOff", "audioTextOff", title: "Play this message", description: "...when the switch turns off", required: false, capitalization: "sentences"
-	            href "customSounds", title: "Or, play these custom sounds....", description: "", state: complete
+	//            href "customSounds", title: "Or, play these custom sounds....", submitOnChange: true, description: "", state: complete 
+  //              if (!actionType) {
                 input "speech1", "capability.speechSynthesis", title: "Message Player", required: false, multiple: true, submitOnChange: true
                 input "music1", "capability.musicPlayer", title: "On this Sonos Type Devices", required: false, multiple: true, submitOnChange: true
                 if (music1) {
@@ -73,7 +79,8 @@ page name: "mainProfilePage"
                 	if (sendMsg1) {
                 	input "push1", "bool", title: "Send Push Notification (optional)", required: false, defaultValue: false, submitOnChange: true
             		input "notify1", "bool", title: "Send message to Mobile App Notifications Tab (optional)", required: false, defaultValue: false, submitOnChange: true
-            		}
+            			}
+                    }
             	}             
         	}
 		}        
@@ -226,7 +233,6 @@ page name: "mainProfilePage"
                     input "sendMsg9", "bool", title: "Send Push and/or Notifications", default: false, submitOnChange: true
                         if (sendMsg9) {
                         input "push9", "bool", title: "Send Push Notification (optional)", required: false, defaultValue: false, submitOnChange: true
-                        input "notify9", "bool", title: "Send message to Mobile App Notifications Tab (optional)", required: false, defaultValue: false, submitOnChange: true
 						}
                     }
 				}
@@ -241,16 +247,22 @@ page name: "mainProfilePage"
 			}
 		} 
 	}
-} 
+ 
 page name: "customSounds"
 	def customSounds() {
     	dynamicPage(name: "customSounds", title: "Play custom sounds", uninstall: false) {
-        section ("Choose a switch") {
+        section ("Choose a Device") {
         	input "mySwitch", "capability.switch", title: "Choose Switches...", required: false, multiple: true, submitOnChange: true
-			}
+            input "myContact", "capability.contactSensor", title: "Choose Doors and Windows..", required: false, multiple: true, submitOnChange: true
+            input "myLocks", "capability.lock", title: "Choose Locks..", required: false, multiple: true, submitOnChange: true
+            input "myMotion", "capability.motionSensor", title: "Choose Motion Sensors..", required: false, multiple: true, submitOnChange: true
+            input "myPresence", "capability.presenceSensor", title: "Choose Presence Sensors...", required: false, multiple: true, submitOnChange: true
+            input "myThermostat", "capability.thermostat", title: "Choose Thermostats...", required: false, multiple: true, submitOnChange: true
+			
+            }
         section ("") {
-        input "actionType", "enum", title: "Action?", required: true, defaultValue: "Bell 1", options: [
-				"Custom Message",
+        input "actionType", "enum", title: "Action?", required: false, defaultValue: "Bell 1", options: [
+		//		"Custom Message",
 				"Bell 1",
 				"Bell 2",
 				"Dogs Barking",
@@ -263,13 +275,18 @@ page name: "customSounds"
 				"Someone is arriving",
 				"Piano",
 				"Lightsaber"]
-			input "message","text",title:"Play this message", required:false, multiple: false
+	//		input "message","text",title:"Play this message", required:false, multiple: false
 		}
 		section {
-			input "sonos", "capability.musicPlayer", title: "On this Speaker player", required: false
-		}
+        if (actionType) {
+			input "sonos", "capability.musicPlayer", title: "On this Sonos type music player", required: false
+			input "speechSynth1", "capability.speechSynthesis", title: "Speech Synthesis Device (may not work)", required: false, multiple: true, submitOnChange: true
+        		}
+//            }
+        }
 	}
 }
+
 page name: "pNotifyConfig"    
     def pNotifyConfig(){
         dynamicPage(name: "pNotifyConfig", title: "Choose from the available Notifications",install: false, uninstall: false) {
@@ -277,6 +294,7 @@ page name: "pNotifyConfig"
             paragraph "To mute a notification, disable its toggle \n" +
             "To mute all notifications, disable the All Notifications toggle"
             input "allNotifications", "bool", title: "Turn on to Activate the Notifications Section", default: false, submitOnChange: true
+            input "customSounds", "bool", title: "Turn on Custom Sounds Notifications", default: false, submitOnChange: true
             input "switchesAndDimmers", "bool", title: "Switches and Dimmers", default: false, submitOnChange: true
             input "doorsAndWindows", "bool", title: "Doors and Windows", default: false, submitOnChange: true
             input "Locks", "bool", title: "Locks", default: false, submitOnChange: true
@@ -351,38 +369,120 @@ def subscribeToEvents() {
     if (runDay) {
    		subscribe(runDay, location.day, location.currentDay)
 	}
-    if (TheSwitch) {
+    if (TheSwitch || mySwitch) {
+    	if (actionType) {subscribe(mySwitch, "switch.on", alertsHandler)}
+        if (actionType) {subscribe(mySwitch, "switch.off", alertsHandler)}
         if (audioTextOn) {subscribe(TheSwitch, "switch.on", alertsHandler)}
         if (audioTextOff) {subscribe(TheSwitch, "switch.off", alertsHandler)}
        }
-    if (TheContact) {
+    if (TheContact || myContact) {
+    	if (actionType) {subscribe(myContact, "contact.open", alertsHandler)}
         if (audioTextOpen) {subscribe(TheContact, "contact.open", alertsHandler)}
         else if (audioTextClosed) {subscribe(TheContact, "contact.closed", alertsHandler)}
         }
-    if (TheLock) {
-        if (audioTextLocked) {subscribe(TheLock, "lock.locked", alertsHandler)}
+    if (TheLock || myLocks) {
+    	if (actionType) {subscribe(myLocks, "lock.locked", alertsHandler)}
+        if (actionType) {subscribe(myLocks, "lock.unlocked", alertsHandler)}
+  		if (audioTextLocked) {subscribe(TheLock, "lock.locked", alertsHandler)}
         else if (audioTextUnlocked) {subscribe(TheLock, "lock.unlocked", alertsHandler)}
         }
-    if (TheMotion) {
+    if (TheMotion || myMotion) {
+    	if (actionType) {subscribe(myMotion, "motion.active", alertsHandler)}
         if (audioTextActive) {subscribe(TheMotion, "motion.active", alertsHandler)}
         else if (audioTextInactive) {subscribe(TheMotion, "motion.inactive", alertsHandler)}
         }
-    if (ThePresence) {
+    if (ThePresence || myPresence) {
+    	if (actionType) {subscribe(myPresence, "presenceSensor", alertsHandler)}
         if (audioTextPresent || audioTextNotPresent ) {subscribe(ThePresence, "presenceSensor", alertsHandler)}
         }
-    if (TheWater) {    
-       if (audioTextDry) {subscribe(TheWater, "water.dry", alertsHandler)}
-        else if (audioTextWet) {subscribe(TheWater, "water.wet", alertsHandler)}
-        }
-    if (TheThermostat) {    
-        if (audioTextHeating) {
-        	subscribe(TheThermostat, "heatingSetpoint", alertsHandler)}
+	if (TheThermostat || myThermostat) {    
+        if (actionType) {subscribe(mythermostat, "heatingSetpoint", alertsHandler)}
+        if (actionType) {subscribe(mythermostat, "coolingSetpoint", alertsHandler)}
+        if (audioTextHeating) {subscribe(TheThermostat, "heatingSetpoint", alertsHandler)}
         else if (audioTextCooling) {subscribe(TheThermostat, "coolingSetpoint", alertsHandler)}
         }
 //    if (cWeather) {
 //    	subscribe(audioTextWeather, "WeatherAlerts", WeatherAlerts)} 
-}    
+	loadText()
+} 
+/***********************************************************************************************************************
+    CUSTOM SOUNDS HANDLER
+***********************************************************************************************************************/
 
+private takeAction(evt) {
+
+	log.trace "takeAction()"
+
+	if (TheSwitch) {
+    	if (speechSynth1) speechSynth1?.playSoundAndTrack(state.sound.uri, state.sound.duration, state.selectedSong)
+    	}
+        else {
+		sonos?.playSoundAndTrack(attention + state.sound.uri, state.sound.duration, state.selectedSong, volume)
+	}
+	if (resumePlaying){
+		sonos.playTrackAndResume(state.sound.uri, state.sound.duration, volume)
+	}
+	else {
+		sonos?.playTrackAndRestore(state.sound.uri, state.sound.duration, volume)
+	}
+
+	if (frequency || oncePerDay) {
+		state[frequencyKey(evt)] = now()
+		}
+	
+    log.trace "Exiting takeAction()"
+}
+private loadText() {
+	switch ( actionType) {
+		case "Bell 1":
+			state.sound = [uri: "http://s3.amazonaws.com/smartapp-media/sonos/bell1.mp3", duration: "10"]
+			break;
+		case "Bell 2":
+			state.sound = [uri: "http://s3.amazonaws.com/smartapp-media/sonos/bell2.mp3", duration: "10"]
+			break;
+		case "Dogs Barking":
+			state.sound = [uri: "http://s3.amazonaws.com/smartapp-media/sonos/dogs.mp3", duration: "10"]
+			break;
+		case "Fire Alarm":
+			state.sound = [uri: "http://s3.amazonaws.com/smartapp-media/sonos/alarm.mp3", duration: "17"]
+			break;
+		case "The mail has arrived":
+			state.sound = [uri: "http://s3.amazonaws.com/smartapp-media/sonos/the+mail+has+arrived.mp3", duration: "1"]
+			break;
+		case "A door opened":
+			state.sound = [uri: "http://s3.amazonaws.com/smartapp-media/sonos/a+door+opened.mp3", duration: "1"]
+			break;
+		case "There is motion":
+			state.sound = [uri: "http://s3.amazonaws.com/smartapp-media/sonos/there+is+motion.mp3", duration: "1"]
+			break;
+		case "Smartthings detected a flood":
+			state.sound = [uri: "http://s3.amazonaws.com/smartapp-media/sonos/smartthings+detected+a+flood.mp3", duration: "2"]
+			break;
+		case "Smartthings detected smoke":
+			state.sound = [uri: "http://s3.amazonaws.com/smartapp-media/sonos/smartthings+detected+smoke.mp3", duration: "1"]
+			break;
+		case "Someone is arriving":
+			state.sound = [uri: "http://s3.amazonaws.com/smartapp-media/sonos/someone+is+arriving.mp3", duration: "1"]
+			break;
+		case "Piano":
+			state.sound = [uri: "http://s3.amazonaws.com/smartapp-media/sonos/piano2.mp3", duration: "10"]
+			break;
+		case "Lightsaber":
+			state.sound = [uri: "http://s3.amazonaws.com/smartapp-media/sonos/lightsaber.mp3", duration: "10"]
+			break;
+		case "Custom Message":
+			if (message) {
+				state.sound = textToSpeech(message instanceof List ? message[0] : message) // not sure why this is (sometimes) needed)
+			}
+			else {
+				state.sound = textToSpeech("You selected the custom message option but did not enter a message in the $app.label Smart App")
+			}
+			break;
+		default:
+			state.sound = [uri: "http://s3.amazonaws.com/smartapp-media/sonos/bell1.mp3", duration: "10"]
+			break;
+	}
+}
 /***********************************************************************************************************************
     RESTRICTIONS HANDLER
 ***********************************************************************************************************************/
@@ -519,8 +619,8 @@ def alertsHandler(evt) {
     log.debug "Received event name ${evt.name} with value:  ${evt.value}, from: ${evt.device}"
 
 	if (getDayOk()==true && getModeOk()==true && getTimeOk()==true) {
-        if (eVal == "on") { 
-            	if (audioTextOn) {   
+        if (eVal == "on") {
+        		if (audioTextOn) {   
                 	eTxt = txtFormat(audioTextOn, eDev, eVal)
                     if (parent.debug) log.debug "Received event: on, playing message:  ${eTxt}"
                     if(speech1) speech1.speak(eTxt)
@@ -530,6 +630,9 @@ def alertsHandler(evt) {
                     if (push1) sendPush eTxt
 					if (notify1) sendNotificationEvent (eTxt)
                 }
+                else if (actionType) {
+                	takeAction(evt)
+                    }
         }
         if (eVal == "off") {       
                 if (audioTextOff) {
