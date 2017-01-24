@@ -49,12 +49,9 @@ preferences {
                 page name: "mDefaults"
                 page name: "mCustomDevices"
                 page name: "mSHMSec"
-                	page name: "secUsers"
-                	page name: "keyPads"
                 page name: "customSounds"
                 page name: "alerts"
             page name: "mNotifyProfile"
-            page name: "mFeedbackProfile"
             page name: "mSecuritySuite"
             page name: "mSupport"
         	page name: "mSecurity"
@@ -168,24 +165,7 @@ page name: "mDevices"
                 section ("Batteries", hideWhenEmpty: true, hideable: true ){
                     input "cBattery", "capability.battery", title: "Allow These Device(s) with Batteries...", required: false, multiple: true
                 } 
-                section ("Weather Alerts", hideable: true) {
-                    input "cWeather", "enum", title: "Choose Weather Alerts...", required: false, multiple: true, submitOnChange: true,
-                    options: [
-                    "TOR":	"Tornado Warning",
-                    "TOW":	"Tornado Watch",
-                    "WRN":	"Severe Thunderstorm Warning",
-                    "SEW":	"Severe Thunderstorm Watch",
-                    "WIN":	"Winter Weather Advisory",
-                    "FLO":	"Flood Warning",
-                    "WND":	"High Wind Advisoryt",
-                    "HEA":	"Heat Advisory",
-                    "FOG":	"Dense Fog Advisory",
-                    "FIR":	"Fire Weather Advisory",
-                    "VOL":	"Volcanic Activity Statement",
-                    "HWW":	"Hurricane Wind Warning"
-					]
-				}
-			}
+            }
 		}   
 	page name: "mDefaults"
         def mDefaults(){
@@ -273,7 +253,7 @@ page name: "mCustomDevices"
     }             
 page name: "mSHMSec"    
     def mSHMSec(){
-        dynamicPage(name: "mSHMSec", title: "Home Security Information",install: false, uninstall: false) {
+        dynamicPage(name: "mSHMSec", title: "Home Security Information via Alexa",install: false, uninstall: false) {
         section ("Configure Security Options for Alexa") {
         	input "cSec", "capability.relaySwitch", title: "Select switch(s) for SHM control(s)...", multiple: true, required: false, submitOnChange: true
 			input "cPIN", "password", title: "Set PIN for ALL Home Security options (While using Alexa)", default: false, required: false
@@ -357,8 +337,7 @@ page name: "mSupport"
             	paragraph "For the notifications and room feedback to be operational, they must be installed in the ST IDE and the toggles below must be activated"
             	input "controlOn", "bool", title: "Is the Control & Messaging Module Installed?", required: true, defaultValue: false
                 input "notifyOn", "bool", title: "Is the Notifications Module Installed? ", required: true, defaultValue: false
- 				input "feedbackOn", "bool", title: "Is the Feedback Module Installed?", required: true, defaultValue: false
-                input "securityOn", "bool", title: "Is the Security Suite Module Installed?", required: true, defaultValue: false
+ 				input "securityOn", "bool", title: "Is the Security Suite Module Installed?", required: true, defaultValue: false
                 }
                 section ("Developers", hideWhenEmpty: true){  
             		paragraph ("You can reach out to the Echosistant Developers with the following information: \n" + 
@@ -664,12 +643,6 @@ def pCreate() {
             image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_devices.png"            			
 			}
 		}
-        if (feedbackOn) {
-        section ("FeedBack Profile") {
-			href "mFeedbackProfile", title: "View and Create Feedback Profiles..", description: pCreateSettings(), state: pCreateComplete(),
-            image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_devices.png"            			
-			}
-        }
         if (securityOn) {
         section ("Security Suite") {
         	href "mSecuritySuite", title: "Plug in Module for SHM Security...", description: pCreateSettings(), state: pCreateComplete(),
@@ -686,19 +659,19 @@ page name: "MainProfiles"
             }
             if (childApps.size()) {  
             	section("Profile",  uninstall: false){
-                	app(name: "Clone", appName: "Clone", namespace: "Clone", title: "Create a new Main Profile", multiple: true,  uninstall: false)
+                	app(name: "Clone", appName: "Clone", namespace: "Clone", title: "Create a new Messaging Profile", multiple: true,  uninstall: false)
             	}
             }
             else {
             	section("Profile",  uninstall: false){
             		paragraph "NOTE: Looks like you haven't created any Profile yet.\n \nPlease make sure you have installed the Profile Smart App Add-on before creating a new Room!"
-            		app(name: "Clone", appName: "Clone", namespace: "Clone", title: "Create a new Main Room", multiple: true,  uninstall: false)
+            		app(name: "Clone", appName: "Clone", namespace: "Clone", title: "Create a new Messaging Profile", multiple: true,  uninstall: false)
         		}
             }
 		} 
     }
 def mainProfilePage() {	
-    dynamicPage(name: "mainProfilePage", title:"I Want This Room To...", install: true, uninstall: true, multiple: true) {
+    dynamicPage(name: "mainProfilePage", title:"I Want This Profile To...", install: true, uninstall: true, multiple: true) {
         section {
            	href "pSend", title: "Send Messages... ", description: pSendComplete(), state: pSendSettings(),
    				image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Media.png"   			
@@ -923,10 +896,13 @@ def updated() {
     initialize()
 }
 def initialize() {
-	//SHM status change and keypad initialize
+	 log.debug "there are ${childApps.size()} child smartapps"
+    childApps.each {child ->
+        log.debug "child app: ${child.label}"
+    }
+    //SHM status change and keypad initialize
     	subscribe(location, locationHandler)
     	subscribe(location, "alarmSystemStatus",alarmStatusHandler)//used for ES speaker feedback
-        subscribe(keypad, "codeEntered", codeEntryHandler) //used for keypads
 		def event = [name:"alarmSystemStatus", value: location.currentState("alarmSystemStatus").value, 
 		displayed: true, description: "System Status is ${shmState}"]
      
@@ -1044,6 +1020,7 @@ def fbSendMessage(userid, message){
         // This you should put in the same method you use for returning the app ID and OAuth 
         log.trace "URL FOR USE AT DEVELOPERS.FACEBOOK.COM:\n${getApiServerUrl()}/api/smartapps/installations/${app.id}/m?access_token=${state.accessToken}"
 */
+
 /************************************************************************************************************
 		Begining Process - Lambda via page b
 ************************************************************************************************************/
@@ -2249,7 +2226,7 @@ private getCustomCmd(command, unit, group) {
 		}        
     }
 	if (command == "start" || command == "enable" || command == "activate" || command == "schedule") {
-		if (unit == "reminder" || unit == "reminders" || unit == "timer" || unit == "timers" || unit.contains ("reminder") || unit.contains ("timer") ) {
+		if (unit == "reminder" || unit == "reminders" || unit == "timer" || unit == "timers" || unit.contains ("reminder") || unit.contains ("timer"))
         	state.scheduledHandler = "reminder"
             result = "Ok, reminder scheduled"
            	return result
@@ -2281,7 +2258,7 @@ private getCustomCmd(command, unit, group) {
             return result
 		}
 	}
-} 
+//} 
 /************************************************************************************************************
 	PIN HANDLER
 ************************************************************************************************************/ 
@@ -2737,78 +2714,6 @@ def subscribeToEvents() {
 	subscribe (location.onSecurityEnable("alarmSystemStatus")?.value)
     log.info "The SHM security system has changed status to '${alarmSystemStatus}'"
 }    
-def codeEntryHandler(evt){
-   	def codeEntered = evt.value as String
-    def correctCode = (userPin1 || userPin2)
-    def data = evt.data as String
-//    def secPin = (userPin1 || userPin2 || userPin3 || userPin4 || userPin5 || userPin6 || userPin7 || userPin8)
-    def secUser = (user1 || user2 || user3 || user4 || user5 || user6 || user7 || user8)
-    def armMode = ''
-    	if (data == '0') armMode = 'off'
-    	else if (data == '3') armMode = 'away'
-    	else if (data == '1') armMode = 'stay'
-    	else {
-    	log.error "Something horrible happened here... I don't know what... but it was bad"
-        return []
-        }
-    if (codeEntered == correctCode) {
-        keypad.acknowledgeArmRequest(data)
-        if (data == '3') {
-            log.debug "Correct PIN entered on the ${evt.device} by ${secUser} at ${now} to change SHM state to ${armMode} with an exit delay of ${armDelay} seconds"
-            keyPad?.each() { it.setExitDelay(armDelay) }
-            runIn(armDelay,sendAwayCommand)
-			}
-        if (data == '1') {
-        	log.debug "Correct PIN entered on the ${evt.device}. Change SHM state to ${armMode} with an exit delay of ${armDelay} seconds"
-            keyPad?.each() { it.setExitDelay(armDelay) }
-            runIn(armDelay,sendStayCommand)
-        	}
-        if (data == '0') {
-			log.debug "Correct PIN entered on the ${evt.device}. Change SHM state to ${armMode}."
-            runIn(0,sendDisarmCommand)
-        	}
-    	}
-   	 	else {
-    		log.debug "You've entered an INVALID PIN!!!  Do you even live here?  Go Away!"
-    		keypad.sendInvalidKeycodeResponse()
-    		}
-		}
-def sendStayCommand() {
-	log.debug "Sending Stay Command to the system."
-    keyPad?.each() { it.acknowledgeArmRequest(1) }
-    keyPad?.each() { it.setArmedStay() }
-    	sendSHMEvent("stay")
-        execRoutine("stay")
-        }
-def sendAwayCommand() {        
-    log.debug "Sending Away Command to the system."
-    keyPad?.each() { it.acknowledgeArmRequest(3) }
-    keyPad?.each() { it.setArmedAway() }
-    	sendSHMEvent("away")
-        execRoutine("away")
-        }
-def sendDisarmCommand() {
-	log.debug "Sending Disarm Command to the system."
-	keyPad?.each() { it.acknowledgeArmRequest(0) }
-    keyPad?.each() { it.setDisarmed() }
-		sendSHMEvent("off")
-        execRoutine("off")
-        }
-private sendSHMEvent(String shmState){
-	def event = [name:"alarmSystemStatus", value: shmState, 
-    	displayed: true, description: "System Status is ${shmState}"]
-    	sendLocationEvent(event)
-//        log.debug "Alarm Information: '${event}'"
-}        
-private execRoutine(armMode) {
-  if (armMode == 'away') {
-    location.helloHome?.execute(settings.armRoutine)
-  } else if (armMode == 'stay') {
-    location.helloHome?.execute(settings.stayRoutine)
-  } else if (armMode == 'off') {
-    location.helloHome?.execute(settings.disarmRoutine)
-  }
-}
 /***********************************************************************************************************************
     SCHEDULE HANDLER
 ***********************************************************************************************************************/
@@ -2904,7 +2809,7 @@ private getCommand(command, unit) {
             }
         }
 	//case "Temperature Commands":  
-        if (command == "colder" || command =="not cold enough" || command =="too hot" || command == "too warm") {
+        if (command == "cooler" || command == "colder" || command =="not cold enough" || command =="too hot" || command == "too warm") {
             command = "decrease"
             deviceType = "temp"
         }     
@@ -3019,34 +2924,7 @@ private def textHelp() {
 		"This smartapp allows you to use an Alexa device to generate a voice or text message on on a different device"
         "See our Wikilinks page for user information!"
 		}
-/************************************************************************************************************
-   SOUNDS
-************************************************************************************************************/
-private loadText() {
-		switch (actionType) {
-		case "Bell 1":
-			state.sound = [uri: "http://s3.amazonaws.com/smartapp-media/sonos/bell1.mp3", duration: "10"]
-			break;
-		case "Bell 2":
-			state.sound = [uri: "http://s3.amazonaws.com/smartapp-media/sonos/bell2.mp3", duration: "10"]
-			break;
-		case "Dogs Barking":
-			state.sound = [uri: "http://s3.amazonaws.com/smartapp-media/sonos/dogs.mp3", duration: "10"]
-			break;
-		case "Fire Alarm":
-			state.sound = [uri: "http://s3.amazonaws.com/smartapp-media/sonos/alarm.mp3", duration: "17"]
-			break;
-		case "Piano":
-			state.sound = [uri: "http://s3.amazonaws.com/smartapp-media/sonos/piano2.mp3", duration: "10"]
-			break;
-		case "Lightsaber":
-			state.sound = [uri: "http://s3.amazonaws.com/smartapp-media/sonos/lightsaber.mp3", duration: "10"]
-			break;
-		default:
-			state.sound = [uri: "http://s3.amazonaws.com/smartapp-media/sonos/bell1.mp3", duration: "10"]
-			break;
-        }
-}        
+       
 /************************************************************************************************************
    Page status and descriptions 
 ************************************************************************************************************/       
@@ -3140,7 +3018,8 @@ def mSecurityComplete(){def result = ""
 def mSecuritySettings() {def text = "Tap here to configure settings" 
     if (debug || ShowLicense || ShowTokens) {
     	text = "Configured - Information is now displayed in the IDE Live Logs"}
-    	else text = "Configure"text	}
+    	else text = "Configure"
+        text}
 def dashboardSettings() { def text = "Tap here to view Dashboard" 
     	text}
 def dashboardComplete(){def result = ""
