@@ -1,6 +1,7 @@
 /* 
  * EchoSistant - The Ultimate Voice and Text Messaging Assistant Using Your Alexa Enabled Device.
  *
+ *		1/25/2017		Version:4.0 R.4.2.14		Bug fixes: new Pin Validation process, more bug fixes, removed feedback page
  *		1/20/2017		Version:4.0 R.4.2.13		Bug fixes: minor fixes
  *		1/20/2017		Version:4.0 R.4.2.11		Feature: completed Phase 2 - Basic Device Feedback
  *		1/14/2017		Version:4.0 R.4.2.10		Feature: added garage door relay control 
@@ -50,7 +51,6 @@ preferences {
     page name: "mainParentPage"
     		page name: "mIntent"
 				page name: "mDevices"
-                page name: "mFeedback"
                 page name: "mDefaults"            
     		page name: "mProfiles"
             page name: "mSettings"
@@ -81,11 +81,7 @@ page name: "mIntent"
 			section("") {
 	            href "mDevices", title: "Select Devices",
                 image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_devices.png"    
-			}
-			section("") {
-	            href "mFeedback", title: "Feedback Options",
-                image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Routines.png"
-			}                
+			}               
             section ("") {
                 href "mDefaults", title: "Change Defaults",
                 image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Extra.png"
@@ -96,7 +92,7 @@ page name: "mIntent"
     page name: "mDevices"    
         def mDevices(){
             dynamicPage(name: "mDevices", title: "",install: false, uninstall: false) {
-                // DEVICE categories 
+                // DEVICE categories: cSwitch,cVent,cFan,cTstat,cDoor,cRelay,cContactRelay,cLock,cMotion,cContact,cWater,cPresence,cSpeaker,cSynth,cMedia,cBattery 
                 section ("Select devices", hideWhenEmpty: true){ }
                 section ("Lights and Switches", hideWhenEmpty: true){  
                     input "cSwitch", "capability.switch", title: "Allow These Switch(es)...", multiple: true, required: false, submitOnChange: true
@@ -116,6 +112,7 @@ page name: "mIntent"
                 section ("Sensors", hideWhenEmpty: true) {
                  	input "cMotion", "capability.motionSensor", title: "Allow These Motion Sensor(s)...", multiple: true, required: false
                     input "cContact", "capability.contactSensor", title: "Allow These Contact Sensor(s)...", multiple: true, required: false      
+            		input "cWater", "capability.waterSensor", title: "Allow These Water Sensor(s)...", multiple: true, required: false                       
                     input "cPresence", "capability.presenceSensor", title: "Allow These Presence Sensors(s)...", multiple: true, required: false
                 }
                 section ("Media" , hideWhenEmpty: true){
@@ -126,6 +123,7 @@ page name: "mIntent"
                 section ("Batteries", hideWhenEmpty: true ){
                     input "cBattery", "capability.battery", title: "Allow These Device(s) with Batteries...", required: false, multiple: true
                 } 
+                /*
                 section ("Weather Alerts") {
                     input "cWeather", "enum", title: "Choose Weather Alerts...", required: false, multiple: true, submitOnChange: true,
                     options: [
@@ -143,36 +141,9 @@ page name: "mIntent"
                     "HWW":	"Hurricane Wind Warning"
                     ]
                  }
-            }
-        }   
-    page name: "mFeedback"
-        def mFeedback() {
-            dynamicPage (name: "mFeedback", uninstall: false) {
-            section ("Create a Custom Device Feedback using variables: $device, $date and $time", hideWhenEmpty: true){
-                input "custMessage1", "text", title: "Custom Message...", multiple: false, required: false
-            }
-            if (custMessage1) {
-                section ("+ Create another Custom Message", hideWhenEmpty: true){
-                    input "custMessage2", "text", title: "Custom Message...", multiple: false, required: false 
-                }
-            }
-            if (custMessage2) {
-                section ("+ Create another Custom Message", hideWhenEmpty: true){
-                    input "custMessage3", "text", title: "Custom Message..", multiple: false, required: false
-                }
-            }
-            if (custMessage3) {
-                section ("+ Create another Custom Message", hideWhenEmpty: true){
-                    input "custMessage4", "text", title: "Custom Message..", multiple: false, required: false
-                }
-            }
-            if (custMessage4) {
-                section ("+ Create another Custom Message", hideWhenEmpty: true){
-                    input "custMessage5", "text", title: "Custom Message..", multiple: false, required: false
-                }
-            }            
-        }
-    }    
+                */
+         }
+    }   
     page name: "mDefaults"
         def mDefaults(){
                 dynamicPage(name: "mDefaults", title: "", uninstall: false){
@@ -386,6 +357,7 @@ def initialize() {
             state.usePIN_T = settings.uPIN_T
             state.usePIN_L = settings.uPIN_L
             state.usePIN_D = settings.uPIN_D
+            state.usePIN_S = false
             state.savedPINdata = null
             state.pinTry = null
         //Other Settings
@@ -420,7 +392,9 @@ def processBegin(){
     def versionSTtxt = textVersion() 
     def pPendingAns = false    
     def String outputTxt = (String) null 
-    
+
+	try {
+
     if (event == "noAction") {//event == "AMAZON.NoIntent" removed 1/20/17
     	state.pinTry = null
         state.savedPINdata = null
@@ -431,6 +405,7 @@ def processBegin(){
     	if(state.pContCmdsR == "level"){
             if (state.lastAction != null) {
                 def savedData = state.lastAction
+                //getCustomCmd(ctCommand, ctUnit, ctGroup)
                 outputTxt = controlHandler(savedData) 
                 pPendingAns = "level"
             }
@@ -446,13 +421,19 @@ def processBegin(){
                 pPendingAns = null 
             }
         }
-        if( state.pContCmdsR == "feedback"){
+        if( state.pContCmdsR == "feedback" ||  state.pContCmdsR == "bat" || state.pContCmdsR == "act" ){
             if (state.lastAction != null) {
                 state.lastAction = null
                 state.pContCmdsR = null 
                 pPendingAns = null 
             }
-        } 
+        }
+        if( state.pContCmdsR == "init"){
+        	state.pTryAgain = false
+        }
+        if( state.pContCmdsR == null){
+        	state.pTryAgain = false
+        }
     }
     if (event == "AMAZON.YesIntent") {
         if (state.pContCmdsR == "level") {
@@ -466,24 +447,63 @@ def processBegin(){
         if( state.pContCmdsR == "door"){
             if (state.lastAction != null) {
                 def savedData = state.lastAction
+ 				//PIN VALIDATION
+ 				if(state.usePIN_D == true) {
+     				//RUN PIN VALIDATION PROCESS
+                	def pin = "undefined"
+               		def command = "validation"
+                	def num = 0
+                	def unit = "doors"
+                	outputTxt = pinHandler(pin, command, num, unit)
+                    pPendingAns = "pin"
+					return ["outputTxt":outputTxt, "pContinue":state.pMuteAlexa, "pPendingAns":pPendingAns, "versionSTtxt":versionSTtxt]
+            	}
+                else {
                 outputTxt = controlHandler(savedData) 
                 pPendingAns = "door"
-            }
+            	}
+        	}
         }
         if( state.pContCmdsR == "feedback"){
             if (state.lastAction != null) {
                 def savedData = state.lastAction
                 outputTxt = getMoreFeedback(savedData) 
                 pPendingAns = "feedback"
+				return ["outputTxt":outputTxt, "pContinue":state.pMuteAlexa, "pPendingAns":pPendingAns, "versionSTtxt":versionSTtxt]
+            }
+         }
+         if( state.pContCmdsR == "bat" || state.pContCmdsR == "act"){
+            if (state.lastAction != null) {
+                def savedData = state.lastAction
+                outputTxt = savedData
+                pPendingAns = "feedback"
+				return ["outputTxt":outputTxt, "pContinue":state.pMuteAlexa, "pPendingAns":pPendingAns, "versionSTtxt":versionSTtxt]
+            }
+       }
+       if( state.pContCmdsR == "caps"){
+            if (state.lastAction != null) {
+                outputTxt = state.lastAction
+                pPendingAns = "caps"
+				state.pContCmdsR = null 
+				state.lastAction = null
+                return ["outputTxt":outputTxt, "pContinue":state.pMuteAlexa, "pPendingAns":pPendingAns, "versionSTtxt":versionSTtxt]
             }
         }        
      }   
     //state.pContCmdsR = null
     //state.lastAction = null
 	  if (debug){log.debug "Initial data received: (event) = '${event}', (ver) = '${versionTxt}', (date) = '${versionDate}', (release) = '${releaseTxt}'"+ 
-      "; data sent: pContinue = '${state.pContCmds}', pPendingAns = '${pPendingAns}', versionSTtxt = '${versionSTtxt}'; other data: pContCmdsR = '${state.pContCmdsR}', pinTry'=${state.pinTry}' "
+      "; data sent: pContinue = '${state.pContCmds}', pPendingAns = '${pPendingAns}', versionSTtxt = '${versionSTtxt}', outputTxt = '${outputTxt}' ; other data: pContCmdsR = '${state.pContCmdsR}', pinTry'=${state.pinTry}' "
 	}
     return ["outputTxt":outputTxt, "pContinue":state.pMuteAlexa, "pPendingAns":pPendingAns, "versionSTtxt":versionSTtxt]
+
+	} catch (e) {
+		log.error "Oh no, something went wrong. If this happens again, please reach out for help!"
+        outputTxt = "Oh no, something went wrong. If this happens again, please reach out for help!"
+        state.pTryAgain = true
+        return ["outputTxt":outputTxt, "pContinue":state.pMuteAlexa, "pPendingAns":pPendingAns, "versionSTtxt":versionSTtxt]
+	}
+
 }   
 
 /************************************************************************************************************
@@ -505,15 +525,34 @@ def feedbackHandler() {
     def stateDate
     def stateTime
 	def data = [:]
-    
+    fDevice = fDevice.replaceAll("[^a-zA-Z0-9 ]", "") 
     if (debug){
     	log.debug 	"Feedback data: (fProfile) = '${fProfile}', (fDevice) = '${fDevice}', "+
     				"(fQuery) = '${fQuery}', (fOperand) = '${fOperand}', (fCommand) = '${fCommand}'"
-    }
+    } 
+    
+	try {
     
     fOperand = fOperand == "switches" ? "lights" : fOperand
-
-
+    
+    if (fDevice != "undefined" && fQuery != "undefined" && fOperand == "undefined" && fQuery != "about"  ) {
+    	def dMatch = deviceMatchHandler(fDevice)
+		if (dMatch?.deviceMatch == null) { 				
+			outputTxt = "Sorry, I couldn't find any details about " + fDevice
+            state.pTryAgain = true
+            return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]	
+		}
+        else {
+            def dDevice = dMatch?.deviceMatch
+            def dType = dMatch?.deviceType
+            def dState = dMatch?.currState
+            def dMainCap = dMatch?.mainCap
+            def dCapCount = getCaps(dDevice,dType, dMainCap, dState)
+            state.pContCmdsR = "caps"
+            outputTxt = "Sorry, I couldn't quite get that, but I found a matching device that has " + dCapCount + " capabilities. Would you like to hear more about this device?"         
+            return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]	
+		}
+	}
     if (fOperand == "undefined" && fQuery == "about") {
 		def deviceMatch=cTstat.find {d -> d.label.toLowerCase() == fDevice.toLowerCase()}
 			if(deviceMatch)	{
@@ -529,13 +568,13 @@ def feedbackHandler() {
                     stateTime = deviceMatch.currentState("temperature").date.time
                     def timeText = getTimeVariable(stateTime, deviceType)            
                     outputTxt = "The " + fDevice + " temperature is " + temp + " degrees and the current mode is " + currentMode + " , with set points of " + cSP + " for cooling and " + hSP + " for heating"
-                    return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
+                    return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR": state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
 			}
             else {
 				def rSearch = deviceMatchHandler(fDevice)
 				if (debug) log.debug "Getting device details"
                     if (rSearch?.deviceMatch == null) { 
-                        outputTxt = "Sorry I couldn't find any details about" + fDevice
+                        outputTxt = "Sorry I couldn't find any details about " + fDevice
                         state.pTryAgain = true
                         return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]	
                     }
@@ -578,10 +617,23 @@ def feedbackHandler() {
                         stateDate = s.currentState("temperature").date
                         stateTime = s.currentState("temperature").date.time
                         def timeText = getTimeVariable(stateTime, deviceType)            
-                        outputTxt = "The temperature " + fDevice + " is " + temp + " degrees and was recorded " + timeText.currDate + " at " + timeText.currTime
+                        outputTxt = "The temperature in " + fDevice + " is " + temp + " degrees and was recorded " + timeText.currDate + " at " + timeText.currTime
                     }
                 }
             }
+            if(cWater){
+                cWater.find {s -> 
+                    if(s.label.toLowerCase() == fDevice.toLowerCase()){
+                        deviceType = "cWater"
+                        def currentTMP = s.latestValue("temperature")
+                        int temp = currentTMP
+                        stateDate = s.currentState("temperature").date
+                        stateTime = s.currentState("temperature").date.time
+                        def timeText = getTimeVariable(stateTime, deviceType)            
+                        outputTxt = "The temperature in the " + fDevice + " is " + temp + " degrees and was recorded " + timeText.currDate + " at " + timeText.currTime
+                    }
+                }
+            }            
 			if (outputTxt == null ) { outputTxt = "Device named " + fDevice + " doesn't have a temperature sensor" }
             return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]                        
         }
@@ -616,7 +668,7 @@ def feedbackHandler() {
                     return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
 
 				}
-				else if (fQuery.contains ("what") || fQuery.contains ("which")) {
+				else if (fQuery.contains ("what") || fQuery.contains ("which") || fQuery == "what's") {
                 	def devNames = []
                     if (cSwitch.latestValue("switch").contains(fCommand)) {
                     	cSwitch.each { deviceName ->
@@ -635,16 +687,22 @@ def feedbackHandler() {
 				}     
             }
         }
-		if(fOperand == "doors" && fCommand != "undefined") { 
-            if(cContact){
+		if(fOperand.contains("doors")) { // && fCommand != "undefined") { removed 1/23/2017
+            //if(cContact){
 				def devList = []
-                if (cContact.latestValue("contact").contains(fCommand)) {
+				if (cContact.latestValue("contact").contains(fCommand) || cDoor.latestValue("door").contains(fCommand)) {
                     cContact.each { deviceName ->
                                 if (deviceName.latestValue("contact")=="${fCommand}") {
                                     String device  = (String) deviceName
                                     devList += device
                                 }
                     }
+                    cDoor?.each { deviceName ->
+								if (deviceName.latestValue("door")=="${fCommand}") {
+                                   	String device  = (String) deviceName
+                                   	devNames += device
+                                }
+                    }                    
                 }
 				if (fQuery == "how" || fQuery== "how many" || fQuery == "undefined" || fQuery == "are there") {
                     if (devList.size() > 0) {
@@ -664,71 +722,96 @@ def feedbackHandler() {
                     }
                     else {outputTxt = "There are no doors or windows " + fCommand}
                     return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
-
 				}
-				else if (fQuery.contains ("what") || fQuery.contains ("which")) {
+				else if (fQuery.contains ("what") || fQuery.contains ("which") || fQuery == "what's") {
                 	def devNames = []
-                    if (cContact.latestValue("contact").contains(fCommand)) {
-                    	cContact.each { deviceName ->
-									if (deviceName.latestValue("contact")=="${fCommand}") {
-                                    	String device  = (String) deviceName
-                                    	devNames += device
-                                	}
-                    	}
-                    outputTxt = "The following doors or windows are " + fCommand + "," + devNames.sort().unique()
-                    return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
+                    fOperand = fOperand.contains("closed") ? "closed" : fOperand.contains("open") ? "open" : fOperand 
+                    fCommand = fCommand.contains("close") ? "closed" : fCommand
+                    fCommand = fOperand == "closed" ? "closed" : fOperand == "open" ? "open" : fCommand                  
+                    log.warn "fCommand = '${fCommand}'"
+                        if (cContact.latestValue("contact").contains(fCommand) || cDoor.latestValue("door").contains(fCommand)) {
+                            cContact?.each { deviceName ->
+                                        if (deviceName.latestValue("contact")=="${fCommand}") {
+                                            String device  = (String) deviceName
+                                            devNames += device
+                                        }
+                            }
+                            cDoor?.each { deviceName ->
+                                        if (deviceName.latestValue("door")=="${fCommand}") {
+                                            String device  = (String) deviceName
+                                            devNames += device
+                                        }
+                            }
+                        outputTxt = "The following doors or windows are " + fCommand + "," + devNames.sort().unique()
+                        return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
 
-                	}
-                    else {outputTxt = "There are no doors or windows " + fCommand}
-                    return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
-				}     
-            }
+                        }
+                        else {outputTxt = "There are no doors or windows " + fCommand}
+                        return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
+            	}
         }
-		if(fOperand == "batteries") { 
-            if(cBattery){
-				def devList = []
-                    cBattery.each { deviceName ->
-                                if (deviceName.latestValue("battery") < settings.cLowBattery) {
-                                    String device  = (String) deviceName
-                                    devList += device
-                                }
-                    }
-				if (fQuery == "how" || fQuery== "how many" || fQuery == "undefined" || fQuery == "are there" || fCommand == "low") {
-                    if (devList.size() > 0) {
-                    	if (devList.size() == 1) {
+		if(fOperand == "batteries") {
+        def cap = "bat"
+        def devList = getCapabilities(cap)
+			if (fQuery == "how" || fQuery== "how many" || fQuery == "undefined" || fQuery == "are there" || fCommand == "low" || fQuery == "give" || fQuery == "get") {
+                    if (devList.listSize > 0) {
+                    	if (devList.listSize == 1) {
                     		outputTxt = "There is one device with low battery level , would you like to know which one"                           			
                     	}
                     	else {
-                    		outputTxt = "There are " + devList.size() + " devices with low battery levels, would you like to know which devices"
+                    		outputTxt = "There are " + devList.listSize + " devices with low battery levels, would you like to know which devices"
                     	}
-                    data.devices = devList
-                    data.cmd = fCommand
-                    data.deviceType = "cBattery"
-                    state.lastAction = data
-                    state.pContCmdsR = "feedback"
+                    def sdevices = devList?.listBat
+                    def devListString = sdevices.join(",")
+                    data.list = devListString
+                    state.lastAction = devListString
+                    state.pContCmdsR = "bat"
                     return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
                     }
                     else {outputTxt = "There are no devices with low battery levels"}
                     return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
 				}
                 else if (fQuery.contains ("what") || fQuery.contains ("which")) {
-                	def devNames = []
-                    	cBattery.each { deviceName ->
-									if (deviceName.latestValue("battery")< settings.cLowBattery) {
-                                    	String device  = (String) deviceName
-                                    	devNames += device
-                                	}
-                    	}
-                    if (devList.size() > 0) {
-                    outputTxt = "The following devices have low battery levels " + devNames.sort().unique()
+                    if (devList.listSize > 0) {
+                    outputTxt = "The following devices have low battery levels " + devList.listBat.sort()//.unique()
                     return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
                 	}
                     else {outputTxt = "There are no devices with low battery levels "
                     return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
 					} 
             	}
-			}
-        }
+		}
+		if(fOperand == "inactive" || fOperand.contains("inactive") ) { //devices inactive
+        def cap = "act"
+        def devList = getCapabilities(cap)
+			if (fQuery == "how" || fQuery== "how many" || fQuery == "undefined" || fQuery == "are there" || fQuery == "give" || fQuery == "get") {
+                    if (devList.listSize > 0) {
+                    	if (devList.listSize == 1) {
+                    		outputTxt = "There is one inactive device, would you like to know which one?"                           			
+                    	}
+                    	else {
+                    		outputTxt = "There are " + devList.listSize + " inactive devices, would you like to know which devices"
+                    	}
+                    def sdevices = devList?.listDev
+                    def devListString = sdevices.join(",")
+                    data.list = devListString
+                    state.lastAction = devListString
+                    state.pContCmdsR = "act"
+                    return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
+                    }
+                    else {outputTxt = "There are no inactive devices"}
+                    return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
+				}
+                else if (fQuery.contains ("what") || fQuery.contains ("which")) {
+                    if (devList.listSize > 0) {
+                    outputTxt = "The following devices have been inactive for more than " + cInactiveDev + " " + devList.listDev.sort()
+                    return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
+                	}
+                    else {outputTxt = "There are no inactive devices"
+                    return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
+					} 
+            	}
+		}       
 		if(fOperand == "settings") {
   			def pCmds = state.pContCmds == true ? "enabled" : "disabled"
             def pCmdsR = state.pContCmdsR //last continuation response
@@ -737,8 +820,20 @@ def feedbackHandler() {
             def pin_D = state.usePIN_D == true ? "active" : "inactive"
             def pin_L = state.usePIN_L == true ? "active" : "inactive"
             def pin_T = state.usePIN_T == true ? "active" : "inactive"
-            outputTxt = pMute + " and the conversational module is " + pCmds + ". The pin number for doors is " + pin_D + ", for locks is " + pin_L + ", and for thermostats is " + pin_T
-			return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
+			def pin_S = state.usePIN_S == true ? "active" : "inactive"
+            
+            def activePin = pin_D == "active" ? "doors" : null
+                activePin  = pin_L == "active" ? activePin + ", locks" : activePin
+            	activePin  = pin_S == "active" ? activePin + ", switches" : activePin
+                activePin  = pin_T == "active" ? activePin + ", thermostats"  : activePin
+            if (activePin == null) { activePin = "no groups"}                
+            def inactivePin = pin_D == "inactive" ? "doors" : null
+                inactivePin  = pin_L == "inactive" ? inactivePin + ", locks" : inactivePin
+            	inactivePin  = pin_S == "inactive" ? inactivePin + ", switches" : inactivePin
+                inactivePin  = pin_T == "inactive" ? inactivePin + ", thermostats" : inactivePin
+            if (inactivePin == null) { inactivePin = "no groups"}    
+            outputTxt = pMute + " and the conversational module is " + pCmds + ". The pin number is active for: " +  activePin + " and inactive for: " + inactivePin
+            return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
 		}
         if (fQuery == "who" ) {
 			if(cPresence){
@@ -793,8 +888,16 @@ def feedbackHandler() {
 			outputTxt = deviceM + " was last " + fOperand + " " + deviceData.tText
             return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
 
-		}     
+		}
 	}
+
+	} catch (e) {
+		log.error "Oh no, something went wrong. If this happens again, please reach out for help!"
+        outputTxt = "Oh no, something went wrong. If this happens again, please reach out for help!"
+        state.pTryAgain = true
+        return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
+	}
+
 }
 
 /******************************************************************************
@@ -810,7 +913,19 @@ private deviceMatchHandler(fDevice) {
     def stateDate
     def stateTime
 	def deviceMatch
-
+    def result
+	
+		if(cTstat){
+           deviceMatch = cTstat.find {d -> d.label.toLowerCase() == fDevice.toLowerCase()}
+			if(deviceMatch){
+				deviceType = "cTstat"
+                currState = deviceMatch.currentState("thermostatOperatingState").value
+                stateDate = deviceMatch.currentState("thermostatOperatingState").date
+                stateTime = deviceMatch.currentState("thermostatOperatingState").date.time
+                def timeText = getTimeVariable(stateTime, deviceType)            
+            	return ["deviceMatch" : deviceMatch, "deviceType": deviceType, "currState": currState, "tText": timeText.tText, "mainCap": "thermostatOperatingState" ]
+            }
+        }
         if (cSwitch){
 		deviceMatch = cSwitch.find {d -> d.label.toLowerCase() == fDevice.toLowerCase()}
 			if(deviceMatch){
@@ -819,7 +934,7 @@ private deviceMatchHandler(fDevice) {
 				stateDate = deviceMatch.currentState("switch").date
 				stateTime = deviceMatch.currentState("switch").date.time
 				def timeText = getTimeVariable(stateTime, deviceType)
-            	return ["deviceMatch" : deviceMatch, "deviceType": deviceType, "currState": currState, "tText": timeText.tText]
+            	return ["deviceMatch" : deviceMatch, "deviceType": deviceType, "currState": currState, "tText": timeText.tText, "mainCap": "switch"]
         	}
         }
         if (cContact){
@@ -830,7 +945,7 @@ private deviceMatchHandler(fDevice) {
 				stateDate = deviceMatch.currentState("contact").date
 				stateTime = deviceMatch.currentState("contact").date.time
 				def timeText = getTimeVariable(stateTime, deviceType)
-                return ["deviceMatch" : deviceMatch, "deviceType": deviceType, "currState": currState, "tText": timeText.tText]
+                return ["deviceMatch" : deviceMatch, "deviceType": deviceType, "currState": currState, "tText": timeText.tText, "mainCap": "contact"]
             }
         }
         if (cMotion){
@@ -841,7 +956,7 @@ private deviceMatchHandler(fDevice) {
                 stateDate = deviceMatch.currentState("motion").date
                 stateTime = deviceMatch.currentState("motion").date.time
                 def timeText = getTimeVariable(stateTime, deviceType)
-                return ["deviceMatch" : deviceMatch, "deviceType": deviceType, "currState": currState, "tText": timeText.tText]
+                return ["deviceMatch" : deviceMatch, "deviceType": deviceType, "currState": currState, "tText": timeText.tText, "mainCap": "motion"]
         	}
         } 
         if (cLock){
@@ -852,7 +967,7 @@ private deviceMatchHandler(fDevice) {
                 stateDate = deviceMatch.currentState("lock").date
                 stateTime = deviceMatch.currentState("lock").date.time
                 def timeText = getTimeVariable(stateTime, deviceType)
-                return ["deviceMatch" : deviceMatch, "deviceType": deviceType, "currState": currState, "tText": timeText.tText]
+                return ["deviceMatch" : deviceMatch, "deviceType": deviceType, "currState": currState, "tText": timeText.tText, "mainCap": "lock"]
         	}
         }        
         if (cPresence){
@@ -863,7 +978,7 @@ private deviceMatchHandler(fDevice) {
                 stateDate = deviceMatch.currentState("presence").date
                 stateTime = deviceMatch.currentState("presence").date.time
                 def timeText = getTimeVariable(stateTime, deviceType)
-                return ["deviceMatch" : deviceMatch, "deviceType": deviceType, "currState": currState, "tText": timeText.tText]
+                return ["deviceMatch" : deviceMatch, "deviceType": deviceType, "currState": currState, "tText": timeText.tText, , "mainCap": "presence"]
         	}
         }  
         if (cDoor){
@@ -874,7 +989,7 @@ private deviceMatchHandler(fDevice) {
                 stateDate = deviceMatch.currentState("door").date
                 stateTime = deviceMatch.currentState("door").date.time
                 def timeText = getTimeVariable(stateTime, deviceType)
-                return ["deviceMatch" : deviceMatch, "deviceType": deviceType, "currState": currState, "tText": timeText.tText]
+                return ["deviceMatch" : deviceMatch, "deviceType": deviceType, "currState": currState, "tText": timeText.tText, "mainCap": "door"]
         	}
         }  
         if (cVent){
@@ -886,9 +1001,20 @@ private deviceMatchHandler(fDevice) {
                 stateDate = deviceMatch.currentState("switch").date
                 stateTime = deviceMatch.currentState("switch").date.time
                 def timeText = getTimeVariable(stateTime, deviceType)
-                return ["deviceMatch" : deviceMatch, "deviceType": deviceType, "currState": currState, "tText": timeText.tText]
+                return ["deviceMatch" : deviceMatch, "deviceType": deviceType, "currState": currState, "tText": timeText.tText, , "mainCap": "switch"]
         	}
         }
+        if (cWater){
+		deviceMatch =cWater.find {d -> d.label.toLowerCase() == fDevice.toLowerCase()}
+            if(deviceMatch)	{
+                deviceType = "cWater"
+                currState = deviceMatch.currentState("water").value 
+                stateDate = deviceMatch.currentState("water").date
+                stateTime = deviceMatch.currentState("water").date.time
+                def timeText = getTimeVariable(stateTime, deviceType)
+                return ["deviceMatch" : deviceMatch, "deviceType": deviceType, "currState": currState, "tText": timeText.tText,  "mainCap": "water"]
+        	}
+        }        
         if (cMedia){
 		deviceMatch =cMedia.find {d -> d.label.toLowerCase() == fDevice.toLowerCase()}
             if(deviceMatch)	{
@@ -898,7 +1024,7 @@ private deviceMatchHandler(fDevice) {
                 stateDate = deviceMatch.currentState("currentActivity").date
                 stateTime = deviceMatch.currentState("currentActivity").date.time
                 def timeText = getTimeVariable(stateTime, deviceType)
-                return ["deviceMatch" : deviceMatch, "deviceType": deviceType, "currState": currState, "tText": timeText.tText]
+                return ["deviceMatch" : deviceMatch, "deviceType": deviceType, "currState": currState, "tText": timeText.tText,  "mainCap": "currentActivity"]
             }
         }        
         if (cFan){
@@ -909,7 +1035,7 @@ private deviceMatchHandler(fDevice) {
                 stateDate = deviceMatch.currentState("switch").date
                 stateTime = deviceMatch.currentState("switch").date.time
                 def timeText = getTimeVariable(stateTime, deviceType)
-                return ["deviceMatch" : deviceMatch, "deviceType": deviceType, "currState": currState, "tText": timeText.tText] 
+                return ["deviceMatch" : deviceMatch, "deviceType": deviceType, "currState": currState, "tText": timeText.tText, "mainCap": "switch"] 
             }
         }         
         if (cRelay){
@@ -921,7 +1047,7 @@ private deviceMatchHandler(fDevice) {
                 stateDate = cContactRelay.currentState("contact").date
                 stateTime = cContactRelay.currentState("contact").date.time
                 def timeText = getTimeVariable(stateTime, deviceType)
-                return ["deviceMatch" : deviceMatch, "deviceType": deviceType, "currState": currState, "tText": timeText.tText] 
+                return ["deviceMatch" : deviceMatch, "deviceType": deviceType, "currState": currState, "tText": timeText.tText,  "mainCap": "contact"] 
                 }
 			}
         }
@@ -932,28 +1058,9 @@ private deviceMatchHandler(fDevice) {
                 currState = cBattery.currentState("battery").value
 				stateTime = cBattery.currentState("battery").date.time
                 def timeText = getTimeVariable(stateTime, deviceType)            
-                return ["deviceMatch" : deviceMatch, "deviceType": deviceType, "currState": "", "tText": timeText.tText]
+                return ["deviceMatch" : deviceMatch, "deviceType": deviceType, "currState": "", "tText": timeText.tText,  "mainCap": "battery"]
             } 
-     	}
-		if (cSpeaker){
-        deviceMatch =cSpeaker.find {d -> d.label.toLowerCase() == fDevice.toLowerCase()} 
-			if(deviceMatch)	{
-                deviceType = "cSpeaker" 
-                currState = cSpeaker.currentState("switch").value
-                def lastTrack = cSpeaker.currentState("switch").trackDescription
-                return ["deviceMatch" : deviceMatch, "deviceType": deviceType, "currState": currState, "tText": lastTrack] 
-        	}
-   		}
-        if (cSynth){
-        deviceMatch =cSynth.find {d -> d.label.toLowerCase() == fDevice.toLowerCase()} 
-			if(deviceMatch)	{
-            	deviceType = "cSynth" 
-				stateTime = cSynth.currentState("contact").date.time
-                def timeText = getTimeVariable(stateTime, deviceType)
-            	return ["deviceMatch" : deviceMatch, "deviceType": deviceType]
-			}
-        }        
-        
+     	}       
 }
 /******************************************************************************
 	 ADDITIONAL FEEDBACK											
@@ -970,31 +1077,266 @@ def result
 	if ( deviceType == "cContact") {
     	result = "The following doors or windows are " + command + "," + devices.sort().unique()
     }
-	
-    state.pContCmdsR == null 
+    state.pContCmdsR = null 
 	state.lastAction = null
 	
     return result
 }
 
 /******************************************************************************
-	 OTHER CAPABILITIES											
+	 DEVICE CAPABILITIES											
 ******************************************************************************/
-private getCaps(device, type) {
-def deviceName = device 
-def deviceType = type 
+private getCaps(capDevice,capType, capMainCap, capState) {
 
-def caps = []
-log.warn "device is '${deviceName}' "
+def deviceName = capDevice
+def deviceType = capType
+def deviceCap = capMainCap
+def deviceState = capState
+state.pContCmdsR = "caps"
+
+def result
+def attr = [:]
+
+log.warn " deviceName: ${deviceName} deviceName: ${deviceName} , deviceType: ${deviceType}, deviceCap: ${deviceCap}, deviceState: ${deviceState}"
 def supportedCaps = deviceName.capabilities
-
 	supportedCaps.each { c ->
 		def capName = c.name
-        def currState = deviceName.currentValue(capName)
-        log.debug "This device:  ${deviceName} also supports: caps ${capName} capsState: ${currState}"
-        caps << [name:capName, currState:deviceName.currentValue("${caps.name}")]
+            c.attributes.each {a ->
+        		def attrName = a.name
+                 def attrValue = deviceName.latestValue(attrName)
+                 
+                 if (a.name != null && a.name !=checkInterval && a.name !=polling  && a.name !=refresh && attrValue != null ) {
+                    if (a.name == "temperature") 		{ result = "The " + attrName + " is " + attrValue + " degrees, " }
+                    if (a.name == "motion") 			{ result = result + attrName + " is " + attrValue +", " }
+                    if (a.name == "humidity") 			{ result = result + attrName + " is " + attrValue + ", " }
+                    if (a.name == "illuminance") 		{ result = result + "lux level is " + attrValue + ", " }
+                    if (a.name == "heatingSetpoint") 	{ result = result + "Heating Set Point is " + attrValue + " degrees, " }
+                    if (a.name == "coolingSetpoint") 	{ result = result + "Cooling Set Point is" + attrValue + " degrees, " }
+                    if (a.name == "thermostatMode") 	{ result = result + "The thermostat Mode is " + attrValue + ", " }
+                    if (a.name == "thermostatFanMode") 	{ result = result + "The Fan Mode is " + attrValue + ", " }
+					if (a.name == "battery") 			{ result = result + attrName + " level is " + attrValue + " percent, " }
+                    	attr << ["${attrName}": attrValue]
+            	}
+           }
+     }
+	state.lastAction = result
+	state.pContCmdsR = "caps"
+    log.debug "${deviceName} has ${attr.size()} capabilities:  ${attr}  with the following attributes: ${result}" 
+    result = attr.size()
+    return result
+}
+/******************************************************************************
+	 CAPABILITIES GROUP											
+****************************************************************************/
+private getCapabilities(cap) {
+// DEVICE categories: cSwitch,cVent,cFan,cTstat,cDoor,cRelay,cContactRelay,cLock,cMotion,cContact,cWater,cPresence,cSpeaker,cSynth,cMedia,cBattery 
+def DeviceDetails = [] 
+def batDetails = [] 
+def result = [:] 
+	try {
+
+//batteries
+	if (cap == "bat") {
+        cMotion?.each 	{ d ->
+        def attrValue = d.latestValue("battery") 
+        	if (attrValue < cLowBattery) {
+        		batDetails << d.displayName         
+             }     
+         }
+        cContact?.each 	{ d ->
+        def attrValue = d.latestValue("battery") 
+        	if (attrValue < cLowBattery) {
+        		batDetails << d.displayName         
+             }
+         }
+         
+        cPresence?.each 	{ d ->
+        def attrValue = d.latestValue("battery") 
+        	if (attrValue < cLowBattery) {
+        		batDetails << d.displayName         
+             }
+         }
+        cWater?.each 	{ d ->
+        def attrValue = d.latestValue("battery") 
+        	if (attrValue < cLowBattery) {
+        		batDetails << d.displayName         
+             }
+         }
+        cVent?.each 	{ d ->
+        def attrValue = d.latestValue("battery") 
+        	if (attrValue < cLowBattery) {
+        		batDetails << d.displayName        
+             }
+         }
+        cLock.each 	{ d ->
+        def attrValue = d.latestValue("battery") 
+        	if (attrValue < cLowBattery) {
+        		batDetails << d.displayName         
+             }
+         }    
+        cBattery?.each 	{ d ->
+        def attrValue = d.latestValue("battery") 
+        	if (attrValue < cLowBattery) {
+        		batDetails << d.displayName     
+             }
+         }
+        def dUniqueList = batDetails.unique (false)
+        dUniqueList = dUniqueList.sort()       
+        def listSize = dUniqueList.size()
+        def listBat = dUniqueList
+        result = [listSize: listSize, listBat: listBat]
+        return result //dUniqueListString
 	}
-	log.debug "This device:  ${deviceName} also supports: caps ${caps.name}, capsState: ${caps.currState}"   
+//activity	
+    if (cap == "act") {
+        cMotion?.each 	{ d ->
+        	def stateTime = d.currentState("motion").date.time
+			def endTime = now() + location.timeZone.rawOffset
+    		def startTimeAdj = new Date(stateTime + location.timeZone.rawOffset)
+    			startTimeAdj = startTimeAdj.getTime()
+    		int hours = (int)((endTime - startTimeAdj) / (1000 * 60 * 60) )
+    		//int minutes = (int)((endTime - startTime) / ( 60 * 1000))
+                if ( hours > cInactiveDev ) {
+                    DeviceDetails << d.displayName 
+                }
+        }
+        cContact?.each 	{ d ->
+        def attrValue = d.latestValue("contact") 
+        	def stateTime = d.currentState("contact").date.time
+			def endTime = now() + location.timeZone.rawOffset
+    		def startTimeAdj = new Date(stateTime + location.timeZone.rawOffset)
+    			startTimeAdj = startTimeAdj.getTime()
+    		int hours = (int)((endTime - startTimeAdj) / (1000 * 60 * 60) )
+    		//int minutes = (int)((endTime - startTime) / ( 60 * 1000))
+                if ( hours > cInactiveDev ) {
+                    DeviceDetails << d.displayName 
+                }
+        }
+        cPresence?.each 	{ d ->
+        def attrValue = d.latestValue("presence") 
+        	def stateTime = d.currentState("presence").date.time
+			def endTime = now() + location.timeZone.rawOffset
+    		def startTimeAdj = new Date(stateTime + location.timeZone.rawOffset)
+    			startTimeAdj = startTimeAdj.getTime()
+    		int hours = (int)((endTime - startTimeAdj) / (1000 * 60 * 60) )
+    		//int minutes = (int)((endTime - startTime) / ( 60 * 1000))
+                if ( hours > cInactiveDev ) {
+                    DeviceDetails << d.displayName 
+                }
+        }
+        cWater?.each 	{ d ->
+        def attrValue = d.latestValue("water") 
+        	def stateTime = d.currentState("water").date.time
+			def endTime = now() + location.timeZone.rawOffset
+    		def startTimeAdj = new Date(stateTime + location.timeZone.rawOffset)
+    			startTimeAdj = startTimeAdj.getTime()
+    		int hours = (int)((endTime - startTimeAdj) / (1000 * 60 * 60) )
+    		//int minutes = (int)((endTime - startTime) / ( 60 * 1000))
+                if ( hours > cInactiveDev ) {
+                    DeviceDetails << d.displayName 
+                }
+        }
+        cVent?.each 	{ d ->
+        def attrValue = d.latestValue("switch") 
+        	def stateTime = d.currentState("switch").date.time
+			def endTime = now() + location.timeZone.rawOffset
+    		def startTimeAdj = new Date(stateTime + location.timeZone.rawOffset)
+    			startTimeAdj = startTimeAdj.getTime()
+    		int hours = (int)((endTime - startTimeAdj) / (1000 * 60 * 60) )
+    		//int minutes = (int)((endTime - startTime) / ( 60 * 1000))
+                if ( hours > cInactiveDev ) {
+                    DeviceDetails << d.displayName 
+                }
+        }
+        cLock.each 	{ d ->
+        def attrValue = d.latestValue("lock") 
+        	def stateTime = d.currentState("lock").date.time
+			def endTime = now() + location.timeZone.rawOffset
+    		def startTimeAdj = new Date(stateTime + location.timeZone.rawOffset)
+    			startTimeAdj = startTimeAdj.getTime()
+    		int hours = (int)((endTime - startTimeAdj) / (1000 * 60 * 60) )
+    		//int minutes = (int)((endTime - startTime) / ( 60 * 1000))
+                if ( hours > cInactiveDev ) {
+                    DeviceDetails << d.displayName 
+                }
+        }
+        cSwitch.each 	{ d ->
+        	def attrValue = d.latestValue("switch") 
+            if (d?.currentState("switch") != null) {
+            def stateTime = d?.currentState("switch").date.time
+			def endTime = now() + location.timeZone.rawOffset
+    		def startTimeAdj = new Date(stateTime + location.timeZone.rawOffset)
+    			startTimeAdj = startTimeAdj.getTime()
+    		int hours = (int)((endTime - startTimeAdj) / (1000 * 60 * 60) )
+    		//int minutes = (int)((endTime - startTime) / ( 60 * 1000))
+                if ( hours > cInactiveDev ) {
+                    DeviceDetails << d.displayName 
+                }
+           	}
+        }        
+        cLock.each 	{ d ->
+        def attrValue = d.latestValue("lock") 
+        	def stateTime = d.currentState("lock").date.time
+			def endTime = now() + location.timeZone.rawOffset
+    		def startTimeAdj = new Date(stateTime + location.timeZone.rawOffset)
+    			startTimeAdj = startTimeAdj.getTime()
+    		int hours = (int)((endTime - startTimeAdj) / (1000 * 60 * 60) )
+    		//int minutes = (int)((endTime - startTime) / ( 60 * 1000))
+                if ( hours > cInactiveDev ) {
+                    DeviceDetails << d.displayName 
+                }
+        }        
+        def dUniqueList = DeviceDetails.unique (false)
+        dUniqueList = dUniqueList.sort()       
+        def listSize = dUniqueList.size()
+        def listDev = dUniqueList
+        result = [listSize: listSize, listDev: listDev]
+        log.warn " result = ${result}"
+        return result //dUniqueListString
+	}
+
+//non battery repo
+/*
+swi =  device.currentValue("switch")
+
+wat = device.currentValue("water")
+
+hum = device.currentValue("humidity")
+        cMotion.each 	{DeviceDetails << it.displayName +"\n"}
+        cWater.each 	{DeviceDetails << it.displayName +"\n"}
+
+tem = device.currentValue("temperature")
+        cMotion.each 	{DeviceDetails << it.displayName +"\n"}
+        cContact.each 	{DeviceDetails << it.displayName +"\n"}
+        cWater.each 	{DeviceDetails << it.displayName +"\n"}
+        cTstat.each 	{DeviceDetails << it.displayName +"\n"}
+
+acc = device.currentValue("acceleration")
+        cContact.each 	{DeviceDetails << it.displayName +"\n"}
+
+mot = device.currentValue("motion")
+        cMotion.each 	{DeviceDetails << it.displayName +"\n"}
+
+lux = device.currentValue("illuminance")
+        cMotion.each 	{DeviceDetails << it.displayName +"\n"}
+
+loc = device.currentValue("lock")
+        cLock.each 		{DeviceDetails << it.displayName +"\n"}     
+
+win = device.currentValue("windowShade")
+lev = device.currentValue("level")
+tra = device.currentValue("trackDescription") 
+mut = device.currentValue("mute")
+pow = device.currentValue("power")
+}
+*/
+
+    	} catch (e) {
+		log.error "Oh no, something went wrong. If this happens again, please reach out for help!"
+        result = "Oh no, something went wrong. If this happens again, please reach out for help!"
+        state.pTryAgain = true
+        return result
+		}
 }
 /******************************************************************************
 	 CUSTOM FEEDBACK MESSAGE											
@@ -1043,15 +1385,6 @@ private getTimeVariable(date, type) {
  
 }
 /************************************************************************************************************
-   ALEXA THINKS HANDLER 
-************************************************************************************************************/
-def alexaThinks() {
-	def outputTxt = "Sorry, the group control module is not ready. If you believe this was not a request to control a Profile group, please open a trouble ticket. Thank you for your help, "
-	def pPIN = false
-    state.pTryAgain = false
-    
-}
-/************************************************************************************************************
 		PROFILE CONTROL HANDLER - from Lambda via page p
 ************************************************************************************************************/
 def controlProfiles() {
@@ -1060,7 +1393,6 @@ def controlProfiles() {
     state.pTryAgain = true
     return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
 }
-
 /************************************************************************************************************
    CONTROL DEVICES - from Lambda via page c
 ************************************************************************************************************/
@@ -1081,11 +1413,14 @@ def controlDevices() {
         def String result = (String) null
         def delay = false
         def data
-    	state.pContCmdsR == "undefined"
+        ctDevice = ctDevice.replaceAll("[^a-zA-Z0-9 ]", "")
+    	state.pContCmdsR = "undefined"
         if (debug) log.debug "Received Lambda request to control devices with settings:" +
         					 " (ctCommand)= ${ctCommand}',(ctNum) = '${ctNum}', (ctPIN) = '${ctPIN}', "+
                              "(ctDevice) = '${ctDevice}', (ctUnit) = '${ctUnit}', (ctGroup) = '${ctGroup}', (pintentName) = '${pintentName}'"
-	if (pintentName == "main") {	
+	try {	
+    
+    if (pintentName == "main") {	
         if (ctNum == "undefined" || ctNum =="?") {ctNum = 0 } 
         if (ctCommand =="?") {ctCommand = "undefined"} 
 			ctNum = ctNum as int
@@ -1110,10 +1445,16 @@ def controlDevices() {
         if (ctNum > 0 && ctDevice != "undefined" && ctCommand == "undefined") {
             ctCommand = "set"
         }
-        if (state.pinTry != null ) {
-        	log.debug "Pin try is not null"
-            outputTxt = pinHandler(ctPIN, ctCommand, ctNum)
-        	return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
+        if (state.pinTry != null) {
+        	if (ctCommand == "undefined" && ctDevice == "undefined") {
+        		log.debug "Pin try is not null and it doesn't appear that this is a new request"
+            	outputTxt = pinHandler(ctPIN, ctCommand, ctNum, ctUnit)
+        		return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
+        	}
+            else {
+            state.pinTry = null
+            state.pTryAgain = false  
+        	}
         }
         if (ctCommand != "undefined") {
         	if (ctCommand.contains ("try again") && state.lastAction != null ) {
@@ -1210,7 +1551,7 @@ def controlDevices() {
                     if (deviceMatch) {
  						device = deviceMatch 
                         if (debug) log.debug "Found a device: '${deviceMatch}'"        	
-                        if(state.usePIN_T == true) {
+                        if(state.usePIN_T == true) { // (THIS PIN VALIDATION HAS BEEN Deprecated as of 1/23/2017)
             				if (debug) log.debug "PIN protected device type - '${deviceType}'"
                 			delay = false
                             data = ["type": "cTstat", "command": command , "device": ctDevice, "unit": ctUnit, "num": ctNum, delay: delay]
@@ -1247,7 +1588,7 @@ def controlDevices() {
                 if (deviceMatch) {
                     if (debug) log.debug "Found a device: '${deviceMatch}'"
                     device = deviceMatch
-					if(state.usePIN_L == true) {
+					if(state.usePIN_L == true) { // (THIS PIN VALIDATION HAS BEEN Deprecated as of 1/23/2017)
             			if (debug) log.debug "PIN protected device type - '${deviceType}'"               		
                         delay = false
 	                    data = [type: "cLock", "command": command , "device": ctDevice, "unit": ctUnit, "num": ctNum, delay: delay]
@@ -1307,10 +1648,28 @@ def controlDevices() {
                 if (debug) log.debug "Searching for a door named '${ctDevice}'"
                 def deviceMatch = cDoor.find {d -> d.label.toLowerCase() == ctDevice.toLowerCase()}
                 if (deviceMatch) {
-                    if (debug) log.debug "Found a device: '${deviceMatch}'"
-                        device = deviceMatch
+                	if (debug) log.debug "Found a device: '${deviceMatch}'"
+                    device = deviceMatch
+                //Check Status
+					def deviceR = device.label
+					def cDoorStatus = device.contactState.value
+					if (debug) log.debug "Garage Door Status is: '${cDoorStatus}', command is: '${command}'  "
+						if (command == "open" && cDoorStatus == "open") {
+						outputTxt = "The " + device + " is already open, would you like to close it instead?"
+						state.pContCmdsR = "door"
+						def actionData = ["type": "cDoor", "command": "close" , "device": deviceR, "unit": ctUnit, "num": ctNum, delay: delayD]
+						state.lastAction = actionData
+						return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
+                    }
+					if (command == "close" && cDoorStatus =="closed") {
+                        outputTxt = "The " + device + " is already closed, would you like to open it instead? "
+                        state.pContCmdsR = "door"
+                        def actionData = ["type": "cDoor", "command": "open" , "device": deviceR, "unit": ctUnit, "num": ctNum, delay: delayD]
+                        state.lastAction = actionData
+                        return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
+                    }
 					if(state.usePIN_D == true) {
-     					//PIN VALIDATION PROCESS
+     					//PIN VALIDATION PROCESS (Deprecated code as of 1/23/2017)
                         if (debug) log.debug "PIN protected device type - '${deviceType}'"
                 		delay = false
 	                    data = [type: "cDoor", "command": command , "device": ctDevice, "unit": ctUnit, "num": ctNum, delay: delay]
@@ -1345,8 +1704,27 @@ def controlDevices() {
                 def deviceMatch = cRelay.find {s -> s.label.toLowerCase() == ctDevice.toLowerCase()}             
 				if (deviceMatch) {
                 	if (debug) log.debug "Found a device: '${deviceMatch}'"
-                	device = deviceMatch
-                    	//PIN VALIDATION PROCESS
+                    device = deviceMatch
+             		if (cContactRelay) {
+                    	if (debug) log.debug "Garage Door has a contact sensor"
+                        def deviceR = device.label
+                         def cCRelayValue = cContactRelay.contactState.value
+                            if (command == "open" && cCRelayValue == "open") {
+                                outputTxt = "The " + device + " is already open, would you like to close it instead?"
+                                state.pContCmdsR = "door"
+                                def actionData = ["type": "cRelay", "command": "close" , "device": deviceR, "unit": unitU, "num": newLevel, delay: delayD]
+                                state.lastAction = actionData
+	                            return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
+                            }
+                            if (command == "close" && cCRelayValue =="closed") {
+                                outputTxt = "The " + device + " is already closed, would you like to open it instead? "
+                                state.pContCmdsR = "door"
+                                def actionData = ["type": "cRelay", "command": "open" , "device": deviceR, "unit": ctUnit, "num": ctNum, delay: delay]
+                                state.lastAction = actionData
+                            	return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
+                             }
+                         }
+                    	//PIN VALIDATION PROCESS (Deprecated code as of 1/23/2017)
 						if(state.usePIN_D == true) {
                         	if (debug) log.debug "PIN protected device type - '${deviceType}'"
                             delay = false
@@ -1411,6 +1789,13 @@ def controlDevices() {
 		state.pTryAgain = true
 		return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
 	}
+    
+    	} catch (e) {
+		log.error "Oh no, something went wrong. If this happens again, please reach out for help!"
+        outputTxt = "Oh no, something went wrong. If this happens again, please reach out for help!"
+        state.pTryAgain = true
+        return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
+	}
 }
 /************************************************************************************************************
 	UNIT CONVERSIONS
@@ -1443,9 +1828,8 @@ private getUnitText (unit, num) {
 	CUSTOM CONTROL COMMANDS
 ************************************************************************************************************/ 
 private getCustomCmd(command, unit, group) {
+
     def result
-//[attribute: "currentActivity",	commands: ["startActivity", "getAllActivities", "getCurrentActivity"]              
-   
     if (command == "repeat") {
 		result = getLastMessageMain()
 		return result
@@ -1462,6 +1846,7 @@ private getCustomCmd(command, unit, group) {
             	if (state.scheduledHandler != null) {
                 	if (state.scheduledHandler == "filters") {
                     	unschedule(filtersHandler)
+                        state.scheduledHandler = null
 		                result = "Ok, canceling reminder for " + state.scheduledHandler
                     }
                     else {
@@ -1484,7 +1869,7 @@ private getCustomCmd(command, unit, group) {
 			return result
         }
 		if (unit == "pin number" || unit == "pin") {
-			if(state.usePIN_D == true || state.usePIN_T == true || state.usePIN_L == true) {
+			if(state.usePIN_D == true || state.usePIN_T == true || state.usePIN_L == true || state.usePIN_S != null) {
         		result = "Pin number please"
         		state.pinTry = 0
                 state.savedPINdata = "disable" + group
@@ -1537,12 +1922,24 @@ private getCustomCmd(command, unit, group) {
 /************************************************************************************************************
 	PIN HANDLER
 ************************************************************************************************************/ 
-private pinHandler(pin, command, num) {
+private pinHandler(pin, command, num, unit) {
 	def result
         def String pinNum = (String) null
 		pinNum = num
-	if (pin == cPIN || command == cPIN || pinNum == cPIN) {
-		def data = state.savedPINdata
+	
+    if (command == "validation") {
+		state.savedPINdata = state.lastAction
+        state.lastAction = null
+		result = "Pin number please"
+		state.pinTry = 0
+		if (debug) log.debug "PIN response pending - '${state.pinTry}'"  
+        return result
+	}    
+    
+    if (pin == cPIN || command == cPIN || pinNum == cPIN || unit == cPIN ) {
+		//def data = state.savedPINdata 1/23/17
+		def data = state.savedPINdata != null ? state.savedPINdata : lastAction
+        state.pTryAgain = false
             if (data == "disablelocks" || data == "disablethermostats" || data == "disabledoors"){ 
                 if (data == "disablelocks"){state.usePIN_L = false}
                 else if (data == "disablethermostats") {state.usePIN_T = false}
@@ -1559,7 +1956,7 @@ private pinHandler(pin, command, num) {
 	else {
 		state.pinTry = state.pinTry + 1
 			if (state.pinTry < 4){
-				result = "I'm sorry, that is incorrect, "
+				result = "I'm sorry, that is incorrect "
 				if (debug) log.debug "PIN NOT Matched! PIN = '${cPIN}', ctPIN= '${ctPIN}', ctNum= '${num}', ctCommand ='${command}', try# ='${state.pinTry}'"
 				state.pTryAgain = true
                 return result
@@ -1587,7 +1984,9 @@ def controlHandler(data) {
     if (debug) log.debug 	"Received device control handler data: " +
         					" (deviceType)= ${deviceType}',(deviceCommand) = '${deviceCommand}', (deviceD) = '${deviceD}', " +
                             "(unitU) = '${unitU}', (numN) = '${numN}', (delayD) = '${delayD}'"  
-    if (deviceType == "cSwitch") {
+
+	try {
+	if (deviceType == "cSwitch") {
     	if (deviceCommand == "on" || deviceCommand == "off") {
             if (delayD == true) {
                 deviceD = cSwitch.find {s -> s.label.toLowerCase() == deviceD.toLowerCase()}   
@@ -1612,7 +2011,6 @@ def controlHandler(data) {
                 deviceD = cSwitch.find {s -> s.label.toLowerCase() == deviceD.toLowerCase()} 
                 if (debug) log.debug "Matched device control (deviceD)= ${deviceD.label}"
             }
-            //state.pContCmdsR = null
             def currLevel = deviceD.latestValue("level")
             def currState = deviceD.latestValue("switch")
             def newLevel = cLevel*10
@@ -1801,34 +2199,13 @@ def controlHandler(data) {
         }
         if (deviceType == "cRelay") {
 		     cmd = "on"
-             def deviceR = deviceD.label
-             //get garage contact status
-             if (cContactRelay) {
-             def cCRelayValue = cContactRelay.contactState.value
-             	if (deviceCommand == "open" && cCRelayValue == "open") {
-                	result = "The " + deviceD + " is already open, would you like to close it instead?"
-                    state.pContCmdsR = "door"
-		            actionData = ["type": deviceType, "command": "close" , "device": deviceR, "unit": unitU, "num": newLevel, delay: delayD]
-		        	state.lastAction = actionData
-		        	if (debug) log.debug "Saved last action for door relay ('open') reversing command to close"
-                    return result
-                }
-                if (deviceCommand == "close" && cCRelayValue =="closed") {
-                    result = "The " + deviceD + " is already closed, would you like to open it instead? "
-                    state.pContCmdsR = "door"
-		            actionData = ["type": deviceType, "command": "open" , "device": deviceR, "unit": unitU, "num": newLevel, delay: delayD]
-		        	state.lastAction = actionData
-		        	if (debug) log.debug "Saved last action for door relay ('closed') reversing command to 'open'"
-					return result             
-                 }
-             }
         }
         state.pinTry = null
    		deviceD."${cmd}"()
         state.pContCmdsR = null //"reverse"
         if (deviceCommand == "open") {result = "Ok, opening the " + deviceD}
         if (deviceCommand == "close") {result = "Ok, closing the  " + deviceD}                   
-        if (delayD == false) {return result}  
+        if (delayD == false || delayD == null) {return result}  
 	}
     else if (deviceType == "cFan") {
 		if (cHigh == null) cHigh = 99
@@ -1916,6 +2293,12 @@ def controlHandler(data) {
             return result
        }
     }
+	} catch (e) {
+		log.error "Oh no, something went wrong. If this happens again, please reach out for help!"
+        result = "Oh no, something went wrong. If this happens again, please reach out for help!"
+        state.pTryAgain = true
+        return result
+	}    
 }
 /***********************************************************************************************************************
     LAST MESSAGE HANDLER
@@ -1959,7 +2342,6 @@ if (state.filterNotif == "flash") {text = "flashing lights"}
 if(state.filterNotif == "text")  {text = "sending text"}
 if(state.filterNotif == "audio")  {text = "pushed audio message"}
 }
-
 /***********************************************************************************************************************
  		SKILL DETAILS
  ***********************************************************************************************************************/
@@ -1972,8 +2354,9 @@ private getProfileDetails() {
     	return  ProfileDetails
 }
 private getDeviceDetails() {
-// DEVICE categories
+// DEVICE categories: cSwitch,cVent,cFan,cTstat,cDoor,cRelay,cContactRelay,cLock,cMotion,cContact,cWater,cPresence,cSpeaker,cSynth,cMedia,cBattery 
 def DeviceDetails = [] 
+        //switches
         cSwitch.each 	{DeviceDetails << it.displayName +"\n"}
         cTstat.each 	{DeviceDetails << it.displayName +"\n"}
         cLock.each 		{DeviceDetails << it.displayName +"\n"}     
@@ -1981,6 +2364,7 @@ def DeviceDetails = []
         cContact.each 	{DeviceDetails << it.displayName +"\n"}
         cPresence.each 	{DeviceDetails << it.displayName +"\n"}
         cDoor.each 		{DeviceDetails << it.displayName +"\n"}
+        cWater.each 	{DeviceDetails << it.displayName +"\n"}
         cSpeaker.each 	{DeviceDetails << it.displayName +"\n"}
         cVent.each 		{DeviceDetails << it.displayName +"\n"}
         cFan.each 		{DeviceDetails << it.displayName +"\n"}
@@ -1995,7 +2379,6 @@ def DeviceDetails = []
         def dUniqueListString = dUniqueList.join("")
         return dUniqueListString
 }
-
 /***********************************************************************************************************************
     COMMANDS HANDLER
 ***********************************************************************************************************************/
