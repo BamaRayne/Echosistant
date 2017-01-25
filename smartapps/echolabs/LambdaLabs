@@ -1,7 +1,7 @@
 /**
  *  EchoSistant - Lambda Code
  *
- *  Version 4.1.6 - 1/18/2017 Added responses for feedback module
+ *  Version 4.1.7 - 1/24/2017 Added responses for feedback module
  *  Version 4.1.5 - 1/15/2017 Added responses for pending relay action
  *  Version 4.1.4 - 1/14/2017 More response fixes
  *  Version 4.1.3 - 1/13/2017 Workflow and response fixes
@@ -31,8 +31,8 @@
 exports.handler = function( event, context ) {
     var https = require( 'https' );
     // Paste app code here between the breaks------------------------------------------------
-    var STappID = '0ae736f9-51c0-439d-9cab-xxx';
-    var STtoken = '21c78384-1323-40d9-aae7-xxx';
+    var STappID = 'xxx-51c0-439d-9cab-xxx';
+    var STtoken = 'xxx-1323-40d9-aae7-xxx';
     var url='https://graph.api.smartthings.com:443/api/smartapps/installations/' + STappID + '/' ;
         //---------------------------------------------------------------------------------------
         var cardName ="";
@@ -76,6 +76,15 @@ exports.handler = function( event, context ) {
                 }
                 else if (intentName == "AMAZON.YesIntent" && pPendingAns == "door") {
                     areWeDone=true;
+                    return output(text, context, cardName, areWeDone);
+                }
+                else if (intentName == "AMAZON.YesIntent" && pPendingAns == "caps") {
+                    areWeDone=false;
+                    text = text + ", would you like anything else?";
+                    return output(text, context, cardName, areWeDone);
+                }
+                else if (intentName == "AMAZON.YesIntent" && pPendingAns == "pin") {
+                    areWeDone=false;
                     return output(text, context, cardName, areWeDone);
                 }
                 else if (intentName == "AMAZON.YesIntent" && pPendingAns == "feedback") {
@@ -172,7 +181,19 @@ exports.handler = function( event, context ) {
                         else if (pContCmds === true && pContCmdsR == "feedback"){
                             //just wait
                             areWeDone=false;
-                        }                        
+                        }
+                        else if (pContCmds === true && pContCmdsR == "caps"){
+                            //just wait
+                            areWeDone=false;                            
+                        } 
+                        else if (pContCmds === true && pContCmdsR == "bat"){
+                            //just wait
+                            areWeDone=false;                            
+                        }
+                        else if (pContCmds === true && pContCmdsR == "act"){
+                            //just wait
+                            areWeDone=false;                            
+                        } 
                         else if (pTryAgain === true){
                             alexaContResp ("Try Again", speechText, context, areWeDone);
                         }
