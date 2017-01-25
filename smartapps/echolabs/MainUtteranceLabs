@@ -62,13 +62,16 @@ feedback {fQuery} the status of {cDevice}
 feedback {fQuery} is the status of {cDevice}
 feedback to tell me {fQuery} {cDevice}
 feedback to tell me {fQuery} the {cDevice}
-feedback to {fQuery} the temperature {cDevice}
+feedback to {fQuery} me the {fOperand} for {cDevice}
+feedback to {fQuery} the {fOperand} for {cDevice}
 feedback {fQuery} the {fOperand} in {cDevice}
+feedback {fQuery} the {fOperand} in the {cDevice}
 feedback {fQuery} {fOperand} is my home
 feedback {fQuery} the {fOperand}
 feedback {fQuery} the current {fOperand}
 feedback {fQuery} {fOperand} is my home in
 feedback {fQuery} {fOperand}
+feedback {fQuery} {cDevice}
 feedback {fQuery} was the last time I {fOperand} {cDevice} 
 feedback {fQuery} I {fOperand} {cDevice} 
 feedback {fQuery} {fOperand} are on in the {pProfile}
