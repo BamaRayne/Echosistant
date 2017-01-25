@@ -58,6 +58,7 @@ replaced
 try again
 
 LIST OF OPERANDS
+
 temperature
 lights
 mode
@@ -78,8 +79,10 @@ active
 inactive
 locked
 unlocked
+unlock
 open
 closed
+close
 on
 off
 settings
@@ -133,3 +136,4 @@ which
 is there
 are there
 did I
+get
