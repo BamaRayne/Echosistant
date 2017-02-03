@@ -1,6 +1,7 @@
 /*
  * EchoSistant - The Ultimate Voice and Text Messaging Assistant Using Your Alexa Enabled Device.
  *
+ *		02/03/2017		Release 3.1.5	Bug Fix - Fixed ability to run more than one Routine in a profile
  *		01/04/2017		Release 3.1.4	Bug Fix - Notifications for Motion and Switches not working. Fixed.
  *		01/01/2017		Release 3.1.3	Bug Fix - Door locks not working, now they do.
  *		01/01/2017		Release 3.1.2	Bug Fix - Devices not showing in List_of_Devices in Logs
@@ -738,7 +739,7 @@ page name: "SMS"
             }        
         }        
     }
-page name: "DevPro"
+page name: "DevPro"	 
     def DevPro(){
         dynamicPage(name: "DevPro", uninstall: false) {
             section ("Trigger these lights and/or execute these routines when the Profile runs...") {
@@ -749,10 +750,14 @@ page name: "DevPro"
 				def actions = location.helloHome?.getPhrases()*.label 
                 if (actions) {
                     actions.sort()
-                    if (parent.debug) log.info actions
-            	}                
-                input "runRoutine", "enum", title: "Select a Routine(s) to execute", required: false, options: actions, multiple: true, 
+                    log.trace actions
+            	input "runRoutine", "enum", title: "Select a Routine to execute", required: false, options: actions, multiple: false, submitOnChange: true,
                 image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Routines.png"
+                if (runRoutine) {
+                input "runRoutine2", "enum", title: "Select a Second Routine to execute", required: false, options: actions, multiple: false,
+                image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Routines.png"
+            		}
+                }
             }
         }
     }
@@ -1844,6 +1849,11 @@ def profileEvaluate(params) {
                 profileDeviceControl()
                 if (runRoutine) {
                 location.helloHome?.execute(settings.runRoutine)
+                log.info "Running Routine ${runRoutine}"
+                }
+                if (runRoutine2) {
+                location.helloHome?.execute(settings.runRoutine2)
+                log.info "And Running Routine ${runRoutine2}"
                 }
 				if (newMode) {
 				setLocationMode(newMode)
@@ -2607,7 +2617,7 @@ private def textVersion() {
 	def text = "3.0"
 }
 private def textRelease() {
-	def text = "3.1.4"
+	def text = "3.15"
 }
 private def textReleaseNotes() {
 	def text = "See the Wiki"
