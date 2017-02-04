@@ -1,6 +1,7 @@
 /*
  * EchoSistant - The Ultimate Voice and Text Messaging Assistant Using Your Alexa Enabled Device.
  *
+ *		02/04/2017		Release 3.1.6	Added Timestamp to SMS, Push, and notify for profiles and notification alerts		
  *		02/03/2017		Release 3.1.5	Bug Fix - Fixed ability to run more than one Routine in a profile
  *		01/04/2017		Release 3.1.4	Bug Fix - Notifications for Motion and Switches not working. Fixed.
  *		01/01/2017		Release 3.1.3	Bug Fix - Door locks not working, now they do.
@@ -276,6 +277,7 @@ page name: "Choices"
     def Choices(){
         dynamicPage(name: "Choices", title: "Choose from the available Notifications",install: false, uninstall: false) {
             section ("Activate/DeActivate Notifications", hideWhenEmpty: true){
+            input "timeStamp", "bool", title: "Add time stamp to Text and Push Messages", required: false, defaultValue: false
             paragraph "To mute a notification, disable its toggle \n" +
             "To mute all notifications, disable the Top toggle"
             input "allNotifications", "bool", title: "Turn on to Activate the Notifications Section", default: false, submitOnChange: true
@@ -729,6 +731,7 @@ page name: "SMS"
                 if (sendText){      
                     paragraph "You may enter multiple phone numbers separated by comma to deliver the Alexa message as a text and a push notification. E.g. 8045551122;8046663344"
                     input name: "sms", title: "Send text notification to (optional):", type: "phone", required: false
+//                	input "timeStamp", "bool", title: "Add time stamp to Text and Push Messages", required: false, defaultValue: false
                 }
             }    
             section ("Push Messages") {
@@ -2002,27 +2005,45 @@ private timeIntervalLabel() {
     SMS HANDLER
 ***********************************************************************************************************************/
 private void sendtxt(message) {
+def stamp = state.lastTime = new Date(now()).format("h:mm aa", location.timeZone)
     if (parent.debug) log.debug "Request to send sms received with message: '${message}'"
-    if (sendContactText) { 
-        sendNotificationToContacts(message, recipients)
+    if (sendContactText) {
+    	sendNotificationToContacts(message, recipients)
             if (parent.debug) log.debug "Sending sms to selected reipients"
     } 
     else {
-    	if (push) { 
-    		sendPush message
-            	if (parent.debug) log.debug "Sending push message to selected reipients"
+    	if (push && parent.timeStamp) {
+            sendPush (message + " at " + stamp)
+            	if (parent.debug) log.debug "Sending push message to selected reipients with timestamp"
         }
-    } 
-    if (notify) {
-        sendNotificationEvent(message)
-             	if (parent.debug) log.debug "Sending notification to mobile app"
-
-    }
-    if (sms) {
-        sendText(sms, message)
+        else {
+        if (push) {
+        sendPush message
+            	if (parent.debug) log.debug "Sending push message to selected reipients"
+    			}
+            }
+        }
+     if (notify && parent.timeStamp) {
+        	sendNotificationEvent(message + " at " + stamp)
+             	if (parent.debug) log.debug "Sending notification to mobile app with timestamp"
+				}
+                else {
+                if (notify) {
+                sendNotificationEvent (message)
+                if (parent.debug) log.debug "Sending notification to mobile app with timestamp"
+                	}
+                }
+            	    
+    if (sms && parent.timeStamp) {
+        sendText(sms, message + " at " + stamp)
         if (parent.debug) log.debug "Processing message for selected phones"
-	}
-}
+		}
+        else {
+        	if (sms) {
+            	sendText(sms, message)
+                }
+            }    
+		}
 private void sendText(number, message) {
     if (sms) {
         def phones = sms.split("\\;")
@@ -2180,21 +2201,28 @@ def alertsHandler(evt) {
 	def eVal = evt.value
     def eName = evt.name
     def eDev = evt.device
+    def stamp = state.lastTime = new Date(now()).format("h:mm aa", location.timeZone)  
     def eTxt = " "
     if (debug) log.debug "Received event name ${evt.name} with value:  ${evt.value}, from: ${evt.device}"
 
 	if (getDayOk()==true && getModeOk()==true && getTimeOk()==true) {
-        if (eVal == "on") {          
-            	if (audioTextOn) {   
+        if (eVal == "on") { 
+            		if (audioTextOn) {
                 	eTxt = txtFormat(audioTextOn, eDev, eVal)
                 	if (debug) log.debug "Received event: on, playing message:  ${eTxt}"
                     if(speech1) speech1?.speak (eTxt)
                     if (music1) {
                         playAlert(eTxt, music1)
                     }
+                    if (timeStamp) {
+                    if (push1) sendPush eTxt + stamp
+					if (notify1) sendNotificationEvent (eTxt + stamp)
+                	}
+                    else {
                     if (push1) sendPush eTxt
 					if (notify1) sendNotificationEvent (eTxt)
-                }
+                    }
+        	}
         }
         if (eVal == "off") {       
                 if (audioTextOff) {
@@ -2205,6 +2233,11 @@ def alertsHandler(evt) {
                         playAlert(eTxt, music1)
                     }
                 }
+                    if (timeStamp) {
+                    if (push1) sendPush eTxt + stamp
+					if (notify1) sendNotificationEvent (eTxt + stamp)
+                	}
+                    else {                
                     if (push1) sendPush eTxt
 					if (notify1) sendNotificationEvent (eTxt)
              }
@@ -2217,10 +2250,16 @@ def alertsHandler(evt) {
                 if (music2) {
                 playAlert(eTxt, music2)
 				}
-                    if (push2) sendPush eTxt
+                    if (timeStamp) {
+                    if (push2) sendPush eTxt + stamp
+					if (notify2) sendNotificationEvent (eTxt + stamp)
+                	}
+                    else {
+                	if (push2) sendPush eTxt
 					if (notify2) sendNotificationEvent (eTxt)
 					} 
  	           }
+            }
             if (eVal == "closed") {           
                 	if (audioTextClosed) {
                 eTxt = txtFormat(audioTextClosed, eDev, eVal)
@@ -2228,9 +2267,15 @@ def alertsHandler(evt) {
                 speech2?.speak(eTxt)
                 if (music2) {
                     playAlert(eTxt, music2)
+                    if (timeStamp) {
+                    if (push2) sendPush eTxt + stamp
+					if (notify2) sendNotificationEvent (eTxt + stamp)
+                	}
+                    else {
                     if (push2) sendPush eTxt
 					if (notify2) sendNotificationEvent (eTxt)
-}
+							}
+                        }
 					}
                 }
         if 	(eVal == "locked") {         
@@ -2240,9 +2285,15 @@ def alertsHandler(evt) {
                     if (music3) {
                         playAlert(eTxt, music3)
  
-					} 
+					}
+                    if (timeStamp) {
+                    if (push3) sendPush eTxt + stamp
+					if (notify3) sendNotificationEvent (eTxt + stamp)
+                	}
+                    else {
                 	if (push3) sendPush eTxt
 					if (notify3) sendNotificationEvent (eTxt)                    
+                	}
                 }
             }
             if (eVal == "unlocked") {        
@@ -2252,9 +2303,14 @@ def alertsHandler(evt) {
                             if (music3) {
                                 playAlert(eTxt, music3)
                                 }
+                    if (timeStamp) {
+                    if (push3) sendPush eTxt + stamp
+					if (notify3) sendNotificationEvent (eTxt + stamp)
+                	}
+                    else {
                    	if (push3) sendPush eTxt
 					if (notify3) sendNotificationEvent (eTxt)                            
-                            
+                    	}        
                     }
                }
         if (eVal == "active") {         
@@ -2266,9 +2322,15 @@ def alertsHandler(evt) {
                     		if (music4) {
                         		playAlert(eTxt, music4)
                     		} 
+                    if (timeStamp) {
+                    if (push4) sendPush eTxt + stamp
+					if (notify4) sendNotificationEvent (eTxt + stamp)
+                	}
+                    else {
                    	if (push4) sendPush eTxt
 					if (notify4) sendNotificationEvent (eTxt)                            
                 	}
+            	}
             }
             if (eVal == "inactive")  {         
 				if (debug) log.debug "Received Motion Event but Motion Alerts are turned off"
@@ -2279,10 +2341,16 @@ def alertsHandler(evt) {
                     		if (music4) {
                         		playAlert(eTxt, music4)
                     		} 
+                    if (timeStamp) {
+                    if (push4) sendPush eTxt + stamp
+					if (notify4) sendNotificationEvent (eTxt + stamp)
+                	}
+                    else {
                    	if (push4) sendPush eTxt
 					if (notify4) sendNotificationEvent (eTxt)                     	
                         }
-                }
+                	}
+        		}
         if (eVal == "present") {          
 				if (debug) log.debug "Received Presence Event but Presence Alerts are turned off"
 				if (audioTextPresent) {
@@ -2292,9 +2360,15 @@ def alertsHandler(evt) {
                     if (music5) {
                         playAlert(eTxt, music5)
                     } 
+                    if (timeStamp) {
+                    if (push5) sendPush eTxt + stamp
+					if (notify5) sendNotificationEvent (eTxt + stamp)
+                	}
+                    else {
                    	if (push5) sendPush eTxt
 					if (notify5) sendNotificationEvent (eTxt) 
-}
+					}
+                }
             }
         if (eVal == "not present")  {        
 				if (debug) log.debug "Received Presence Event but Presence Alerts are turned off"
@@ -2305,9 +2379,15 @@ def alertsHandler(evt) {
                     if (music5) {
                         playAlert(eTxt, music5)
                     } 
+                    if (timeStamp) {
+                    if (push5) sendPush eTxt + stamp
+					if (notify5) sendNotificationEvent (eTxt + stamp)
+                	}
+                    else {
                    	if (push5) sendPush eTxt
 					if (notify5) sendNotificationEvent (eTxt) 
-}
+						}
+                    }
                 }
         if (eName == "heatingSetpoint")  {                    
             if (audioTextHeating) {
@@ -2319,12 +2399,16 @@ def alertsHandler(evt) {
                     if (music8) {
                         playAlert(eTxt, music8)
                     } 
-                    
-                     if (push8) sendPush eTxt
+                    if (timeStamp) {
+                    if (push8) sendPush eTxt + stamp
+					if (notify8) sendNotificationEvent (eTxt + stamp)
+                	}
+                    else {
+                    if (push8) sendPush eTxt
 					if (notify8) sendNotificationEvent (eTxt) 
+                	}
                 }
             }
-
             if (eName == "coolingSetpoint") {
 				if (audioTextCooling) {
             		def eTemp = eVal
@@ -2335,13 +2419,18 @@ def alertsHandler(evt) {
                 	if (music8) {
                         playAlert(eTxt, music8)
                     }
+                    if (timeStamp) {
+                    if (push8) sendPush eTxt + stamp
+					if (notify8) sendNotificationEvent (eTxt + stamp)
+                	}
+                    else {
                      if (push8) sendPush eTxt
 					if (notify8) sendNotificationEvent (eTxt) 
                 }
             }  
         }   
-//}
-//}
+	}
+}
 
 private txtFormat (message, eDev, eVal) {
     def eTxt = " " 
@@ -2617,7 +2706,7 @@ private def textVersion() {
 	def text = "3.0"
 }
 private def textRelease() {
-	def text = "3.15"
+	def text = "3.16"
 }
 private def textReleaseNotes() {
 	def text = "See the Wiki"
