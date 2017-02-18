@@ -1,0 +1,182 @@
+LIST_OF_COMMANDS
+
+brighter
+colder
+cooler
+darker
+hotter
+down
+freezing
+not bright enough
+not cold enough
+not dark enough
+not hot enough
+not loud enough
+off
+on
+repeat
+too bright
+too chilly
+too cold
+too dark
+too hot
+too loud
+too warm
+too fast
+too slow
+too quiet
+up
+warmer
+increase
+decrease
+dim
+brighten
+mute
+unmute
+quiet
+cancel
+run
+trigger 
+change
+changed
+open
+close
+lock
+unlock
+speed up
+slow down
+stop
+disable
+enable
+start
+high
+low
+medium
+activate
+deactivate
+replace
+replaced
+try again
+switch
+all off
+reading
+working
+relax
+relaxing
+chilling
+energize
+cleaning
+concentrate
+concentrating
+feeling lucky
+feeling romantic
+
+LIST_OF_GROUPS
+
+lights
+vents
+doors
+batteries
+devices
+fans
+thermostats
+locks
+switches
+security
+activities
+
+LIST_OF_OPERANDS
+
+temperature
+lights
+mode
+feed
+fed
+text
+audio
+doors
+present
+here
+at home
+not here
+not present
+not home
+light
+battery
+active
+inactive
+locked
+unlocked
+unlock
+open
+closed
+close
+on
+off
+settings
+batteries
+weather
+current weather
+weather alerts
+alerts
+weather conditions
+current temperature
+temperature inside
+indoor temperature
+temperature outside
+outdoor temperature
+security
+smart home monitor
+home monitor
+alarm
+temperature is inside
+temperature is outside
+
+LIST_OF_QUERIES
+
+about
+what
+who
+where
+when
+what's
+give
+which
+is there
+are there
+did I
+get
+
+LIST_OF_TYPES
+
+mode
+security
+routine
+modes
+
+LIST_OF_UNITS
+
+minute
+minutes
+percent
+degrees
+pin
+pin number
+conversation
+heat
+AC
+cooling
+heating
+filters
+timer
+reminder
+flash
+audio
+text
+feedback
+hour
+hours
+schedule
+number
+short answer
+short answers
