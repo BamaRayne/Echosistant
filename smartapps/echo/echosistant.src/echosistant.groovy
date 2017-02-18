@@ -1,7 +1,7 @@
 /* 
  * EchoSistant - The Ultimate Voice and Text Messaging Assistant Using Your Alexa Enabled Device.
  *
- *		2/18/2017		Version:4.0 R.0.0.1		Weather Service text fixes, added Elvis to all size() 
+ *		2/18/2017		Version:4.0 R.0.0.1a	Weather Service text fixes, added Elvis to all size(), removed empty shmStatus variable
  *		2/17/2017		Version:4.0 R.0.0.0		Public Release 
  *
  *  Copyright 2016 Jason Headley & Bobby Dobrescu
@@ -556,9 +556,9 @@ def initialize() {
 			}
         //SHM status change and keypad initialize
     		subscribe(location, locationHandler)
-    		subscribe(location, "alarmSystemStatus",alarmStatusHandler)//used for ES speaker feedback
-			def event = [name:"alarmSystemStatus", value: location.currentState("alarmSystemStatus").value, 
-						displayed: true, description: "System Status is ${shmState}"]
+            subscribe(location, "alarmSystemStatus",alarmStatusHandler)//used for ES speaker feedback
+			//def event = [name:"alarmSystemStatus", value: location.currentState("alarmSystemStatus").value, //removed as event no longer used // ...2/18/17 Bobby 
+			//			displayed: true, description: "System Status is ${evt.value}"]
         //State Variables            
             state.lastMessage = null
             state.lastIntent  = null
