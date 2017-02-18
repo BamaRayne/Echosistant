@@ -1,6 +1,7 @@
 /* 
  * Message and Control Profile - EchoSistant Add-on 
  *
+ *		2/18/2017		Version:4.0 R.0.0.2		Bug fix for sms
  *		2/17/2017		Version:4.0 R.0.0.1		Public Release
  * 
  *  Copyright 2016 Jason Headley & Bobby Dobrescu
@@ -1011,12 +1012,12 @@ def ttsActions(tts) {
                 	if (parent.debug) log.debug "Playing message on Sonos: ${tts}"
             }
         }
-		if(recipients?.size()>0 || sms?.size()>0){        
+			if(recipients || sms){				//if(recipients.size()>0 || sms.size()>0){ removed: 2/18/17 Bobby
                 sendtxt(ttx)
         }
 	}
 	else {
-		if(recipients.size()>0 || sms.size()>0){
+			if(recipients || sms){				//if(recipients.size()>0 || sms.size()>0){ removed: 2/18/17 Bobby
 			if (parent.debug) log.debug "Only sending sms because disable voice message is ON"
             sendtxt(ttx)
 		}
