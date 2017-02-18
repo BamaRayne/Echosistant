@@ -1,6 +1,7 @@
 /* 
  * EchoSistant - The Ultimate Voice and Text Messaging Assistant Using Your Alexa Enabled Device.
- * 
+ *
+ *		2/18/2017		Version:4.0 R.0.0.1		Weather Service text fixes, added Elvis to all size() 
  *		2/17/2017		Version:4.0 R.0.0.0		Public Release 
  *
  *  Copyright 2016 Jason Headley & Bobby Dobrescu
@@ -207,7 +208,7 @@ page name: "mIntent"
 		page name: "mSecuritySuite"    
                     def mSecuritySuite() {
                         dynamicPage (name: "mSecuritySuite", title: "", install: true, uninstall: false) {
-                            if (childApps.size()) {  
+                            if (childApps?.size()) {  
                                 section("Security Suite",  uninstall: false){
                                     app(name: "security", appName: "SecuritySuite", namespace: "Echo", title: "Configure Security Suite", multiple: false,  uninstall: false)
                                 }
@@ -237,7 +238,7 @@ page name: "mIntent"
 	page name: "mNotifyProfile"    
             def mNotifyProfile() {
                 dynamicPage (name: "mNotifyProfile", title: "", install: true, uninstall: false) {
-                    if (childApps.size()) {  
+                    if (childApps?.size()) {  
                         section("Notifications",  uninstall: false){
                             app(name: "notification", appName: "NotificationProfile", namespace: "Echo", title: "Create a new Notifications Profile", multiple: true,  uninstall: false)
                         }
@@ -253,7 +254,7 @@ page name: "mIntent"
         page name: "mMainProfile"    
             def mMainProfile() {
                 dynamicPage (name: "mMainProfile", title: "", install: true, uninstall: false) {
-                    if (childApps.size()>0) {  
+                    if (childApps?.size()>0) {  
                         section("Message and Control Profiles",  uninstall: false){
                             app(name: "Profiles", appName: "Profiles", namespace: "Echo", title: "Create a New Message & Control Profile", multiple: true,  uninstall: false)
                         }
@@ -911,7 +912,7 @@ try {
                 }
                 else {
                     if(cIndoor){
-                        def sensors = cIndoor.size()
+                        def sensors = cIndoor?.size()
                         def tempAVG = cIndoor ? getAverage(cIndoor, "temperature") : "undefined device"          
                         def currentTemp = tempAVG
                         outputTxt = "The indoor temperature is " + currentTemp
@@ -929,7 +930,7 @@ try {
 //>>> Temp >>>>>
             if (fOperand == "temperature inside" || fOperand == "indoor temperature" || fOperand == "temperature is inside"){
                 if(cIndoor){
-                    def sensors = cIndoor.size()
+                    def sensors = cIndoor?.size()
                     def tempAVG = cIndoor ? getAverage(cIndoor, "temperature") : "undefined device"          
                     def currentTemp = tempAVG
                     outputTxt = "The indoor temperature is " + currentTemp
@@ -943,7 +944,7 @@ try {
 //>>> Temp >>>>
             if (fOperand == "temperature outside" || fOperand == "outdoor temperature" || fOperand == "temperature is outside"){
                 if(cOutDoor){
-                    def sensors = cOutDoor.size()
+                    def sensors = cOutDoor?.size()
                     def tempAVG = cOutDoor ? getAverage(cOutDoor, "temperature") : "undefined device"          
                     def currentTemp = tempAVG
                     def forecastT = mGetWeatherTemps()
@@ -990,12 +991,12 @@ try {
                         }
                     }
                     if (fQuery == "how" || fQuery.contains ("if") || fQuery == "are there") { // removed fQuery == "undefined" 2/13/2017
-                        if (devList.size() > 0) {
-                            if (devList.size() == 1) {
+                        if (devList?.size() > 0) {
+                            if (devList?.size() == 1) {
                                 outputTxt = "There is one switch " + fCommand + " , would you like to know which one"                           			
                             }
                             else {
-                                outputTxt = "There are " + devList.size() + " switches " + fCommand + " , would you like to know which switches"
+                                outputTxt = "There are " + devList?.size() + " switches " + fCommand + " , would you like to know which switches"
                             }
                         data.devices = devList
                         data.cmd = fCommand
@@ -1045,12 +1046,12 @@ try {
                         }                    
                     }
                     if (fQuery == "how" || fQuery== "how many" || fQuery == "arere") { // removed fQuery == "undefined" 2/13
-                        if (devList.size() > 0) {
-                            if (devList.size() == 1) {
+                        if (devList?.size() > 0) {
+                            if (devList?.size() == 1) {
                                 outputTxt = "There is one door or window " + fCommand + " , would you like to know which one"                           			
                             }
                             else {
-                                outputTxt = "There are " + devList.size() + " doors or windows " + fCommand + " , would you like to know which doors or windows"
+                                outputTxt = "There are " + devList?.size() + " doors or windows " + fCommand + " , would you like to know which doors or windows"
                             }
                         data.devices = devList
                         data.cmd = fCommand
@@ -1217,12 +1218,12 @@ try {
                             }
                         }
                     if (fOperand == "here" || fOperand == "at home" || fOperand == "present" || fOperand == "home" ) {
-                            if (devListP.size() > 0) {
-                                if (devListP.size() == 1) {
+                            if (devListP?.size() > 0) {
+                                if (devListP?.size() == 1) {
                                     outputTxt = "Only" + devListP + "is at home"                         			
                                 }
                                 else {
-                                    outputTxt = "The following " + devListP.size() + " people are at home: " + devListP
+                                    outputTxt = "The following " + devListP?.size() + " people are at home: " + devListP
                                 }
 
                             }
@@ -1230,12 +1231,12 @@ try {
                             return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
                     }
                     else if (fOperand.contains("not")) {
-                        if (devListNP.size() > 0) {
-                            if (devListNP.size() == 1) {
+                        if (devListNP?.size() > 0) {
+                            if (devListNP?.size() == 1) {
                                     outputTxt = "Only" + devListNP + "is not home"                         			
                             }
                             else {
-                                    outputTxt = "The following " + devListNP.size() + " people are not at home: " + devListNP
+                                    outputTxt = "The following " + devListNP?.size() + " people are not at home: " + devListNP
                             }
                         }
                         else outputTxt = "Everyone is at home"
@@ -2391,7 +2392,7 @@ def processTts() {
                 
         pContCmdsR = "profile"
 		def tProcess = true
-	try {
+	//try {
         if(ptts == "no" || ptts == "stop" || ptts == "cancel" || ptts == "kill it" || ptts == "zip it" || ptts == "yes" && state.pContCmdsR != "wrongIntent"){
         	if(ptts == "no" || ptts == "stop" || ptts == "cancel" || ptts == "kill it" || ptts == "zip it"){
                 outputTxt = "ok, I am here if you need me"
@@ -2440,14 +2441,14 @@ def processTts() {
 			pTryAgain = true
 			return ["outputTxt":outputTxt, "pContCmds":pContCmds, "pShort":state.pShort, "pContCmdsR":pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]              
     	}
-
+/*
 } catch (Throwable t) {
         log.error t
         outputTxt = "Oh no, something went wrong. If this happens again, please reach out for help!"
         state.pTryAgain = true
         return ["outputTxt":outputTxt, "pContCmds":pContCmds, "pShort":state.pShort, "pContCmdsR":pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
     } 
-
+*/
 }
 /***********************************************************************************************************
 		SMART HOME MONITOR STATUS AND KEYPAD HANDLER
@@ -2489,7 +2490,7 @@ def getAverage(device,type){
 	def total = 0
 		if(debug) log.debug "calculating average temperature"  
     device.each {total += it.latestValue(type)}
-    return Math.round(total/device.size())
+    return Math.round(total/device?.size())
 }
 /******************************************************************************
 	 FEEDBACK SUPPORT - ADDITIONAL FEEDBACK											
@@ -2711,7 +2712,7 @@ private getCaps(capDevice,capType, capMainCap, capState) {
 	result = result.replace("null", "")
     state.lastAction = result
     state.pContCmdsR = "caps"
-    result = attr.size()
+    result = attr?.size()
     return result
 }
 /******************************************************************************
@@ -2770,7 +2771,7 @@ try {
          }
         def dUniqueList = batDetails.unique (false)
         dUniqueList = dUniqueList.sort()       
-        def listSize = dUniqueList.size()
+        def listSize = dUniqueList?.size()
         def listBat = dUniqueList
         result = [listSize: listSize, listBat: listBat]
         return result //dUniqueListString
@@ -2876,7 +2877,7 @@ try {
         }        
         def dUniqueList = DeviceDetails.unique (false)
         dUniqueList = dUniqueList.sort()       
-        def listSize = dUniqueList.size()
+        def listSize = dUniqueList?.size()
         def listDev = dUniqueList
         result = [listSize: listSize, listDev: listDev]
         return result //dUniqueListString
@@ -3540,6 +3541,10 @@ def private mGetWeather(){
     def result ="Today's weather is not available at the moment, please try again later"
 	try {
     	def weather = getWeatherFeature("forecast", settings.wZipCode)
+        def todayWeather = weather.forecast.txt_forecast.forecastday[0].fcttext
+        def tonightWeather = weather.forecast.txt_forecast.forecastday[1].fcttext
+        log.warn "today = ${todayWeather}"
+        log.warn "tonight = ${tonightWeather}"
         
         if(settings.wImperial){
 			result = "Today's forecast is " + weather.forecast.txt_forecast.forecastday[0].fcttext  + " Tonight it will be " + weather.forecast.txt_forecast.forecastday[1].fcttext 
@@ -3587,10 +3592,11 @@ def private mGetWeatherAlerts(){
             def alert = weather.alerts.description.toString()
             def expire = weather.alerts.expires
             def DT = weather.alerts.expires_epoch
-            if(alert){
+            log.warn "alert = ${alert}, alert size...${alert?.size()}"
+            if(alert >10){
                 result = alert  + " is in effect for your area, that expires at " + expire
             }
-            else { result }
+            else {result}
         
         }
         catch (Throwable t) {
@@ -3711,14 +3717,14 @@ def mIntentD() {
 /** Configure Profiles Pages **/
 def mRoomsS(){
     def result = ""
-    if (childApps.size()) {
+    if (childApps?.size()) {
     	result = "complete"	
     }
     result
 }
 def mRoomsD() {
     def text = "No Profiles have been configured. Tap here to begin"
-    def ch = childApps.size()     
+    def ch = childApps?.size()     
     if (ch == 1) {
         text = "One profile has been configured. Tap here to view and change"
     }
