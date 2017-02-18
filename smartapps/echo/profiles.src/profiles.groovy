@@ -1,7 +1,7 @@
 /* 
  * Message and Control Profile - EchoSistant Add-on 
  *
- *		2/18/2017		Version:4.0 R.0.0.2		Bug fix for sms
+ *		2/18/2017		Version:4.0 R.0.0.2a	Bug fix for sms, fixed default variables
  *		2/17/2017		Version:4.0 R.0.0.1		Public Release
  * 
  *  Copyright 2016 Jason Headley & Bobby Dobrescu
@@ -328,8 +328,8 @@ def initialize() {
         state.pContCmdsR = "init"
         state.pTryAgain = false
         //Sound Cancellation    
-        state.pMuteAlexa = settings.pDisableAlexaProfile
-        state.pMuteAll = settings.pDisableALLProfile
+        state.pMuteAlexa = settings.pDisableAlexaProfile ?: false
+        state.pMuteAll = settings.pDisableALLProfile ?: false
 }
 
 /******************************************************************************************************
@@ -842,15 +842,16 @@ def profileEvaluate(params) {
                         return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]
                     } 
                 }
-        	}
-            else{
+        	}    
+			log.warn "end of cycle, command=${command}, ${deviceType}"
+            if (command == null && deviceType == null) { //added 2/18/17 Bobby  
                 state.lastMessage = tts
 				state.lastTime = new Date(now()).format("h:mm aa", location.timeZone)
 				outputTxt = ttsHandler(tts)
                 pContCmdsR = "profile"
 				return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]
             }
-   		}
+        }
 	}
 }
 /******************************************************************************************************
@@ -943,6 +944,7 @@ def ttsHandler(tts) {
 	def result = tts
     def cm = app.label
 	//Preparing Alexa Response
+    log.warn " ttshandler settings: pAlexaCustResp=${pAlexaCustResp},pAlexaRepeat=${pAlexaRepeat},tts=${tts}"
     if (pAlexaCustResp) {
 			result = settings.pAlexaCustResp
 	}
@@ -954,7 +956,8 @@ def ttsHandler(tts) {
        	    result = "Message sent to " + cm + " , " 
         }
     }
-	ttsActions(tts) 
+	ttsActions(tts)
+    log.warn "running actions, sending result to Parent = ${result}"
     return result
 }
 /******************************************************************************************************
@@ -977,6 +980,7 @@ def ttsActions(tts) {
         else {
 			tts = tts
 		}
+    log.warn "defined tts = ${tts}"
     }
 	//define text message
     if(pRunTextMsg){
@@ -989,8 +993,11 @@ def ttsActions(tts) {
         else {
 			ttx = tts
 		}
+    log.warn "defined sms = ${ttx}"
     }
+        	log.warn "reached process, muteAll is = ${state.pMuteAll}"
     if(state.pMuteAll == false){
+    	log.warn "starting process"
         if (getDayOk()==true && getModeOk()==true && getTimeOk()==true) {
             if (synthDevice) {
                 synthDevice?.speak(tts) 
