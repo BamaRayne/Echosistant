@@ -1,6 +1,7 @@
 /* 
  * Notification - EchoSistant Add-on 
  *
+ *		2/17/2017		Version:4.0 R.0.0.2		Bug Fix: presence not working
  *		2/17/2017		Version:4.0 R.0.0.1		Public Release
  *
  *  Copyright 2016 Jason Headley & Bobby Dobrescu
@@ -194,7 +195,7 @@ def subscribeToEvents() {
     	subscribe(myLocks, "lock.locked", alertsHandler)}
     	subscribe(myLocks, "lock.unlocked", alertsHandler)
     }
-    if (myPresence) {subscribe(myPresence, "presenceSensor", alertsHandler)}
+    if (myPresence) {subscribe(myPresence, "presence", alertsHandler)}
     if (myTstat) {    
 		subscribe(TheThermostat, "heatingSetpoint", alertsHandler)
         subscribe(TheThermostat, "coolingSetpoint", alertsHandler)
@@ -228,7 +229,7 @@ def alertsHandler(evt) {
         	if(recipients?.size()>0 || sms?.size()>0) {
             	sendtxt(eTxt)
         	}
-        }
+         }
         takeAction(eTxt)
 	}
 }
