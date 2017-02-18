@@ -67,11 +67,9 @@ page name: "mainProfilePage"
         if (actionType == "Custom") {
             section ("Send this message...") {
                 input "message", "text", title: "Play this message...", required:false, multiple: false, defaultValue: ""
-                if (message) {
-                    paragraph "You can use the following variables in your custom message: &device, &action , &event and &time \n" +
+                paragraph "You can use the following variables in your custom message: &device, &action , &event and &time \n" +
                     "\nFor Example: \n&event sensor &device is &action and the event happened at &time \n" +
-                    "Translates to: 'Contact' sensor 'Bedroom' is 'Open' and the event happened at '1:00 PM'"  
-                }
+                    "Translates to: 'Contact' sensor 'Bedroom' is 'Open' and the event happened at '1:00 PM'"
             }
         }
         section ("Using These Triggers", hideWhenEmpty: true) {
