@@ -161,7 +161,7 @@ page name: "mIntent"
            				}
                         else {      
                             input name: "sms", title: "Send Text Notification when due, to this phone(s) ", type: "phone", required: false
-                        		paragraph "You may enter multiple phone numbers separated by semicolon (E.G. 8045551122;8046663344)"
+                        		paragraph "You may enter multiple phone numbers separated by comma (E.G. 8045551122,8046663344)"
                             input "push", "bool", title: "Send Push Notification too?", required: false, defaultValue: false
                         }
                      }                     
@@ -3331,7 +3331,7 @@ private void sendtxt(message) {
 }
 private void processSms(number, message) {
     if (sms) {
-        def phones = sms.split("\\;")
+        def phones = sms.split("\\,")
         for (phone in phones) {
             sendSms(phone, message)
         }

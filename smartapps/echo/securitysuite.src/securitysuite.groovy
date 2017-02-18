@@ -790,8 +790,8 @@ private sendMessage(msg) {
     sendNotificationEvent(msg)
   }
   if (phone) {
-    if ( phone.indexOf(";") > 1){
-      def phones = phone.split(";")
+    if ( phone.indexOf(",") > 1){
+      def phones = phone.split(",")
       for ( def i = 0; i < phones.size(); i++) {
         sendSms(phones[i], msg)
       }

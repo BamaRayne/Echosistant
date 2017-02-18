@@ -121,7 +121,7 @@ page name: "SMS"
                 }
             input "sendText", "bool", title: "Enable Text Notifications to non-contact book phone(s)", required: false, submitOnChange: true      
                 if (sendText){      
-                    paragraph "You may enter multiple phone numbers separated by semicolon to deliver the Alexa message as a text and a push notification. E.g. 8045551122;8046663344"
+                    paragraph "You may enter multiple phone numbers separated by comma to deliver the Alexa message as a text and a push notification. E.g. 8045551122,8046663344"
                     input name: "sms", title: "Send text notification to...", type: "phone", required: false
                 }
             }    
@@ -415,7 +415,7 @@ private void sendtxt(message) {
 }
 private void sendText(number, message) {
     if (sms) {
-        def phones = sms.split("\\;")
+        def phones = sms.split("\\,")
         for (phone in phones) {
             sendSms(phone, message)
             if (parent.debug) log.debug "Sending sms to selected phones"
