@@ -575,7 +575,7 @@ def profileEvaluate(params) {
             	}    
             }
             //EXECUTE PROFILE ACTIONS
-			 if (command == "run" && deviceType == "profile"){    	
+			 if (command == "run" && deviceType == "profile" || command == "run"){    	
     			outputTxt = "Running profile"
                 ttsActions(tts)
                 pContCmdsR = "run"
@@ -1298,11 +1298,11 @@ private getCommand(text){
 	}
 //Disable Switches
    	else if (text =="disable automation" || text.startsWith("stop turning the") || text == "stop the motion sensor" || text == "turn the motion sensor off" || text =="stop the sensor"){
-    	command = "off"
+    	command = "on"  // changed to inverse by Jason on 02/18/2017
     	deviceType = "disable"
 	}
     else if (text == "enable automation" || text.startsWith("start turning the") || text == "start the motion sensor" || text == "turn the motion sensor on" || text == "start the sensor"){
-    	command = "on"
+    	command = "off" // changed to inverse by Jason on 02/18/2017
     	deviceType = "disable"
 	}        
 //Switches
