@@ -1,6 +1,7 @@
 /* 
  * Message and Control Profile - EchoSistant Add-on 
  *
+ *		2/19/2017		Version:4.0 R.0.0.3 	Restricted control to only selected devices, added option to reverse disable commands
  *		2/18/2017		Version:4.0 R.0.0.2a	Bug fix for sms, fixed default variables
  *		2/17/2017		Version:4.0 R.0.0.1		Public Release
  * 
@@ -68,7 +69,6 @@ page name: "pSend"
                 input "sonosDevice", "capability.musicPlayer", title: "On this Sonos Type Devices", required: false, multiple: true, submitOnChange: true    
                 if (sonosDevice) {
                     input "volume", "number", title: "Temporarily change volume", description: "0-100%", required: false
-                    input "resumePlaying", "bool", title: "Resume currently playing music after notification", required: false, defaultValue: false
                 }  
             }
             section ("Text Messages" ) {
@@ -225,8 +225,9 @@ page name: "pDeviceControl"
                             paragraph "You can now control this group by speaking commands to Alexa:  \n" +
                             " E.G: Alexa, turn on/off the lights in the " + app.label
                         }
-                        input "gDisable", "capability.switch", title: "Group Disable Automation Switches...", multiple: true, required: false, submitOnChange: true
+                        input "gDisable", "capability.switch", title: "Group Disable Automation Switches (disable = off, enable = on)", multiple: true, required: false, submitOnChange: true
 						if (gDisable) {
+                            input "reverseDisable", "bool", title: "Reverse Disable Command (disable = on, enable = off)", required: false, defaultValue: false
                             paragraph "You can now use this group by speaking commands to Alexa:  \n" +
                             " E.G: Disable Automation in the " + app.label
                         }
@@ -367,7 +368,6 @@ def profileEvaluate(params) {
     def recordingNowNoA = tts.startsWith("record message")
     //Reminders
     def reminder = tts.startsWith("set a reminder ") ? "set a reminder " : tts.startsWith("set reminder ") ? "set reminder" : tts.startsWith("remind me ") ? "remind me " : tts.startsWith("set the reminder") ? "set the reminder" : null
-    log.warn "start - reminder = ${reminder}"
     //def reminderNoA = tts.startsWith("set reminder")
     //def remindMeNow = tts.startsWith("remind me")
     def cancelReminder = tts.startsWith("cancel reminder") ? true : tts.startsWith("cancel the reminder") ? true : tts.startsWith("cancel a reminder") ? true : false
@@ -541,7 +541,6 @@ def profileEvaluate(params) {
                 }
 				//Set a reminder        	
                 if (reminder) {
-                log.warn "reminder not blank = ${reminder}"
                 def remindMe = tts.replace("${reminder}", "")
                 if (parent.debug) log.debug "Setting Reminder: (remindMe) = '${remindMe}' for (intent) = '${intent}'" 
                     if (state.reminder1 == null || state.reminder2 == null || state.reminder3 == null) {
@@ -575,7 +574,7 @@ def profileEvaluate(params) {
             	}    
             }
             //EXECUTE PROFILE ACTIONS
-			 if (command == "run" && deviceType == "profile" || command == "run"){    	
+			 if (command == "run" && deviceType == "profile"){    	
     			outputTxt = "Running profile"
                 ttsActions(tts)
                 pContCmdsR = "run"
@@ -626,88 +625,74 @@ def profileEvaluate(params) {
               	state.reminderAnsPend = 0
             	return  ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]
 			}
-            //HUE SCENES / Changing Colored Lights
-            if (read == true || concentrate == true || relax == true || feelLucky == true){
-				def color = read == true ? "Warm White" : concentrate == true ? "Daylight White" : relax == true ? "Very Warm White" : feelLucky == true ? "random" : "undefined"
-                if (color != "undefined" && gHues?.size()>0){
-                	if (color != "random"){
-                    	def hueSetVals = getColorName("${color}",level)
-                    	gHues?.setColor(hueSetVals)
-						outputTxt =  "Ok, changing your bulbs to " + color 
-						return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]
-                	}
-                    else  {
-                    	setRandomColorName()
-						outputTxt =  "Ok, changing your bulbs to random colors"
-						return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]
-                	}
-                }
-                else {
-					outputTxt =  "Sorry, I was unable to change the color"
-                    pTryAgain = true
-					return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]
-            	}
-            }
-            if (hueSet == true || hueChange == true){
-            	def hueSetVals
-    				if(hueSet == true) {
-                    	tts = tts.replace("set the color to ", "")
-                        hueSetVals =  getColorName( tts , level)
-                        gHues?.setColor(hueSetVals)
-                        outputTxt =  "Ok, changing your bulbs to " + tts
+            /**********************
+            FREE TEXT CONTROL ENGINE 
+            ***********************/
+            //Colored Lights
+            if (gHues?.size()>0) {
+            	//HUE SCENES
+                if (read == true || concentrate == true || relax == true || feelLucky == true){
+                    def color = read == true ? "Warm White" : concentrate == true ? "Daylight White" : relax == true ? "Very Warm White" : feelLucky == true ? "random" : "undefined"
+                    if (color != "undefined"){
+                        if (color != "random"){
+                            def hueSetVals = getColorName("${color}",level)
+                            gHues?.setColor(hueSetVals)
+                            outputTxt =  "Ok, changing your bulbs to " + color 
+                            return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]
+                        }
+                        else  {
+                            setRandomColorName()
+                            outputTxt =  "Ok, changing your bulbs to random colors"
+                            return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]
+                        }
                     }
-                    if(hueChange == true) {
-                    	tts = tts.replace("change the color to ", "")
-                        hueSetVals =  getColorName("${tts}", level)
-                        gHues?.setColor(hueSetVals)
-                        outputTxt =  "Ok, changing your bulbs to " + tts
-					}
-                    if (hueSetVals == null) {
-                    	outputTxt =  "Sorry, I wasn't able to change the color to " +  tts
-                		pTryAgain = true
-                        return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":pContCmdsR, "pTryAgain": pTryAgain, "pPIN":pPIN]
-            		}
-                    return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]
-       		}            
-       //DEVICE/GROUP CONTROL
-       		//LIGHT SWITCHES
+                }
+                // CHANGING COLORS
+                if (hueSet == true || hueChange == true){
+                    def hueSetVals
+                        if(hueSet == true) {
+                            tts = tts.replace("set the color to ", "")
+                            hueSetVals =  getColorName( tts , level)
+                            gHues?.setColor(hueSetVals)
+                            outputTxt =  "Ok, changing your bulbs to " + tts
+                        }
+                        if(hueChange == true) {
+                            tts = tts.replace("change the color to ", "")
+                            hueSetVals =  getColorName("${tts}", level)
+                            gHues?.setColor(hueSetVals)
+                            outputTxt =  "Ok, changing your bulbs to " + tts
+                        }
+                        if (hueSetVals == null) {
+                            outputTxt =  "Sorry, I wasn't able to change the color to " +  tts
+                            pTryAgain = true
+                            return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":pContCmdsR, "pTryAgain": pTryAgain, "pPIN":pPIN]
+                        }
+                        return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]
+       			}
+            }
+            if (command != null && deviceType != null) {
+            //LIGHT SWITCHES
             if (deviceType == "light" && gSwitches?.size()>0){
             	if (command == "on" || command == "off") {
                 	gSwitches?."${command}"()
                     outputTxt = "Ok, turning lights " + command
                     return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]            
             	}
-                else {
-                    if (command == "decrease" || command == "increase"){
-                        dataSet =  ["command": command, "deviceType": deviceType]
-                        outputTxt = advCtrlHandler(dataSet)
-                        return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]
-                    }
-                    else {
-                        outputTxt = "Sorry, I couldn't find any light switches"
-                        pTryAgain = true
-                        return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]
-                    }                                       
+                if (command == "decrease" || command == "increase"){
+                	dataSet =  ["command": command, "deviceType": deviceType]
+                    outputTxt = advCtrlHandler(dataSet)
+                    return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]                                  
                 }
             }
             //DISABLE SWITCHES
             if (deviceType == "disable") {
             	if (gDisable?.size()>0) {
 					if (command == "on" || command == "off") {
+                    	if (reverseDisable == true) { command = command == "on" ? "off" : command == "off" ? "on" : command } // added 2/19/17 per Jason's request 
                 		gDisable?."${command}"()
-                    	outputTxt = "Ok, disabling automation in the " + childName
+                    	outputTxt = "Ok, turning " + childName + " automation " + command
                     	return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]
             		}
-                    else {
-                        outputTxt = "Sorry, that command is not supported for disable switches"
-                        pTryAgain = true
-                        return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]
-                    }
-            	}
-                else {
-                	outputTxt = "Sorry, you don't have any disable switches selected, please check your settings"
-                    pTryAgain = true
-                    return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]
             	}
             }            
             //FANS CONTROL
@@ -723,11 +708,7 @@ def profileEvaluate(params) {
                         outputTxt = advCtrlHandler(dataSet)
                         return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]
                     }
-         		}
-                else {
-                        outputTxt = "Sorry, you don't have any fans selected, please check your settings"
-                        pTryAgain = true
-                        return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]
+         		        return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]
                 }     
             }          
             //VENTS CONTROL
@@ -747,11 +728,6 @@ def profileEvaluate(params) {
                         }
                     }
                 }
-                else {
-					outputTxt = "Sorry, I couldn't find any vents"
-                    pTryAgain = true
-                    return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]
-            	} 
             }
             if (deviceType == "tv") {
             	if(sMedia){
@@ -801,11 +777,6 @@ def profileEvaluate(params) {
                                     return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]
                                 }
                         }
-                        else {
-                            outputTxt = "Sorry, I couldn't find any media devices"
-                            pTryAgain = true
-                            return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]
-                        }
                     }
                	}
             }
@@ -842,9 +813,10 @@ def profileEvaluate(params) {
                         return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]
                     } 
                 }
-        	}    
-			log.warn "end of cycle, command=${command}, ${deviceType}"
-            if (command == null && deviceType == null) { //added 2/18/17 Bobby  
+        	}
+            }
+			if (parent.debug) {log.debug "end of control engine, command=${command}, ${deviceType}"}
+            if (sonosDevice || synthDevice || recipients || sms) { //added 2/19/17 Bobby  
                 state.lastMessage = tts
 				state.lastTime = new Date(now()).format("h:mm aa", location.timeZone)
 				outputTxt = ttsHandler(tts)
@@ -944,7 +916,7 @@ def ttsHandler(tts) {
 	def result = tts
     def cm = app.label
 	//Preparing Alexa Response
-    log.warn " ttshandler settings: pAlexaCustResp=${pAlexaCustResp},pAlexaRepeat=${pAlexaRepeat},tts=${tts}"
+    if(parent.debug) log.debug " ttshandler settings: pAlexaCustResp=${pAlexaCustResp},pAlexaRepeat=${pAlexaRepeat},tts=${tts}"
     if (pAlexaCustResp) {
 			result = settings.pAlexaCustResp
 	}
@@ -957,7 +929,7 @@ def ttsHandler(tts) {
         }
     }
 	ttsActions(tts)
-    log.warn "running actions, sending result to Parent = ${result}"
+    if(parent.debug) log.debug "running actions, sending result to Parent = ${result}"
     return result
 }
 /******************************************************************************************************
@@ -980,7 +952,7 @@ def ttsActions(tts) {
         else {
 			tts = tts
 		}
-    log.warn "defined tts = ${tts}"
+    if(parent.debug) log.debug "defined tts = ${tts}"
     }
 	//define text message
     if(pRunTextMsg){
@@ -993,11 +965,9 @@ def ttsActions(tts) {
         else {
 			ttx = tts
 		}
-    log.warn "defined sms = ${ttx}"
+    if(parent.debug) log.debug "defined sms = ${ttx}"
     }
-        	log.warn "reached process, muteAll is = ${state.pMuteAll}"
     if(state.pMuteAll == false){
-    	log.warn "starting process"
         if (getDayOk()==true && getModeOk()==true && getTimeOk()==true) {
             if (synthDevice) {
                 synthDevice?.speak(tts) 
@@ -1010,7 +980,7 @@ def ttsActions(tts) {
                 state.sound = textToSpeech("You selected the custom message option but did not enter a message in the $app.label Smart App")
                 if (parent.debug) log.debug "You selected the custom message option but did not enter a message"
             }
-            if (sonosDevice){
+            if (sonosDevice){ 
                 def currVolLevel = sonosDevice.latestValue("level")
                 def newVolLevel = volume
                 	if (parent.debug) log.debug "Setting volume to: '${newVolLevel}'"
@@ -1063,7 +1033,7 @@ private getAllOk() {
 }
 private getModeOk() {
     def result = !modes || modes?.contains(location.mode)
-	if(debug) log.debug "modeOk = $result"
+	if(parent.debug) log.debug "modeOk = $result"
     result
 } 
 private getDayOk() {
@@ -1297,12 +1267,12 @@ private getCommand(text){
     	deviceType = "profile"
 	}
 //Disable Switches
-   	else if (text =="disable automation" || text.startsWith("stop turning the") || text == "stop the motion sensor" || text == "turn the motion sensor off" || text =="stop the sensor"){
-    	command = "on"  // changed to inverse by Jason on 02/18/2017
+   	else if (text =="disable automation" || text.startsWith("stop turning the") || text == "stop the motion sensor" || text == "turn the motion sensor off" || text =="stop the sensor" || text =="kill the automation" || text =="kill the sensor"){
+    	command = "off"
     	deviceType = "disable"
 	}
     else if (text == "enable automation" || text.startsWith("start turning the") || text == "start the motion sensor" || text == "turn the motion sensor on" || text == "start the sensor"){
-    	command = "off" // changed to inverse by Jason on 02/18/2017
+    	command = "on"
     	deviceType = "disable"
 	}        
 //Switches
@@ -1370,11 +1340,11 @@ private getCommand(text){
 		command = "unmute"
 		deviceType = "volume" 
 	}
-    else if  (text.contains("too loud") || text.contains("down")) {
+    else if  (text.contains("too loud") || text.startsWith("turn down")) {
 		command = "decrease"
 		deviceType = "volume" 
 	}
-	else if (text.contains("not loud enough") || text.contains("too quiet") || text.contains("up")) {
+	else if (text.contains("not loud enough") || text.contains("too quiet") || text.startsWith("turn up")) {
 		command = "increase"
 		deviceType = "volume"
 	}
@@ -1384,11 +1354,11 @@ private getCommand(text){
 	}        
 //Harmony
 	else if (text.contains("tv")) {
-		if  (text.contains("start") || text.contains("turn on") || text.contains("switch to") || text.contains("on")){
+		if  (text.contains("start") || text.startsWith("turn on") || text.contains("switch to") || text.contains("on")){
         	command = "startActivity"
             deviceType = "tv"
 		}
-		else if  (text.contains("stop") || text.contains("turn off") || text.contains("switch off") || text.contains("off")){
+		else if  (text.contains("stop") || text.startsWith("turn off") || text.contains("switch off") || text.contains("off")){
 			command = "activityoff"
             deviceType = "tv"
 		}
