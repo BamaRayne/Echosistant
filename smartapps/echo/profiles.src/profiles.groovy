@@ -1257,21 +1257,21 @@ private getCommand(text){
     	text = text.toLowerCase()
 
 //Run Profile
-	if (text == "run profile" || text == "execute profile" || text == "run actions" || text == "execute actions"){
+	if (text.startsWith ("run profile") || text.startsWith ("execute profile") || text.startsWith("run actions") || text.startsWith ("execute actions")){
     	command = "run"
     	deviceType = "profile"
 	}
 //Run Profile with Delay
-	if (text == "run profile with delay" || text == "execute profile with delay" || text == "run actions with delay" || text == "execute actions with delay" || text == "delay actions") {
+	if (text.startsWith ("run profile with delay") || text.startsWith("execute profile with delay") || text.startsWith("run actions with delay") || text.startsWith ("execute actions with delay") || text.startsWith ("delay actions")) {
     	command = "delay"
     	deviceType = "profile"
 	}
 //Disable Switches
-   	else if (text =="disable automation" || text.startsWith("stop turning the") || text == "stop the motion sensor" || text == "turn the motion sensor off" || text =="stop the sensor" || text =="kill the automation" || text =="kill the sensor"){
+   	else if (text.startsWith("disable automation") || text.startsWith("stop turning the") || text.startsWith("stop the motion sensor") || text.startsWith ("turn the motion sensor off") || text.startsWith("stop the sensor") || text.startsWith("kill the automation") || text.contains("kill the sensor")){
     	command = "off"
     	deviceType = "disable"
 	}
-    else if (text == "enable automation" || text.startsWith("start turning the") || text == "start the motion sensor" || text == "turn the motion sensor on" || text == "start the sensor"){
+    else if (text.contains("enable automation") || text.startsWith("start turning the") || text.startsWith("start the motion sensor") || text.startsWith("turn the motion sensor on") || text.startsWith ("start the sensor")){
     	command = "on"
     	deviceType = "disable"
 	}        

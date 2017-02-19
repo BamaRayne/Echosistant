@@ -1,6 +1,7 @@
 /* 
  * EchoSistant - The Ultimate Voice and Text Messaging Assistant Using Your Alexa Enabled Device.
  *
+ *		2/19/2017		Version:4.0 R.0.0.2		general bug fixes
  *		2/18/2017		Version:4.0 R.0.0.1a	Weather Service text fixes, added Elvis to all size(), removed empty shmStatus variable
  *		2/17/2017		Version:4.0 R.0.0.0		Public Release 
  *
@@ -155,7 +156,6 @@ page name: "mIntent"
                         input "cFilterSonosDevice", "capability.musicPlayer", title: "Send Audio Notification when due, to this Sonos Type Device(s)", required: false, multiple: true   
                         if (cFilterSonosDevice) {
                             input "volume", "number", title: "Temporarily change volume", description: "0-100%", required: false
-                            input "resumePlaying", "bool", title: "Resume currently playing music after notification", required: false, defaultValue: false
                         }
 						if (location.contactBookEnabled){
                         	input "recipients", "contact", title: "Send Text Notification when due, to this recipient(s) ", multiple: true, required: false
@@ -181,11 +181,16 @@ page name: "mIntent"
                         input "cMiscDev", "capability.switch", title: "Allow these Switches to be PIN Protected...", multiple: true, required: false, submitOnChange: true
                         input "cRoutines", "enum", title: "Allow these Routines to be PIN Protected...", options: routines, multiple: true, required: false
                         input "uPIN_SHM", "bool", title: "Enable PIN for Smart Home Monitor?", default: false
+                            if(uPIN_SHM == true)  {paragraph " You can also say: Alexa enable/disable the pin number for Security"} 
                         input "uPIN_Mode", "bool", title: "Enable PIN for Location Modes?", default: false
 							if (cMiscDev) 			{input "uPIN_S", "bool", title: "Enable PIN for Switch(es)?", default: false}
+                            	if(uPIN_S == true)  {paragraph " You can also say: Alexa enable/disable the pin number for Switches"} 
                             if (cTstat) 			{input "uPIN_T", "bool", title: "Enable PIN for Thermostats?", default: false}
+                            	if(uPIN_T == true)  {paragraph " You can also say: Alexa enable/disable the pin number for Thermostats"}                             
                             if (cDoor || cRelay) 	{input "uPIN_D", "bool", title: "Enable PIN for Doors?", default: false}
+                            	if(uPIN_D == true)  {paragraph " You can also say: Alexa enable/disable the pin number for Doors"}                             
                             if (cLock) 				{input "uPIN_L", "bool", title: "Enable PIN for Locks?", default: false}
+                            	if(uPIN_D == true)  {paragraph " You can also say: Alexa enable/disable the pin number for Locks"}                             
                     }
                 }
                     section ("Access Security Suite") {
@@ -200,7 +205,6 @@ page name: "mIntent"
                         }
                         if (shmSonosDevice) {
                             input "volume", "number", title: "Temporarily change volume", description: "0-100%", required: false
-                            input "resumePlaying", "bool", title: "Resume currently playing music after notification", required: false, defaultValue: false
                             }
                     }
                 }
@@ -2392,7 +2396,7 @@ def processTts() {
                 
         pContCmdsR = "profile"
 		def tProcess = true
-	//try {
+try {
         if(ptts == "no" || ptts == "stop" || ptts == "cancel" || ptts == "kill it" || ptts == "zip it" || ptts == "yes" && state.pContCmdsR != "wrongIntent"){
         	if(ptts == "no" || ptts == "stop" || ptts == "cancel" || ptts == "kill it" || ptts == "zip it"){
                 outputTxt = "ok, I am here if you need me"
@@ -2433,7 +2437,8 @@ def processTts() {
                 pTryAgain = true
                 return ["outputTxt":outputTxt, "pContCmds":pContCmds, "pShort":state.pShort, "pContCmdsR":pContCmdsR, "pTryAgain": pTryAgain, "pPIN":pPIN]
             }
-        def hText = "run a messaging and control profile"
+        	
+            def hText = "run a messaging and control profile"
 			if (state.pShort != true){ 
 				outputTxt = "Sorry, I heard that you were looking to " + hText + " but Echosistant wasn't able to take any actions "
 			}
@@ -2441,14 +2446,14 @@ def processTts() {
 			pTryAgain = true
 			return ["outputTxt":outputTxt, "pContCmds":pContCmds, "pShort":state.pShort, "pContCmdsR":pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]              
     	}
-/*
+
 } catch (Throwable t) {
         log.error t
         outputTxt = "Oh no, something went wrong. If this happens again, please reach out for help!"
         state.pTryAgain = true
         return ["outputTxt":outputTxt, "pContCmds":pContCmds, "pShort":state.pShort, "pContCmdsR":pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
     } 
-*/
+
 }
 /***********************************************************************************************************
 		SMART HOME MONITOR STATUS AND KEYPAD HANDLER
@@ -3801,11 +3806,11 @@ def mDefaultsD() {def text = "Tap here to configure settings"
     	else text = "Tap to Configure"
 		text}         
 def mSecurityS() {def result = ""
-    if (cMiscDev || cRoutines || uPIN_SHM || uPIN_Mode || fSecFeed || shmSynthDevice || shmSonosDevice || volume || resumePlaying) {
+    if (cMiscDev || cRoutines || uPIN_SHM || uPIN_Mode || fSecFeed || shmSynthDevice || shmSonosDevice || volume) {
     	result = "complete"}
    		result}
 def mSecurityD() {def text = "Tap here to configure settings" 
-    if (cMiscDev || cRoutines || uPIN_SHM || uPIN_Mode || fSecFeed || shmSynthDevice || shmSonosDevice || volume || resumePlaying) {
+    if (cMiscDev || cRoutines || uPIN_SHM || uPIN_Mode || fSecFeed || shmSynthDevice || shmSonosDevice || volume) {
     	text = "Configured"}
     	else text = "Tap to Configure"
 		text}
