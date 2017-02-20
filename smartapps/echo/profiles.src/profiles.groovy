@@ -1,6 +1,8 @@
 /* 
  * Message and Control Profile - EchoSistant Add-on 
  *
+ *      
+ *      2/20/2017       Version:4.0 R.0.0.4     Profile device actions not working.
  *		2/19/2017		Version:4.0 R.0.0.3 	Restricted control to only selected devices, added option to reverse disable commands
  *		2/18/2017		Version:4.0 R.0.0.2a	Bug fix for sms, fixed default variables
  *		2/17/2017		Version:4.0 R.0.0.1		Public Release
@@ -250,17 +252,17 @@ page name: "pDeviceControl"
                         }
                 }                
                 section ("Media" , hideWhenEmpty: true){
-                    input "sMedia", "capability.mediaController", title: "Use This Media Controller", multiple: false, required: false, submitOnChange: true
+					input "sMedia", "capability.mediaController", title: "Use This Media Controller", multiple: false, required: false, submitOnChange: true
                     	if (sMedia) {
                             paragraph "You can now control this device by speaking commands to Alexa:  \n" +
                             " E.G: Alexa start < Harmony Activity Name > in the " + app.label
-                        }                    
-                    input "sSpeaker", "capability.musicPlayer", title: "Use This Media Player Device For Volume Control", required: false, multiple: false, submitOnChange: true
-					input "sSynth", "capability.speechSynthesis", title: "Use This Speech Synthesis Capable Device", multiple: false, required: false, submitOnChange: true
+                        }
 						if (sSpeaker || sSynth) {
                             paragraph "You can now control this device by speaking commands to Alexa:  \n" +
                             " E.G: Alexa mute/unmute < Media Device Name > in the " + app.label
                         }
+                    input "sSpeaker", "capability.musicPlayer", title: "Use This Media Player Device For Volume Control", required: false, multiple: false, submitOnChange: true
+					input "sSynth", "capability.speechSynthesis", title: "Use This Speech Synthesis Capable Device", multiple: false, required: false, submitOnChange: true
                 }             
             }
       	}
@@ -1151,26 +1153,26 @@ ttsActions(text)
    Switch/Color/Dimmer/Toggle Handlers
 ************************************************************************************************************/
 // Used for delayed devices
-def turnOnSwitch() { switches?.on() }  
-def turnOffSwitch() { switches?.off() }
-def turnOnOtherSwitch() { otherSwitch?.on() }
-def turnOffOtherSwitch() { otherSwitch?.off() }  
+def turnOnSwitch() { sSwitches?.on() }  
+def turnOffSwitch() { sSwitches?.off() }
+def turnOnOtherSwitch() { sOtherSwitch?.on() }
+def turnOffOtherSwitch() { sOtherSwitch?.off() }  
 def turnOnDimmers() { def level = dimmersLVL < 0 || !dimmersLVL ?  0 : dimmersLVL >100 ? 100 : dimmersLVL as int
-	dimmers?.setLevel(dimmersLVL) }
-def turnOffDimmers() { dimmers?.off() }
+	sDimmers?.setLevel(sDimmersLVL) }
+def turnOffDimmers() { sDimmers?.off() }
 def turnOnOtherDimmers() { def otherlevel = otherDimmersLVL < 0 || !otherDimmersLVL ?  0 : otherDimmersLVL >100 ? 100 : otherDimmersLVL as int
-	otherDimmers?.setLevel(otherDimmersLVL) }
-def turnOffOtherDimmers() { otherDimmers?.off() }   
+	sOtherDimmers?.setLevel(sOtherDimmersLVL) }
+def turnOffOtherDimmers() { sOtherDimmers?.off() }   
 
 // Primary control of profile triggered lights/switches when delayed
 def profileDeviceControl() {
 	if (sSecondsOn) { runIn(sSecondsOn,turnOnSwitch)}
     if (sSecondsOff) { runIn(sSecondsOff,turnOffSwitch)}
     if (sOtherSecondsOn)  { runIn(sOtherSecondsOn,turnOnOtherSwitch)}
-    if (sSecondsOtherOff) { runIn(sSecondsOtherOff,turnOffOtherSwitch)}
-	if (sSecondsDimmersOn) { runIn(sSecondsDimmersOn,turnOnDimmers)}
+    if (sOtherSecondsOff) { runIn(sOtherSecondsOff,turnOffOtherSwitch)}
+	if (sSecondsDimmers) { runIn(sSecondsDimmers,turnOnDimmers)}
 	if (sSecondsDimmersOff) { runIn(sSecondsDimmersOff,turnOffDimmers)}
-    if (sSecondsOtherDimmersOn) { runIn(sSecondsOtherDimmersOn,turnOnOtherDimmers)}
+    if (sSecondsOtherDimmers) { runIn(sSecondsOtherDimmers,turnOnOtherDimmers)}
 	if (sSecondsOtherDimmersOff) { runIn(sSecondsOtherDimmersOff,turnOffOtherDimmers)}
 // Control of Lights and Switches when not delayed            
     if (!sSecondsOn) {
@@ -1380,8 +1382,10 @@ private setRandomColorName(){
         bulb.setColor(randomColor)
     }
 }
-private processColor() { 
+private processColor() {
+    if (sHuesCmd == "on") { sHues?.on() }
 	if (sHuesCmd == "off") { sHues?.off() }
+    if (sHuesOtherCmd == "on") { sHuesOther?.on() }
     if (sHuesOtherCmd == "off") { sHuesOther?.off() }
 		def hueSetVals = getColorName("${sHuesColor}",level)
         	sHues?.setColor(hueSetVals)
