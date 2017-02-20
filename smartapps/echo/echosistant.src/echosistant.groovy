@@ -1,7 +1,7 @@
 /* 
  * EchoSistant - The Ultimate Voice and Text Messaging Assistant Using Your Alexa Enabled Device.
  *
- *		2/19/2017		Version:4.0 R.0.0.2		general bug fixes
+ *		2/19/2017		Version:4.0 R.0.0.2a	general bug fixes
  *		2/18/2017		Version:4.0 R.0.0.1a	Weather Service text fixes, added Elvis to all size(), removed empty shmStatus variable
  *		2/17/2017		Version:4.0 R.0.0.0		Public Release 
  *
@@ -3678,7 +3678,7 @@ private getDeviceDetails() {
         cBattery.each	{DeviceDetails << it.displayName +"\n"}
         cMiscDev.each	{DeviceDetails << it.displayName +"\n"} // added 2/1/2017 BD
         if(cMedia) {
-            cMedia.each {a ->         
+            cMedia?.each {a ->         
                 def activities = a.currentState("activities").value
                 def activityList = new groovy.json.JsonSlurper().parseText(activities)
                     activityList.each { it ->  
