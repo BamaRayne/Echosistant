@@ -61,8 +61,10 @@ def mainProfilePage() {
         }
        	section("Devices/Group Control Settings and Restrictions") {
 	    	href "pGroups", title: "Create Groups and Select Devices", description: pGroupComplete(), state: pGroupSettings()
-			href "pRestrict", title: "General Profile Restrictions", description: pRestrictComplete(), state: pRestrictSettings()
-		}
+			if (pGroupSettings() == "complete" || pSendSettings() == "complete" ){
+            	href "pRestrict", title: "General Profile Restrictions", description: pRestrictComplete(), state: pRestrictSettings()
+			}
+        }
 	}
 }
 page name: "pSend"
