@@ -1,6 +1,7 @@
 /* 
  * EchoSistant - The Ultimate Voice and Text Messaging Assistant Using Your Alexa Enabled Device.
  *
+ *		2/19/2017		Version:4.0 R.0.0.3		running routines fix and spelling errors
  *		2/19/2017		Version:4.0 R.0.0.2a	general bug fixes
  *		2/18/2017		Version:4.0 R.0.0.1a	Weather Service text fixes, added Elvis to all size(), removed empty shmStatus variable
  *		2/17/2017		Version:4.0 R.0.0.0		Public Release 
@@ -324,7 +325,7 @@ page name: "mSettings"
                     section ("LIST_OF_SYSTEM_CONTROLS") { 
                         def DeviceList = getControlDetails()
                             paragraph ("${DeviceList}")
-                            log.info "\nLLIST_OF_SYSTEM_CONTROLS \n${DeviceList}"
+                            log.info "\nLIST_OF_SYSTEM_CONTROLS \n${DeviceList}"
                                 }
                             }
                         }
@@ -768,7 +769,7 @@ def feedbackHandler() {
     def stateDate
     def stateTime
 	def data = [:]
-    	fDevice = fDevice.replaceAll("[^a-zA-Z0-9 ]", "") 
+    	fDevice = fDevice.replaceAll("[^a-zA-Z0-9]", "") 
     if (debug){
     	log.debug 	"Feedback data: (fDevice) = '${fDevice}', "+
     				"(fQuery) = '${fQuery}', (fOperand) = '${fOperand}', (fCommand) = '${fCommand}', (fIntentName) = '${fIntentName}'"}
@@ -1303,7 +1304,7 @@ def controlDevices() {
         def String activityId = (String) "undefined"
         def delay = false
         def data
-        ctDevice = ctDevice.replaceAll("[^a-zA-Z0-9 ]", "")
+        ctDevice = ctDevice.replaceAll("[^a-zA-Z0-9]", "")
 
         if (debug) log.debug "Control Data: (ctCommand)= ${ctCommand}',(ctNum) = '${ctNum}', (ctPIN) = '${ctPIN}', "+
                              "(ctDevice) = '${ctDevice}', (ctUnit) = '${ctUnit}', (ctGroup) = '${ctGroup}', (ctIntentName) = '${ctIntentName}'"
@@ -2180,7 +2181,7 @@ def controlSecurity() {
         def String secCommand = (String) null
         def delay = false
         def data = [:]
-			control = control.replaceAll("[^a-zA-Z0-9]", "")
+        	control = control.replaceAll("[^a-zA-Z0-9]", "")
         	sPIN = sPIN == "?" ? "undefined" : sPIN
         if (num == "undefined" || num =="?") {num = 0 } 
         	num = num as int
@@ -2270,7 +2271,7 @@ try {
         else {
         	if(currMode != control){
                 modes?.find { m -> 
-					def mMatch = m.replaceAll("[^a-zA-Z0-9 ]", "")
+					def mMatch = m.replaceAll("[^a-zA-Z0-9]", "")
                     if(mMatch.toLowerCase() == control.toLowerCase()) {
                         if(currMode !=  m) {
                             if(cPIN && state.usePIN_Mode == true) {
@@ -2309,9 +2310,12 @@ try {
         }
 		if (control != "undefined") {	
             routines?.find {r -> 
-            	def rMatch = r.replaceAll("[^a-zA-Z0-9 ]", "")
+            	log.warn "routine before ${r}"
+                def rMatch = r.replaceAll("[^a-zA-Z0-9]", "")
             	if(rMatch.toLowerCase() == control.toLowerCase()){
+                		log.warn "found a match"
                    		if(cPIN && cRoutines) {
+                        	log.warn "checking pin and looking for cRoutines = ${cRoutines}"
                          	def pinRoutine =  cRoutines.find {r1 -> r1 == r}  
                             if (pinRoutine) {
                                 delay = false
@@ -2323,16 +2327,27 @@ try {
                                 command = "validation"
                                 def unit = "routine"
                                 outputTxt = pinHandler(pin, command, num, unit)
+                                log.warn " outputTxt = ${outputTxt}"
                                 pPIN = true
                                 if (state.pinTry == 3) {pPIN = false}
                                 log.warn "try# ='${state.pinTry}'"                        
                             }
-                            else { 
+                            /* faluty logic ... removed 2/20/17 Bobby
+                            else {
+                            	log.warn "running routine = ${r}"
                                 location.helloHome?.execute(r)
                                 outputTxt = "Ok, I am running the " + control + " routine"
+                                log.warn " outputTxt = ${outputTxt}"
                             }
+                            */
                     	}
-                    }
+                        else {
+								log.warn "running routine = ${r}"
+                                location.helloHome?.execute(r)
+                                outputTxt = "Ok, I am running the " + control + " routine"
+                                log.warn " outputTxt = ${outputTxt}"
+                    	}
+            	}
 			}
          	if (outputTxt != null) {
             	return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
@@ -2343,7 +2358,7 @@ try {
 			if (state.pShort != true){ 
 				outputTxt = "Sorry, I heard that you were looking to " + hText + " but Echosistant wasn't able to take any actions"
 			}
-			else {outputTxt = "I've heard " + sText +  " but I wasn't able manage your system controls "} 
+			else {outputTxt = "I've heard " + sText +  " but I wasn't able to manage your system controls "} 
             state.pTryAgain = true
             return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
     }
