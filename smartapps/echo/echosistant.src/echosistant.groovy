@@ -1,6 +1,7 @@
 /* 
  * EchoSistant - The Ultimate Voice and Text Messaging Assistant Using Your Alexa Enabled Device.
  *
+ *		2/20/2017		Version:4.0 R.0.0.4		introdusing the "is active state feedback"
  *		2/19/2017		Version:4.0 R.0.0.3		running routines fix and spelling errors
  *		2/19/2017		Version:4.0 R.0.0.2a	general bug fixes
  *		2/18/2017		Version:4.0 R.0.0.1a	Weather Service text fixes, added Elvis to all size(), removed empty shmStatus variable
@@ -764,12 +765,13 @@ def feedbackHandler() {
     //OTHER 
     def String deviceType = (String) null
     def String outputTxt = (String) null
+    def String result = (String) null
     def String deviceM = (String) null
 	def currState
     def stateDate
     def stateTime
 	def data = [:]
-    	fDevice = fDevice.replaceAll("[^a-zA-Z0-9]", "") 
+    	fDevice = fDevice.replaceAll("[^a-zA-Z0-9 ]", "") 
     if (debug){
     	log.debug 	"Feedback data: (fDevice) = '${fDevice}', "+
     				"(fQuery) = '${fQuery}', (fOperand) = '${fOperand}', (fCommand) = '${fCommand}', (fIntentName) = '${fIntentName}'"}
@@ -790,19 +792,55 @@ try {
 	}    
     else {
     	if (fDevice != "undefined" && fQuery != "undefined" && fOperand == "undefined" && fQuery != "about" && fQuery != "get" ) {
-            def dMatch = deviceMatchHandler(fDevice)
-            if (dMatch?.deviceMatch == null) { 				
-                outputTxt = "Sorry, I couldn't find any details about " + fDevice
-                state.pTryAgain = true
-        		return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
-            }
-            else {
-                def dDevice = dMatch?.deviceMatch
-                def dType = dMatch?.deviceType
-                def dState = dMatch?.currState
-                def dMainCap = dMatch?.mainCap
-                def dCapCount = getCaps(dDevice,dType, dMainCap, dState)
-                state.pContCmdsR = "caps"
+            
+        if(debug) log.debug " is query = ${fQuery.contains ("is ")}"
+        if (fQuery.contains ("is ") && fDevice != "undefined" && fCommand != "undefined" ) {
+			def deviceMatch = cRelay?.find {d -> d.label.toLowerCase() == fDevice.toLowerCase()}
+                if(deviceMatch && cContactRelay) {
+					outputTxt =  cContactRelay.latestValue("contact").contains(fCommand) ? "yes" : "no"
+                    return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
+				}
+                else {
+                	if (deviceMatch == null && cDoor) {
+            			deviceMatch = cDoor?.find {d -> d.label.toLowerCase() == fDevice.toLowerCase()}
+            			 if(deviceMatch) outputTxt =  deviceMatch.latestValue("contact").contains(fCommand) ? "yes" : "no"
+            		}
+            		else if (deviceMatch == null && cContact) {
+            			deviceMatch = cContact?.find {d -> d.label.toLowerCase() == fDevice.toLowerCase()}
+                    	if(deviceMatch) outputTxt =  deviceMatch.latestValue("contact").contains(fCommand) ? "yes" : "no"
+					}
+            		else if (deviceMatch == null && cSwitch) {
+                    	deviceMatch = cSwitch?.find {d -> d.label.toLowerCase() == fDevice.toLowerCase()}
+        				if(deviceMatch) outputTxt =  deviceMatch.latestValue("switch").contains(fCommand) ? "yes" : "no"
+            		}
+                    else if (deviceMatch == null && cMotion) {
+                    	deviceMatch = cMotion?.find {d -> d.label.toLowerCase() == fDevice.toLowerCase()}
+        				if(deviceMatch) outputTxt =  deviceMatch.latestValue("motion").contains(fCommand) ? "yes" : "no"
+            		}
+                    else if (deviceMatch == null && cPresence) {
+                    	deviceMatch = cPresence?.find {d -> d.label.toLowerCase() == fDevice.toLowerCase()} 	
+            			if(deviceMatch) outputTxt =  deviceMatch.latestValue("motion").contains(fCommand) ? "yes" : "no"
+                	}        
+                    else if (deviceMatch == null && cWater) {
+                    	deviceMatch = cWater?.find {d -> d.label.toLowerCase() == fDevice.toLowerCase()}	
+            			if(deviceMatch) outputTxt =  deviceMatch.latestValue("water").contains(fCommand) ? "yes" : "no"
+                	}
+               if(outputTxt) return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
+               }
+        }             
+		def dMatch = deviceMatchHandler(fDevice)
+      	if (dMatch?.deviceMatch == null) { 				
+        	outputTxt = "Sorry, I couldn't find any details about " + fDevice
+            state.pTryAgain = true
+        	return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
+      	}
+        else {
+        	def dDevice = dMatch?.deviceMatch
+            def dType = dMatch?.deviceType
+            def dState = dMatch?.currState
+            def dMainCap = dMatch?.mainCap
+            def dCapCount = getCaps(dDevice,dType, dMainCap, dState)
+            state.pContCmdsR = "caps"
                 	
                     if (state.pShort != true){ 
                     outputTxt = "I couldn't quite get that, but " + fDevice +  " has " + dCapCount + " capabilities. Would you like to hear more about this device?"         
@@ -810,7 +848,7 @@ try {
                     else {outputTxt = "I didn't catch that, but " + fDevice +  " has " + dCapCount + " capabilities. Want to hear more?"} 
         			return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
             }
-        }
+        }   
         if (fOperand == "undefined" && fQuery != "undefined" && fQuery != "who" && !fQuery.contains ("when")) {        
                 def deviceMatch=cTstat.find {d -> d.label.toLowerCase() == fDevice.toLowerCase()}
                     if(deviceMatch)	{
@@ -1304,7 +1342,7 @@ def controlDevices() {
         def String activityId = (String) "undefined"
         def delay = false
         def data
-        ctDevice = ctDevice.replaceAll("[^a-zA-Z0-9]", "")
+        ctDevice = ctDevice.replaceAll("[^a-zA-Z0-9 ]", "")
 
         if (debug) log.debug "Control Data: (ctCommand)= ${ctCommand}',(ctNum) = '${ctNum}', (ctPIN) = '${ctPIN}', "+
                              "(ctDevice) = '${ctDevice}', (ctUnit) = '${ctUnit}', (ctGroup) = '${ctGroup}', (ctIntentName) = '${ctIntentName}'"
@@ -1988,7 +2026,7 @@ def controlHandler(data) {
 	}
     else if (deviceType == "cDoor" || deviceType == "cRelay" ) {
     	def cmd = deviceCommand
-        log.warn "pinTry = ${state.pinTry}"
+        if(degug) log.warn "pinTry = ${state.pinTry}"
         if (delayD == true || state.pinTry != null || state.pContCmdsR == "door" ) {  
             def deviceR = cRelay.find {r -> r.label.toLowerCase() == deviceD.toLowerCase()}
 			deviceD = cDoor.find {d -> d.label.toLowerCase() == deviceD.toLowerCase()}   
@@ -2315,7 +2353,7 @@ try {
                                 delay = false
                                 data = [command: r, delay: delay]
                                 state.lastAction = data
-                                state.pContCmdsR = "mode"
+                                state.pContCmdsR = "routine"
                                 //RUN PIN VALIDATION PROCESS
                                 def pin = "undefined"
                                 command = "validation"
@@ -2353,12 +2391,14 @@ try {
             state.pTryAgain = true
             return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
     }
+
     } catch (Throwable t) {
         log.error t
         outputTxt = "Oh no, something went wrong. If this happens again, please reach out for help!"
         state.pTryAgain = true
         return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
 	}
+
 }
 /************************************************************************************************************
 	SECURITY CONTROL HANDLER
@@ -2913,7 +2953,7 @@ private pinHandler(pin, command, num, unit) {
         state.lastAction = null
 		result = "Pin number please"
 		state.pinTry = 0
-		if (debug) log.debug "PIN response pending - '${state.pinTry}'"  
+		if (debug) log.warn "PIN response pending - '${state.pinTry}'"  
         return result
 	}        
     if (pin == cPIN || command == cPIN || pinNum == cPIN || unit == cPIN ) {
@@ -2948,8 +2988,8 @@ private pinHandler(pin, command, num, unit) {
                 }
                 if(state.pContCmdsR == "routine"){ 
                 	def cmd = state.savedPINdata.command
-                	location.helloHome?.execute(cmd)
-                	result = "I changed your location mode to " + cmd
+                	location.helloHome.execute(cmd)
+                	result = "I executed your routine, " + cmd
                 	state.pinTry = null /// 2/8/2017
                     return result
                 }
