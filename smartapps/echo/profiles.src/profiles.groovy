@@ -250,13 +250,13 @@ page name: "pDeviceControl"
                         }
                 }                
                 section ("Media" , hideWhenEmpty: true){
-                    input "sMedia", "capability.mediaController", title: "Use This Media Controller(s)", multiple: false, required: false
-                    input "sSpeaker", "capability.musicPlayer", title: "Use This Media Player Device For Volume Control", required: false, multiple: false
-					input "sSynth", "capability.speechSynthesis", title: "Use This Speech Synthesis Capable Device", multiple: false, required: false
+                    input "sMedia", "capability.mediaController", title: "Use This Media Controller", multiple: false, required: false, submitOnChange: true
                     	if (sMedia) {
                             paragraph "You can now control this device by speaking commands to Alexa:  \n" +
                             " E.G: Alexa start < Harmony Activity Name > in the " + app.label
-                        }
+                        }                    
+                    input "sSpeaker", "capability.musicPlayer", title: "Use This Media Player Device For Volume Control", required: false, multiple: false, submitOnChange: true
+					input "sSynth", "capability.speechSynthesis", title: "Use This Speech Synthesis Capable Device", multiple: false, required: false, submitOnChange: true
 						if (sSpeaker || sSynth) {
                             paragraph "You can now control this device by speaking commands to Alexa:  \n" +
                             " E.G: Alexa mute/unmute < Media Device Name > in the " + app.label
@@ -1181,7 +1181,7 @@ def profileDeviceControl() {
 			else if (sOtherSwitchCmd == "off") { sOtherSwitch?.off() }
 		if (otherSwitchCmd == "toggle") { toggle() }
 		
-        if (sDimmersCmd == "set" && dimmers) { def level = sDimmersLVL < 0 || !sDimmersLVL ?  0 : sDimmersLVL >100 ? 100 : sDimmersLVL as int
+        if (sDimmersCmd == "set" && sDimmers) { def level = sDimmersLVL < 0 || !sDimmersLVL ?  0 : sDimmersLVL >100 ? 100 : sDimmersLVL as int
 			sDimmers?.setLevel(level) }
 		if (sOtherDimmersCmd == "set" && sOtherDimmers) { def otherLevel = sOtherDimmersLVL < 0 || !sOtherDimmersLVL ?  0 : sOtherDimmersLVL >100 ? 100 : sOtherDimmersLVL as int
 			sOtherDimmers?.setLevel(otherLevel) }
@@ -1267,11 +1267,11 @@ private getCommand(text){
     	deviceType = "profile"
 	}
 //Disable Switches
-   	else if (text.startsWith("disable automation") || text.startsWith("stop turning the") || text.startsWith("stop the motion sensor") || text.startsWith ("turn the motion sensor off") || text.startsWith("stop the sensor") || text.startsWith("kill the automation") || text.contains("kill the sensor")){
+   	else if (text.startsWith("disable automation") || text.startsWith("stop turning the") || text.startsWith("stop the motion sensor") || text.startsWith ("turn the motion sensor off") || text.startsWith("stop the sensor") || text.startsWith("kill the automation") || text.contains("kill the sensor") || text.contains("sensor off")){
     	command = "off"
     	deviceType = "disable"
 	}
-    else if (text.contains("enable automation") || text.startsWith("start turning the") || text.startsWith("start the motion sensor") || text.startsWith("turn the motion sensor on") || text.startsWith ("start the sensor")){
+    else if (text.contains("enable automation") || text.startsWith("start turning the") || text.startsWith("start the motion sensor") || text.startsWith("turn the motion sensor on") || text.startsWith ("start the sensor")|| text.contains("sensor on")){
     	command = "on"
     	deviceType = "disable"
 	}        

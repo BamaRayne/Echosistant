@@ -180,17 +180,18 @@ page name: "mIntent"
                     	def routines = location.helloHome?.getPhrases()*.label.sort()
                         input "cMiscDev", "capability.switch", title: "Allow these Switches to be PIN Protected...", multiple: true, required: false, submitOnChange: true
                         input "cRoutines", "enum", title: "Allow these Routines to be PIN Protected...", options: routines, multiple: true, required: false
-                        input "uPIN_SHM", "bool", title: "Enable PIN for Smart Home Monitor?", default: false
-                            if(uPIN_SHM == true)  {paragraph " You can also say: Alexa enable/disable the pin number for Security"} 
-                        input "uPIN_Mode", "bool", title: "Enable PIN for Location Modes?", default: false
-							if (cMiscDev) 			{input "uPIN_S", "bool", title: "Enable PIN for Switch(es)?", default: false}
-                            	if(uPIN_S == true)  {paragraph " You can also say: Alexa enable/disable the pin number for Switches"} 
-                            if (cTstat) 			{input "uPIN_T", "bool", title: "Enable PIN for Thermostats?", default: false}
-                            	if(uPIN_T == true)  {paragraph " You can also say: Alexa enable/disable the pin number for Thermostats"}                             
-                            if (cDoor || cRelay) 	{input "uPIN_D", "bool", title: "Enable PIN for Doors?", default: false}
-                            	if(uPIN_D == true)  {paragraph " You can also say: Alexa enable/disable the pin number for Doors"}                             
-                            if (cLock) 				{input "uPIN_L", "bool", title: "Enable PIN for Locks?", default: false}
-                            	if(uPIN_D == true)  {paragraph " You can also say: Alexa enable/disable the pin number for Locks"}                             
+                        input "uPIN_SHM", "bool", title: "Enable PIN for Smart Home Monitor?", default: false, submitOnChange: true
+                            if(uPIN_SHM == true)  {paragraph "You can also say: Alexa enable/disable the pin number for Security"} 
+                        input "uPIN_Mode", "bool", title: "Enable PIN for Location Modes?", default: false, submitOnChange: true
+                            if(uPIN_Mode == true)  {paragraph "You can also say: Alexa enable/disable the pin number for Location Modes"} 
+							if (cMiscDev) 			{input "uPIN_S", "bool", title: "Enable PIN for Switch(es)?", default: false, submitOnChange: true}
+                            	if(uPIN_S == true)  {paragraph "You can also say: Alexa enable/disable the pin number for Switches"} 
+                            if (cTstat) 			{input "uPIN_T", "bool", title: "Enable PIN for Thermostats?", default: false, submitOnChange: true}
+                            	if(uPIN_T == true)  {paragraph "You can also say: Alexa enable/disable the pin number for Thermostats"}                             
+                            if (cDoor || cRelay) 	{input "uPIN_D", "bool", title: "Enable PIN for Doors?", default: false, submitOnChange: true}
+                            	if(uPIN_D == true)  {paragraph "You can also say: Alexa enable/disable the pin number for Doors"}                             
+                            if (cLock) 				{input "uPIN_L", "bool", title: "Enable PIN for Locks?", default: false, submitOnChange: true}
+                            	if(uPIN_L == true)  {paragraph "You can also say: Alexa enable/disable the pin number for Locks"}                             
                     }
                 }
                     section ("Access Security Suite") {
