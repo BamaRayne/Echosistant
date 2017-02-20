@@ -1381,7 +1381,7 @@ try {
                             if (settings.cSpeaker?.size()>0) {
                                 deviceMatch = cSpeaker.find {s -> s.label.toLowerCase() == ctDevice.toLowerCase()}
                                 if(deviceMatch) {
-                                log.warn "found a speaker "
+                                if (debug) log.debug "found a speaker "
                                 dType = "v"}
                             }
                             if (deviceMatch == null && settings.cSynth?.size()>0) {
@@ -1471,11 +1471,9 @@ try {
                         if (deviceMatch && dType == "m") {
                             device = deviceMatch
                             if (ctNum > 0 && ctUnit == "minutes") {
-                                log.warn "delay Harmony activity = ${deviceMatch}, activityId = ${activityId}, ctNum = ${ctNum}, ctUnit = ${ctUnit} "
                                 device = device.label
                                 delay = true
                                 data = [type: "cHarmony", command: command, device: device, unit: activityId, num: ctNum, delay: delay]
-                                log.warn "delay Harmony with data: ${data}"
                                 runIn(ctNum*60, controlHandler, [data: data])
                                 outputTxt = "Ok, turning " +  deviceMatch + " activity " + command + ", in " + numText
                                 return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
@@ -2100,7 +2098,6 @@ def controlHandler(data) {
                     	if (deviceCommand == "start" || deviceCommand == "switch" || deviceCommand == "on" || deviceCommand == "set"){
 							deviceCommand = "startActivity"
                             if (unitU != "undefined"){
-                            	log.warn "starting unitU = ${unitU}"
                             	deviceD."${deviceCommand}"(unitU)
                         		deviceD.refresh() 
                         		if(debug) log.debug "starting - deviceD: ${deviceD.label}, deviceCommand:${deviceCommand}, unitU:${unitU}"
@@ -2125,7 +2122,7 @@ def controlHandler(data) {
                                     return result
                                 }
                                 else { 
-                                    if(debug) log.warn "last activity must be saved - deviceD: ${deviceD.label}, deviceCommand:${deviceCommand}, activityId:${activityId}"
+                                    if(debug) log.error "last activity must be saved - deviceD: ${deviceD.label}, deviceCommand:${deviceCommand}, activityId:${activityId}"
                                     result = "Sorry for the trouble, but in order for EchoSistant to be able to start where you left off, the last activity must be saved"
                                     return result
                                 }
@@ -2310,12 +2307,9 @@ try {
         }
 		if (control != "undefined") {	
             routines?.find {r -> 
-            	log.warn "routine before ${r}"
                 def rMatch = r.replaceAll("[^a-zA-Z0-9]", "")
             	if(rMatch.toLowerCase() == control.toLowerCase()){
-                		log.warn "found a match"
                    		if(cPIN && cRoutines) {
-                        	log.warn "checking pin and looking for cRoutines = ${cRoutines}"
                          	def pinRoutine =  cRoutines.find {r1 -> r1 == r}  
                             if (pinRoutine) {
                                 delay = false
@@ -2327,7 +2321,6 @@ try {
                                 command = "validation"
                                 def unit = "routine"
                                 outputTxt = pinHandler(pin, command, num, unit)
-                                log.warn " outputTxt = ${outputTxt}"
                                 pPIN = true
                                 if (state.pinTry == 3) {pPIN = false}
                                 log.warn "try# ='${state.pinTry}'"                        
@@ -2342,10 +2335,8 @@ try {
                             */
                     	}
                         else {
-								log.warn "running routine = ${r}"
                                 location.helloHome?.execute(r)
                                 outputTxt = "Ok, I am running the " + control + " routine"
-                                log.warn " outputTxt = ${outputTxt}"
                     	}
             	}
 			}
@@ -3365,29 +3356,15 @@ private void processSms(number, message) {
 private getColorName(cName, level) {
 	if (cName == "random") {
     def randomColor = [:]
-    def bulbName
-    	log.warn "color is random"
-        
+    def bulbName       
         child?.gHues.each { bulb ->
             int hueLevel = color.l
             int hueHue = Math.random() *100 as Integer
             bulbName = bulb.name
             randomColor = [hue: hueHue, saturation: 100, level: hueLevel]
-            log.warn "setting ${bulbName} to ${randomColor}"
-            //child?.gHues.setColor(hueSetVals)
+            if(debug) log.info "setting ${bulbName} to ${randomColor}"
             bulb.setColor(randomColor)
        	}
-        log.warn "setting bulb to ${randomColor}"
-        log.warn "setting ${bulbName} to ${randomColor}"
-        /*
-        for (bulb in child?.gHues) {    
-            int hueLevel = !level ? 100 : level
-            int hueHue = Math.random() *100 as Integer
-            def randomColor = [hue: hueHue, saturation: 100, level: hueLevel]
-            log.warn "setting bulb to ${randomColor}"
-            bulb.setColor(randomColor) 
-        }
-        */
         return "executed"
 	}    
     for (color in fillColorSettings()) {
@@ -3564,8 +3541,6 @@ def private mGetWeather(){
     	def weather = getWeatherFeature("forecast", settings.wZipCode)
         def todayWeather = weather.forecast.txt_forecast.forecastday[0].fcttext
         def tonightWeather = weather.forecast.txt_forecast.forecastday[1].fcttext
-        log.warn "today = ${todayWeather}"
-        log.warn "tonight = ${tonightWeather}"
         
         if(settings.wImperial){
 			result = "Today's forecast is " + weather.forecast.txt_forecast.forecastday[0].fcttext  + " Tonight it will be " + weather.forecast.txt_forecast.forecastday[1].fcttext 
@@ -3613,7 +3588,6 @@ def private mGetWeatherAlerts(){
             def alert = weather.alerts.description.toString()
             def expire = weather.alerts.expires
             def DT = weather.alerts.expires_epoch
-            log.warn "alert = ${alert}, alert size...${alert?.size()}"
             if(alert >10){
                 result = alert  + " is in effect for your area, that expires at " + expire
             }
