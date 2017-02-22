@@ -293,7 +293,7 @@ page name: "mSettings"
                                                 "${state.accessToken}\n"+
                                                 "Application ID:\n"+
                                                 "${app.id}"
-                    href "tokens", title: "Revoke/Reset Security Access Token", description: none
+                    href "mTokens", title: "Revoke/Reset Security Access Token", description: none // 2/21/17 Bobby
                 }
                 section("Tap below to remove the ${textAppName()} application.  This will remove ALL Profiles and the App from the SmartThings mobile App."){
                 }	
