@@ -1,6 +1,7 @@
 /* 
  * EchoSistant - The Ultimate Voice and Text Messaging Assistant Using Your Alexa Enabled Device.
  *
+ *		2/21/2017		Version:4.0 R.0.0.5DB	debug version, DO NOT USE
  *		2/21/2017		Version:4.0 R.0.0.5		added Ask Home if device is in < current state > feedback
  *		2/20/2017		Version:4.0 R.0.0.4		added the "is device < current state > feedback"
  *		2/19/2017		Version:4.0 R.0.0.3		running routines fix and spelling errors
@@ -779,7 +780,7 @@ def feedbackHandler() {
 	def fProcess = true
     state.pTryAgain = false
 
-try {
+//try {
 		
         fOperand = fOperand == "lights on" ? "lights" : fOperand == "switches on" ? "lights" : fOperand == "switches" ? "lights" : fOperand
         fCommand = fOperand == "lights on" ? "on" : fOperand == "switches on" ? "on" : fCommand
@@ -1039,8 +1040,8 @@ try {
             if (fOperand == "lights" && fCommand != "undefined") { 
                 if(cSwitch){
                     def devList = []
-                    if (cSwitch.latestValue("switch").contains(fCommand)) {
-                        cSwitch.each { deviceName ->
+                    if (cSwitch?.latestValue("switch").contains(fCommand)) {
+                        cSwitch?.each { deviceName ->
                                     if (deviceName.latestValue("switch")=="${fCommand}") {
                                         String device  = (String) deviceName
                                         devList += device
@@ -1069,8 +1070,8 @@ try {
                     }
                     else if (fQuery.contains ("what") || fQuery.contains ("which") || fQuery == "what's") {
                         def devNames = []
-                        if (cSwitch.latestValue("switch").contains(fCommand)) {
-                            cSwitch.each { deviceName ->
+                        if (cSwitch?.latestValue("switch").contains(fCommand)) {
+                            cSwitch?.each { deviceName ->
                                         if (deviceName.latestValue("switch")=="${fCommand}") {
                                             String device  = (String) deviceName
                                             devNames += device
@@ -1089,7 +1090,7 @@ try {
             if(fOperand.contains("doors")) { // && fCommand != "undefined") { removed 1/23/2017
                     def devList = []
                     if (cContact.latestValue("contact").contains(fCommand) || cDoor.latestValue("door").contains(fCommand)) {
-                        cContact.each { deviceName ->
+                        cContact?.each { deviceName ->
                                     if (deviceName.latestValue("contact")=="${fCommand}") {
                                         String device  = (String) deviceName
                                         devList += device
@@ -1126,7 +1127,7 @@ try {
                         fOperand = fOperand.contains("closed") ? "closed" : fOperand.contains("open") ? "open" : fOperand 
                         fCommand = fCommand.contains("close") ? "closed" : fCommand
                         fCommand = fOperand == "closed" ? "closed" : fOperand == "open" ? "open" : fCommand                  
-                            if (cContact.latestValue("contact").contains(fCommand) || cDoor.latestValue("door").contains(fCommand)) {
+                            if (cContact?.latestValue("contact").contains(fCommand) || cDoor?.latestValue("door").contains(fCommand)) {
                                 cContact?.each { deviceName ->
                                             if (deviceName.latestValue("contact")=="${fCommand}") {
                                                 String device  = (String) deviceName
@@ -1258,16 +1259,16 @@ try {
                 if(cPresence){
                         def devListP = []
                         def devListNP = []
-                        if (cPresence.latestValue("presence").contains("present")) {
-                            cPresence.each { deviceName ->
+                        if (cPresence?.latestValue("presence").contains("present")) {
+                            cPresence?.each { deviceName ->
                                         if (deviceName.latestValue("presence")=="present") {
                                             String device  = (String) deviceName
                                             devListP += device
                                         }
                             }
                         }
-                        if (cPresence.latestValue("presence").contains("not present")) {
-                            cPresence.each { deviceName ->
+                        if (cPresence?.latestValue("presence").contains("not present")) {
+                            cPresence?.each { deviceName ->
                                         if (deviceName.latestValue("presence")=="not present") {
                                             String device  = (String) deviceName
                                             devListNP += device
@@ -1324,14 +1325,14 @@ try {
             return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
         }
     } 
-
+/*
 }catch (Throwable t) {
         log.error t
         outputTxt = "Oh no, something went wrong. If this happens again, please reach out for help!"
         state.pTryAgain = true
         return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
 }
-
+*/
 }
 /************************************************************************************************************
    DEVICE CONTROL - from Lambda via page c
@@ -1361,8 +1362,14 @@ def controlDevices() {
                              "(ctDevice) = '${ctDevice}', (ctUnit) = '${ctUnit}', (ctGroup) = '${ctGroup}', (ctIntentName) = '${ctIntentName}'"
 	def ctProcess = true	
     state.pTryAgain = false 
-try {	   
+
+//try {
+
     if (ctIntentName == "main") {
+    	if (ctCommand == "this is a test"){
+			outputTxt = "Congratiulations! Your EchoSistant is now setup properly" 
+			return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]       
+    	}
         ctPIN = ctPIN == "?" ? "undefined" : ctPIN
         if (ctNum == "undefined" || ctNum =="?") {ctNum = 0 } 
         if (ctCommand =="?") {ctCommand = "undefined"} 
@@ -1466,7 +1473,7 @@ try {
                             //Personal Preference to use the Harmony Hub for TV off (works only with first Hub selected 2/10/17 Bobby
                             if (ctDevice == "TV" && command != "mute" && command != "unmute" && command != "setLevel" && command != "decrease" && command != "increase" && settings.cMedia?.size()>0) {
                             	dType = "m"
-                                deviceMatch = cMedia.first()                   
+                                deviceMatch = cMedia?.first()                   
                             }    
                             if (deviceMatch == null && settings.cSwitch?.size()>0 && state.pinTry == null) {
                                 deviceMatch = cSwitch.find {s -> s.label.toLowerCase() == ctDevice.toLowerCase()}                 
@@ -1803,12 +1810,14 @@ try {
 		state.pTryAgain = true
 		return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
     }
+    /*
        } catch (Throwable t) {
         log.error t
         outputTxt = "Oh no, something went wrong. If this happens again, please reach out for help!"
         state.pTryAgain = true
         return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
 	}
+    */
 }
 /************************************************************************************************************
    DEVICE CONTROL HANDLER
@@ -1830,9 +1839,9 @@ def controlHandler(data) {
 	if (deviceType == "cSwitch" || deviceType == "cMiscDev"  ) {
     	if (deviceCommand == "on" || deviceCommand == "off") {
             if (delayD == true ) {
-                if(deviceType == "cSwitch") {deviceD = cSwitch.find {s -> s.label.toLowerCase() == deviceD.toLowerCase()}}
+                if(deviceType == "cSwitch") {deviceD = cSwitch?.find {s -> s.label.toLowerCase() == deviceD.toLowerCase()}}
                 if (deviceType == "cMiscDev") {
-                	deviceD = cMiscDev.find {s -> s.label.toLowerCase() == deviceD.toLowerCase()}            
+                	deviceD = cMiscDev?.find {s -> s.label.toLowerCase() == deviceD.toLowerCase()}            
                 	deviceD."${deviceCommand}"()
                     result = "Ok, turning " + deviceD + " " + deviceCommand 
                 	return result          
@@ -1857,8 +1866,8 @@ def controlHandler(data) {
         }        
         else if (deviceCommand == "increase" || deviceCommand == "decrease" || deviceCommand == "setLevel" || deviceCommand == "set") {
  			if (delayD == true) {
-            	if(deviceType == "cSwitch") {deviceD = cSwitch.find {s -> s.label.toLowerCase() == deviceD.toLowerCase()}}
-                else if (deviceType == "cMiscDev") {deviceD = cMiscDev.find {s -> s.label.toLowerCase() == deviceD.toLowerCase()}}            
+            	if(deviceType == "cSwitch") {deviceD = cSwitch?.find {s -> s.label.toLowerCase() == deviceD.toLowerCase()}}
+                else if (deviceType == "cMiscDev") {deviceD = cMiscDev?.find {s -> s.label.toLowerCase() == deviceD.toLowerCase()}}            
             }            
             if(state.pContCmdsR == "repeat") {state.pContCmdsR == "level"}
             def currLevel = deviceD.latestValue("level")
@@ -2902,7 +2911,7 @@ try {
                     DeviceDetails << d.displayName 
                 }
         }
-        cLock.each 	{ d ->
+        cLock?.each 	{ d ->
         def attrValue = d.latestValue("lock") 
         	def stateTime = d.currentState("lock").date.time
 			def endTime = now() + location.timeZone.rawOffset
@@ -2914,7 +2923,7 @@ try {
                     DeviceDetails << d.displayName 
                 }
         }
-        cSwitch.each 	{ d ->
+        cSwitch?.each 	{ d ->
         	def attrValue = d.latestValue("switch") 
             if (d?.currentState("switch") != null) {
             def stateTime = d?.currentState("switch").date.time
@@ -2928,7 +2937,8 @@ try {
                 }
            	}
         }        
-        cLock.each 	{ d ->
+        /* //appears to be duplicate to line 2909 - removed 2/22/17 Bobby
+        cLock?.each 	{ d ->
         def attrValue = d.latestValue("lock") 
         	def stateTime = d.currentState("lock").date.time
 			def endTime = now() + location.timeZone.rawOffset
@@ -2939,7 +2949,8 @@ try {
                 if ( hours > cInactiveDev ) {
                     DeviceDetails << d.displayName 
                 }
-        }        
+        } 
+        */
         def dUniqueList = DeviceDetails.unique (false)
         dUniqueList = dUniqueList.sort()       
         def listSize = dUniqueList?.size()
@@ -3703,23 +3714,23 @@ private getControlDetails() {
 private getDeviceDetails() {
 	def DeviceDetails = [] 
         //switches
-        cSwitch.each 	{DeviceDetails << it.displayName +"\n"}
-        cTstat.each 	{DeviceDetails << it.displayName +"\n"}
-        cLock.each 		{DeviceDetails << it.displayName +"\n"}     
-        cMotion.each 	{DeviceDetails << it.displayName +"\n"}
-        cContact.each 	{DeviceDetails << it.displayName +"\n"}
-        cPresence.each 	{DeviceDetails << it.displayName +"\n"}
-        cDoor.each 		{DeviceDetails << it.displayName +"\n"}
-        cWater.each 	{DeviceDetails << it.displayName +"\n"}
-        cSpeaker.each 	{DeviceDetails << it.displayName +"\n"}
-        cVent.each 		{DeviceDetails << it.displayName +"\n"}
-        cFan.each 		{DeviceDetails << it.displayName +"\n"}
-		cVent.each		{DeviceDetails << it.displayName +"\n"}
-    	cRelay.each		{DeviceDetails << it.displayName +"\n"}
-        cSynth.each		{DeviceDetails << it.displayName +"\n"}
-        cMedia.each		{DeviceDetails << it.displayName +"\n"} 
-        cBattery.each	{DeviceDetails << it.displayName +"\n"}
-        cMiscDev.each	{DeviceDetails << it.displayName +"\n"} // added 2/1/2017 BD
+        cSwitch?.each 	{DeviceDetails << it.displayName +"\n"}
+        cTstat?.each 	{DeviceDetails << it.displayName +"\n"}
+        cLock?.each 		{DeviceDetails << it.displayName +"\n"}     
+        cMotion?.each 	{DeviceDetails << it.displayName +"\n"}
+        cContact?.each 	{DeviceDetails << it.displayName +"\n"}
+        cPresence?.each 	{DeviceDetails << it.displayName +"\n"}
+        cDoor?.each 		{DeviceDetails << it.displayName +"\n"}
+        cWater?.each 	{DeviceDetails << it.displayName +"\n"}
+        cSpeaker?.each 	{DeviceDetails << it.displayName +"\n"}
+        cVent?.each 		{DeviceDetails << it.displayName +"\n"}
+        cFan?.each 		{DeviceDetails << it.displayName +"\n"}
+		cVent?.each		{DeviceDetails << it.displayName +"\n"}
+    	cRelay?.each		{DeviceDetails << it.displayName +"\n"}
+        cSynth?.each		{DeviceDetails << it.displayName +"\n"}
+        cMedia?.each		{DeviceDetails << it.displayName +"\n"} 
+        cBattery?.each	{DeviceDetails << it.displayName +"\n"}
+        cMiscDev?.each	{DeviceDetails << it.displayName +"\n"} // added 2/1/2017 BD
         if(cMedia) {
             cMedia?.each {a ->         
                 def activities = a.currentState("activities").value
