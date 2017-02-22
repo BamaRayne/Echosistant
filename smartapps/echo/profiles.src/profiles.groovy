@@ -1,7 +1,7 @@
 /* 
  * Message and Control Profile - EchoSistant Add-on 
  *
- *		2/22/2017		Version:4.0 R.0.0.4b    Bug fixes
+ *		2/22/2017		Version:4.0 R.0.0.5    	Bug fixes
  *		2/21/2017		Version:4.0 R.0.0.4b    Fix Profile vent control
  *      2/20/2017       Version:4.0 R.0.0.4a    Minor UI change      
  *      2/20/2017       Version:4.0 R.0.0.4     Profile device actions not working.
@@ -1000,17 +1000,21 @@ def ttsActions(tts) {
                 state.sound = textToSpeech("You selected the custom message option but did not enter a message in the $app.label Smart App")
                 if (parent.debug) log.debug "You selected the custom message option but did not enter a message"
             }
-            if (sonosDevice){ 
+            if (sonosDevice){ // 2/22/2017 updated Sono handling when speaker is muted
                 def currVolLevel = sonosDevice.latestValue("level")
-                def newVolLevel = volume
-                	if (parent.debug) log.debug "Setting volume to: '${newVolLevel}'"
-                sonosDevice.setLevel(newVolLevel)
-                sonosDevice.playTrackAndResume(state.sound.uri, state.sound.duration, volume)
-                	if (parent.debug) log.debug "Playing message on Sonos: ${tts}"
+            	def currMuteOn = sonosDevice.latestValue("mute").contains("muted")
+                if (parent.debug) log.debug "currVolSwitchOff = ${currVolSwitchOff}, vol level = ${currVolLevel}, currMuteOn = ${currMuteOn} "
+                    if (currMuteOn) { 
+                        if (parent.debug) log.warn "speaker is on mute, sending unmute command"
+                        sonosDevice.unmute()
+                    }
+                def sVolume = settings.volume ?: 30
+                sonosDevice?.playTrackAndResume(state.sound.uri, state.sound.duration, sVolume)
+                if (parent.debug) log.info "Playing message on the music player '${sonosDevice}' at volume '${volume}'" 
             }
         }
-			if(recipients || sms){				//if(recipients.size()>0 || sms.size()>0){ removed: 2/18/17 Bobby
-                sendtxt(ttx)
+		if(recipients || sms){				//if(recipients.size()>0 || sms.size()>0){ removed: 2/18/17 Bobby
+			sendtxt(ttx)
         }
 	}
 	else {

@@ -1,6 +1,7 @@
 /* 
  * Notification - EchoSistant Add-on 
  *
+ *		2/22/2017		Version:4.0 R.0.0.4		rounding temps output
  *		2/21/2017		Version:4.0 R.0.0.3		Added toggles for action choices
  *		2/17/2017		Version:4.0 R.0.0.2		Bug Fix: presence not working
  *		2/17/2017		Version:4.0 R.0.0.1		Public Release
@@ -222,8 +223,8 @@ def subscribeToEvents() {
     	subscribe(myPresence, "presence", alertsHandler)
         }
     if (myTstat) {    
-		subscribe(TheThermostat, "heatingSetpoint", alertsHandler)
-        subscribe(TheThermostat, "coolingSetpoint", alertsHandler)
+		subscribe(myTstat, "heatingSetpoint", alertsHandler)
+        subscribe(myTstat, "coolingSetpoint", alertsHandler)
     	}
     }
 }
@@ -249,9 +250,13 @@ def alertsHandler(evt) {
     log.debug "Received event"		
     if (getDayOk()==true && getModeOk()==true && getTimeOk()==true) {
 		def stamp = state.lastTime = new Date(now()).format("h:mm aa", location.timeZone)
-        log.debug "Event Data: name ${evt.name}, value:  ${evt.value}, device: ${evt.device}, stamp: ${stamp}"	
+        if(eName == "coolingSetpoint" || eName == "heatingSetpoint") {
+            eVal = evt.value.toFloat() // 2/22 Bobby rounding temps
+            eVal = Math.round(eVal) // 2/22 Bobby rounding temps
+        }
+        if(parent.debug) log.info "Event Data: eName ${eName}, eVal:  ${eVal}, eDev: ${eDev}, stamp: ${stamp}"	
         if (message){      
-            eTxt = message ? "$message".replace("&device", "${evt.device}").replace("&event", "${evt.name}").replace("&action", "${evt.value}").replace("&time", "${stamp}") : null
+            eTxt = message ? "$message".replace("&device", "${eDev}").replace("&event", "${eName}").replace("&action", "${eVal}").replace("&time", "${stamp}") : null
         	if(recipients?.size()>0 || sms?.size()>0) {
             	sendtxt(eTxt)
         	}
@@ -282,7 +287,7 @@ private takeAction(eTxt) {
                 log.debug "vol switch = ${currVolSwitch}, vol level = ${currVolLevel}, currMute = ${currMute} "
                 sVolume = settings.speechVolume ?: 30 
                 speechSynth?.playTextAndResume(eTxt, sVolume)
-                log.info "Playing message on the speech synthesizer'${speechSynth}' at volume '${volume}'"
+                log.info "Playing message on the speech synthesizer'${speechSynth}' at volume '${sVolume}'"
         }
         if (sonos) { 
             def currVolLevel = sonos.latestValue("level")

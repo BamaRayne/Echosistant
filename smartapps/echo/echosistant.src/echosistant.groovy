@@ -1,9 +1,9 @@
 /* 
  * EchoSistant - The Ultimate Voice and Text Messaging Assistant Using Your Alexa Enabled Device.
  *
- *		2/21/2017		Version:4.0 R.0.0.5DB	debug version, DO NOT USE
- *		2/21/2017		Version:4.0 R.0.0.5		added Ask Home if device is in < current state > feedback
- *		2/20/2017		Version:4.0 R.0.0.4		added the "is device < current state > feedback"
+ *		2/22/2017		Version:4.0 R.0.0.6		minor bug fixes
+ *		2/21/2017		Version:4.0 R.0.0.5		added Ask Home "IF" device is in < status > feedback
+ *		2/20/2017		Version:4.0 R.0.0.4		added the "IS THE" device < status > feedback
  *		2/19/2017		Version:4.0 R.0.0.3		running routines fix and spelling errors
  *		2/19/2017		Version:4.0 R.0.0.2a	general bug fixes
  *		2/18/2017		Version:4.0 R.0.0.1a	Weather Service text fixes, added Elvis to all size(), removed empty shmStatus variable
@@ -19,7 +19,7 @@
  *  Unless required by applicable law or agreed to in writing, software distributed under the License is distributed
  *  on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License
  *  for the specific language governing permissions and limitations under the License.
- *
+ * //UPDATE VERSION
 /**********************************************************************************************************************************************/
 definition(
 	name			: "EchoSistant",
@@ -780,10 +780,16 @@ def feedbackHandler() {
 	def fProcess = true
     state.pTryAgain = false
 
-//try {
+try {
 		
-        fOperand = fOperand == "lights on" ? "lights" : fOperand == "switches on" ? "lights" : fOperand == "switches" ? "lights" : fOperand
-        fCommand = fOperand == "lights on" ? "on" : fOperand == "switches on" ? "on" : fCommand
+	fOperand = fOperand == "lights on" ? "lights" : fOperand == "switches on" ? "lights" : fOperand == "switches" ? "lights" : fOperand
+	fCommand = fOperand == "lights on" ? "on" : fOperand == "switches on" ? "on" : fCommand
+    
+	if (ctCommand == "this is a test"){
+		outputTxt = "Congratulations! Your EchoSistant is now setup properly" 
+		return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]       
+    }
+    
     
     if (fDevice == "undefined" && fQuery == "undefined" && fOperand == "undefined" && fCommand == "undefined") {
 		outputTxt = "Sorry, I didn't get that, "
@@ -864,7 +870,7 @@ def feedbackHandler() {
             }
         }   
         if (fOperand == "undefined" && fQuery != "undefined" && fQuery != "who" && !fQuery.contains ("when")) {        
-                def deviceMatch=cTstat.find {d -> d.label.toLowerCase() == fDevice.toLowerCase()}
+                def deviceMatch=cTstat?.find {d -> d.label.toLowerCase() == fDevice.toLowerCase()}
                     if(deviceMatch)	{
                             deviceType = "cTstat"
                             def currentMode = deviceMatch.latestValue("thermostatMode")
@@ -917,7 +923,7 @@ def feedbackHandler() {
 //>>> Temp >>>>      
             if(fOperand == "temperature") {
                 if(cTstat){
-                    cTstat.find {s -> 
+                    cTstat?.find {s -> 
                         if(s.label.toLowerCase() == fDevice.toLowerCase()){
                             deviceType = "cTstat"
                             def currentTMP = s.latestValue("temperature")
@@ -1325,14 +1331,14 @@ def feedbackHandler() {
             return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
         }
     } 
-/*
+
 }catch (Throwable t) {
         log.error t
         outputTxt = "Oh no, something went wrong. If this happens again, please reach out for help!"
         state.pTryAgain = true
         return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
 }
-*/
+
 }
 /************************************************************************************************************
    DEVICE CONTROL - from Lambda via page c
@@ -1363,11 +1369,11 @@ def controlDevices() {
 	def ctProcess = true	
     state.pTryAgain = false 
 
-//try {
+try {
 
     if (ctIntentName == "main") {
     	if (ctCommand == "this is a test"){
-			outputTxt = "Congratiulations! Your EchoSistant is now setup properly" 
+			outputTxt = "Congratulations! Your EchoSistant is now setup properly" 
 			return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]       
     	}
         ctPIN = ctPIN == "?" ? "undefined" : ctPIN
@@ -1437,7 +1443,7 @@ def controlDevices() {
                         //def activityId = null 2/11/2017 moved as global variable
                         def dType = null
                             if (settings.cSpeaker?.size()>0) {
-                                deviceMatch = cSpeaker.find {s -> s.label.toLowerCase() == ctDevice.toLowerCase()}
+                                deviceMatch = cSpeaker?.find {s -> s.label.toLowerCase() == ctDevice.toLowerCase()}
                                 if(deviceMatch) {
                                 if (debug) log.debug "found a speaker "
                                 dType = "v"}
@@ -1810,14 +1816,14 @@ def controlDevices() {
 		state.pTryAgain = true
 		return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
     }
-    /*
+
        } catch (Throwable t) {
         log.error t
         outputTxt = "Oh no, something went wrong. If this happens again, please reach out for help!"
         state.pTryAgain = true
         return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
 	}
-    */
+
 }
 /************************************************************************************************************
    DEVICE CONTROL HANDLER
@@ -2248,7 +2254,11 @@ def controlSecurity() {
 	def sProcess = true
     state.pTryAgain = false
 try {	
-	if (pintentName == "security") {    
+	if (pintentName == "security") { 
+		if (ptts == "this is a test"){
+			outputTxt = "Congratulations! Your EchoSistant is now setup properly" 
+			return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]       
+    	}
         def modes = location.modes.name
     	def currMode = location.currentMode
     	def routines = location.helloHome?.getPhrases()*.label
@@ -2466,6 +2476,12 @@ def processTts() {
         pContCmdsR = "profile"
 		def tProcess = true
 try {
+        
+	if (ptts == "this is a test"){
+		outputTxt = "Congratulations! Your EchoSistant is now setup properly" 
+		return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]       
+    }
+        
         if(ptts == "no" || ptts == "stop" || ptts == "cancel" || ptts == "kill it" || ptts == "zip it" || ptts == "yes" && state.pContCmdsR != "wrongIntent"){
         	if(ptts == "no" || ptts == "stop" || ptts == "cancel" || ptts == "kill it" || ptts == "zip it"){
                 outputTxt = "ok, I am here if you need me"
@@ -3673,7 +3689,8 @@ X                        																					X
 ************************************************************************************************************/
 private def textAppName() {
 	def text = app.label // Parent Name
-}	
+}
+//UPDATE VERSION
 private def textVersion() {
 	def text = "4.0"
 }
