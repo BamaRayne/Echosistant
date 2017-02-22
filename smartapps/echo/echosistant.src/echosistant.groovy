@@ -1,7 +1,8 @@
 /* 
  * EchoSistant - The Ultimate Voice and Text Messaging Assistant Using Your Alexa Enabled Device.
  *
- *		2/20/2017		Version:4.0 R.0.0.4		introdusing the "is active state feedback"
+ *		2/21/2017		Version:4.0 R.0.0.5		added Ask Home if device is in < current state > feedback
+ *		2/20/2017		Version:4.0 R.0.0.4		added the "is device < current state > feedback"
  *		2/19/2017		Version:4.0 R.0.0.3		running routines fix and spelling errors
  *		2/19/2017		Version:4.0 R.0.0.2a	general bug fixes
  *		2/18/2017		Version:4.0 R.0.0.1a	Weather Service text fixes, added Elvis to all size(), removed empty shmStatus variable
@@ -293,7 +294,7 @@ page name: "mSettings"
                                                 "${state.accessToken}\n"+
                                                 "Application ID:\n"+
                                                 "${app.id}"
-                    href "mTokens", title: "Revoke/Reset Security Access Token", description: none // 2/21/17 Bobby
+                    href "mTokens", title: "Revoke/Reset Security Access Token", description: none
                 }
                 section("Tap below to remove the ${textAppName()} application.  This will remove ALL Profiles and the App from the SmartThings mobile App."){
                 }	
@@ -791,43 +792,55 @@ try {
         return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
 	}    
     else {
-    	if (fDevice != "undefined" && fQuery != "undefined" && fOperand == "undefined" && fQuery != "about" && fQuery != "get" ) {
-            
-        if(debug) log.debug " is query = ${fQuery.contains ("is ")}"
-        if (fQuery.contains ("is ") && fDevice != "undefined" && fCommand != "undefined" ) {
-			def deviceMatch = cRelay?.find {d -> d.label.toLowerCase() == fDevice.toLowerCase()}
-                if(deviceMatch && cContactRelay) {
-					outputTxt =  cContactRelay.latestValue("contact").contains(fCommand) ? "yes" : "no"
-                    return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
-				}
-                else {
-                	if (deviceMatch == null && cDoor) {
-            			deviceMatch = cDoor?.find {d -> d.label.toLowerCase() == fDevice.toLowerCase()}
-            			 if(deviceMatch) outputTxt =  deviceMatch.latestValue("contact").contains(fCommand) ? "yes" : "no"
-            		}
-            		else if (deviceMatch == null && cContact) {
-            			deviceMatch = cContact?.find {d -> d.label.toLowerCase() == fDevice.toLowerCase()}
-                    	if(deviceMatch) outputTxt =  deviceMatch.latestValue("contact").contains(fCommand) ? "yes" : "no"
-					}
-            		else if (deviceMatch == null && cSwitch) {
-                    	deviceMatch = cSwitch?.find {d -> d.label.toLowerCase() == fDevice.toLowerCase()}
-        				if(deviceMatch) outputTxt =  deviceMatch.latestValue("switch").contains(fCommand) ? "yes" : "no"
-            		}
-                    else if (deviceMatch == null && cMotion) {
-                    	deviceMatch = cMotion?.find {d -> d.label.toLowerCase() == fDevice.toLowerCase()}
-        				if(deviceMatch) outputTxt =  deviceMatch.latestValue("motion").contains(fCommand) ? "yes" : "no"
-            		}
-                    else if (deviceMatch == null && cPresence) {
-                    	deviceMatch = cPresence?.find {d -> d.label.toLowerCase() == fDevice.toLowerCase()} 	
-            			if(deviceMatch) outputTxt =  deviceMatch.latestValue("motion").contains(fCommand) ? "yes" : "no"
-                	}        
-                    else if (deviceMatch == null && cWater) {
-                    	deviceMatch = cWater?.find {d -> d.label.toLowerCase() == fDevice.toLowerCase()}	
-            			if(deviceMatch) outputTxt =  deviceMatch.latestValue("water").contains(fCommand) ? "yes" : "no"
-                	}
-               if(outputTxt) return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
-               }
-        }             
+         if (fDevice != "undefined" && fQuery != "undefined" && fOperand != "undefined") {
+            if (fQuery.contains ("is ") || fQuery.contains ("if ") || fQuery == "is" || fQuery == "if" || fQuery == "is the") {
+                def deviceMatch = cRelay?.find {d -> d.label.toLowerCase() == fDevice.toLowerCase()}
+                    if(deviceMatch && cContactRelay) {
+                        outputTxt =  cContactRelay.latestValue("contact").contains(fOperand) ? "yes" : "no"
+                        return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
+                    }
+                    else {
+                        if (deviceMatch == null && cDoor) {
+                            deviceMatch = cDoor?.find {d -> d.label.toLowerCase() == fDevice.toLowerCase()}
+                             if(deviceMatch) outputTxt =  deviceMatch.latestValue("contact").contains(fOperand) ? "yes" : "no"
+                        }
+                        if (deviceMatch == null && cContact) {
+                            deviceMatch = cContact?.find {d -> d.label.toLowerCase() == fDevice.toLowerCase()}
+                            if(deviceMatch) outputTxt =  deviceMatch.latestValue("contact").contains(fOperand) ? "yes" : "no"
+                        }                    
+                        if (deviceMatch == null && cSwitch) {
+                            deviceMatch = cSwitch?.find {d -> d.label.toLowerCase() == fDevice.toLowerCase()} 
+                            if(deviceMatch) outputTxt =  deviceMatch.latestValue("switch").contains(fOperand) ? "yes" : "no"
+                        }
+                        if (deviceMatch == null && cMotion) {
+                            deviceMatch = cMotion?.find {d -> d.label.toLowerCase() == fDevice.toLowerCase()}
+                            if(deviceMatch) outputTxt =  deviceMatch.latestValue("motion").contains(fOperand) ? "yes" : "no"
+                        }
+                        if (deviceMatch == null && cPresence) {
+                            deviceMatch = cPresence?.find {d -> d.label.toLowerCase() == fDevice.toLowerCase()} 	
+                            if(deviceMatch) outputTxt =  deviceMatch.latestValue("presence").contains(fOperand) ? "yes" : "no"
+                        }        
+                        if (deviceMatch == null && cWater) {
+                            deviceMatch = cWater?.find {d -> d.label.toLowerCase() == fDevice.toLowerCase()}	
+                            if(deviceMatch) outputTxt =  deviceMatch.latestValue("water").contains(fOperand) ? "yes" : "no"
+                        }
+                        if (deviceMatch == null && cSpeaker) {
+                            deviceMatch = cSpeaker?.find {d -> d.label.toLowerCase() == fDevice.toLowerCase()}	
+                            if(deviceMatch) outputTxt =  deviceMatch.latestValue("mute").contains(fOperand) ? "yes" : "no"
+                        }
+                        if (deviceMatch == null && fOperand == "running" && cTstat ) {
+                            deviceMatch = cTstat?.find {d -> d.label.toLowerCase() == fDevice.toLowerCase()}
+                            if(deviceMatch) {
+                                currState = deviceMatch.latestValue("thermostatOperatingState")
+                                currState = currState == "cooling" ? "yes" : currState == "heating" ? "yes" : "no"
+                                outputTxt =  currState
+                            }
+                        }                        
+						if(outputTxt) return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
+                   }
+            }
+        }
+        if (fDevice != "undefined" && fQuery != "undefined" && fOperand == "undefined" && fQuery != "about" && fQuery != "get" ) {            
 		def dMatch = deviceMatchHandler(fDevice)
       	if (dMatch?.deviceMatch == null) { 				
         	outputTxt = "Sorry, I couldn't find any details about " + fDevice
@@ -1034,7 +1047,7 @@ try {
                                     }
                         }
                     }
-                    if (fQuery == "how" || fQuery.contains ("if") || fQuery == "are there") { // removed fQuery == "undefined" 2/13/2017
+                    if (fQuery == "how" || fQuery.contains ("if") || fQuery == "are there" || fQuery == "how many") { // removed fQuery == "undefined" 2/13/2017
                         if (devList?.size() > 0) {
                             if (devList?.size() == 1) {
                                 outputTxt = "There is one switch " + fCommand + " , would you like to know which one"                           			
@@ -1089,7 +1102,7 @@ try {
                                     }
                         }                    
                     }
-                    if (fQuery == "how" || fQuery== "how many" || fQuery == "arere") { // removed fQuery == "undefined" 2/13
+                    if (fQuery == "how" || fQuery== "how many" || fQuery == "are there" || fQuery.contains ("if")) { // removed fQuery == "undefined" 2/13
                         if (devList?.size() > 0) {
                             if (devList?.size() == 1) {
                                 outputTxt = "There is one door or window " + fCommand + " , would you like to know which one"                           			
