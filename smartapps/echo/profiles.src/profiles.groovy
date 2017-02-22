@@ -1,6 +1,7 @@
 /* 
  * Message and Control Profile - EchoSistant Add-on 
  *
+ *		2/21/2017		Version:4.0 R.0.0.4b    Fix Profile vent control
  *      2/20/2017       Version:4.0 R.0.0.4a    Minor UI change      
  *      2/20/2017       Version:4.0 R.0.0.4     Profile device actions not working.
  *		2/19/2017		Version:4.0 R.0.0.3 	Restricted control to only selected devices, added option to reverse disable commands
@@ -720,7 +721,7 @@ def profileEvaluate(params) {
                     }     
                 }          
                 //VENTS CONTROL
-                if (deviceType == "vent") {
+                if (deviceType == "vent") {  
                     if(gVents?.size()>0) {
                         if (command == "open"  || command == "close") {
                             if (command == "open") {
@@ -1332,7 +1333,7 @@ private getCommand(text){
     	}      
     }           
 // Vents
-    else if (text.contains("vents")) {
+    else if (text.contains("vent")) {  // Changed "vents" to "vent" to fix bug.  Jason 2/21/2017
 		if (text.contains("open")) {
 			command = "open" 
 			deviceType = "vent"
