@@ -87,50 +87,55 @@ activities
 
 LIST_OF_OPERANDS
 
-temperature
-lights
-mode
-feed
-fed
-text
-audio
-doors
-present
-here
-at home
-not here
-not present
-not home
-light
-battery
 active
-inactive
-locked
-unlocked
-unlock
-open
-closed
-close
-on
-off
-settings
-batteries
-weather
-current weather
-weather alerts
-alerts
-weather conditions
-current temperature
-temperature inside
-indoor temperature
-temperature outside
-outdoor temperature
-security
-smart home monitor
-home monitor
 alarm
+alerts
+at home
+audio
+batteries
+battery
+close
+closed
+current temperature
+current weather
+doors
+dry
+fed
+feed
+here
+home monitor
+inactive
+indoor temperature
+light
+lights
+locked
+mode
+muted
+not here
+not home
+not present
+off
+on
+open
+outdoor temperature
+present
+running
+security
+settings
+smart home monitor
+temperature
+temperature inside
 temperature is inside
 temperature is outside
+temperature outside
+text
+unlock
+unlocked
+unmuted
+weather
+weather alerts
+weather conditions
+wet
 
 LIST_OF_QUERIES
 
@@ -146,6 +151,15 @@ is there
 are there
 did I
 get
+is
+is my
+is the
+if my
+if the
+if
+how
+how many
+many
 
 LIST_OF_TYPES
 
