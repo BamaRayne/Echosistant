@@ -1,6 +1,7 @@
 /* 
  * Message and Control Profile - EchoSistant Add-on 
  *
+ *		2/22/2017		Version:4.0 R.0.0.4b    Bug fixes
  *		2/21/2017		Version:4.0 R.0.0.4b    Fix Profile vent control
  *      2/20/2017       Version:4.0 R.0.0.4a    Minor UI change      
  *      2/20/2017       Version:4.0 R.0.0.4     Profile device actions not working.
@@ -392,12 +393,15 @@ def profileEvaluate(params) {
     	muteAll = tts.contains("activate sound") ? "unmute" : tts.contains("enable audio") ? "unmute" : tts.contains("unmute audio") ? "unmute" : muteAll
     def muteAlexa = tts.contains("disable Alexa") ? "mute" : tts.contains("silence Alexa") ? "mute" : tts.contains("mute Alexa") ? "mute" : null
     	muteAlexa = tts.contains("enable Alexa") ? "unmute" : tts.contains("start Alexa") ? "unmute" : tts.contains("unmute Alexa") ? "unmute" : muteAll
-
+	def test = tts.contains("this is a test") ? true : tts.contains("a test") ? true : false
     if (parent.debug) log.debug "Message received from Parent with: (tts) = '${tts}', (intent) = '${intent}', (childName) = '${childName}'"  
     if (pSendSettings() == "complete" || pGroupSettings() == "complete"){
         
         if (intent == childName){
-
+			if (test){
+				outputTxt = "Congratulations! Your EchoSistant is now setup properly" 
+				return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]       
+    		}
             def  getCMD = getCommand(tts) 
                 deviceType = getCMD.deviceType
                 command = getCMD.command 
