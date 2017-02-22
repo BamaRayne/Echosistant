@@ -1,6 +1,7 @@
 /* 
  * Notification - EchoSistant Add-on 
  *
+ *		2/21/2017		Version:4.0 R.0.0.3		Added toggles for action choices
  *		2/17/2017		Version:4.0 R.0.0.2		Bug Fix: presence not working
  *		2/17/2017		Version:4.0 R.0.0.1		Public Release
  *
@@ -76,8 +77,11 @@ page name: "mainProfilePage"
         	def actions = location.helloHome?.getPhrases()*.label.sort()
             input "timeOfDay", "time", title: "At this time every day", required: false
             input "mySwitch", "capability.switch", title: "Choose Switch(es)...", required: false, multiple: true, submitOnChange: true
+            	if (mySwitch) input "switchBoth", "bool", title: "Enable to play message for on and off", required: false, defaultValue: false // Jason 2/21/2017
             input "myContact", "capability.contactSensor", title: "Choose Doors and Windows..", required: false, multiple: true, submitOnChange: true
+            	if (myContact) input "contactBoth", "bool", title: "Enable to play message for open and close", required: false, defaultValue: false  // Jason 2/21/2017
             input "myLocks", "capability.lock", title: "Choose Locks..", required: false, multiple: true, submitOnChange: true
+            	if (myLocks) input "locksBoth", "bool", title: "Enable to play message for lock and unlock", required: false, defaultValue: false  // Jason 2/21/2017
             input "myMotion", "capability.motionSensor", title: "Choose Motion Sensors..", required: false, multiple: true, submitOnChange: true
             input "myPresence", "capability.presenceSensor", title: "Choose Presence Sensors...", required: false, multiple: true, submitOnChange: true
             input "myTstat", "capability.thermostat", title: "Choose Thermostats...", required: false, multiple: true, submitOnChange: true
@@ -186,17 +190,41 @@ def subscribeToEvents() {
     if (actionType) {
     if (myRoutine) {subscribe(location, "routineExecuted",alertsHandler)}
     if (myMode) {subscribe(location, "mode", alertsHandler)}
-   	if (mySwitch) {subscribe(mySwitch, "switch.on", alertsHandler)}
-    if (myContact) {subscribe(myContact, "contact.open", alertsHandler)}
+   	if (mySwitch) {
+    	if (switchBoth) {  // Jason 2/21/2017
+        	subscribe(mySwitch, "switch.on", alertsHandler)
+            subscribe(mySwitch, "switch.off", alertsHandler)
+            }
+        if (!switchBoth) {
+        	subscribe(mySwitch, "switch.on", alertsHandler)
+            }
+        }    
+	if (myContact) {
+    	if (contactBoth) {  // Jason 2/21/2017
+    		subscribe(myContact, "contact.open", alertsHandler)
+            subscribe(myContact, "contact.closed", alertsHandler)
+            }
+        if (!contactBoth) {
+        	subscribe(myContact, "contact.open", alertsHandler)
+            }
+        }    
     if (myMotion) {subscribe(myMotion, "motion.active", alertsHandler)}
     if (myLocks) {
-    	subscribe(myLocks, "lock.locked", alertsHandler)}
-    	subscribe(myLocks, "lock.unlocked", alertsHandler)
-    }
-    if (myPresence) {subscribe(myPresence, "presence", alertsHandler)}
+    	if (locksBoth) {  // Jason 2/21/2017 
+    		subscribe(myLocks, "lock.locked", alertsHandler)
+    		subscribe(myLocks, "lock.unlocked", alertsHandler)
+    		}
+    	if (!locksBoth) {
+        	subscribe(myLocks, "lock.locked", alertsHandler)
+            }
+        }    
+    if (myPresence) {
+    	subscribe(myPresence, "presence", alertsHandler)
+        }
     if (myTstat) {    
 		subscribe(TheThermostat, "heatingSetpoint", alertsHandler)
         subscribe(TheThermostat, "coolingSetpoint", alertsHandler)
+    	}
     }
 }
 /************************************************************************************************************
