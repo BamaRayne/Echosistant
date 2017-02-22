@@ -40,6 +40,8 @@ main set the {cDevice} to {cNum} {cUnit}
 main set {cDevice} to {cNum} {cUnit}
 main turn the {cDevice} {cCommand}
 main turn {cCommand} the {cDevice}
+main turn {cDevice} {cCommand}
+main turn the {cDevice} {cCommand}
 main turn {cCommand} the {cUnit} {cDevice}
 main turn the {cDevice} {cCommand} in {cNum} {cUnit}
 main turn the {cDevice} {cCommand} in {cNum} {cUnit}
@@ -73,6 +75,14 @@ main to {cCommand} the {cUnit} for {cGroup}
 main to {cCommand} the {cUnit} number for {cGroup}
 main to {cCommand} the {cGroup}
 main to {cCommand} the {cGroup} in {cNum} {cUnit}
+
+main turn {cDevice} light {cCommand}
+main turn {cCommand} {cDevice} light
+main turn {cCommand} the {cDevice} light
+main turn the {cDevice} Light {cCommand} in {cNum} {cUnit}
+main turn {cDevice} Light {cCommand} in {cNum} {cUnit}
+main turn {cCommand} the {cDevice} Light in {cNum} {cUnit}
+main make the {cDevice} Light {cCommand} in {cNum} {cUnit}
 
 feedback {fQuery} the status of {cDevice}
 feedback {fQuery} is the status of {cDevice}
