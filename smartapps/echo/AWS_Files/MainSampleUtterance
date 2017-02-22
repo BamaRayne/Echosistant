@@ -91,7 +91,7 @@ feedback {fQuery} {cDevice}
 feedback {fQuery} was the last time I {fOperand} {cDevice} 
 feedback {fQuery} I {fOperand} {cDevice} 
 feedback {fQuery} many {fOperand} are {cCommand}
-feedback if {cDevice} is {cCommand}
+feedback {fQuery} {cDevice} is {fOperand}
 feedback for {fOperand} {cCommand}
 feedback for {cCommand} {fOperand}
 feedback for {fOperand} that are {cCommand}
@@ -99,7 +99,7 @@ feedback {fOperand} are {cCommand}
 feedback {fOperand} {cDevice} left
 feedback {fQuery} is {fOperand}
 feedback {fQuery} is the {fOperand}
-feedback how many {fOperand} are {cCommand}
+feedback {fQuery} {fOperand} are {cCommand}
 feedback {fQuery} any {fOperand} {cCommand}
 feedback {fQuery} any people {fOperand}
 feedback {fQuery} any one {fOperand}
@@ -109,3 +109,4 @@ feedback {cDevice} is {fOperand}
 feedback {fQuery} was {cDevice} last {fOperand}
 feedback {fQuery} do I have to {cCommand} the filters
 feedback {fQuery} do I need to {cCommand} the filters
+feedback {fQuery} {cDevice} {fOperand}
