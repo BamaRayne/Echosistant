@@ -1,6 +1,7 @@
 /* 
  * Notification - EchoSistant Add-on 
  *
+ *		2/23/2017		Version:4.0 R.0.0.5		Bug Fix: fixed routine & mode notification bug
  *		2/22/2017		Version:4.0 R.0.0.4		rounding temps output
  *		2/21/2017		Version:4.0 R.0.0.3		Added toggles for action choices
  *		2/17/2017		Version:4.0 R.0.0.2		Bug Fix: presence not working
@@ -246,22 +247,70 @@ def alertsHandler(evt) {
 	def eVal = evt.value
     def eName = evt.name
     def eDev = evt.device
-    def eTxt
-    log.debug "Received event"		
+    def eDisplayN = evt.displayName
+    def nRoutine = false
+    def eTxt	
+	def stamp = state.lastTime = new Date(now()).format("h:mm aa", location.timeZone)     
+    
+    if(parent.debug) log.info "Event Data: eName ${eName}, eVal:  ${eVal}, eDev: ${eDev}, eDisplayN: ${eDisplayN}, stamp: ${stamp}"	
     if (getDayOk()==true && getModeOk()==true && getTimeOk()==true) {
-		def stamp = state.lastTime = new Date(now()).format("h:mm aa", location.timeZone)
         if(eName == "coolingSetpoint" || eName == "heatingSetpoint") {
             eVal = evt.value.toFloat() // 2/22 Bobby rounding temps
             eVal = Math.round(eVal) // 2/22 Bobby rounding temps
         }
-        if(parent.debug) log.info "Event Data: eName ${eName}, eVal:  ${eVal}, eDev: ${eDev}, stamp: ${stamp}"	
-        if (message){      
-            eTxt = message ? "$message".replace("&device", "${eDev}").replace("&event", "${eName}").replace("&action", "${eVal}").replace("&time", "${stamp}") : null
-        	if(recipients?.size()>0 || sms?.size()>0) {
-            	sendtxt(eTxt)
-        	}
-         }
-        takeAction(eTxt)
+        if(eName == "routineExecuted" && myRoutine) {
+        	def deviceMatch = myRoutine?.find {r -> r == eDisplayN}  
+            if (deviceMatch){
+            	eTxt = message ? "$message".replace("&device", "${eDisplayN}").replace("&event", "routine").replace("&action", "executed").replace("&time", "${stamp}") : null
+            	if(parent.debug) log.debug "eTxt = ${eTxt}"
+                if (message){
+					if(recipients?.size()>0 || sms?.size()>0) {
+                    	sendtxt(eTxt)
+                	}
+                    takeAction(eTxt)
+                }
+                else {
+                	eTxt = "getting custom sound"
+                    takeAction(eTxt) 
+        		}
+         	}
+        }
+        //Event Data: eName mode, eVal: Standby, eDev: null, eDisplayN: Casa Dobrescu, stamp: 12:24 PM
+        else {
+            if(eName == "mode" && myMode) {
+                def deviceMatch = myMode?.find {m -> m == eVal}  
+                if (deviceMatch){
+                    eTxt = message ? "$message".replace("&device", "${eVal}").replace("&event", "${eName}").replace("&action", "changed").replace("&time", "${stamp}") : null
+                    if(parent.debug) log.debug "eTxt = ${eTxt}"
+                    if (message){
+                        if(recipients?.size()>0 || sms?.size()>0) {
+                            sendtxt(eTxt)
+                        }
+                        takeAction(eTxt)
+                    }
+                    else {
+                        eTxt = "getting custom sound"
+                        takeAction(eTxt) 
+                    }
+                }
+            }        
+            else {
+                if (message){      
+                    eTxt = message ? "$message".replace("&device", "${eDev}").replace("&event", "${eName}").replace("&action", "${eVal}").replace("&time", "${stamp}") : null
+                    if(parent.debug) log.debug "eTxt = ${eTxt}"
+                    if(eTxt){
+                        if(recipients?.size()>0 || sms?.size()>0) {
+                            sendtxt(eTxt)
+                        }
+                        takeAction(eTxt)
+                    }
+                }
+                else {
+                    eTxt = "getting custom sound"
+                    takeAction(eTxt)
+                }
+            }
+        }
 	}
 }
 /***********************************************************************************************************************
