@@ -7,6 +7,8 @@ security {cCommand} {sType} in {cNum} minute
 security {cCommand} {sType} {sControl} in {cNum} minutes
 security {cCommand} {sType} {sControl} in {cNum} minute
 security turn {cCommand} the {sType} {sControl}
+security turn the {sType} {cCommand}
+security turn {sType} {cCommand}
 security turn the {sType} {sControl} {cCommand} in {cNum}
 security turn the {sType} {cCommand} in {cNum}
 security {cCommand} {sControl} in {cNum} minutes
@@ -76,6 +78,29 @@ main to {cCommand} the {cUnit} number for {cGroup}
 main to {cCommand} the {cGroup}
 main to {cCommand} the {cGroup} in {cNum} {cUnit}
 
+main to set {cDevice} to {cUnit}
+main to set the {cDevice} to {cUnit}
+main to set the {cDevice} to {cCommand} {cUnit}
+main to set {cDevice} to {cCommand} {cUnit}
+main {cCommand} {cDevice} to {cUnit}
+main to {cCommand} the {cDevice} {cUnit} 
+main to {cCommand} {cDevice} {cUnit} 
+main to {cCommand} the {cDevice} to {cUnit} 
+main to {cCommand} {cDevice} to {cUnit}
+
+main {cCommand} {cDevice} {cGroup} to {cUnit}
+main {cCommand} the {cDevice} {cGroup} to {cUnit}
+main set {cDevice} {cGroup} to {cUnit}
+main set the {cDevice} {cGroup} to {cUnit}
+main set {cDevice} {cGroup} to {cUnit}
+main set the {cDevice} {cGroup} to {cUnit}
+main set {cCommand} {cUnit} in the {cDevice} {cGroup}
+main set {cCommand} {cUnit} in {cDevice} {cGroup}
+main to {cCommand} the {cDevice} {cGroup} {cUnit} 
+main to {cCommand} {cDevice} {cGroup} {cUnit} 
+main to {cCommand} the {cDevice} {cGroup} to {cUnit} 
+main to {cCommand} {cDevice} {cGroup} to {cUnit}
+
 main turn {cDevice} light {cCommand}
 main turn {cCommand} {cDevice} light
 main turn {cCommand} the {cDevice} light
@@ -83,6 +108,18 @@ main turn the {cDevice} Light {cCommand} in {cNum} {cUnit}
 main turn {cDevice} Light {cCommand} in {cNum} {cUnit}
 main turn {cCommand} the {cDevice} Light in {cNum} {cUnit}
 main make the {cDevice} Light {cCommand} in {cNum} {cUnit}
+main {cCommand} {cUnit} in {cDevice}
+main {cCommand} {cUnit} in the {cDevice}
+main {cCommand} {cUnit} on {cDevice}
+main {cCommand} {cUnit} on the {cDevice}
+main {cCommand} the {cUnit} on {cDevice}
+main {cCommand} the {cUnit} in {cDevice}
+main {cCommand} {cUnit} in {cDevice} {cGroup}
+main {cCommand} {cUnit} in the {cDevice} {cGroup}
+main {cCommand} {cUnit} on {cDevice} {cGroup}
+main {cCommand} {cUnit} on the {cDevice} {cGroup}
+main {cCommand} the {cUnit} on {cDevice} {cGroup}
+main {cCommand} the {cUnit} in {cDevice} {cGroup}
 
 feedback {fQuery} the status of {cDevice}
 feedback {fQuery} is the status of {cDevice}
