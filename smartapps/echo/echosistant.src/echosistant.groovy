@@ -1,6 +1,7 @@
 /* 
  * EchoSistant - The Ultimate Voice and Text Messaging Assistant Using Your Alexa Enabled Device.
  *
+ *		2/24/2017		Version:4.0 R.0.0.7		added device and Profile color control 
  *		2/22/2017		Version:4.0 R.0.0.6		minor bug fixes
  *		2/21/2017		Version:4.0 R.0.0.5		added Ask Home "IF" device is in < status > feedback
  *		2/20/2017		Version:4.0 R.0.0.4		added the "IS THE" device < status > feedback
@@ -559,7 +560,7 @@ def initialize() {
         sendLocationEvent(name: "echoSistant", value: "refresh", data: [profiles: getProfileList()] , isStateChange: true, descriptionText: "echoSistant Profile list refresh")
         def children = getChildApps()
     	if (debug) log.debug "Refreshing Profiles for CoRE, ${getChildApps()*.label}"
-		if (!state.accessToken) {
+        if (!state.accessToken) {
         	if (debug) log.error "Access token not defined. Attempting to refresh. Ensure OAuth is enabled in the SmartThings IDE."
                 OAuthToken()
 			}
@@ -730,8 +731,8 @@ try {
      }
 // >>> Handling a Profile Intent <<<<      
      if (!event.startsWith("AMAZON") && event != "main" && event != "security" && event != "feedback" && event != "profile" && event != "noAction"){
-		childApps.each {child ->
-			if (child.label.toLowerCase() == event.toLowerCase()) { 
+		childApps?.each {child ->
+			if (child?.label.toLowerCase() == event.toLowerCase()) { 
                 pContinue = child?.checkState()   
             }
        	}
@@ -1362,6 +1363,7 @@ def controlDevices() {
         def String activityId = (String) "undefined"
         def delay = false
         def data
+     
         ctDevice = ctDevice.replaceAll("[^a-zA-Z0-9 ]", "")
 
         if (debug) log.debug "Control Data: (ctCommand)= ${ctCommand}',(ctNum) = '${ctNum}', (ctPIN) = '${ctPIN}', "+
@@ -1403,7 +1405,7 @@ try {
                 state.pinTry = null
                 state.pTryAgain = false  
                 }
-            }
+            }           
             if (ctCommand != "undefined") {
                 if (ctCommand.contains ("try again") && state.lastAction != null ) {
                         def savedData = state.lastAction
@@ -1435,9 +1437,146 @@ try {
                     def  getCMD = getCommand(ctCommand, ctUnit) 
                     deviceType = getCMD.deviceType
                     command = getCMD.command
+                    if(debug) log.info "deviceType = ${deviceType} , command = ${command}"
                 }
             }
+            if (ctUnit != "undefined" &&  ctDevice != "undefined" && ctCommand == "undefined"){
+				def  getCMD = getCommand(ctCommand, ctUnit) 
+                deviceType = getCMD.deviceType
+                command = getCMD.command
+            }
+            //Control Data: (ctCommand)= run',(ctNum) = 'undefined', (ctPIN) = 'undefined', (ctDevice) = 'bedroom', (ctUnit) = 'undefined', (ctGroup) = 'profile', (ctIntentName) = 'main'
+
     		//>>> MAIN PROCESS STARTS <<<<        
+             if (ctCommand == "run" && ctDevice != "undefined" && ctGroup != "undefined"){
+              	def String pintentName = (String) null
+                def String pContCmdsR = (String) null
+                def String ptts = (String) null
+        		def pContCmds = false
+        		def pTryAgain = false
+        		def dataSet = [:]
+           		childApps.each {child ->
+                        def ch = child.label
+                        	ch = ch.replaceAll("[^a-zA-Z0-9]", "")
+                		if (ch.toLowerCase() == ctDevice.toLowerCase()) { 
+                    		if (debug) log.debug "Found a profile"
+                            pintentName = child.label
+                    		ptts = "Running Profile actions from the main home"
+                            dataSet = [ptts:ptts, pintentName:pintentName] 
+                    		def pResponse = child.profileEvaluate(dataSet)
+                            	outputTxt = pResponse?.outputTxt
+                                pContCmds = pResponse?.pContCmds
+                                pContCmdsR = pResponse?.pContCmdsR
+                                pTryAgain = pResponse?.pTryAgain
+						}
+            	}
+            	if (outputTxt?.size()>0){
+                	outputTxt = "Executed actions for " + pintentName + " profile"
+                    
+                	return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]
+            	}
+            	else {
+                	if (state.pShort != true){
+                		outputTxt = "I wish I could help, but EchoSistant couldn't find a Profile named " + pintentName + " or the command may not be supported"
+                	}
+                	else {outputTxt = "I've heard " + pintentName + " , but I wasn't able to take any actions "} 
+                		pTryAgain = true
+                		return ["outputTxt":outputTxt, "pContCmds":pContCmds, "pShort":state.pShort, "pContCmdsR":pContCmdsR, "pTryAgain": pTryAgain, "pPIN":pPIN]
+                }                
+            }
+            if (deviceType == "color"){
+            def color = command == "read"  ? "Warm White" : command == "concentrate" ? "Daylight White" : command == "relax" ? "Very Warm White" : command
+                if(ctDevice != "undefined" && ctGroup != "profile"){
+                    def deviceMatch = cSwitch.find {s -> s.label.toLowerCase() == ctDevice.toLowerCase()}
+                    if(deviceMatch){
+                    	def capMatch = deviceMatch.capabilities.name.contains("Color Control") ?: null
+                        def availableCommands = deviceMatch.supportedCommands.contains("colorloop") ?: null
+                        if(debug) log.info "availableCommands = ${availableCommands}"
+                        if(capMatch){
+                            if (color != "random" && color != "colorloopOn" && color != "colorloopOff" ){
+                           		def hueSetVals = getColorName("${color}",level)
+                                deviceMatch?.setColor(hueSetVals)
+                                outputTxt =  "Ok, changing the color to " + color 
+                                return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]
+                            }
+                            if (color == "random") {
+								int hueLevel = !level ? 100 : level
+								int hueHue = Math.random() *100 as Integer
+								def randomColor = [hue: hueHue, saturation: 100, level: hueLevel]
+        						deviceMatch.setColor(randomColor)
+                                outputTxt =  "Ok, changing to a random color"
+                                return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]
+                            }
+                            if (color == "colorloopOn" || color == "colorloopOff") {
+								if(availableCommands){
+                                	if (color == "colorloopOn") {deviceMatch.colorloopOn()}
+                                    else deviceMatch.colorloopOff()
+									outputTxt =  "Ok, turning the " + color
+                                	return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]
+                                }
+                                else {
+                                def loopOn = color == "colorloopOn" ? true : color == "colorloopOff" ? false : null
+                                    if(loopOn == true){
+                                        int hueLevel = !level ? 100 : level
+                                        int hueHue = Math.random() *100 as Integer
+                                        def randomColor = [hue: hueHue, saturation: 100, level: hueLevel]
+                                        deviceMatch.setColor(randomColor)
+                                        state.lastDevice = deviceMatch.label
+                                        runIn(60, "startLoop")
+                                        outputTxt =  "Ok, turning the " + color
+                                        return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]
+                                  	}
+                                    else { 
+                                    	unschedule("startLoop")
+                                        unschedule("continueLoop")
+                                        state.lastDevice = null
+										outputTxt =  "Ok, turning the " + color
+                                        return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]
+                                    }
+                                }
+                            }                            
+                    	}
+                    }
+                }
+                if(ctDevice != "undefined" && ctGroup == "profile"){
+            		childApps.each {child ->
+                    	def profile
+                        def ch = child.label
+                        	ch = ch.replaceAll("[^a-zA-Z0-9]", "")
+                            profile  = ctDevice.replaceAll("[^a-zA-Z0-9]", "")
+                		if (ch.toLowerCase() == profile.toLowerCase()) { 
+                    		if (debug) log.debug "Found a profile"
+                    		//def capMatch = deviceMatch.capabilities.name.contains("Color Control") ?: null
+                        	//def availableCommands = deviceMatch.supportedCommands
+                        	//log.warn "availableCommands = ${availableCommands}"
+                        	if(child.gHues){
+                            	if (color != "random" && color != "colorloopOn" && color != "colorloopOff" ){
+                           			def hueSetVals = getColorName("${color}",level)
+                                	child.gHues.setColor(hueSetVals)
+                                	outputTxt =  "Ok, changing the color to " + color + " in the " + ctDevice
+                            	}
+                            	if (color == "random") {
+									int hueLevel = !level ? 100 : level
+									int hueHue = Math.random() *100 as Integer
+									def randomColor = [hue: hueHue, saturation: 100, level: hueLevel]
+                                	child.gHues.setColor(randomColor)
+                                	outputTxt =  "Ok, changing the " + ctDevice +  " to random colors"
+                                }
+                            	 if (color == "colorloopOn" || color == "colorloopOff") {
+                                 	def loopOn = color == "colorloopOn" ? true : color == "colorloopOff" ? false : null
+                                 	if(loopOn == true){
+                                        outputTxt = child.profileLoop(child.label)
+                                    }
+									else { 
+                                    	outputTxt = child.profileLoopCancel(child.label)
+                                    }
+                                }                                
+                            }
+                    	}
+                    }
+                    return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]
+                }
+            }
             if (deviceType == "volume" || deviceType == "general" || deviceType == "light") {      
                         def deviceMatch = null
                         //def activityId = null 2/11/2017 moved as global variable
@@ -1823,7 +1962,7 @@ try {
         state.pTryAgain = true
         return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
 	}
-
+    
 }
 /************************************************************************************************************
    DEVICE CONTROL HANDLER
@@ -3105,7 +3244,7 @@ private getUnitText (unit, num) {
 ***********************************************************************************************************************/
 private getCommand(command, unit) {
 	def deviceType = " "
-	if (command) {
+	if (command && unit) {
 	//case "General Commands":
     		deviceType = "general"
         if (unit == "undefined") {
@@ -3121,23 +3260,38 @@ private getCommand(command, unit) {
                 command = "setLevel"
                 deviceType = "general"
             }
+       }
+	//case "Color Commands": 
     		if (command == "reading" || command == "read" || command == "studying"){ 
             	command = "read" 
-                deviceType = "general"
+                deviceType = "color"
             }
-			if (command == "feeling lucky" || command == "random" || command == "different colors"){ 
+			if (command == "feeling lucky" || command.contains("random") || command == "different colors" || unit == "random"){ 
             	command = "random" 
-                deviceType = "general"
+                deviceType = "color"
             }
     		if (command == "cleaning" || command == "working" || command == "concentrating" || command == "concentrate" || command == "cooking"){ 
     			command = "concentrate"
-                deviceType = "general"
+                deviceType = "color"
            	}
     		if (command == "relax" || command == "relaxing" || command == "chilling" || command == "watching"){
             	command = "relax"
-                deviceType = "general"
-            }              
-        }
+                deviceType = "color"
+            }
+			if (unit.contains("green") || unit.contains("blue") || unit.contains("red") || unit == "yellow" || unit == "pink" || unit == "orange" || unit.contains("white") || unit == "daylight"){
+                command = unit
+                deviceType = "color"
+            }
+            if (unit.contains("loop")){
+                if (command == "start" || command == "play" || command == "on"){
+                    command = "colorloopOn"
+                    deviceType = "color"
+                } 
+                if (command == "stop" || command == "cancel" || command == "off"){
+                    command = "colorloopOff"
+                    deviceType = "color"
+                }
+           }
 	//case "Temperature Commands":  
         if (command == "colder" || command =="not cold enough" || command =="too hot" || command == "too warm") {
             command = "decrease"
@@ -3225,7 +3379,7 @@ private getCustomCmd(command, unit, group, num) {
         	if (unit.contains ("reminder") || unit.contains ("schedule")) {
             	if (state.scheduledHandler != null) {
                 	if (state.scheduledHandler == "filters") {
-                    	unschedule(filtersHandler)
+                    	unschedule("filtersHandler")
                         state.scheduledHandler = null
 		                result = "Ok, canceling reminder to replace HVAC filters"
                     }
@@ -3243,8 +3397,8 @@ private getCustomCmd(command, unit, group, num) {
             }
             else {
                 if (unit.contains ("timer") || unit.contains ("delay")) {
-                    unschedule(controlHandler)
-                    unschedule(securityHandler)
+                    unschedule("controlHandler")
+                    unschedule("securityHandler")
                     result = "Ok, canceling timer"
                     return result
                 }
@@ -3433,6 +3587,25 @@ private void processSms(number, message) {
 /************************************************************************************************************
    Custom Color Filter
 ************************************************************************************************************/       
+private startLoop() {
+	def device =  state.lastDevice
+    def deviceMatch = cSwitch.find {s -> s.label.toLowerCase() == device.toLowerCase()}	
+    int hueLevel = !level ? 100 : level
+	int hueHue = Math.random() *100 as Integer
+	def randomColor = [hue: hueHue, saturation: 100, level: hueLevel]
+	deviceMatch.setColor(randomColor)
+    runIn(60, "continueLoop")
+}
+private continueLoop() {
+	def device =  state.lastDevice
+    def deviceMatch = cSwitch.find {s -> s.label.toLowerCase() == device.toLowerCase()}	
+    int hueLevel = !level ? 100 : level
+	int hueHue = Math.random() *100 as Integer
+	def randomColor = [hue: hueHue, saturation: 100, level: hueLevel]
+	deviceMatch.setColor(randomColor)
+    runIn(60, "startLoop")
+}
+
 private getColorName(cName, level) {
 	if (cName == "random") {
     def randomColor = [:]
@@ -3731,23 +3904,25 @@ private getControlDetails() {
 private getDeviceDetails() {
 	def DeviceDetails = [] 
         //switches
-        cSwitch?.each 	{DeviceDetails << it.displayName +"\n"}
-        cTstat?.each 	{DeviceDetails << it.displayName +"\n"}
+        cSwitch?.each 		{DeviceDetails << it.displayName +"\n"}
+        cTstat?.each 		{DeviceDetails << it.displayName +"\n"}
         cLock?.each 		{DeviceDetails << it.displayName +"\n"}     
-        cMotion?.each 	{DeviceDetails << it.displayName +"\n"}
-        cContact?.each 	{DeviceDetails << it.displayName +"\n"}
+        cMotion?.each 		{DeviceDetails << it.displayName +"\n"}
+        cContact?.each 		{DeviceDetails << it.displayName +"\n"}
         cPresence?.each 	{DeviceDetails << it.displayName +"\n"}
         cDoor?.each 		{DeviceDetails << it.displayName +"\n"}
-        cWater?.each 	{DeviceDetails << it.displayName +"\n"}
-        cSpeaker?.each 	{DeviceDetails << it.displayName +"\n"}
+        cWater?.each 		{DeviceDetails << it.displayName +"\n"}
+        cSpeaker?.each 		{DeviceDetails << it.displayName +"\n"}
         cVent?.each 		{DeviceDetails << it.displayName +"\n"}
-        cFan?.each 		{DeviceDetails << it.displayName +"\n"}
-		cVent?.each		{DeviceDetails << it.displayName +"\n"}
+        cFan?.each 			{DeviceDetails << it.displayName +"\n"}
+		cVent?.each			{DeviceDetails << it.displayName +"\n"}
     	cRelay?.each		{DeviceDetails << it.displayName +"\n"}
         cSynth?.each		{DeviceDetails << it.displayName +"\n"}
         cMedia?.each		{DeviceDetails << it.displayName +"\n"} 
-        cBattery?.each	{DeviceDetails << it.displayName +"\n"}
-        cMiscDev?.each	{DeviceDetails << it.displayName +"\n"} // added 2/1/2017 BD
+        cBattery?.each		{DeviceDetails << it.displayName +"\n"}
+        cMiscDev?.each		{DeviceDetails << it.displayName +"\n"} // added 2/1/2017 BD
+        childApps?.each 	{DeviceDetails << it.label +"\n"} 		// added 2/23/2017 BD
+        
         if(cMedia) {
             cMedia?.each {a ->         
                 def activities = a.currentState("activities").value

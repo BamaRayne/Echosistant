@@ -1,6 +1,7 @@
 /* 
  * Message and Control Profile - EchoSistant Add-on 
  *
+ *		2/24/2017		Version:4.0 R.0.0.7		added Main Profile color and color looping control 
  *		2/22/2017		Version:4.0 R.0.0.5    	Bug fixes
  *		2/21/2017		Version:4.0 R.0.0.4b    Fix Profile vent control
  *      2/20/2017       Version:4.0 R.0.0.4a    Minor UI change      
@@ -249,6 +250,7 @@ page name: "pDeviceControl"
                             paragraph "You can now control this group by speaking commands to Alexa:  \n" +
                             " E.G: Alexa set the color to red in the " + app.label
                         }
+                    	href "gCustom", title: "Create Custom Groups", description: "Tap to set"               
                 }       
                section ("Climate Control", hideWhenEmpty: true){ 
                     input "gVents", "capability.switchLevel", title: "Group Smart Vent(s)...", multiple: true, required: false
@@ -272,6 +274,41 @@ page name: "pDeviceControl"
                 }             
             }
       	}
+        page name: "gCustom"    
+            def gCustom(){
+                dynamicPage(name: "gCustom", title: "",install: false, uninstall: false) {
+                    section ("Create a Group", hideWhenEmpty: true){
+                        input "gCustom1", "capability.switch", title: "Select Switches...", multiple: true, required: false, submitOnChange: true
+                        input "gCustom1N", "text", title: "Name this Group...", multiple: false, required: false
+                    }
+                    if (gCustom1) {
+                        section ("+ Create another Group", hideWhenEmpty: true){
+                            input "gCustom2", "capability.switch", title: "Select Switches...", multiple: false, required: false, submitOnChange: true
+                            input "gCustom2N", "text", title: "Name this Group...", multiple: false, required: false
+                        }
+                    }
+                    if (gCustom2) {
+                        section ("+ Create another Group", hideWhenEmpty: true){
+                            input "gCustom3", "capability.switch", title: "Select Switches...", multiple: false, required: false, submitOnChange: true
+                            input "gCustom3N", "text", title: "Name this Group...", multiple: false, required: false
+                        }
+                    }
+                    /*
+                    if (gCustom3) {    
+                        section ("+ Create another Group", hideWhenEmpty: true){
+                            input "gCustom4", "capability.switch", title: "Select Switches...", multiple: false, required: false, submitOnChange: true
+                            input "gCustom4N", "text", title: "Name this Group...", multiple: false, required: false
+                        }
+                    }
+                    if (gCustom4) {    
+                        section ("+ Create another Group", hideWhenEmpty: true){
+                            input "gCustom5", "capability.switch", title: "Select Switches...", multiple: false, required: false, submitOnChange: true
+                            input "gCustom5N", "text", title: "Name this Group...", multiple: false, required: false
+                        }
+                    }
+                    */ 
+                }
+            }    
 page name: "pRestrict"
     def pRestrict(){
         dynamicPage(name: "pRestrict", title: "", uninstall: false) {
@@ -376,8 +413,6 @@ def profileEvaluate(params) {
     def recordingNowNoA = tts.startsWith("record message")
     //Reminders
     def reminder = tts.startsWith("set a reminder ") ? "set a reminder " : tts.startsWith("set reminder ") ? "set reminder" : tts.startsWith("remind me ") ? "remind me " : tts.startsWith("set the reminder") ? "set the reminder" : null
-    //def reminderNoA = tts.startsWith("set reminder")
-    //def remindMeNow = tts.startsWith("remind me")
     def cancelReminder = tts.startsWith("cancel reminder") ? true : tts.startsWith("cancel the reminder") ? true : tts.startsWith("cancel a reminder") ? true : false
     def whatReminders = tts.startsWith("what reminders")
     def cancelReminderNum = tts.startsWith("cancel reminder 1") ?  "reminder1" : tts.startsWith("cancel reminder 2") ? "reminder2" : tts.startsWith("cancel reminder 3") ? "reminder3" : null
@@ -395,8 +430,10 @@ def profileEvaluate(params) {
     	muteAlexa = tts.contains("enable Alexa") ? "unmute" : tts.contains("start Alexa") ? "unmute" : tts.contains("unmute Alexa") ? "unmute" : muteAll
 	def test = tts.contains("this is a test") ? true : tts.contains("a test") ? true : false
     if (parent.debug) log.debug "Message received from Parent with: (tts) = '${tts}', (intent) = '${intent}', (childName) = '${childName}'"  
+
+    
     if (pSendSettings() == "complete" || pGroupSettings() == "complete"){
-        
+
         if (intent == childName){
 			if (test){
 				outputTxt = "Congratulations! Your EchoSistant is now setup properly" 
@@ -509,21 +546,21 @@ def profileEvaluate(params) {
                      }	
                      if(cancelMe != "undefined" || cancelReminderNum != null) {
                         if (cancelMe == "reminder1" || cancelReminderNum == "reminder1") {                        
-                            unschedule(reminderHandler1)
+                            unschedule("reminderHandler1")
                             cancelMeText = state.reminder1
                             state.reminder1 = null
                             state.reminderAnsPend = 0
                          }
                          else {
                             if (cancelMe == "reminder2" || cancelReminderNum == "reminder2") {
-                                unschedule(reminder2)
+                                unschedule("reminderHandler2")
                                 cancelMeText = state.reminder2
                                 state.reminder2 = null
                                 state.reminderAnsPend = 0
                             }
                             else {
                                 if (cancelMe == "reminder3" || cancelReminderNum == "reminder3") {
-                                unschedule(reminder3)
+                                unschedule("reminderHandler3")
                                 cancelMeText = state.reminder3
                                 state.reminder3 = null
                                 state.reminderAnsPend = 0
@@ -697,6 +734,19 @@ def profileEvaluate(params) {
                         return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]                                  
                     }
                 }
+				//LIGHT SWITCHES
+                if (deviceType == "light1" && gCustom1?.size()>0){
+                    if (command == "on" || command == "off") {
+                        gCustom1?."${command}"()
+                        outputTxt = "Ok, turning " + gCustom1N + " " + command
+                        return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]            
+                    }
+                    if (command == "decrease" || command == "increase"){
+                        dataSet =  ["command": command, "deviceType": deviceType]
+                        outputTxt = advCtrlHandler(dataSet)
+                        return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]                                  
+                    }
+                }
                 //DISABLE SWITCHES
                 if (deviceType == "disable") {
                     if (gDisable?.size()>0) {
@@ -854,9 +904,10 @@ def advCtrlHandler(data) {
 	def deviceCommand = data.command
 	def deviceType = data.deviceType
     def result
-	if (deviceType == "light"){
+	if (deviceType == "light" || deviceType == "light1" || deviceType == "light2" || deviceType == "light3"){
+    	deviceType = deviceType == "light" && gSwitches ? gSwitches : deviceType == "light1" && gCustom1 ? gCustom1 : deviceType == "light2" && gCustom2 ? gCustom2 : deviceType == "light3" && gCustom3 ? gCustom3 : null
 		if (deviceCommand == "increase" || deviceCommand == "decrease") {
-                    gSwitches.each {s -> 
+                    deviceType.each {s ->  //gSwitches.each {s -> 
                     	def	currLevel = s?.latestValue("level")
                     	def currState = s?.latestValue("switch") 
                         if (currLevel) {
@@ -1290,8 +1341,48 @@ private getCommand(text){
     	command = "delay"
     	deviceType = "profile"
 	}
+	//CUSTOM GROUPS
+    if (gCustom1N ||  gCustom2N || gCustom3N){
+    if (gCustom1N) {
+    	if (text.contains(settings.gCustom1N.toLowerCase())) {
+			command = text.contains("on") ? "on" : text.contains("off") ? "off" : "undefined"
+			if (command == "undefined") {
+        		command = text.contains("darker") ? "decrease" : text.contains("too bright")  ? "decrease" : text.contains("dim") ? "decrease" : text.contains("dimmer") ? "decrease" : "undefined"
+        	}
+        	if (command == "undefined") {
+            	command = text.contains("not bright enough") ? "increase" : text.contains("brighter")  ? "increase" : text.contains("too dark") ? "increase" : text.contains("brighten") ? "increase" : "undefined"
+        	}
+            deviceType = "light1"
+		}
+    }
+    if (gCustom2N) {
+    	if (text.contains(settings.gCustom2N.toLowerCase())) {
+			command = text.contains("on") ? "on" : text.contains("off") ? "off" : "undefined"
+			if (command == "undefined") {
+        		command = text.contains("darker") ? "decrease" : text.contains("too bright")  ? "decrease" : text.contains("dim") ? "decrease" : text.contains("dimmer") ? "decrease" : "undefined"
+        	}
+            else if (command == "undefined") {
+            	command = text.contains("not bright enough") ? "increase" : text.contains("brighter")  ? "increase" : text.contains("too dark") ? "increase" : text.contains("brighten") ? "increase" : "undefined"
+            }
+        	deviceType = "light2"
+		}
+    }
+    if (gCustom3N) {
+    	if (text.contains(settings.gCustom3N.toLowerCase())) {
+			command = text.contains("on") ? "on" : text.contains("off") ? "off" : "undefined"
+			if (command == "undefined") {
+        		command = text.contains("darker") ? "decrease" : text.contains("too bright")  ? "decrease" : text.contains("dim") ? "decrease" : text.contains("dimmer") ? "decrease" : "undefined"
+        	}
+            else if (command == "undefined") {
+            	command = text.contains("not bright enough") ? "increase" : text.contains("brighter")  ? "increase" : text.contains("too dark") ? "increase" : text.contains("brighten") ? "increase" : "undefined"
+            }
+        	deviceType = "light3"
+		}
+    }
+    }
 //Disable Switches
-   	else if (text.startsWith("disable automation") || text.startsWith("stop turning the") || text.startsWith("stop the motion sensor") || text.startsWith ("turn the motion sensor off") || text.startsWith("stop the sensor") || text.startsWith("kill the automation") || text.contains("kill the sensor") || text.contains("sensor off")){
+   	else {
+    if (text.startsWith("disable automation") || text.startsWith("stop turning the") || text.startsWith("stop the motion sensor") || text.startsWith ("turn the motion sensor off") || text.startsWith("stop the sensor") || text.startsWith("kill the automation") || text.contains("kill the sensor") || text.contains("sensor off")){
     	command = "off"
     	deviceType = "disable"
 	}
@@ -1390,12 +1481,59 @@ private getCommand(text){
 			command = "undefined"
            	deviceType = "tv"
 		}
-	}   
+	}
+    }
     return ["deviceType":deviceType, "command":command ]
 }
 /************************************************************************************************************
    Custom Color Filter
 ************************************************************************************************************/       
+def profileLoop(child) {
+	def childName = app.label
+    def result
+	if(childName == child){
+    	if(gHues){
+    		int hueLevel = !level ? 100 : level
+			int hueHue = Math.random() *100 as Integer
+			def randomColor = [hue: hueHue, saturation: 100, level: hueLevel]
+			gHues.setColor(randomColor)
+    		runIn(60, "startLoop")
+            result =  "Ok, turning the color loop on, in the " + childName
+            
+		}
+        else result = "Sorry, I wasn't able to turn the color loop on in the " + childName
+    }
+    return result
+}
+private startLoop() {
+	def device =  state.lastDevice
+    def deviceMatch = cSwitch.find {s -> s.label.toLowerCase() == device.toLowerCase()}	
+    int hueLevel = !level ? 100 : level
+	int hueHue = Math.random() *100 as Integer
+	def randomColor = [hue: hueHue, saturation: 100, level: hueLevel]
+	gHues.setColor(randomColor)
+    runIn(60, "continueLoop")
+}
+
+
+private continueLoop() {
+    int hueLevel = !level ? 100 : level
+	int hueHue = Math.random() *100 as Integer
+	def randomColor = [hue: hueHue, saturation: 100, level: hueLevel]
+	gHues.setColor(randomColor)
+    runIn(60, "startLoop")
+}
+def profileLoopCancel(child) {
+	def childName = app.label 
+    def result
+	if(childName == child){
+		unschedule("profileLoop")
+		unschedule("continueLoop")
+        result =  "Ok, turning the color loop off in the " + childName
+	}
+    else result = "Sorry, I wasn't able to turn the color loop off"
+    return result
+}
 private setRandomColorName(){
 	for (bulb in gHues) {    
 		int hueLevel = !level ? 100 : level
