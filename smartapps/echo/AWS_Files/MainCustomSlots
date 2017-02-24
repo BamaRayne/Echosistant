@@ -71,6 +71,8 @@ concentrating
 feeling lucky
 feeling romantic
 this is a test
+color
+play
 
 LIST_OF_GROUPS
 
@@ -85,6 +87,7 @@ locks
 switches
 security
 activities
+profile
 
 LIST_OF_OPERANDS
 
@@ -186,6 +189,9 @@ filters
 timer
 reminder
 flash
+loop
+color loop
+looping
 audio
 text
 feedback
@@ -195,3 +201,18 @@ schedule
 number
 short answer
 short answers
+blue
+cool white
+dark blue
+dark red
+dark green
+daylight
+green
+light blue
+light green
+orange
+pink
+red
+soft white
+warm white
+yellow
