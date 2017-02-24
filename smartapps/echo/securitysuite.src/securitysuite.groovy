@@ -1,6 +1,7 @@
 /** 
  * Security - EchoSistant Add-on 
  *
+ *		2/23/2017		Version:4.0 R.0.0.2		Added SMS and Push message of arm/disarm 
  *		2/17/2017		Version:4.0 R.0.0.1		Public Release
  *
 
@@ -58,6 +59,7 @@ preferences {
   page(name: "setupPage")
   page(name: "userPage")
   page(name: "onUnlockPage")
+  page(name: "notificationPage")
   page(name: "resetAllCodeUsagePage")
   page(name: "resetCodeUsagePage")
   page(name: "reEnableUserPage")
@@ -78,6 +80,7 @@ def rootPage() {
         input name: "maxUsers", title: "Number of users", type: "number", multiple: false, refreshAfterSelection: true, submitOnChange: true
         href(name: "toSetupPage", title: "User Settings", page: "setupPage", description: setupPageDescription(), state: setupPageDescription() ? "complete" : "")
         href(name: "toKeypadPage", page: "keypadPage", title: "Keypad Info (optional)")
+        href(name: "toNotificationPage", page: "notificationPage", title: "Notification Settings", description: notificationPageDescription(), state: notificationPageDescription() ? "complete" : "")
       }
     }
   }
@@ -154,6 +157,27 @@ def preSlectedCode(i) {
     return settings."userSlot${i}"
   } else {
     return i
+  }
+}
+def notificationPage() {
+  dynamicPage(name: "notificationPage", title: "Notification Settings") {
+
+    section {
+      input(name: "phone", type: "text", title: "Text This Number", description: "Phone number", required: false, submitOnChange: true)
+      paragraph "For multiple SMS recipients, separate phone numbers with a semicolon(;)"
+      input(name: "notification", type: "bool", title: "Send A Push Notification", description: "Notification", required: false, submitOnChange: true)
+      if (phone != null || notification || sendevent) {
+        input(name: "notifyAccess", title: "on User Entry", type: "bool", required: false)
+        input(name: "notifyLock", title: "on Lock", type: "bool", required: false)
+        input(name: "notifyAccessStart", title: "when granting access", type: "bool", required: false)
+        input(name: "notifyAccessEnd", title: "when revoking access", type: "bool", required: false)
+      }
+    }
+
+    section("Only During These Times (optional)") {
+      input(name: "notificationStartTime", type: "time", title: "Notify Starting At This Time", description: null, required: false)
+      input(name: "notificationEndTime", type: "time", title: "Notify Ending At This Time", description: null, required: false)
+    }
   }
 }
 def resetCodeUsagePage(params) {
@@ -326,6 +350,45 @@ def setupPageDescription(){
   }
   return fancyString(parts)
 }
+def notificationPageDescription() {
+  def parts = []
+  def msg = ""
+  if (settings.phone) {
+    parts << "SMS to ${phone}"
+  }
+  if (settings.sendevent) {
+    parts << "Event Notification"
+  }
+  if (settings.notification) {
+    parts << "Push Notification"
+  }
+  msg += fancyString(parts)
+  parts = []
+
+  if (settings.notifyAccess) {
+    parts << "on entry"
+  }
+  if (settings.notifyLock) {
+    parts << "on lock"
+  }
+  if (settings.notifyAccessStart) {
+    parts << "when granting access"
+  }
+  if (settings.notifyAccessEnd) {
+    parts << "when revoking access"
+  }
+  if (settings.notificationStartTime) {
+    parts << "starting at ${settings.notificationStartTime}"
+  }
+  if (settings.notificationEndTime) {
+    parts << "ending at ${settings.notificationEndTime}"
+  }
+  if (parts.size()) {
+    msg += ": "
+    msg += fancyString(parts)
+  }
+  return msg
+}
 def userHrefTitle(i) {
   def title = "User ${i}"
   if (settings."userName${i}") {
@@ -406,7 +469,26 @@ def updated() {
 private initialize() {
   unsubscribe()
   unschedule()
+  if (startTime && !startDateTime()) {
+    log.debug "scheduling access routine to run at ${startTime}"
+    schedule(startTime, "reconcileCodesStart")
+  } else if (startDateTime()) {
+    // There's a start date, so let's run then
+    log.debug "scheduling RUNONCE start"
+    runOnce(startDateTime().format(smartThingsDateFormat(), location.timeZone), "reconcileCodesStart")
+  }
+
+  if (endTime && !endDateTime()) {
+    log.debug "scheduling access denial routine to run at ${endTime}"
+    schedule(endTime, "reconcileCodesEnd")
+  } else if (endDateTime()) {
+    // There's a end date, so let's run then
+    log.debug "scheduling RUNONCE end"
+    runOnce(endDateTime().format(smartThingsDateFormat(), location.timeZone), "reconcileCodesEnd")
+  }
+
   subscribe(location, locationHandler)
+
   subscribe(theLocks, "codeReport", codereturn)
   subscribe(theLocks, "lock", codeUsed)
   subscribe(theLocks, "reportAllCodes", pollCodeReport, [filterEvents:false])
@@ -414,10 +496,32 @@ private initialize() {
     subscribe(location,"alarmSystemStatus",alarmStatusHandler)
     subscribe(keypad,"codeEntered",codeEntryHandler)
   }
+
   revokeDisabledUsers()
+//  reconcileCodes()
   lockErrorLoopReset()
   initalizeLockData()
+
   log.debug "state: ${state}"
+}
+def startDateTime() {
+  if (startDay && startMonth && startYear && startTime) {
+    def time = new Date().parse(smartThingsDateFormat(), startTime).format("'T'HH:mm:ss.SSSZ", timeZone(startTime))
+    return Date.parse("yyyy-MM-dd'T'HH:mm:ss.SSSZ", "${startYear}-${startMonth}-${startDay}${time}")
+  } else {
+    // Start Date Time not set
+    return false
+  }
+}
+
+def endDateTime() {
+  if (endDay && endMonth && endYear && endTime) {
+    def time = new Date().parse(smartThingsDateFormat(), endTime).format("'T'HH:mm:ss.SSSZ", timeZone(endTime))
+    return Date.parse("yyyy-MM-dd'T'HH:mm:ss.SSSZ", "${endYear}-${endMonth}-${endDay}${time}")
+  } else {
+    // End Date Time not set
+    return false
+  }
 }
 def resetAllCodeUsage() {
   for (int i = 1; i <= settings.maxUsers; i++) {
