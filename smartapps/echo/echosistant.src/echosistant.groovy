@@ -1,6 +1,7 @@
 /* 
  * EchoSistant - The Ultimate Voice and Text Messaging Assistant Using Your Alexa Enabled Device.
  *
+ *		2/24/2017		Version:4.0 R.0.0.8		updated feedback handler to give more than yes & no responses
  *		2/24/2017		Version:4.0 R.0.0.7		added device and Profile color control 
  *		2/22/2017		Version:4.0 R.0.0.6		minor bug fixes
  *		2/21/2017		Version:4.0 R.0.0.5		added Ask Home "IF" device is in < status > feedback
@@ -803,48 +804,54 @@ try {
          if (fDevice != "undefined" && fQuery != "undefined" && fOperand != "undefined") {
             if (fQuery.contains ("is ") || fQuery.contains ("if ") || fQuery == "is" || fQuery == "if" || fQuery == "is the") {
                 def deviceMatch = cRelay?.find {d -> d.label.toLowerCase() == fDevice.toLowerCase()}
-                    if(deviceMatch && cContactRelay) {
-                        outputTxt =  cContactRelay.latestValue("contact").contains(fOperand) ? "yes" : "no"
+                    if(deviceMatch && cContactRelay) {// changed by Jason 2/24/2017
+                        outputTxt =  cContactRelay.latestValue("contact").contains(fOperand) ? "yes, the ${deviceMatch} is ${fOperand}" : "no, the ${deviceMatch} is not ${fOperand}"
                         return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
                     }
                     else {
-                        if (deviceMatch == null && cDoor) {
+                        if (deviceMatch == null && cDoor) {// changed by Jason 2/24/2017
                             deviceMatch = cDoor?.find {d -> d.label.toLowerCase() == fDevice.toLowerCase()}
-                             if(deviceMatch) outputTxt =  deviceMatch.latestValue("contact").contains(fOperand) ? "yes" : "no"
+                             if(deviceMatch) outputTxt =  deviceMatch.latestValue("contact").contains(fOperand) ? "yes, the ${deviceMatch} is ${fOperand}" : "no, the ${deviceMatch} is not ${fOperand}"
                         }
-                        if (deviceMatch == null && cContact) {
+                        if (deviceMatch == null && cContact) {// changed by Jason 2/24/2017
                             deviceMatch = cContact?.find {d -> d.label.toLowerCase() == fDevice.toLowerCase()}
-                            if(deviceMatch) outputTxt =  deviceMatch.latestValue("contact").contains(fOperand) ? "yes" : "no"
+                            if(deviceMatch) outputTxt =  deviceMatch.latestValue("contact").contains(fOperand) ? "yes, the ${deviceMatch} is ${fOperand}" : "no, the ${deviceMatch} is not ${fOperand}"
                         }                    
-                        if (deviceMatch == null && cSwitch) {
+                        if (deviceMatch == null && cSwitch) {// changed by Jason 2/24/2017
                             deviceMatch = cSwitch?.find {d -> d.label.toLowerCase() == fDevice.toLowerCase()} 
-                            if(deviceMatch) outputTxt =  deviceMatch.latestValue("switch").contains(fOperand) ? "yes" : "no"
+                            if(deviceMatch) outputTxt = deviceMatch.latestValue("switch").contains(fOperand) ? "yes, the ${deviceMatch} is ${fOperand}" : "no, the ${deviceMatch} is not ${fOperand}"
                         }
-                        if (deviceMatch == null && cMotion) {
+                        if (deviceMatch == null && cMotion) {// changed by Jason 2/24/2017
                             deviceMatch = cMotion?.find {d -> d.label.toLowerCase() == fDevice.toLowerCase()}
-                            if(deviceMatch) outputTxt =  deviceMatch.latestValue("motion").contains(fOperand) ? "yes" : "no"
+                            if(deviceMatch) {
+                                currState = deviceMatch.currentValue("motion")
+                                currState = currState == "active" ? "yes, the ${deviceMatch} is ${fOperand}" : "no, the ${deviceMatch} is not ${fOperand}"
+                                outputTxt =  currState
+                            }
                         }
-                        if (deviceMatch == null && cPresence) {
-                            deviceMatch = cPresence?.find {d -> d.label.toLowerCase() == fDevice.toLowerCase()} 	
-                            if(deviceMatch) outputTxt =  deviceMatch.latestValue("presence").contains(fOperand) ? "yes" : "no"
-                        }        
-                        if (deviceMatch == null && cWater) {
+						if (deviceMatch == null && cPresence) {  // changed by Jason 2/24/2017
+                            deviceMatch = cPresence.find {d -> d.label.toLowerCase() == fDevice.toLowerCase()}  	
+                               	if(fOperand == "home" || fOperand == "here" || fOperand == "present") {
+                                	outputTxt = deviceMatch.latestValue("presence").contains("not") ? "no, ${deviceMatch} is not ${fOperand}" : "yes, ${deviceMatch} is ${fOperand}"
+									}
+                                }    
+                        if (deviceMatch == null && cWater) {// changed by Jason 2/24/2017
                             deviceMatch = cWater?.find {d -> d.label.toLowerCase() == fDevice.toLowerCase()}	
-                            if(deviceMatch) outputTxt =  deviceMatch.latestValue("water").contains(fOperand) ? "yes" : "no"
+                            if(deviceMatch) outputTxt =  deviceMatch.latestValue("water").contains(fOperand) ? "yes, the ${deviceMatch} is ${fOperand}" : "no, the ${deviceMatch} is not ${fOperand}"
                         }
-                        if (deviceMatch == null && cSpeaker) {
+                        if (deviceMatch == null && cSpeaker) {// changed by Jason 2/24/2017
                             deviceMatch = cSpeaker?.find {d -> d.label.toLowerCase() == fDevice.toLowerCase()}	
-                            if(deviceMatch) outputTxt =  deviceMatch.latestValue("mute").contains(fOperand) ? "yes" : "no"
+                            if(deviceMatch) outputTxt =  deviceMatch.latestValue("mute").contains(fOperand) ? "yes, the ${deviceMatch} is ${fOperand}" : "no, the ${deviceMatch} is not ${fOperand}"
                         }
-                        if (deviceMatch == null && fOperand == "running" && cTstat ) {
+                        if (deviceMatch == null && fOperand == "running" && cTstat ) {// changed by Jason 2/24/2017
                             deviceMatch = cTstat?.find {d -> d.label.toLowerCase() == fDevice.toLowerCase()}
                             if(deviceMatch) {
                                 currState = deviceMatch.latestValue("thermostatOperatingState")
-                                currState = currState == "cooling" ? "yes" : currState == "heating" ? "yes" : "no"
+                                currState = currState == "cooling" ? "yes, ${deviceMatch} is ${fOperand}" : currState == "heating" ? "yes, the ${deviceMatch} is ${fOperand}" : "no, the ${deviceMatch} is not ${fOperand}"
                                 outputTxt =  currState
                             }
-                        }                        
-						if(outputTxt) return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
+                        }
+                        if(outputTxt) return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
                    }
             }
         }
