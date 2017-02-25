@@ -831,7 +831,7 @@ try {
                         }
 						if (deviceMatch == null && cPresence) {  // changed by Jason 2/24/2017
                             deviceMatch = cPresence.find {d -> d.label.toLowerCase() == fDevice.toLowerCase()}  	
-                               	if(fOperand == "home" || fOperand == "here" || fOperand == "present") {
+                               	if(fOperand == "home" || fOperand == "here" || fOperand == "present" || fOperand == "in" || fOperand == "at home") {
                                 	outputTxt = deviceMatch.latestValue("presence").contains("not") ? "no, ${deviceMatch} is not ${fOperand}" : "yes, ${deviceMatch} is ${fOperand}"
 									}
                                 }    
