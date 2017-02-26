@@ -1986,7 +1986,8 @@ def controlHandler(data) {
     if (debug) log.debug 	"Received device control handler data: " +
         					" (deviceType)= ${deviceType}',(deviceCommand) = '${deviceCommand}', (deviceD) = '${deviceD}', " +
                             "(unitU) = '${unitU}', (numN) = '${numN}', (delayD) = '${delayD}'"  
-
+//Received device control handler data: (deviceType)= cSwitch',
+//(deviceCommand) = 'undefined', (deviceD) = 'Entertainment Left', (unitU) = 'read', (numN) = '0', (delayD) = 'false'
 	state.pTryAgain = false
 	if (deviceType == "cSwitch" || deviceType == "cMiscDev"  ) {
     	if (deviceCommand == "on" || deviceCommand == "off") {
@@ -2082,6 +2083,16 @@ def controlHandler(data) {
             result = "Ok, setting  " + deviceD + " to " + newLevel + " percent"            
             if (delayD == false || deviceType == "cMiscDev"  || state.pContCmdsR == "repeat") { return result } 
     	}
+		else { 
+			if(debug) log.error "deviceD: ${deviceD.label}, deviceCommand:${deviceCommand}"
+            def cmd = deviceCommand != "undefined" ? deviceCommand : unitU != "undefined" ? unitU : "undefined"
+            def devTrue = deviceD != "undefined" ? " device name " + deviceD : "undefined" 
+            def devFalse = deviceD == "undefined" ? " didn't catch the device name " : "undefined"
+			if (devTrue != "undefined") result = "I heard the command " + cmd + " and " + dev +  " but I wasn't able to take any actions"
+            else result = "Sorry, I wasn't able to take any actions, becase " + devFalse + " but I've heard the command " + cmd
+            state.pTryAgain = true
+			return result
+		}        
 	}
 	else if (deviceType == "cTstat") {
  		if (delayD == true || state.pinTry != null) {  
@@ -2384,6 +2395,8 @@ def controlSecurity() {
         def type = params.sType
         def control = params.sControl       
 		def pintentName = params.intentName
+        //getCustomCmd
+        //getCustomCmd(command, unit, group, num)
         //OTHER VARIABLES
         def String outputTxt = (String) null 
 		def pPIN = false
@@ -3286,7 +3299,10 @@ private getCommand(command, unit) {
                 deviceType = "color"
             }
 			if (unit.contains("green") || unit.contains("blue") || unit.contains("red") || unit == "yellow" || unit == "pink" || unit == "orange" || unit.contains("white") || unit == "daylight"){
-                command = unit
+                //command = unit
+				command = unit.replace("color", "")
+                log.warn "command = ${command}"
+                //command = unit.contains(fillColorSettings().name) ? fillColorSettings().name : unit
                 deviceType = "color"
             }
             if (unit.contains("loop")){
@@ -3616,7 +3632,7 @@ private continueLoop() {
 private getColorName(cName, level) {
 	if (cName == "random") {
     def randomColor = [:]
-    def bulbName       
+    def bulbName
         child?.gHues.each { bulb ->
             int hueLevel = color.l
             int hueHue = Math.random() *100 as Integer
@@ -3629,6 +3645,7 @@ private getColorName(cName, level) {
 	}    
     for (color in fillColorSettings()) {
 		if (color.name.toLowerCase() == cName.toLowerCase()) {
+        log.warn "found a color match"
         	int hueVal = Math.round(color.h / 3.6)
             int hueLevel = !level ? color.l : level
 			def hueSet = [hue: hueVal, saturation: color.s, level: hueLevel]
