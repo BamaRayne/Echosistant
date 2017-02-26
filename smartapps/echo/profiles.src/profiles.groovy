@@ -735,7 +735,7 @@ def profileEvaluate(params) {
                         return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]                                  
                     }
                 }
-				//LIGHT SWITCHES     ***THIS SECTION MOD'D BY JASON ON 2/26/2017***
+				//CUSTOM GROUP SWITCHES     ***THIS SECTION MOD'D BY JASON ON 2/26/2017***
                	if (deviceType == "light1" && gCustom1?.size()>0 ){
                 	if (command == "on" || command == "off") {
                     	gCustom1?."${command}"() 
@@ -1366,56 +1366,54 @@ private getCommand(text){
     	command = "delay"
     	deviceType = "profile"
 	}
-	//CUSTOM GROUPS
+	//LIGHT SWITCHES
     if (gSwitches || gCustom1N || gCustom2N || gCustom3N){ // ***THIS SECTION MOD'D BY JASON ON 2/26/2017***
-	if (gSwitches) {
-//    	if (text.contains(settings.gSwitches.toLowerCase())) {
-			command = text.contains("on") ? "on" : text.contains("off") ? "off" : "undefined"
-			if (command == "undefined") {
-        		command = text.contains("darker") ? "decrease" : text.contains("too bright")  ? "decrease" : text.contains("dim") ? "decrease" : text.contains("dimmer") ? "decrease" : "undefined"
-        	}
-        	if (command == "undefined") {
-            	command = text.contains("not bright enough") ? "increase" : text.contains("brighter")  ? "increase" : text.contains("too dark") ? "increase" : text.contains("brighten") ? "increase" : "undefined"
-        	}
-            deviceType = "light"
-		}
-//    }    
-    if (gCustom1N) {
-    	if (text.contains(settings.gCustom1N.toLowerCase())) {
-			command = text.contains("on") ? "on" : text.contains("off") ? "off" : "undefined"
-			if (command == "undefined") {
-        		command = text.contains("darker") ? "decrease" : text.contains("too bright")  ? "decrease" : text.contains("dim") ? "decrease" : text.contains("dimmer") ? "decrease" : "undefined"
-        	}
-        	if (command == "undefined") {
-            	command = text.contains("not bright enough") ? "increase" : text.contains("brighter")  ? "increase" : text.contains("too dark") ? "increase" : text.contains("brighten") ? "increase" : "undefined"
-        	}
-            deviceType = "light1"
-		}
-    }
-    if (gCustom2N) {
-    	if (text.contains(settings.gCustom2N.toLowerCase())) {
-			command = text.contains("on") ? "on" : text.contains("off") ? "off" : "undefined"
-			if (command == "undefined") {
-        		command = text.contains("darker") ? "decrease" : text.contains("too bright")  ? "decrease" : text.contains("dim") ? "decrease" : text.contains("dimmer") ? "decrease" : "undefined"
-        	}
-            else if (command == "undefined") {
-            	command = text.contains("not bright enough") ? "increase" : text.contains("brighter")  ? "increase" : text.contains("too dark") ? "increase" : text.contains("brighten") ? "increase" : "undefined"
+        if (gSwitches) {
+                command = text.contains("on") ? "on" : text.contains("off") ? "off" : "undefined"
+                if (command == "undefined") {
+                    command = text.contains("darker") ? "decrease" : text.contains("too bright")  ? "decrease" : text.contains("dim") ? "decrease" : text.contains("dimmer") ? "decrease" : "undefined"
+                }
+                if (command == "undefined") {
+                    command = text.contains("not bright enough") ? "increase" : text.contains("brighter")  ? "increase" : text.contains("too dark") ? "increase" : text.contains("brighten") ? "increase" : "undefined"
+                }
+                deviceType = "light"
+        }
+        if (gCustom1N) {
+            if (text.contains(settings.gCustom1N.toLowerCase())) {
+                command = text.contains("on") ? "on" : text.contains("off") ? "off" : "undefined"
+                if (command == "undefined") {
+                    command = text.contains("darker") ? "decrease" : text.contains("too bright")  ? "decrease" : text.contains("dim") ? "decrease" : text.contains("dimmer") ? "decrease" : "undefined"
+                }
+                if (command == "undefined") {
+                    command = text.contains("not bright enough") ? "increase" : text.contains("brighter")  ? "increase" : text.contains("too dark") ? "increase" : text.contains("brighten") ? "increase" : "undefined"
+                }
+                deviceType = "light1"
             }
-        	deviceType = "light2"
-		}
-    }
-    if (gCustom3N) {
-    	if (text.contains(settings.gCustom3N.toLowerCase())) {
-			command = text.contains("on") ? "on" : text.contains("off") ? "off" : "undefined"
-			if (command == "undefined") {
-        		command = text.contains("darker") ? "decrease" : text.contains("too bright")  ? "decrease" : text.contains("dim") ? "decrease" : text.contains("dimmer") ? "decrease" : "undefined"
-        	}
-            else if (command == "undefined") {
-            	command = text.contains("not bright enough") ? "increase" : text.contains("brighter")  ? "increase" : text.contains("too dark") ? "increase" : text.contains("brighten") ? "increase" : "undefined"
+        }
+        if (gCustom2N) {
+            if (text.contains(settings.gCustom2N.toLowerCase())) {
+                command = text.contains("on") ? "on" : text.contains("off") ? "off" : "undefined"
+                if (command == "undefined") {
+                    command = text.contains("darker") ? "decrease" : text.contains("too bright")  ? "decrease" : text.contains("dim") ? "decrease" : text.contains("dimmer") ? "decrease" : "undefined"
+                }
+                else if (command == "undefined") {
+                    command = text.contains("not bright enough") ? "increase" : text.contains("brighter")  ? "increase" : text.contains("too dark") ? "increase" : text.contains("brighten") ? "increase" : "undefined"
+                }
+                deviceType = "light2"
             }
-        	deviceType = "light3"
-		}
-    }
+        }
+        if (gCustom3N) {
+            if (text.contains(settings.gCustom3N.toLowerCase())) {
+                command = text.contains("on") ? "on" : text.contains("off") ? "off" : "undefined"
+                if (command == "undefined") {
+                    command = text.contains("darker") ? "decrease" : text.contains("too bright")  ? "decrease" : text.contains("dim") ? "decrease" : text.contains("dimmer") ? "decrease" : "undefined"
+                }
+                else if (command == "undefined") {
+                    command = text.contains("not bright enough") ? "increase" : text.contains("brighter")  ? "increase" : text.contains("too dark") ? "increase" : text.contains("brighten") ? "increase" : "undefined"
+                }
+                deviceType = "light3"
+            }
+        }
     }
 //Disable Switches
    	else {
@@ -1427,20 +1425,6 @@ private getCommand(text){
     	command = "on"
     	deviceType = "disable"
 	}        
-//Switches   // REMOVED BY JASON ON 2/26/2017
-/*    else if (text.contains("lights") || text.contains("light")) {
-		command = text.contains("on") ? "on" : text.contains("off") ? "off" : "undefined"
-		deviceType = "light"
-	}
-//Dimmers
-    else if (text.contains("darker") || text.contains("too bright") || text.contains("dim") || text.contains("dimmer")) {
-            command = "decrease" 
-            deviceType = "light"
-    }
-	else if  (text.contains("not bright enough") || text.contains("brighter") || text.contains("too dark") || text.contains("brighten")) {
-		command = "increase" 
-        deviceType = "light"     
-    }*/
 // Fans
     else if (text.contains("fan") || text.contains("fans")) {
 		if (text.contains("on") || text.contains("start")) {
