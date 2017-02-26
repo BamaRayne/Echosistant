@@ -1,6 +1,7 @@
 /* 
  * Message and Control Profile - EchoSistant Add-on 
  *
+ *		2/26/2017		Version:4.0 R.0.0.8		Bug fixes for custom groups
  *		2/24/2017		Version:4.0 R.0.0.7		added Main Profile color and color looping control 
  *		2/22/2017		Version:4.0 R.0.0.5    	Bug fixes
  *		2/21/2017		Version:4.0 R.0.0.4b    Fix Profile vent control
@@ -283,13 +284,13 @@ page name: "pDeviceControl"
                     }
                     if (gCustom1) {
                         section ("+ Create another Group", hideWhenEmpty: true){
-                            input "gCustom2", "capability.switch", title: "Select Switches...", multiple: false, required: false, submitOnChange: true
+                            input "gCustom2", "capability.switch", title: "Select Switches...", multiple: true, required: false, submitOnChange: true
                             input "gCustom2N", "text", title: "Name this Group...", multiple: false, required: false
                         }
                     }
                     if (gCustom2) {
                         section ("+ Create another Group", hideWhenEmpty: true){
-                            input "gCustom3", "capability.switch", title: "Select Switches...", multiple: false, required: false, submitOnChange: true
+                            input "gCustom3", "capability.switch", title: "Select Switches...", multiple: true, required: false, submitOnChange: true
                             input "gCustom3N", "text", title: "Name this Group...", multiple: false, required: false
                         }
                     }
@@ -442,7 +443,7 @@ def profileEvaluate(params) {
             def  getCMD = getCommand(tts) 
                 deviceType = getCMD.deviceType
                 command = getCMD.command 
-                if(parent.debug) log.debug "received control command: ${command}, deviceType:  ${deviceType}"
+                if(parent.debug) log.debug "received a control command: ${command}, deviceType:  ${deviceType}"
             //Voice Activated Commands
             if(muteAll == "mute" || muteAll == "unmute"){
                 if(muteAll == "mute"){
@@ -734,19 +735,43 @@ def profileEvaluate(params) {
                         return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]                                  
                     }
                 }
-				//LIGHT SWITCHES
-                if (deviceType == "light1" && gCustom1?.size()>0){
-                    if (command == "on" || command == "off") {
-                        gCustom1?."${command}"()
+				//LIGHT SWITCHES     ***THIS SECTION MOD'D BY JASON ON 2/26/2017***
+               	if (deviceType == "light1" && gCustom1?.size()>0 ){
+                	if (command == "on" || command == "off") {
+                    	gCustom1?."${command}"() 
+                        outputTxt = "Ok, turning " + gCustom1N + " " + command
+                        return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]                                  
+                        }
+                   	if (command == "decrease" || command == "increase"){
+                        dataSet =  ["command": command, "deviceType": deviceType]
+                        outputTxt = advCtrlHandler(dataSet)
+                        return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]                                  
+	                    }
+                   }     
+               	if (deviceType == "light2" && gCustom2?.size()>0 ){
+                	if (command == "on" || command == "off") {
+                    	gCustom2?."${command}"() 
+                        outputTxt = "Ok, turning " + gCustom2N + " " + command
+                        return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]                                  
+                        }
+                   	if (command == "decrease" || command == "increase"){
+                        dataSet =  ["command": command, "deviceType": deviceType]
+                        outputTxt = advCtrlHandler(dataSet)
+                        return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]                                  
+	                    }
+                   }     
+				if (deviceType == "light3" && gCustom3?.size()>0 ){ 
+					if (command == "on" || command == "off") {
+                    	gCustom3?."${command}"() 
                         outputTxt = "Ok, turning " + gCustom1N + " " + command
                         return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]            
-                    }
+                    	}
                     if (command == "decrease" || command == "increase"){
                         dataSet =  ["command": command, "deviceType": deviceType]
                         outputTxt = advCtrlHandler(dataSet)
                         return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]                                  
+	                    }
                     }
-                }
                 //DISABLE SWITCHES
                 if (deviceType == "disable") {
                     if (gDisable?.size()>0) {
@@ -1342,7 +1367,19 @@ private getCommand(text){
     	deviceType = "profile"
 	}
 	//CUSTOM GROUPS
-    if (gCustom1N ||  gCustom2N || gCustom3N){
+    if (gSwitches || gCustom1N || gCustom2N || gCustom3N){ // ***THIS SECTION MOD'D BY JASON ON 2/26/2017***
+	if (gSwitches) {
+//    	if (text.contains(settings.gSwitches.toLowerCase())) {
+			command = text.contains("on") ? "on" : text.contains("off") ? "off" : "undefined"
+			if (command == "undefined") {
+        		command = text.contains("darker") ? "decrease" : text.contains("too bright")  ? "decrease" : text.contains("dim") ? "decrease" : text.contains("dimmer") ? "decrease" : "undefined"
+        	}
+        	if (command == "undefined") {
+            	command = text.contains("not bright enough") ? "increase" : text.contains("brighter")  ? "increase" : text.contains("too dark") ? "increase" : text.contains("brighten") ? "increase" : "undefined"
+        	}
+            deviceType = "light"
+		}
+//    }    
     if (gCustom1N) {
     	if (text.contains(settings.gCustom1N.toLowerCase())) {
 			command = text.contains("on") ? "on" : text.contains("off") ? "off" : "undefined"
@@ -1390,8 +1427,8 @@ private getCommand(text){
     	command = "on"
     	deviceType = "disable"
 	}        
-//Switches
-    else if (text.contains("lights") || text.contains("light")) {
+//Switches   // REMOVED BY JASON ON 2/26/2017
+/*    else if (text.contains("lights") || text.contains("light")) {
 		command = text.contains("on") ? "on" : text.contains("off") ? "off" : "undefined"
 		deviceType = "light"
 	}
@@ -1403,7 +1440,7 @@ private getCommand(text){
 	else if  (text.contains("not bright enough") || text.contains("brighter") || text.contains("too dark") || text.contains("brighten")) {
 		command = "increase" 
         deviceType = "light"     
-    }
+    }*/
 // Fans
     else if (text.contains("fan") || text.contains("fans")) {
 		if (text.contains("on") || text.contains("start")) {
