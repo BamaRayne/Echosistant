@@ -170,35 +170,18 @@ page name: "certainTime"
 ************************************************************************************************************/
 def installed() {
 	log.debug "Installed with settings: ${settings}"
-    state.scheduledTime
+	if (timeOfDay) {
+		schedule(timeOfDay, "scheduledTimeHandler")
+	}
 }
 def updated() { 
 	log.debug "Updated with settings: ${settings}"
-    unsubscribe()
     initialize()
 }
 def initialize() {
-		if(state.scheduledTime == null && timeOfDay) {
-        	state.scheduledTime = settings.timeOfDay
-            schedule(timeOfDay, "scheduledTimeHandler")
-        }
-        else {
-        	if(state.scheduledTime != settings.timeOfDay){
-            	state.scheduledTime = settings.timeOfDay
-                schedule(timeOfDay, "scheduledTimeHandler")
-            }
-        }
-    	subscribeToEvents()
-}    
-/************************************************************************************************************
-		Subscriptions
-************************************************************************************************************/
-def subscribeToEvents() {
-
-//Disabled and moved initialize() - 2/27/2017 Bobby 
-//	if (timeOfDay) {
-//		schedule(timeOfDay, "scheduledTimeHandler")
-//	} 
+	if (timeOfDay) {
+		schedule(timeOfDay, "scheduledTimeHandler")
+	} 
     if (actionType) {
     if (myRoutine) {subscribe(location, "routineExecuted",alertsHandler)}
     if (myMode) {subscribe(location, "mode", alertsHandler)}
@@ -238,7 +221,7 @@ def subscribeToEvents() {
         subscribe(myTstat, "coolingSetpoint", alertsHandler)
     	}
     }
-}
+}    
 /************************************************************************************************************
    TIME OF DAY HANDLER
 ************************************************************************************************************/
@@ -246,7 +229,6 @@ def scheduledTimeHandler() {
 	def data = [:]
 		if (getDayOk()==true && getModeOk()==true && getTimeOk()==true) {	
 			data = [value:"time", name:"time of day", device:"schedule"] 
-            unschedule()
     		alertsHandler(data)
     	}
 }
