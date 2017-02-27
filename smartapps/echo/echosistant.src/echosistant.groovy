@@ -1,14 +1,7 @@
 /* 
  * EchoSistant - The Ultimate Voice and Text Messaging Assistant Using Your Alexa Enabled Device.
  *
- *		2/24/2017		Version:4.0 R.0.0.8		updated feedback handler to give more than yes & no responses
- *		2/24/2017		Version:4.0 R.0.0.7		added device and Profile color control 
- *		2/22/2017		Version:4.0 R.0.0.6		minor bug fixes
- *		2/21/2017		Version:4.0 R.0.0.5		added Ask Home "IF" device is in < status > feedback
- *		2/20/2017		Version:4.0 R.0.0.4		added the "IS THE" device < status > feedback
- *		2/19/2017		Version:4.0 R.0.0.3		running routines fix and spelling errors
- *		2/19/2017		Version:4.0 R.0.0.2a	general bug fixes
- *		2/18/2017		Version:4.0 R.0.0.1a	Weather Service text fixes, added Elvis to all size(), removed empty shmStatus variable
+ *		2/27/2017		Version:4.0 R.0.0.9		SHM handling bug fixes
  *		2/17/2017		Version:4.0 R.0.0.0		Public Release 
  *
  *  Copyright 2016 Jason Headley & Bobby Dobrescu
@@ -139,6 +132,7 @@ page name: "mIntent"
                         input "cLevel", "number", title: "Alexa Adjusts Light Levels by using a scale of 1-10 (default is +/-3)", defaultValue: 3, required: false
                         input "cVolLevel", "number", title: "Alexa Adjusts the Volume Level by using a scale of 1-10 (default is +/-2)", defaultValue: 2, required: false
                         input "cTemperature", "number", title: "Alexa Automatically Adjusts temperature by using a scale of 1-10 (default is +/-1)", defaultValue: 1, required: false						
+						//input "pMetric", "bool", title: "Use Metric Units (Celsius) for temperature", required: false, defaultValue: false
                     }
                     section ("Fan Control") {            
                         input "cHigh", "number", title: "Alexa Adjusts High Level to 99% by default", defaultValue: 99, required: false
@@ -155,8 +149,7 @@ page name: "mIntent"
                         input "pEnableMuteAlexa", "bool", title: "Disable Feedback (Silence Alexa - it no longer provides any responses)?", required: false, defaultValue: false
                         input "pUseShort", "bool", title: "Use Short Alexa Answers (Alexa provides quick answers)?", required: false, defaultValue: false
                     }
-                    
-                    section ("HVAC Filters Replacement Reminders", hideWhenEmpty: true, hideable: true, hidden: false) {            
+                    section ("HVAC Filters Replacement Reminders", hideWhenEmpty: true, hideable: true, hidden: false) {
 						input "cFilterReplacement", "number", title: "Alexa Automatically Schedules HVAC Filter Replacement in this number of days (default is 90 days)", defaultValue: 90, required: false                        
                         input "cFilterSynthDevice", "capability.speechSynthesis", title: "Send Audio Notification when due, to this Speech Synthesis Type Device(s)", multiple: true, required: false
                         input "cFilterSonosDevice", "capability.musicPlayer", title: "Send Audio Notification when due, to this Sonos Type Device(s)", required: false, multiple: true   
@@ -597,6 +590,9 @@ def initialize() {
             state.filterNotif = null
             state.lastAction = null
 			state.lastActivity = null
+			unschedule("startLoop")
+            unschedule("continueLoop")            
+            
 	}
 /************************************************************************************************************
 		CoRE Integration
@@ -1378,7 +1374,7 @@ def controlDevices() {
 	def ctProcess = true	
     state.pTryAgain = false 
 
-try {
+//try {
 
     if (ctIntentName == "main") {
     	if (ctCommand == "this is a test"){
@@ -1962,14 +1958,14 @@ try {
 		state.pTryAgain = true
 		return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
     }
-
+/*
        } catch (Throwable t) {
         log.error t
         outputTxt = "Oh no, something went wrong. If this happens again, please reach out for help!"
         state.pTryAgain = true
         return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
 	}
-    
+*/    
 }
 /************************************************************************************************************
    DEVICE CONTROL HANDLER
@@ -2387,7 +2383,7 @@ def controlHandler(data) {
 /************************************************************************************************************
    SECURITY CONTROL - from Lambda via page s
 ************************************************************************************************************/
-def controlSecurity() {
+def controlSecurity(param) {
 		//FROM LAMBDA
         def command = params.sCommand
         def num = params.sNum
@@ -2395,15 +2391,24 @@ def controlSecurity() {
         def type = params.sType
         def control = params.sControl       
 		def pintentName = params.intentName
-        //getCustomCmd
-        //getCustomCmd(command, unit, group, num)
+        //FROM CONTROL MODULE       
+        def cCommand = param?.command
+        def cNum = param?.num      
+		def cPintentName = param?.pintentName        
+        log.warn "cCommand = ${cCommand},cNum = ${cNum}, cPintentName = ${cPintentName}"
+        if(cCommand){
+        	command = cCommand
+            num = cNum
+            pintentName = cPintentName
+        }
+		log.warn "command = ${command},num = ${num}, pintentName = ${pintentName}"
         //OTHER VARIABLES
         def String outputTxt = (String) null 
 		def pPIN = false
         def String secCommand = (String) null
         def delay = false
         def data = [:]
-        	control = control.replaceAll("[^a-zA-Z0-9]", "")
+        	control = control?.replaceAll("[^a-zA-Z0-9]", "")
         	sPIN = sPIN == "?" ? "undefined" : sPIN
         if (num == "undefined" || num =="?") {num = 0 } 
         	num = num as int
@@ -2412,8 +2417,12 @@ def controlSecurity() {
         					 " (type) = '${type}', (sControl) = '${control}',(pintentName) = '${pintentName}'"
 	def sProcess = true
     state.pTryAgain = false
-try {	
-	if (pintentName == "security") { 
+//try {	
+	
+    //System Control Data: (sCommand)= disable,(sNum) = '0', (sPIN) = 'null', (type) = 'null', (sControl) = 'null',(pintentName) = 'security'
+    
+    if (pintentName == "security") { 
+    log.warn "security intent"
 		if (ptts == "this is a test"){
 			outputTxt = "Congratulations! Your EchoSistant is now setup properly" 
 			return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]       
@@ -2431,6 +2440,7 @@ try {
                     return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
             }
             if (command == "cancel" || command == "stop" || command == "disable" || command == "deactivate" || command == "off" || command == "disarm") {
+            log.warn "command disarm"
                 secCommand = currentSHM == "off" ? null : "off"
                     if (secCommand == "off"){
                     delay = false
@@ -2460,6 +2470,7 @@ try {
                 }
             }
             if (command == "start" || command == "enable" || command == "activate" || command == "schedule" || command == "arm" || command == "on") {
+            log.warn "command arm"
                 if(control == "stay" || control == "away") {  
                     secCommand = control == "stay" ? "stay" : control == "away" ? "away" : control
                     def process = true
@@ -2582,14 +2593,14 @@ try {
             state.pTryAgain = true
             return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
     }
-
+/*
     } catch (Throwable t) {
         log.error t
         outputTxt = "Oh no, something went wrong. If this happens again, please reach out for help!"
         state.pTryAgain = true
         return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
 	}
-
+*/
 }
 /************************************************************************************************************
 	SECURITY CONTROL HANDLER
@@ -3112,20 +3123,6 @@ try {
                 }
            	}
         }        
-        /* //appears to be duplicate to line 2909 - removed 2/22/17 Bobby
-        cLock?.each 	{ d ->
-        def attrValue = d.latestValue("lock") 
-        	def stateTime = d.currentState("lock").date.time
-			def endTime = now() + location.timeZone.rawOffset
-    		def startTimeAdj = new Date(stateTime + location.timeZone.rawOffset)
-    			startTimeAdj = startTimeAdj.getTime()
-    		int hours = (int)((endTime - startTimeAdj) / (1000 * 60 * 60) )
-    		//int minutes = (int)((endTime - startTime) / ( 60 * 1000))
-                if ( hours > cInactiveDev ) {
-                    DeviceDetails << d.displayName 
-                }
-        } 
-        */
         def dUniqueList = DeviceDetails.unique (false)
         dUniqueList = dUniqueList.sort()       
         def listSize = dUniqueList?.size()
@@ -3398,7 +3395,16 @@ private getCustomCmd(command, unit, group, num) {
 		return result
     } 
     if (command == "cancel" || command == "stop" || command == "disable" || command == "deactivate" || command == "unschedule" || command == "disarm") {
-    	if (unit == "reminder" || unit == "reminders" || unit == "timer" || unit == "timers" || unit.contains ("reminder") || unit.contains ("timer") || unit.contains ("schedule") ) {
+    	if(group == "security"){
+        	def param = [:]
+        		param.command = command
+        		param.num = num
+				param.pintentName = group
+        		result = controlSecurity(param)
+                log.warn "security result = ${result}"
+                return result.outputTxt
+        }
+        if (unit == "reminder" || unit == "reminders" || unit == "timer" || unit == "timers" || unit.contains ("reminder") || unit.contains ("timer") || unit.contains ("schedule") ) {
         	if (unit.contains ("reminder") || unit.contains ("schedule")) {
             	if (state.scheduledHandler != null) {
                 	if (state.scheduledHandler == "filters") {
@@ -3476,7 +3482,16 @@ private getCustomCmd(command, unit, group, num) {
 		}        
     }
 	if (command == "start" || command == "enable" || command == "activate" || command == "schedule" || command == "arm") {
-		if (unit == "reminder" || unit == "reminders" || unit == "timer" || unit == "timers" || unit.contains ("reminder") || unit.contains ("timer") ) {
+		if(group == "security"){
+        	def param = [:]
+        		param.command = command
+        		param.num = num
+				param.pintentName = group
+        		result = controlSecurity(param)
+                log.warn "security arm result = ${result}"
+                return result.outputTxt
+        }
+        if (unit == "reminder" || unit == "reminders" || unit == "timer" || unit == "timers" || unit.contains ("reminder") || unit.contains ("timer") ) {
         	state.scheduledHandler = "reminder"
             result = "Ok, reminder scheduled"
            	return result

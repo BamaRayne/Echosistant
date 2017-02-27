@@ -1,10 +1,7 @@
 /* 
  * Notification - EchoSistant Add-on 
  *
- *		2/23/2017		Version:4.0 R.0.0.5		Bug Fix: fixed routine & mode notification bug
- *		2/22/2017		Version:4.0 R.0.0.4		rounding temps output
- *		2/21/2017		Version:4.0 R.0.0.3		Added toggles for action choices
- *		2/17/2017		Version:4.0 R.0.0.2		Bug Fix: presence not working
+ *		2/27/2017		Version:4.0 R.0.0.6		time scheduling bug fix 
  *		2/17/2017		Version:4.0 R.0.0.1		Public Release
  *
  *  Copyright 2016 Jason Headley & Bobby Dobrescu
@@ -173,6 +170,7 @@ page name: "certainTime"
 ************************************************************************************************************/
 def installed() {
 	log.debug "Installed with settings: ${settings}"
+    state.scheduledTime
 }
 def updated() { 
 	log.debug "Updated with settings: ${settings}"
@@ -180,15 +178,27 @@ def updated() {
     initialize()
 }
 def initialize() {
+		if(state.scheduledTime == null && timeOfDay) {
+        	state.scheduledTime = settings.timeOfDay
+            schedule(timeOfDay, "scheduledTimeHandler")
+        }
+        else {
+        	if(state.scheduledTime != settings.timeOfDay){
+            	state.scheduledTime = settings.timeOfDay
+                schedule(timeOfDay, "scheduledTimeHandler")
+            }
+        }
     	subscribeToEvents()
 }    
 /************************************************************************************************************
 		Subscriptions
 ************************************************************************************************************/
 def subscribeToEvents() {
-	if (timeOfDay) {
-		schedule(timeOfDay, "scheduledTimeHandler")
-	} 
+
+//Disabled and moved initialize() - 2/27/2017 Bobby 
+//	if (timeOfDay) {
+//		schedule(timeOfDay, "scheduledTimeHandler")
+//	} 
     if (actionType) {
     if (myRoutine) {subscribe(location, "routineExecuted",alertsHandler)}
     if (myMode) {subscribe(location, "mode", alertsHandler)}

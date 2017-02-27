@@ -1,14 +1,7 @@
 /* 
  * Message and Control Profile - EchoSistant Add-on 
  *
- *		2/26/2017		Version:4.0 R.0.0.8		Bug fixes for custom groups
- *		2/24/2017		Version:4.0 R.0.0.7		added Main Profile color and color looping control 
- *		2/22/2017		Version:4.0 R.0.0.5    	Bug fixes
- *		2/21/2017		Version:4.0 R.0.0.4b    Fix Profile vent control
- *      2/20/2017       Version:4.0 R.0.0.4a    Minor UI change      
- *      2/20/2017       Version:4.0 R.0.0.4     Profile device actions not working.
- *		2/19/2017		Version:4.0 R.0.0.3 	Restricted control to only selected devices, added option to reverse disable commands
- *		2/18/2017		Version:4.0 R.0.0.2a	Bug fix for sms, fixed default variables
+ *		2/27/2017		Version:4.0 R.0.0.9		Bug fixes for colored lights
  *		2/17/2017		Version:4.0 R.0.0.1		Public Release
  * 
  *  Copyright 2016 Jason Headley & Bobby Dobrescu
@@ -27,7 +20,7 @@ definition(
 	name			: "Profiles",
     namespace		: "Echo",
     author			: "JH/BD",
-	description		: "EchoSistant Profiles Add-on",
+	description		: "EchoSistant Profiles Add-on - only publish if using secondary accounts",
 	category		: "My Apps",
     parent			: "Echo:EchoSistant",
 	iconUrl			: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/app-Echosistant.png",
@@ -294,20 +287,18 @@ page name: "pDeviceControl"
                             input "gCustom3N", "text", title: "Name this Group...", multiple: false, required: false
                         }
                     }
-                    /*
                     if (gCustom3) {    
                         section ("+ Create another Group", hideWhenEmpty: true){
-                            input "gCustom4", "capability.switch", title: "Select Switches...", multiple: false, required: false, submitOnChange: true
+                            input "gCustom4", "capability.switch", title: "Select Switches...", multiple: true, required: false, submitOnChange: true
                             input "gCustom4N", "text", title: "Name this Group...", multiple: false, required: false
                         }
                     }
                     if (gCustom4) {    
                         section ("+ Create another Group", hideWhenEmpty: true){
-                            input "gCustom5", "capability.switch", title: "Select Switches...", multiple: false, required: false, submitOnChange: true
+                            input "gCustom5", "capability.switch", title: "Select Switches...", multiple: true, required: false, submitOnChange: true
                             input "gCustom5N", "text", title: "Name this Group...", multiple: false, required: false
                         }
                     }
-                    */ 
                 }
             }    
 page name: "pRestrict"
@@ -377,6 +368,9 @@ def initialize() {
         //Sound Cancellation    
         state.pMuteAlexa = settings.pDisableAlexaProfile ?: false
         state.pMuteAll = settings.pDisableALLProfile ?: false
+        // Turn OFF the Color Loop
+		unschedule("startLoop")
+		unschedule("continueLoop")
 }
 
 /******************************************************************************************************
@@ -419,9 +413,9 @@ def profileEvaluate(params) {
     def cancelReminderNum = tts.startsWith("cancel reminder 1") ?  "reminder1" : tts.startsWith("cancel reminder 2") ? "reminder2" : tts.startsWith("cancel reminder 3") ? "reminder3" : null
     // Hue Scenes / Colored Lights   
     def hueSet = tts.startsWith("set the color")
-    def hueChange = tts.startsWith("change the color")
+    def hueChange = tts.startsWith("change the color") ? true : tts.startsWith("change the lights") ? true : tts.startsWith("change color") ? true : tts.startsWith("change lights to ")
     def feelLucky = tts.startsWith("I feel lucky") ? true : tts.startsWith("I am feeling lucky") ? true : tts.startsWith("I'm feeling lucky") ? true : tts.contains("feeling lucky") ? true : tts.startsWith("pick a random color") ? true : false
-    def read = tts.contains("reading") ? true : tts.contains("read") ? true : tts.contains("studying") ? true : false 
+    def read = tts.contains("reading") ? true : tts.contains("studying") ? true : false 
     def concentrate = tts.contains("cleaning") ? true : tts.contains("working") ? true : tts.contains("concentrate") ? true : tts.contains("concentrating") ? true : false
     def relax = tts.contains("relax") ? true : tts.contains("relaxing") ? true : tts.contains("chilling") ? true : false    
     //Voice Activation Settings
@@ -430,11 +424,10 @@ def profileEvaluate(params) {
     def muteAlexa = tts.contains("disable Alexa") ? "mute" : tts.contains("silence Alexa") ? "mute" : tts.contains("mute Alexa") ? "mute" : null
     	muteAlexa = tts.contains("enable Alexa") ? "unmute" : tts.contains("start Alexa") ? "unmute" : tts.contains("unmute Alexa") ? "unmute" : muteAll
 	def test = tts.contains("this is a test") ? true : tts.contains("a test") ? true : false
+    
     if (parent.debug) log.debug "Message received from Parent with: (tts) = '${tts}', (intent) = '${intent}', (childName) = '${childName}'"  
-
     
     if (pSendSettings() == "complete" || pGroupSettings() == "complete"){
-
         if (intent == childName){
 			if (test){
 				outputTxt = "Congratulations! Your EchoSistant is now setup properly" 
@@ -684,7 +677,7 @@ def profileEvaluate(params) {
                     //HUE SCENES
                     if (read == true || concentrate == true || relax == true || feelLucky == true){
                         def color = read == true ? "Warm White" : concentrate == true ? "Daylight White" : relax == true ? "Very Warm White" : feelLucky == true ? "random" : "undefined"
-                        if (color != "undefined"){
+                        if (color != "undefined" && command != "colorloopOn" && command != "colorloopOff" ){
                             if (color != "random"){
                                 def hueSetVals = getColorName("${color}",level)
                                 gHues?.setColor(hueSetVals)
@@ -702,13 +695,13 @@ def profileEvaluate(params) {
                     if (hueSet == true || hueChange == true){
                         def hueSetVals
                             if(hueSet == true) {
-                                tts = tts.replace("set the color to ", "")
+                                tts = tts.replace("set the color to ", "").replace("set the color lights to ", "").replace("set the colored lights to ", "")
                                 hueSetVals =  getColorName( tts , level)
                                 gHues?.setColor(hueSetVals)
                                 outputTxt =  "Ok, changing your bulbs to " + tts
                             }
                             if(hueChange == true) {
-                                tts = tts.replace("change the color to ", "")
+                                tts = tts.replace("change the color to ", "").replace("change the lights to ", "")
                                 hueSetVals =  getColorName("${tts}", level)
                                 gHues?.setColor(hueSetVals)
                                 outputTxt =  "Ok, changing your bulbs to " + tts
@@ -720,6 +713,17 @@ def profileEvaluate(params) {
                             }
                             return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]
                     }
+					if (command == "colorloopOn" || command == "colorloopOff") {
+                        def loopOn = command == "colorloopOn" ? true : command == "colorloopOff" ? false : null
+						if(loopOn == true){
+							outputTxt = profileLoop(app.label)
+                            return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]
+						}
+                        else { 
+                            outputTxt =  profileLoopCancel(app.label)
+                            return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]
+						}
+                	}
                 }
                 if (command != null && deviceType != null) {
                 //LIGHT SWITCHES
@@ -736,7 +740,7 @@ def profileEvaluate(params) {
                     }
                 }
 				//CUSTOM GROUP SWITCHES     ***THIS SECTION MOD'D BY JASON ON 2/26/2017***
-               	if (deviceType == "light1" && gCustom1?.size()>0 ){
+               	if (deviceType == "light1" && gCustom1){
                 	if (command == "on" || command == "off") {
                     	gCustom1?."${command}"() 
                         outputTxt = "Ok, turning " + gCustom1N + " " + command
@@ -746,9 +750,9 @@ def profileEvaluate(params) {
                         dataSet =  ["command": command, "deviceType": deviceType]
                         outputTxt = advCtrlHandler(dataSet)
                         return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]                                  
-	                    }
-                   }     
-               	if (deviceType == "light2" && gCustom2?.size()>0 ){
+	               }
+                }     
+               	if (deviceType == "light2" && gCustom2){
                 	if (command == "on" || command == "off") {
                     	gCustom2?."${command}"() 
                         outputTxt = "Ok, turning " + gCustom2N + " " + command
@@ -759,11 +763,11 @@ def profileEvaluate(params) {
                         outputTxt = advCtrlHandler(dataSet)
                         return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]                                  
 	                    }
-                   }     
-				if (deviceType == "light3" && gCustom3?.size()>0 ){ 
+                }     
+				if (deviceType == "light3" && gCustom3){ 
 					if (command == "on" || command == "off") {
                     	gCustom3?."${command}"() 
-                        outputTxt = "Ok, turning " + gCustom1N + " " + command
+                        outputTxt = "Ok, turning " + gCustom3N + " " + command
                         return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]            
                     	}
                     if (command == "decrease" || command == "increase"){
@@ -771,8 +775,32 @@ def profileEvaluate(params) {
                         outputTxt = advCtrlHandler(dataSet)
                         return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]                                  
 	                    }
-                    }
-                //DISABLE SWITCHES
+                 }
+               	if (deviceType == "light4" && gCustom4){
+                	if (command == "on" || command == "off") {
+                    	gCustom2?."${command}"() 
+                        outputTxt = "Ok, turning " + gCustom4N + " " + command
+                        return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]                                  
+                        }
+                   	if (command == "decrease" || command == "increase"){
+                        dataSet =  ["command": command, "deviceType": deviceType]
+                        outputTxt = advCtrlHandler(dataSet)
+                        return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]                                  
+	                    }
+                }     
+				if (deviceType == "light5" && gCustom5){ 
+					if (command == "on" || command == "off") {
+                    	gCustom3?."${command}"() 
+                        outputTxt = "Ok, turning " + gCustom5N + " " + command
+                        return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]            
+                    	}
+                    if (command == "decrease" || command == "increase"){
+                        dataSet =  ["command": command, "deviceType": deviceType]
+                        outputTxt = advCtrlHandler(dataSet)
+                        return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]                                  
+	                    }
+                 }
+				//DISABLE SWITCHES
                 if (deviceType == "disable") {
                     if (gDisable?.size()>0) {
                         if (command == "on" || command == "off") {
@@ -1366,8 +1394,26 @@ private getCommand(text){
     	command = "delay"
     	deviceType = "profile"
 	}
-	//LIGHT SWITCHES
-    if (gSwitches || gCustom1N || gCustom2N || gCustom3N){ // ***THIS SECTION MOD'D BY JASON ON 2/26/2017***
+//Color Loop
+	if(text.contains("loop") || text.contains("looping") || text.contains("color l") || text.contains("colored l")) {
+    	deviceType = "color"
+    	if (text.startsWith ("start") || text.startsWith("play") || text.startsWith ("run")) {
+        	command = "colorloopOn"
+		}
+    	else if (text.startsWith ("stop") || text.startsWith("cancel")){
+    		command = "colorloopOff" 
+    	}
+		else if  (text.contains("slow down") || text.contains("too fast" )) {
+            command = "decrease"
+        }
+        else if  (text.contains("speed up") || text.contains("too slow")) {
+            command = "increase"
+        }
+        log.warn "deviceType = ${deviceType}, command = ${command}"
+	}
+    else {
+//LIGHT SWITCHES
+    if (gSwitches || gCustom1N || gCustom2N || gCustom3N || gCustom4N || gCustom5N){ // ***THIS SECTION MOD'D BY JASON ON 2/26/2017***
         if (gSwitches) {
                 command = text.contains("on") ? "on" : text.contains("off") ? "off" : "undefined"
                 if (command == "undefined") {
@@ -1414,6 +1460,30 @@ private getCommand(text){
                 deviceType = "light3"
             }
         }
+        if (gCustom4N) {
+            if (text.contains(settings.gCustom4N.toLowerCase())) {
+                command = text.contains("on") ? "on" : text.contains("off") ? "off" : "undefined"
+                if (command == "undefined") {
+                    command = text.contains("darker") ? "decrease" : text.contains("too bright")  ? "decrease" : text.contains("dim") ? "decrease" : text.contains("dimmer") ? "decrease" : "undefined"
+                }
+                else if (command == "undefined") {
+                    command = text.contains("not bright enough") ? "increase" : text.contains("brighter")  ? "increase" : text.contains("too dark") ? "increase" : text.contains("brighten") ? "increase" : "undefined"
+                }
+                deviceType = "light4"
+            }
+        }
+        if (gCustom5N) {
+            if (text.contains(settings.gCustom5N.toLowerCase())) {
+                command = text.contains("on") ? "on" : text.contains("off") ? "off" : "undefined"
+                if (command == "undefined") {
+                    command = text.contains("darker") ? "decrease" : text.contains("too bright")  ? "decrease" : text.contains("dim") ? "decrease" : text.contains("dimmer") ? "decrease" : "undefined"
+                }
+                else if (command == "undefined") {
+                    command = text.contains("not bright enough") ? "increase" : text.contains("brighter")  ? "increase" : text.contains("too dark") ? "increase" : text.contains("brighten") ? "increase" : "undefined"
+                }
+                deviceType = "light5"
+            }
+        }        
     }
 //Disable Switches
    	else {
@@ -1504,6 +1574,7 @@ private getCommand(text){
 		}
 	}
     }
+    }
     return ["deviceType":deviceType, "command":command ]
 }
 /************************************************************************************************************
@@ -1548,7 +1619,7 @@ def profileLoopCancel(child) {
 	def childName = app.label 
     def result
 	if(childName == child){
-		unschedule("profileLoop")
+		unschedule("startLoop")
 		unschedule("continueLoop")
         result =  "Ok, turning the color loop off in the " + childName
 	}
