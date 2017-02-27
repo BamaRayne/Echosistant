@@ -1,7 +1,7 @@
 /* 
  * Message and Control Profile - EchoSistant Add-on 
  *
- *		2/27/2017		Version:4.0 R.0.0.9		Bug fixes for colored lights
+ *		2/27/2017		Version:4.0 R.0.0.9		Bug fixes for colored lights, disable switches
  *		2/17/2017		Version:4.0 R.0.0.1		Public Release
  * 
  *  Copyright 2016 Jason Headley & Bobby Dobrescu
@@ -1411,11 +1411,10 @@ private getCommand(text){
         }
         log.warn "deviceType = ${deviceType}, command = ${command}"
 	}
-    else {
 //LIGHT SWITCHES
-    if (gSwitches || gCustom1N || gCustom2N || gCustom3N || gCustom4N || gCustom5N){ // ***THIS SECTION MOD'D BY JASON ON 2/26/2017***
+	if (gSwitches || gCustom1N || gCustom2N || gCustom3N || gCustom4N || gCustom5N){ // ***THIS SECTION MOD'D BY JASON ON 2/26/2017***
         if (gSwitches) {
-                command = text.contains("on") ? "on" : text.contains("off") ? "off" : "undefined"
+                command = text.contains(" on") ? "on" : text.contains(" off") ? "off" : "undefined"
                 if (command == "undefined") {
                     command = text.contains("darker") ? "decrease" : text.contains("too bright")  ? "decrease" : text.contains("dim") ? "decrease" : text.contains("dimmer") ? "decrease" : "undefined"
                 }
@@ -1486,94 +1485,101 @@ private getCommand(text){
         }        
     }
 //Disable Switches
-   	else {
-    if (text.startsWith("disengage") ||text.startsWith("disable automation") || text.startsWith("stop turning the") || text.startsWith("stop the motion sensor") || text.startsWith ("turn the motion sensor off") || text.startsWith("stop the sensor") || text.startsWith("kill the automation") || text.contains("kill the sensor") || text.contains("sensor off")){
-    	command = "off"
-    	deviceType = "disable"
-	}
-    else if (text.startsWith("engage") ||text.contains("enable automation") || text.startsWith("start turning the") || text.startsWith("start the motion sensor") || text.startsWith("turn the motion sensor on") || text.startsWith ("start the sensor")|| text.contains("sensor on")){
-    	command = "on"
-    	deviceType = "disable"
-	}        
+    if (gDisable){
+        if (text.startsWith("disengage") || text.startsWith("disable automation") || text.startsWith("stop turning the") || text.startsWith("stop the motion sensor") || text.startsWith ("turn the motion sensor off") || text.startsWith("stop the sensor") || text.startsWith("kill the automation") || text.contains("kill the sensor") || text.contains("sensor off")){
+            command = "off"
+            deviceType = "disable"
+        }
+        else if (text.startsWith("engage") ||text.contains("enable automation") || text.startsWith("start turning the") || text.startsWith("start the motion sensor") || text.startsWith("turn the motion sensor on") || text.startsWith ("start the sensor")|| text.contains("sensor on")){
+            command = "on"
+            deviceType = "disable"
+        }
+   	}
 // Fans
-    else if (text.contains("fan") || text.contains("fans")) {
-		if (text.contains("on") || text.contains("start")) {
-			command = "on" 
-			deviceType = "fan"
-		}
-        else if (text.contains("off") || text.contains("stop")) {
-			command = "off" 
-            deviceType = "fan"
-		}
-        else if (text.contains("high") || text.contains("medium") || text.contains("low")) {
-			command = text.contains("high") ? "high" : text.contains("medium") ? "medium" : text.contains("low") ? "low" : "undefined"
-            deviceType = "fan"
-		}
-        else if  (text.contains("slow down") || text.contains("too fast" )) {
-            command = "decrease"
-            deviceType = "fan" 
+	if(gFans) {
+        if (text.contains("fan") || text.contains("fans")) {
+            if (text.contains("on") || text.contains("start")) {
+                command = "on" 
+                deviceType = "fan"
+            }
+            else if (text.contains("off") || text.contains("stop")) {
+                command = "off" 
+                deviceType = "fan"
+            }
+            else if (text.contains("high") || text.contains("medium") || text.contains("low")) {
+                command = text.contains("high") ? "high" : text.contains("medium") ? "medium" : text.contains("low") ? "low" : "undefined"
+                deviceType = "fan"
+            }
+            else if  (text.contains("slow down") || text.contains("too fast" )) {
+                command = "decrease"
+                deviceType = "fan" 
+            }
+            else if  (text.contains("speed up") || text.contains("too slow")) {
+                command = "increase"
+                deviceType = "fan" 
+            }
+            else {
+                command = "undefined"
+                deviceType = "fan"
+            }      
         }
-        else if  (text.contains("speed up") || text.contains("too slow")) {
-            command = "increase"
-            deviceType = "fan" 
-        }
-        else {
-			command = "undefined"
-            deviceType = "fan"
-    	}      
-    }           
+    }
 // Vents
-    else if (text.contains("vent")) {  // Changed "vents" to "vent" to fix bug.  Jason 2/21/2017
-		if (text.contains("open")) {
-			command = "open" 
-			deviceType = "vent"
-		}
-        else if (text.contains("close")) {
-			command = "close" 
-            deviceType = "vent"
-		}
-        else { 
-			command = "undefined"
-            deviceType = "vent"
-    	}
-	}
+    if(gVents){
+        if (text.contains("vent")) {  // Changed "vents" to "vent" to fix bug.  Jason 2/21/2017
+            if (text.contains("open")) {
+                command = "open" 
+                deviceType = "vent"
+            }
+            else if (text.contains("close")) {
+                command = "close" 
+                deviceType = "vent"
+            }
+            else { 
+                command = "undefined"
+                deviceType = "vent"
+            }
+        }
+    }
 //Volume
-	else if  (text.contains("mute") || text.contains("be quiet") || text.contains("pause speaker")){
-        	command = "mute"
-        	deviceType = "volume"
+	if(sSpeaker || sSynth){
+        if  (text.contains("mute") || text.contains("be quiet") || text.contains("pause speaker")){
+                command = "mute"
+                deviceType = "volume"
+        }
+        else if (text.contains("unmute") || text.contains("resume") || text.contains("play")) {
+            command = "unmute"
+            deviceType = "volume" 
+        }
+        else if  (text.contains("too loud") || text.startsWith("turn down")) {
+            command = "decrease"
+            deviceType = "volume" 
+        }
+        else if (text.contains("not loud enough") || text.contains("too quiet") || text.startsWith("turn up")) {
+            command = "increase"
+            deviceType = "volume"
+        }
+        else if  (text.contains("volume")) {
+            command = "undefined"
+            deviceType = "volume"
+        }
     }
-	else if (text.contains("unmute") || text.contains("resume") || text.contains("play")) {
-		command = "unmute"
-		deviceType = "volume" 
-	}
-    else if  (text.contains("too loud") || text.startsWith("turn down")) {
-		command = "decrease"
-		deviceType = "volume" 
-	}
-	else if (text.contains("not loud enough") || text.contains("too quiet") || text.startsWith("turn up")) {
-		command = "increase"
-		deviceType = "volume"
-	}
-	else if  (text.contains("volume")) {
-		command = "undefined"
-		deviceType = "volume"
-	}        
 //Harmony
-	else if (text.contains("tv")) {
-		if  (text.contains("start") || text.startsWith("turn on") || text.contains("switch to") || text.contains("on")){
-        	command = "startActivity"
-            deviceType = "tv"
-		}
-		else if  (text.contains("stop") || text.startsWith("turn off") || text.contains("switch off") || text.contains("off")){
-			command = "activityoff"
-            deviceType = "tv"
-		}
-		else { 
-			command = "undefined"
-           	deviceType = "tv"
-		}
-	}
-    }
+	if(sMedia){
+        if (text.contains("tv")) {
+            if  (text.contains("start") || text.startsWith("turn on") || text.contains("switch to") || text.contains("on")){
+                command = "startActivity"
+                deviceType = "tv"
+            }
+            else if  (text.contains("stop") || text.startsWith("turn off") || text.contains("switch off") || text.contains("off")){
+                command = "activityoff"
+                deviceType = "tv"
+            }
+            else { 
+                command = "undefined"
+                deviceType = "tv"
+            }
+        }
     }
     return ["deviceType":deviceType, "command":command ]
 }
