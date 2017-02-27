@@ -778,7 +778,7 @@ def profileEvaluate(params) {
                  }
                	if (deviceType == "light4" && gCustom4){
                 	if (command == "on" || command == "off") {
-                    	gCustom2?."${command}"() 
+                    	gCustom4?."${command}"() 
                         outputTxt = "Ok, turning " + gCustom4N + " " + command
                         return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]                                  
                         }
@@ -790,7 +790,7 @@ def profileEvaluate(params) {
                 }     
 				if (deviceType == "light5" && gCustom5){ 
 					if (command == "on" || command == "off") {
-                    	gCustom3?."${command}"() 
+                    	gCustom5?."${command}"() 
                         outputTxt = "Ok, turning " + gCustom5N + " " + command
                         return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]            
                     	}
@@ -1487,11 +1487,11 @@ private getCommand(text){
     }
 //Disable Switches
    	else {
-    if (text.startsWith("disable automation") || text.startsWith("stop turning the") || text.startsWith("stop the motion sensor") || text.startsWith ("turn the motion sensor off") || text.startsWith("stop the sensor") || text.startsWith("kill the automation") || text.contains("kill the sensor") || text.contains("sensor off")){
+    if (text.startsWith("disengage") ||text.startsWith("disable automation") || text.startsWith("stop turning the") || text.startsWith("stop the motion sensor") || text.startsWith ("turn the motion sensor off") || text.startsWith("stop the sensor") || text.startsWith("kill the automation") || text.contains("kill the sensor") || text.contains("sensor off")){
     	command = "off"
     	deviceType = "disable"
 	}
-    else if (text.contains("enable automation") || text.startsWith("start turning the") || text.startsWith("start the motion sensor") || text.startsWith("turn the motion sensor on") || text.startsWith ("start the sensor")|| text.contains("sensor on")){
+    else if (text.startsWith("engage") ||text.contains("enable automation") || text.startsWith("start turning the") || text.startsWith("start the motion sensor") || text.startsWith("turn the motion sensor on") || text.startsWith ("start the sensor")|| text.contains("sensor on")){
     	command = "on"
     	deviceType = "disable"
 	}        
