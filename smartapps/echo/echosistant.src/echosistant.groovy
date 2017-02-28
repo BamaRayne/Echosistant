@@ -2878,8 +2878,16 @@ def getMoreFeedback(data) {
     	result = "The following windows are " + command + "," + devices.sort().unique()
     }
     if ( deviceTypeDoors == "cDoor1") {
-    	result = "The following doors are " + command + "," + deviceDoors.sort().unique() + " , and the following windows are " + command + "," + deviceWindows.sort().unique() 
-   	}
+    	if (data.deviceWindows?.size() == 0) {
+        	result = "The following doors are " + command + "," + deviceDoors.sort().unique()
+            }
+    		else result = "The following doors are " + command + "," + deviceDoors.sort().unique() + " , and the following windows are " + command + "," + deviceWindows.sort().unique() 
+   			}
+        else if (data.deviceDoors?.size() == 0) {
+        	result = "The following windows are " + command + "," + deviceWindows.sort().unique()
+            }
+    		else result = "The following doors are " + command + "," + deviceDoors.sort().unique() + " , and the following windows are " + command + "," + deviceWindows.sort().unique() 
+   			
     state.pContCmdsR = null 
 	state.lastAction = null
     return result
