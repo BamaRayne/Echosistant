@@ -781,7 +781,7 @@ def feedbackHandler() {
 	def fProcess = true
     state.pTryAgain = false
 
-try {
+//try {
 		
 	fOperand = fOperand == "lights on" ? "lights" : fOperand == "switches on" ? "lights" : fOperand == "switches" ? "lights" : fOperand
 	fCommand = fOperand == "lights on" ? "on" : fOperand == "switches on" ? "on" : fCommand
@@ -1107,22 +1107,26 @@ try {
                 	fCommand = "closed" }   
                     def devListDoors = []
                     def devListWindows = []
-                    if (cDoor1.latestValue("contact").contains(fCommand)) {
-                        cDoor1?.each { deviceName ->
-                                    if (deviceName.latestValue("contact")=="${fCommand}") {
-                                        String device  = (String) deviceName
-                                        devListDoors += device
+                    if(cDoor1){
+                        if (cDoor1?.latestValue("contact").contains(fCommand)) {
+                            cDoor1?.each { deviceName ->
+                                        if (deviceName.latestValue("contact")=="${fCommand}") {
+                                            String device  = (String) deviceName
+                                            devListDoors += device
+                                        }
                                     }
-                        		}
-                   			 }
-                    if (cWindow.latestValue("contact").contains(fCommand)) {
-                        cWindow?.each { deviceName ->
-                                    if (deviceName.latestValue("contact")=="${fCommand}") {
-                                        String device  = (String) deviceName
-                                        devListWindows += device
+                                 }
+                    }
+                    if(cWindow) {
+                        if (cWindow?.latestValue("contact").contains(fCommand)) {
+                            cWindow?.each { deviceName ->
+                                        if (deviceName.latestValue("contact")=="${fCommand}") {
+                                            String device  = (String) deviceName
+                                            devListWindows += device
+                                        }
                                     }
-                        		}
-                   			 }
+                                 }
+                    }
                     if (fQuery == "what's" || fQuery == "what" || fQuery == "is" || fQuery == "if" && fQuery.contains ("is")) { // removed fQuery == "undefined" 2/13
                         if (devListDoors?.size() > 0) {
                             if (devListDoors?.size() == 1) {
@@ -1147,7 +1151,7 @@ try {
 //>>> Doors >>>>     // Mod'd by Jason to ask "which windows are open" on 2/27/2017         
             if(fOperand.contains("door")) { 
                     def devList = []
-                    if (cDoor1.latestValue("contact").contains(fCommand)) {
+                    if (cDoor1?.latestValue("contact").contains(fCommand)) {
                         cDoor1?.each { deviceName ->
                                     if (deviceName.latestValue("contact")=="${fCommand}") {
                                         String device  = (String) deviceName
@@ -1201,7 +1205,7 @@ try {
 //>>> Windows >>>>       // Added by Jason to ask "which windows are open" on 2/27/2017     
             if(fOperand.contains("window")) { 
                     def devList = []
-                    if (cWindow.latestValue("contact").contains(fCommand)) {
+                    if (cWindow?.latestValue("contact").contains(fCommand)) {
                         cWindow?.each { deviceName ->
                                     if (deviceName.latestValue("contact")=="${fCommand}") {
                                         String device  = (String) deviceName
@@ -1429,14 +1433,14 @@ try {
             return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
         }
     } 
-
+/*
 }catch (Throwable t) {
         log.error t
         outputTxt = "Oh no, something went wrong. If this happens again, please reach out for help!"
         state.pTryAgain = true
         return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
 }
-
+*/
 }
 /************************************************************************************************************
    DEVICE CONTROL - from Lambda via page c
