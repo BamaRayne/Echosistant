@@ -1151,7 +1151,7 @@ def feedbackHandler() {
 //>>> Doors >>>>     // Mod'd by Jason to ask "which windows are open" on 2/27/2017         
             if(fOperand.contains("door")) { 
                     def devList = []
-                    if (cDoor1?.latestValue("contact").contains(fCommand)) {
+                    if (cDoor1?.latestValue("contact")?.contains(fCommand)) {
                         cDoor1?.each { deviceName ->
                                     if (deviceName.latestValue("contact")=="${fCommand}") {
                                         String device  = (String) deviceName
@@ -1182,7 +1182,7 @@ def feedbackHandler() {
                         fOperand = fOperand.contains("close") ? "closed" : fOperand.contains("open") ? "open" : fOperand 
                         fCommand = fCommand.contains("close") ? "closed" : fCommand
                         fCommand = fOperand == "closed" ? "closed" : fOperand == "open" ? "open" : fCommand                  
-                            if (cDoor1?.latestValue("contact").contains(fCommand)) {
+                            if (cDoor1?.latestValue("contact")?.contains(fCommand)) {
                                 cDoor1?.each { deviceName ->
                                             if (deviceName.latestValue("contact")=="${fCommand}") {
                                                 String device  = (String) deviceName
@@ -1205,7 +1205,7 @@ def feedbackHandler() {
 //>>> Windows >>>>       // Added by Jason to ask "which windows are open" on 2/27/2017     
             if(fOperand.contains("window")) { 
                     def devList = []
-                    if (cWindow?.latestValue("contact").contains(fCommand)) {
+                    if (cWindow?.latestValue("contact")?.contains(fCommand)) {
                         cWindow?.each { deviceName ->
                                     if (deviceName.latestValue("contact")=="${fCommand}") {
                                         String device  = (String) deviceName
@@ -1236,7 +1236,7 @@ def feedbackHandler() {
                         fOperand = fOperand.contains("close") ? "closed" : fOperand.contains("open") ? "open" : fOperand 
                         fCommand = fCommand.contains("close") ? "closed" : fCommand
                         fCommand = fOperand == "closed" ? "closed" : fOperand == "open" ? "open" : fCommand                  
-                            if (cWindow?.latestValue("contact").contains(fCommand)) {
+                            if (cWindow?.latestValue("contact")?.contains(fCommand)) {
                                 cWindow?.each { deviceName ->
                                             if (deviceName.latestValue("contact")=="${fCommand}") {
                                                 String device  = (String) deviceName
