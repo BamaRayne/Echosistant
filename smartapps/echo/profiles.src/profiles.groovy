@@ -957,8 +957,8 @@ def advCtrlHandler(data) {
 	def deviceCommand = data.command
 	def deviceType = data.deviceType
     def result
-	if (deviceType == "light" || deviceType == "light1" || deviceType == "light2" || deviceType == "light3"){
-    	deviceType = deviceType == "light" && gSwitches ? gSwitches : deviceType == "light1" && gCustom1 ? gCustom1 : deviceType == "light2" && gCustom2 ? gCustom2 : deviceType == "light3" && gCustom3 ? gCustom3 : null
+	if (deviceType == "light" || deviceType == "light1" || deviceType == "light2" || deviceType == "light3" || deviceType == "light4" || deviceType == "light5"){
+    	deviceType = deviceType == "light" && gSwitches ? gSwitches : deviceType == "light1" && gCustom1 ? gCustom1 : deviceType == "light2" && gCustom2 ? gCustom2 : deviceType == "light3" && gCustom3 ? gCustom3 : deviceType == "light4" && gCustom4 ? gCustom4 : deviceType == "light5" && gCustom5 ? gCustom5 : null
 		if (deviceCommand == "increase" || deviceCommand == "decrease") {
                     deviceType.each {s ->  //gSwitches.each {s -> 
                     	def	currLevel = s?.latestValue("level")
