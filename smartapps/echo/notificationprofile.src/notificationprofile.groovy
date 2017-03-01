@@ -1,6 +1,7 @@
 /* 
  * Notification - EchoSistant Add-on 
  *
+ *		3/01/2017		Version:4.0 R.0.2.0		weather 2.0
  *		2/27/2017		Version:4.0 R.0.0.6		time scheduling bug fix 
  *		2/17/2017		Version:4.0 R.0.0.1		Public Release
  *
@@ -37,7 +38,6 @@ preferences {
         	page name: "pRestrict"
             page name: "pNotifyConfig"
             page name: "SMS"
-            page name: "severeWeatherAlertsPage"
             page name: "customSounds"
             page( name: "timeIntervalInput", title: "Only during a certain time")
 
@@ -84,6 +84,23 @@ page name: "mainProfilePage"
             input "myMotion", "capability.motionSensor", title: "Choose Motion Sensors..", required: false, multiple: true, submitOnChange: true
             input "myPresence", "capability.presenceSensor", title: "Choose Presence Sensors...", required: false, multiple: true, submitOnChange: true
             input "myTstat", "capability.thermostat", title: "Choose Thermostats...", required: false, multiple: true, submitOnChange: true
+            input "myWeatherAlert", "enum", title: "Choose Weather Alerts...", required: false, multiple: true, submitOnChange: true,
+                    options: [
+                    "TOR":	"Tornado Warning",
+                    "TOW":	"Tornado Watch",
+                    "WRN":	"Severe Thunderstorm Warning",
+                    "SEW":	"Severe Thunderstorm Watch",
+                    "WIN":	"Winter Weather Advisory",
+                    "FLO":	"Flood Warning",
+                    "WND":	"High Wind Advisoryt",
+                    "HEA":	"Heat Advisory",
+                    "FOG":	"Dense Fog Advisory",
+                    "FIR":	"Fire Weather Advisory",
+                    "VOL":	"Volcanic Activity Statement",
+                    "HWW":	"Hurricane Wind Warning"
+					]          
+			input "myWeather", "enum", title: "Choose Hourly Weather Forecast Updates...", required: false, multiple: true, submitOnChange: true,
+					options: ["Weather Condition Changes", "Chance of Precipitation Changes", "Wind Speed Changes", "Humidity Changes", "Any Weather Updates"]   
             input "myMode", "enum", title: "Choose Modes...", options: location.modes.name.sort(), multiple: true, required: false 
             input "myRoutine", "enum", title: "Choose Routines...", options: actions, multiple: true, required: false
         }    
@@ -173,6 +190,12 @@ def installed() {
 	if (timeOfDay) {
 		schedule(timeOfDay, "scheduledTimeHandler")
 	}
+	if (myWeatherAlert) {
+		runEvery5Minutes(mGetWeatherAlerts)
+	}
+	if (myWeather) {
+		runEvery1Hour(mGetCurrentWeather)
+	}    
 }
 def updated() { 
 	log.debug "Updated with settings: ${settings}"
@@ -181,7 +204,16 @@ def updated() {
 def initialize() {
 	if (timeOfDay) {
 		schedule(timeOfDay, "scheduledTimeHandler")
-	} 
+	}
+	if (myWeatherAlert) {
+		runEvery5Minutes(mGetWeatherAlerts)
+		state.weatherAlert
+    }
+	if (myWeather) {
+		runEvery1Hour(mGetCurrentWeather)
+        state.lastWeather
+	}    
+    state.lastWeather
     if (actionType) {
     if (myRoutine) {subscribe(location, "routineExecuted",alertsHandler)}
     if (myMode) {subscribe(location, "mode", alertsHandler)}
@@ -246,6 +278,10 @@ def alertsHandler(evt) {
     
     if(parent.debug) log.info "Event Data: eName ${eName}, eVal:  ${eVal}, eDev: ${eDev}, eDisplayN: ${eDisplayN}, stamp: ${stamp}"	
     if (getDayOk()==true && getModeOk()==true && getTimeOk()==true) {
+		if(eName == "coolingSetpoint" || eName == "heatingSetpoint") {
+            eVal = evt.value.toFloat() // 2/22 Bobby rounding temps
+            eVal = Math.round(eVal) // 2/22 Bobby rounding temps
+        }
         if(eName == "coolingSetpoint" || eName == "heatingSetpoint") {
             eVal = evt.value.toFloat() // 2/22 Bobby rounding temps
             eVal = Math.round(eVal) // 2/22 Bobby rounding temps
@@ -262,12 +298,11 @@ def alertsHandler(evt) {
                     takeAction(eTxt)
                 }
                 else {
-                	eTxt = "getting custom sound"
+                	eTxt = "routine was executed"
                     takeAction(eTxt) 
         		}
          	}
         }
-        //Event Data: eName mode, eVal: Standby, eDev: null, eDisplayN: Casa Dobrescu, stamp: 12:24 PM
         else {
             if(eName == "mode" && myMode) {
                 def deviceMatch = myMode?.find {m -> m == eVal}  
@@ -281,7 +316,7 @@ def alertsHandler(evt) {
                         takeAction(eTxt)
                     }
                     else {
-                        eTxt = "getting custom sound"
+                        eTxt = "location mode has changed"
                         takeAction(eTxt) 
                     }
                 }
@@ -298,7 +333,9 @@ def alertsHandler(evt) {
                     }
                 }
                 else {
-                    eTxt = "getting custom sound"
+                	if (eDev == "weather"){eTxt = eName}
+                    else {eTxt = "Heads up, ${eDev} is now ${eVal}"}         
+                    log.info "last else eTxt = ${eTxt}"
                     takeAction(eTxt)
                 }
             }
@@ -313,13 +350,8 @@ private takeAction(eTxt) {
 	log.debug "received message (eTxt) = ${eTxt}"
 	
     if (actionType == "Custom") {
-		if(message){
-        	state.sound = textToSpeech(eTxt instanceof List ? eTxt[0] : eTxt)
-      	}
-        else {
-           	state.sound = textToSpeech("Attention, Attention. You selected the custom message option but did not enter a message in the ${app.label} Smart App")
-        }
- 	}
+		state.sound = textToSpeech(eTxt instanceof List ? eTxt[0] : eTxt)
+    }
     else loadSound()
     //Playing Audio Message
         if (speechSynth) {
@@ -389,6 +421,104 @@ private loadSound() {
 			break;
 	}
 }
+/***********************************************************************************************************************
+    WEATHER ALERTS
+***********************************************************************************************************************/
+def mGetWeatherAlerts(){
+	def result = "There are no weather alerts for your area"
+	def data = [:]
+//    try {
+		if (getDayOk()==true && getModeOk()==true && getTimeOk()==true) {
+        	def weather = getWeatherFeature("alerts", settings.wZipCode)
+        	def alert = weather.alerts.description[0]
+            def expire = weather.alerts.expires[0]
+            if(expire != null) expire = expire?.replaceAll(~/ EST /, " ").replaceAll(~/ CST /, " ").replaceAll(~/ MST /, " ").replaceAll(~/ PST /, " ")
+            if(alert != null) {
+				log.warn "new weather alert = ${alert} , expire = ${expire}"
+                result = alert  + " is in effect for your area, that expires at " + expire
+				def newAlert = result != state.weatherAlert ? true : false
+                if(newAlert == true){
+                	state.weatherAlert = result
+                    data = [value:"alert", name: result, device:"weather"] 
+                	alertsHandler(data)
+             	}
+            }
+    	}
+/*    
+    }
+	catch (Throwable t) {
+	log.error t
+	return result
+	}
+*/    
+}
+/***********************************************************************************************************************
+    HOURLY FORECAST
+***********************************************************************************************************************/
+def mGetCurrentWeather(){
+    def weatherData = [:]
+    def data = [:]
+   	def result
+//    try {
+        //hourly updates
+        def cWeather = getWeatherFeature("hourly", settings.wZipCode)
+        def cWeatherCondition = cWeather.hourly_forecast[0].condition
+        def cWeatherPrecipitation = cWeather.hourly_forecast[0].pop + " percent"
+        def cWeatherWind = cWeather.hourly_forecast[0].wspd.english + " miles per hour"
+        def cWeatherHum = cWeather.hourly_forecast[0].humidity + " percent"
+        def cWeatherUpdate = cWeather.hourly_forecast[0].FCTTIME.civil
+        def pastWeather = state.lastWeather
+        if(myWeather) {
+        def wUpdate = pastWeather.wCond != cWeatherCondition ? "current weather condition" : pastWeather.wWind != cWeatherWind ? "wind intensity" : pastWeather.wHum != cWeatherHum ? "humidity" : pastWeather.wPrecip != cWeatherPrecipitation ? "chance of precipitation" : null
+		def wChange = wUpdate == "current weather condition" ? cWeatherCondition : wUpdate == "wind intensity" ? cWeatherWind  : wUpdate == "humidity" ? cWeatherHum : wUpdate == "chance of precipitation" ? cWeatherPrecipitation : null                    
+        	//something has changed
+        	if(wUpdate != null){
+				log.warn "hourly weather has changed" 
+        		if (myWeather == "Any weather changes"){                   
+                    result = "The hourly weather forecast has been updated. The " + wUpdate + " has been changed to "  + wChange
+					data = [value:"forecast", name: result, device:"weather"] 
+					alertsHandler(data)
+				}
+                else {
+                	if (myWeather == "Weather Condition Changes" && wUpdate ==  "current weather condition"){
+                    	result = "The " + wUpdate + " has been updated to " + wChange
+						data = [value:"condition", name: result, device:"weather"] 
+						alertsHandler(data)
+        			}
+                	else if (myWeather == "Chance of Precipitation Changes" && wUpdate ==  "chance of precipitation"){
+                    	result = "The " + wUpdate + " has been updated to " + wChange
+						data = [value:"precipitation", name: result, device:"weather"] 
+						alertsHandler(data)
+                    // [ ,
+        			}        
+                	else if (myWeather == "Wind Speed Changes" && wUpdate == "wind intensity"){
+                    	result = "The " + wUpdate + " has been updated to " + wChange
+						data = [value:"wind", name: result, device:"weather"] 
+						alertsHandler(data)
+        			}         
+                	else if (myWeather == "Humidity Changes" && wUpdate == "humidity"){
+                    	result = "The " + wUpdate + " has been updated to " + wChange
+						data = [value:"humidity", name: result, device:"weather"] 
+						alertsHandler(data)
+        			}
+        		}
+				weatherData.wCond = cWeatherCondition
+                weatherData.wWind = cWeatherWind
+                weatherData.wHum = cWeatherHum
+                weatherData.wPrecip = cWeatherPrecipitation        
+                state.lastWeather = weatherData
+         	}       
+		}
+		log.info "updating hourly weather"  
+/*    
+    }
+	catch (Throwable t) {
+	log.error t
+	return result
+	}
+*/ 
+}
+
 /***********************************************************************************************************************
     RESTRICTIONS HANDLER
 ***********************************************************************************************************************/

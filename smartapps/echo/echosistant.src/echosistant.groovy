@@ -1,6 +1,7 @@
 /* 
  * EchoSistant - The Ultimate Voice and Text Messaging Assistant Using Your Alexa Enabled Device.
  *
+ *		3/01/2017		Version:4.0 R.0.2.0		weather 2.0
  *		2/28/2017		Version:4.0 R.0.1.0		Expanded doors & windows feedback
  *		2/27/2017		Version:4.0 R.0.0.9		SHM handling bug fixes
  *		2/17/2017		Version:4.0 R.0.0.0		Public Release 
@@ -95,11 +96,9 @@ page name: "mIntent"
                     input "cSwitch", "capability.switch", title: "Allow These Switch(es)...", multiple: true, required: false, submitOnChange: true                   
                     input "cFan", "capability.switchLevel", title: "Allow These Fan(s)...", multiple: true, required: false
                 }     
-                section ("Doors, Windows, and Locks ", hideWhenEmpty: true){ 
+                section (c, hideWhenEmpty: true){ 
                 	input "cLock", "capability.lock", title: "Allow These Lock(s)...", multiple: true, required: false, submitOnChange: true
-                    input "cDoor", "capability.garageDoorControl", title: "Allow These Garage Door(s)...", multiple: true, required: false, submitOnChange: true
-                    input "cWindow", "capability.contactSensor", title: "Choose Contacts that are only on a Window(s)...", multiple: true, required: false      
-                    input "cDoor1", "capability.contactSensor", title: "Choose Contacts that are only on a Door(s)...", multiple: true, required: false      
+                    input "cDoor", "capability.garageDoorControl", title: "Allow These Garage Door(s)...", multiple: true, required: false, submitOnChange: true     
 					input "cRelay", "capability.switch", title: "Allow These Garage Door Relay(s)...", multiple: false, required: false, submitOnChange: true
                     if (cRelay) input "cContactRelay", "capability.contactSensor", title: "Allow This Contact Sensor to Monitor the Garage Door Relay(s)...", multiple: false, required: false                
                 }    
@@ -111,7 +110,9 @@ page name: "mIntent"
                 } 
                 section ("Sensors", hideWhenEmpty: true) {
                  	input "cMotion", "capability.motionSensor", title: "Allow These Motion Sensor(s)...", multiple: true, required: false
-                    input "cContact", "capability.contactSensor", title: "Allow These Contact Sensor(s) that are NOT Doors or Windows...", multiple: true, required: false      
+                    input "cWindow", "capability.contactSensor", title: "Allow These Contact Sensor(s) that are used on a Window(s)...", multiple: true, required: false      
+                    input "cDoor1", "capability.contactSensor", title: "Allow These Contact Sensor(s) that are used on a Door(s)...", multiple: true, required: false                     
+                    input "cContact", "capability.contactSensor", title: "Allow These Contact Sensor(s) that are NOT used on Doors or Windows...", multiple: true, required: false      
             		input "cWater", "capability.waterSensor", title: "Allow These Water Sensor(s)...", multiple: true, required: false                       
                     input "cPresence", "capability.presenceSensor", title: "Allow These Presence Sensors(s)...", multiple: true, required: false
                 }
@@ -429,15 +430,15 @@ page name: "mDashboard"
 	def mDashboard(){
         dynamicPage(name: "mDashboard", uninstall: false) {
         if (mLocalWeather) {
-            section("Today's Weather"){
+            section("Today's Forecat"){
                 paragraph (mGetWeather())
-                }
-            def activeAlert = mGetWeatherAlerts()
-            if (activeAlert){
-                section("Active Weather Alerts"){
-                    paragraph (mGetWeatherAlerts())
-                }
-            }
+        }
+        }
+		def activeAlert = mGetWeatherAlerts()
+		if (activeAlert){
+        	section("Active Weather Alerts"){
+            	paragraph (activeAlert)
+        	}
         }
         section ("ThermoStats and Temperature") {
         	def tStat1 = ThermoStat1
@@ -515,7 +516,7 @@ page name: "mDashConfig"
 def mWeatherConfig() {
 	dynamicPage(name: "mWeatherConfig", title: "Weather Settings") {
 		section {
-    		input "wImperial", "bool", title: "Report Weather In Imperial Units\n(°F / MPH)", defaultValue: "true", required: "false"
+    		input "wMetric", "bool", title: "Report Weather In Metric Units\n(°C / km/h)", defaultValue: false, required: false, submitOnChange: true 
             input "wZipCode", "text", title: "Zip Code (If Location Not Set)", required: "false"
             paragraph("Currently forecast is automatically pulled from getWeatherFeature your location must be set in your SmartThings app for this to work.")
 		}
@@ -1013,7 +1014,7 @@ def feedbackHandler() {
                 }                            
             }
 //>>> Temp >>>>
-            if (fOperand == "temperature outside" || fOperand == "outdoor temperature" || fOperand == "temperature is outside"){
+            if (fOperand == "temperature outside" || fOperand == "outdoor temperature" || fOperand == "temperature is outside" || fOperand == "hot outside" || fOperand == "cold outside"){
                 if(cOutDoor){
                     def sensors = cOutDoor?.size()
                     def tempAVG = cOutDoor ? getAverage(cOutDoor, "temperature") : "undefined device"          
@@ -1028,13 +1029,42 @@ def feedbackHandler() {
                 }                            
             }
 //>>> Weather >>>>
-			if (fOperand == "weather" || fOperand == "weather conditions" || fOperand == "current weather"){
+			//Full forecast
+            if (fOperand == "weather" || fOperand == "weather forecast" || fOperand == "today's weather" || fOperand == "tonight's weather"){
                     outputTxt = mGetWeather()
                     return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]				
             }
-            if (fOperand == "weather alert" || fOperand == "alerts" || fOperand == "weather alerts"){
+			//Today's forecast
+            if (fOperand == "today's weather" || fOperand == "weather today" || fOperand == "forecast for today" || fOperand == "forecast today") {
+                    def period = "today"
+                    outputTxt = mGetWeatherShort(period)       
+                    return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]				
+            }
+            //Tonight's forecast
+			if (fOperand == "tonight's weather" || fOperand == "weather tonight" || fOperand == "forecast for tonight" || fOperand == "forecast tonight"){
+                    def period = "tonight"
+                    outputTxt = mGetWeatherShort(period)       
+                    return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]				
+            }
+            //Tomorrow's forecast
+			if (fOperand == "tomorrow's weather" || fOperand == "weather tomorrow" || fOperand == "forecast for tomorrow" || fOperand == "forecast tomorrow"){
+                    def period = "tomorrow"
+                    outputTxt = mGetWeatherShort(period)       
+                    return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]				
+            }
+            if (fOperand == "weather alert" || fOperand.contains("alert") || fOperand.contains("warning")){
                     outputTxt = mGetWeatherAlerts()
                     return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]		
+            }
+			if (fOperand.contains("wind") || fOperand.contains("rain") || fOperand == "precipitation" || fOperand.contains("UV ") || fOperand== "weather conditions"){
+				def wElement = fOperand.contains("wind") ? "wind" : fOperand.contains("rain") ? "rain" : fOperand == "precipitation" ? "precip" : fOperand.contains("UV ") ? "uv" : fOperand== "weather conditions"? "cond" : null
+				outputTxt = mGetWeatherElements(wElement)
+				return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]		
+            }
+			if (fOperand == "outside humidity" || fOperand== "humid is outside" || fOperand== "outside humidity" || fOperand== "current conditions" || fOperand== "current forecast" || fOperand == "current weather" ){
+				def wElement = fOperand.contains("humid") ? "humid" : fOperand.contains("current ") ? "cond" : null
+				outputTxt = mGetWeatherElements(wElement)
+				return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]		
             }            
 //>>> Mode >>>>
             if (fOperand == "mode" ){
@@ -3956,66 +3986,212 @@ def private mGetWeather(){
 	state.pTryAgain = false
     def result ="Today's weather is not available at the moment, please try again later"
 	try {
-    	def weather = getWeatherFeature("forecast", settings.wZipCode)
-        def todayWeather = weather.forecast.txt_forecast.forecastday[0].fcttext
-        def tonightWeather = weather.forecast.txt_forecast.forecastday[1].fcttext
-        
-        if(settings.wImperial){
-			result = "Today's forecast is " + weather.forecast.txt_forecast.forecastday[0].fcttext  + " Tonight it will be " + weather.forecast.txt_forecast.forecastday[1].fcttext 
+    	//daily forecast text
+        def weather = getWeatherFeature("forecast", settings.wZipCode)
+        def todayWeather = 	weather.forecast.txt_forecast.forecastday[0].fcttext 
+        def tonightWeather = weather.forecast.txt_forecast.forecastday[1].fcttext 
+		def tomorrowWeather = weather.forecast.txt_forecast.forecastday[2].fcttext 
+        //simple forecast 
+        def sTodayWeather = weather.forecast.simpleforecast.forecastday[0]
+        def sTonightWeather = weather.forecast.simpleforecast.forecastday[1]
+		def sTomorrowWeather = weather.forecast.simpleforecast.forecastday[2]
+        def sHumidity = sTodayWeather.avehumidity + " for " + sTodayWeather.date.weekday + ", " + sTodayWeather.date.monthname + ", " + sTodayWeather.date.day
+		def sHumidityTomorrow = sTonightWeather.avehumidity + " for " + sTonightWeather.date.weekday + ", " + sTonightWeather.date.monthname + ", " + sTonightWeather.date.day
+		def sLow = sTodayWeather.low.fahrenheit
+        def sHigh = sTodayWeather.high.fahrenheit
+        def sRainFall = sTodayWeather.qpf_day.in + " inches"
+        def sPrecip = sTodayWeather.pop + "percent"
+        //conditions
+		def condWeather = getWeatherFeature("conditions", settings.wZipCode)
+        def condTodayWeather = 	condWeather.current_observation.weather
+		def condTodayhumidity = condWeather.current_observation.relative_humidity
+		def condTodayUV = condWeather.current_observation.UV
+        if(wMetric){
+			result = "Today's forecast is " + weather.forecast.txt_forecast.forecastday[0].fcttext_metric + " Tonight it will be " + weather.forecast.txt_forecast.forecastday[1].fcttext_metric
+        	result = result.toString()
+            result = result.replaceAll(/([0-9]+)C/,'$1 degrees')
+            result = result.toLowerCase()
         }
         else {
-    		result = "Today's forecast is " + weather.forecast.txt_forecast.forecastday[0].fcttext_metric + " Tonight it will be " + weather.forecast.txt_forecast.forecastday[1].fcttext_metric
-	   	}
-		
+    		result = "Today's forecast is: " + weather.forecast.txt_forecast.forecastday[0].fcttext   + " Tonight it will be " + weather.forecast.txt_forecast.forecastday[1].fcttext
+        	result = result.toString()
+            //clean up wind and temps units
+            result = result.replaceAll(/([0-9]+)F/,'$1 degrees').replaceAll(~/mph/, " miles per hour")
+            // clean up wind direction (South)
+            result = result.replaceAll(~/ SSW /, " South-southwest ").replaceAll(~/ SSE /, " South-southeast ").replaceAll(~/ SE /, " Southeast ").replaceAll(~/ SW /, " Southwest ")
+            // clean up wind direction (North)
+            result = result.replaceAll(~/ NNW /, " North-northwest ").replaceAll(~/ NNE /, " North-northeast ").replaceAll(~/ NE /, " Northeast ").replaceAll(~/ NW /, " Northwest ")
+            // clean up wind direction (West)
+            result = result.replaceAll(~/ WNW /, " West-northwest ").replaceAll(~/ WSW /, " West-southwest ")
+            // clean up wind direction (East)
+            result = result.replaceAll(~/ ENE /, " East-northeast ").replaceAll(~/ ESE /, " East-southeast ")
+            //result = result + " humidity " + sHumidity /// simple weather example
+            result = result.toLowerCase()
+        }
+        log.info "returning Today's forecast result"
+        return result
+	}
+    catch (Throwable t) {
+		log.error t
+        state.pTryAgain = true
+        return result
+	}
+}
+def private mGetWeatherShort(period){
+	state.pTryAgain = false
+    def result ="The weather service is not available at the moment, please try again later"
+	try {
+    	//daily forecast text
+        def weather = getWeatherFeature("forecast", settings.wZipCode)
+        def todayWeather = 	weather.forecast.txt_forecast.forecastday[0].fcttext 
+        def tonightWeather = weather.forecast.txt_forecast.forecastday[1].fcttext 
+		def tomorrowWeather = weather.forecast.txt_forecast.forecastday[2].fcttext 
+        def forecast = period == "today" ? todayWeather : period == "tonight" ? tonightWeather :  period == "tomorrow" ? tomorrowWeather : null
+        
+        if(wMetric){
+			result = period + "'s forecast is " + forecast
+        	result = result.toString()
+            result = result.replaceAll(/([0-9]+)C/,'$1 degrees')
+            result = result.toLowerCase()
+        }
+        else {
+    		result = period + "'s forecast is " + forecast
+        	result = result.toString()
+            //clean up wind and temps units
+            result = result.replaceAll(/([0-9]+)F/,'$1 degrees').replaceAll(~/mph/, " miles per hour")
+            // clean up wind direction (South)
+            result = result.replaceAll(~/ SSW /, " South-southwest ").replaceAll(~/ SSE /, " South-southeast ").replaceAll(~/ SE /, " Southeast ").replaceAll(~/ SW /, " Southwest ")
+            // clean up wind direction (North)
+            result = result.replaceAll(~/ NNW /, " North-northwest ").replaceAll(~/ NNE /, " North-northeast ").replaceAll(~/ NE /, " Northeast ").replaceAll(~/ NW /, " Northwest ")
+            // clean up wind direction (West)
+            result = result.replaceAll(~/ WNW /, " West-northwest ").replaceAll(~/ WSW /, " West-southwest ")
+            // clean up wind direction (East)
+            result = result.replaceAll(~/ ENE /, " East-northeast ").replaceAll(~/ ESE /, " East-southeast ")
+            //result = result + " humidity " + sHumidity /// simple weather example
+            result = result.toLowerCase()
+        }
+        log.info "returning Today's forecast result"
+        return result
+	}
+    catch (Throwable t) {
+		log.error t
+        state.pTryAgain = true
+        return result
+	}
+}
+
+
+def private mGetWeatherElement(element){
+	state.pTryAgain = false
+    def result ="Today's weather is not available at the moment, please try again later"
+	try {
+        def weather = getWeatherFeature("forecast", settings.wZipCode)
+        def sTodayWeather = weather.forecast.simpleforecast.forecastday[0]
+        def sTonightWeather = weather.forecast.simpleforecast.forecastday[1]
+		def sTomorrowWeather = weather.forecast.simpleforecast.forecastday[2]
+        def sHumidity = sTodayWeather.avehumidity + " for " + sTodayWeather.date.weekday + ", " + sTodayWeather.date.monthname + ", " + sTodayWeather.date.day
+		def sHumidityTomorrow = sTonightWeather.avehumidity + " for " + sTonightWeather.date.weekday + ", " + sTonightWeather.date.monthname + ", " + sTonightWeather.date.day
+		def sLow = sTodayWeather.low.fahrenheit
+        def sHigh = sTodayWeather.high.fahrenheit
+        def sRainFall = sTodayWeather.qpf_day.in + " inches"
+        def sPrecip = sTodayWeather.pop + "percent"
+        //conditions
+		def condWeather = getWeatherFeature("conditions", settings.wZipCode)
+        def condTodayWeather = 	condWeather.current_observation.weather
+		def condTodayhumidity = condWeather.current_observation.relative_humidity
+		def condTodayUV = condWeather.current_observation.UV
+        if(wMetric){
+			result = "Today's forecast is " + weather.forecast.txt_forecast.forecastday[0].fcttext_metric + " Tonight it will be " + weather.forecast.txt_forecast.forecastday[1].fcttext_metric
+        	result = result.toString()
+            result = result.replaceAll(/([0-9]+)C/,'$1 degrees')
+            result = result.toLowerCase()
+        }
+        else {
+
+        }
+        log.info "returning Today's forecast result"
+        return result
+	}
+    catch (Throwable t) {
+		log.error t
+        state.pTryAgain = true
+        return result
+	}
+}
+def private mGetWeatherElements(element){
+	state.pTryAgain = false
+    def result ="Current weather is not available at the moment, please try again later"
+   	try {
+        //hourly updates
+        def cWeather = getWeatherFeature("hourly", settings.wZipCode)
+        def cWeatherCondition = cWeather.hourly_forecast[0].condition
+        def cWeatherPrecipitation = cWeather.hourly_forecast[0].pop + " percent"
+        def cWeatherWind = cWeather.hourly_forecast[0].wspd.english + " miles per hour"
+        def cWeatherHum = cWeather.hourly_forecast[0].humidity + " percent"
+        def cWeatherUpdate = cWeather.hourly_forecast[0].FCTTIME.civil
+        
+        def condWeather = getWeatherFeature("conditions", settings.wZipCode)
+        def condTodayUV = condWeather.current_observation.UV
+        
+        if(debug) log.debug "cWeatherUpdate = ${cWeatherUpdate}, cWeatherCondition = ${cWeatherCondition}, " +
+        					"cWeatherPrecipitation = ${cWeatherPrecipitation}, cWeatherWind = ${cWeatherWind},  cWeatherHum = ${cWeatherHum}, cWeatherHum = ${condTodayUV}  "    
+        
+        if		(element == "precip" || element == "rain") {result = "The chance of precipitation is " + cWeatherPrecipitation }
+        else if	(element == "wind") {result = "The wind intensity is " + cWeatherWind }
+        else if	(element == "uv") {result = "The UV index is " + condTodayUV }
+		else if	(element == "hum") {result = "The relative humidity is " + cWeatherHum }        
+		else if	(element == "cond") {result = "The current weather condition is " + cWeatherCondition }        
+        
         return result
 	}
 	catch (Throwable t) {
 		log.error t
         state.pTryAgain = true
         return result
-	}
+	} 
 }
 def private mGetWeatherTemps(){
 	state.pTryAgain = false
     def result ="Today's temperatures not available at the moment, please try again later"
-        try {
-            def weather = getWeatherFeature("forecast", settings.wZipCode)
-            def tHigh = weather.forecast.simpleforecast.forecastday[0].high.fahrenheit.toInteger()
-            def tLow = weather.forecast.simpleforecast.forecastday[0].low.fahrenheit.toInteger()
-            if(settings.wImperial){
-                result = "Today's low temperature is: " + tLow  + ", with a high of " + tHigh
-                return result
+	try {
+		def weather = getWeatherFeature("forecast", settings.wZipCode)
+        def sTodayWeather = weather.forecast.simpleforecast.forecastday[0]
+        def tHigh = sTodayWeather.high.fahrenheit//.toInteger()
+        def tLow = sTodayWeather.low.fahrenheit//.toInteger()
+        	if(wMetric){
+                def tHighC = weather.forecast.simpleforecast.forecastday[0].high.celsius//.toInteger()
+                def tLowC = weather.forecast.simpleforecast.forecastday[0].low.celsius//.toInteger()
+                result = "Today's low temperature is: " + tLowC  + ", with a high of " + tHighC
             }
             else {
-                def tHighC = weather.forecast.simpleforecast.forecastday[0].high.celsius.toInteger()
-                def tLowC = weather.forecast.simpleforecast.forecastday[0].low.celsius.toInteger()
-                result = "Today's low temperature is: " + tLowC  + ", with a high of " + tHighC
-                return result
+                result = "Today's low temperature is: " + tLow  + ", with a high of " + tHigh
         	}
-        }
-        catch (Throwable t) {
-            log.error t
-            state.pTryAgain = true
             return result
-        }
 	}
+	catch (Throwable t) {
+        log.error t
+        state.pTryAgain = true
+        return result
+    }
+}
+    
 def private mGetWeatherAlerts(){
-	def result ="There are no weather alerts for your area"
-        try {
-            def weather = getWeatherFeature("alerts", settings.wZipCode)
-            def alert = weather.alerts.description.toString()
-            def expire = weather.alerts.expires
-            def DT = weather.alerts.expires_epoch
-            if(alert >10){
-                result = alert  + " is in effect for your area, that expires at " + expire
+	def result = "There are no weather alerts for your area"
+	try {
+		def weather = getWeatherFeature("alerts", settings.wZipCode)
+        def alert = weather.alerts.description[0]
+        def expire = weather.alerts.expires[0]
+        	expire = expire.replaceAll(~/ EST /, " ").replaceAll(~/ CST /, " ").replaceAll(~/ MST /, " ").replaceAll(~/ PST /, " ")
+        	log.warn "alert = ${alert} , expire = ${expire}"   	
+            if(alert != null) {
+                result = alert  + " is in effect for your area, that expires at " + expire            
             }
-            else {result}
-        
-        }
-        catch (Throwable t) {
-            log.error t
-            return result
-        }
+        return result
+    }
+	catch (Throwable t) {
+	log.error t
+	return result
+	}
 }
 /*^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 X 																											X
@@ -4228,3 +4404,99 @@ def mSecurityD() {def text = "Tap here to configure settings"
         
       
 
+/*//OTHER WEATHER FIELDS !!!!!!
+def cWeatherUpdate = cWeather.hourly_forecast[0].FCTTIME.civil
+
+FCTTIME:[	weekday_name_night:Wednesday Night, 
+			month_name:March, 
+            pretty:1:00 AM EST on March 01, 2017, 
+            mon_abbrev:Mar, mday_padded:01, hour_padded:01, 
+            ampm:AM, age:, civil:1:00 AM, 
+            year:2017, min:00, weekday_name_unlang:Wednesday, 
+            UTCDATE:, epoch:1488348000, mday:1, mon:3, weekday_name:Wednesday, 
+            hour:1, month_name_abbrev:Mar, weekday_name_night_unlang:Wednesday Night, mon_padded:03, min_unpadded:0, 
+            isdst:0, tz:, yday:59, sec:0, 
+            weekday_name_abbrev:Wed
+        ], 
+heatindex:[metric:-9999, english:-9999], 
+wspd:[metric:6, english:4], 
+pop:15, 
+fctcode:3, 
+feelslike:[metric:15, english:59], 
+wdir:[dir:S, degrees:190], 
+wx:Mostly Cloudy, 
+qpf:[metric:0, english:0.0], 
+humidity:89, 
+sky:77, 
+snow:[metric:0, english:0.0], 
+dewpoint:[metric:13, english:55], 
+temp:[metric:15, english:59], 
+windchill:[metric:-9999, english:-9999]], 
+[uvi:0, mslp:[metric:1015, english:29.98], 
+
+//conditions
+"current_observation": {
+  "display_location": {
+  "full": "San Francisco, CA",
+  "city": "San Francisco",
+  "state": "CA",
+  "state_name": "California",
+  "country": "US",
+  "country_iso3166": "US",
+  "zip": "94101",
+  },
+  "weather": "Partly Cloudy",
+  "temperature_string": "66.3 F (19.1 C)",
+  "temp_f": 66.3,
+  "temp_c": 19.1,
+  "relative_humidity": "65%",
+  "wind_dir": "NNW",
+  "wind_degrees": 346,
+  "wind_mph": 22.0,
+  "wind_gust_mph": "28.0",
+  "wind_kph": 35.4,
+  "wind_gust_kph": "45.1",
+  "pressure_mb": "1013",
+  "pressure_in": "29.93",
+  "pressure_trend": "+",
+  "dewpoint_string": "54 F (12 C)",
+  "dewpoint_f": 54,
+  "dewpoint_c": 12,
+  "heat_index_string": "NA",
+  "heat_index_f": "NA",
+  "heat_index_c": "NA",
+  "windchill_string": "NA",
+  "windchill_f": "NA",
+  "windchill_c": "NA",
+  "feelslike_string": "66.3 F (19.1 C)",
+  "feelslike_f": "66.3",
+  "feelslike_c": "19.1",
+  "visibility_mi": "10.0",
+  "visibility_km": "16.1",
+  "solarradiation": "",
+  "UV": "5",
+  }
+
+        OTHER FIELDS
+        def sTodayWeather = weather.forecast.simpleforecast.forecastday[0]
+        sTodayWeather = [qpf_allday:[mm:7, in:0.29], icon:partlycloudy, 
+        maxwind:[mph:30, dir:SSW, degrees:210, kph:48], 
+        qpf_day:[mm:0, in:0.00], 
+        pop:20, 
+        date:[min:00, epoch:1488412800, tz_short:EST, 
+        monthname:March, weekday_short:Wed, hour:19, pretty:7:00 PM EST on March 01, 2017, monthname_short:Mar, 
+        isdst:0, tz_long:America/New_York, ampm:PM, weekday:Wednesday, yday:59, sec:0, month:3, year:2017, day:1], 
+        period:1, 
+        snow_night:[cm:0.0, in:0.0], 
+        conditions:Partly Cloudy, 
+        avewind:[mph:23, dir:SSW, degrees:210, kph:37], 
+        avehumidity:59, 
+        snow_day:[cm:0.0, in:0.0], 
+        minhumidity:0, 
+        high:[celsius:27, fahrenheit:81], 
+        qpf_night:[mm:7, in:0.29], 
+        snow_allday:[cm:0.0, in:0.0], 
+        low:[celsius:8, fahrenheit:46], 
+        maxhumidity:0]     
+        //Current temp, today's high, tonight's low, current humidity, current uv index, precipitation forecast.
+  */
