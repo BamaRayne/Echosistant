@@ -102,6 +102,7 @@ batteries
 battery
 close
 closed
+current condition
 current conditions
 current forecast
 current temperature
@@ -114,6 +115,8 @@ here
 home
 home monitor
 hourly forcast
+humid is outside
+humidity outside
 humidity
 in
 inactive
@@ -130,8 +133,14 @@ off
 on
 open
 outdoor temperature
+outside humidity
 precipitation
+precipitation for the next hour
 present
+raining
+rain
+rain fall
+rainfall
 running
 security
 settings
@@ -143,35 +152,41 @@ temperature is outside
 temperature outside
 text
 thunderstorm
+today
 today's weather
+today's forecast
+weather today
+forecast for today
+tomorrow
+tomorrow's weather
+tomorrow's forecast
+weather tomorrow
+forecast for tomorrow
+tonight
 tonight's weather
+tonight's forecast
+weather tonight
+forecast for tonight
 tornado
 unlock
 unlocked
 unmuted
+UV
+uv index
 warning
 warnings
 weather
 weather alert
 weather alerts
+weather condition for the next hour
 weather conditions
-weather today
-weather tonight
 weather updates
 wet
 wind
-tomorrow
-today
-tonight
-tomorrow's weather
-rain fall
-rainfall
-UV
-uv index
-precipitation for the next hour
-weather condition for the next hour
-windy
 wind intensity
+windy
+hot outside
+cold outside
 
 LIST_OF_QUERIES
 
