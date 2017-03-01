@@ -94,6 +94,7 @@ LIST_OF_OPERANDS
  
 active
 alarm
+alert
 alerts
 at home
 audio
@@ -101,6 +102,8 @@ batteries
 battery
 close
 closed
+current conditions
+current forecast
 current temperature
 current weather
 doors
@@ -110,6 +113,9 @@ feed
 here
 home
 home monitor
+hourly forcast
+humidity
+in
 inactive
 indoor temperature
 light
@@ -124,6 +130,7 @@ off
 on
 open
 outdoor temperature
+precipitation
 present
 running
 security
@@ -135,22 +142,36 @@ temperature is inside
 temperature is outside
 temperature outside
 text
+thunderstorm
+today's weather
+tonight's weather
+tornado
 unlock
 unlocked
 unmuted
+warning
+warnings
 weather
+weather alert
 weather alerts
 weather conditions
-wet
-windows
-anything
-weather forecast
-today's weather
-tomorrow's weather
 weather today
-weather tomorrow
 weather tonight
-tonight's weather
+weather updates
+wet
+wind
+tomorrow
+today
+tonight
+tomorrow's weather
+rain fall
+rainfall
+UV
+uv index
+precipitation for the next hour
+weather condition for the next hour
+windy
+wind intensity
 
 LIST_OF_QUERIES
 
