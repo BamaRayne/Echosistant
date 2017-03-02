@@ -177,8 +177,11 @@ page name: "mIntent"
                 section ("Set PIN Number to Unlock Security Features") {
                     input "cPIN", "password", title: "Use this PIN for ALL Alexa Controlled Controls", default: false, required: false, submitOnChange: true
                     //input "cTempPIN", "password", title: "Guest PIN (expires in 24 hours)", default: false, required: false, submitOnChange: true
-                }                                
-                if (cPIN) {
+                }
+				if (cPIN){
+                	section("PIN Number Restrictions") {
+            			href "pRestrict", title: "Only prompt for PIN number when...", description: pRestrictComplete(), state: pRestrictSettings()
+					}
                     section ("Configure Security Options for Alexa") {
                     	def routines = location.helloHome?.getPhrases()*.label.sort()
                         input "cMiscDev", "capability.switch", title: "Allow these Switches to be PIN Protected...", multiple: true, required: false, submitOnChange: true
@@ -213,7 +216,23 @@ page name: "mIntent"
                     }
                 }
         	}
-		page name: "mSecuritySuite"    
+		
+            page name: "pRestrict"
+                def pRestrict(){
+                    dynamicPage(name: "pRestrict", title: "", uninstall: false) {
+                        section ("Mode Restrictions") {
+                            input "modes", "mode", title: "Only when mode is", multiple: true, required: false
+                        }        
+                        section ("Days - Audio only on these days"){	
+                            input "days", title: "Only on certain days of the week", multiple: true, required: false, submitOnChange: true,
+                                "enum", options: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+                        }
+                        section ("Time - Audio only during these times"){
+                            href "certainTime", title: "Only during a certain time", description: timeIntervalLabel ?: "Tap to set", state: timeIntervalLabel ? "complete" : null
+                        }   
+                    }
+                }        
+        page name: "mSecuritySuite"    
                     def mSecuritySuite() {
                         dynamicPage (name: "mSecuritySuite", title: "", install: true, uninstall: false) {
                             if (childApps?.size()) {  
@@ -2871,6 +2890,79 @@ X 																											X
 X                       					PRIVATE FUNCTIONS												X
 X                        																					X
 /*^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/***********************************************************************************************************************
+    RESTRICTIONS HANDLER
+***********************************************************************************************************************/
+private getAllOk() {
+	modeOk && daysOk && timeOk
+}
+private getModeOk() {
+    def result = !modes || modes?.contains(location.mode)
+	if(parent.debug) log.debug "modeOk = $result"
+    result
+} 
+private getDayOk() {
+    def result = true
+if (days) {
+		def df = new java.text.SimpleDateFormat("EEEE")
+		if (location.timeZone) {
+			df.setTimeZone(location.timeZone)
+		}
+		else {
+			df.setTimeZone(TimeZone.getTimeZone("America/New_York"))
+		}
+		def day = df.format(new Date())
+		result = days.contains(day)
+	}
+	if(parent.debug) log.debug "daysOk = $result"
+	result
+}
+private getTimeOk() {
+	def result = true
+	if ((starting && ending) ||
+	(starting && endingX in ["Sunrise", "Sunset"]) ||
+	(startingX in ["Sunrise", "Sunset"] && ending) ||
+	(startingX in ["Sunrise", "Sunset"] && endingX in ["Sunrise", "Sunset"])) {
+		def currTime = now()
+		def start = null
+		def stop = null
+		def s = getSunriseAndSunset(zipCode: zipCode, sunriseOffset: startSunriseOffset, sunsetOffset: startSunsetOffset)
+		if(startingX == "Sunrise") start = s.sunrise.time
+		else if(startingX == "Sunset") start = s.sunset.time
+		else if(starting) start = timeToday(starting,location.timeZone).time
+		s = getSunriseAndSunset(zipCode: zipCode, sunriseOffset: endSunriseOffset, sunsetOffset: endSunsetOffset)
+		if(endingX == "Sunrise") stop = s.sunrise.time
+		else if(endingX == "Sunset") stop = s.sunset.time
+		else if(ending) stop = timeToday(ending,location.timeZone).time
+		result = start < stop ? currTime >= start && currTime <= stop : currTime <= stop || currTime >= start
+	if (parent.debug) log.trace "getTimeOk = $result."
+    }
+    return result
+}
+private hhmm(time, fmt = "h:mm a") {
+	def t = timeToday(time, location.timeZone)
+	def f = new java.text.SimpleDateFormat(fmt)
+	f.setTimeZone(location.timeZone ?: timeZone(time))
+	f.format(t)
+}
+private offset(value) {
+	def result = value ? ((value > 0 ? "+" : "") + value + " min") : ""
+}
+private timeIntervalLabel() {
+	def result = ""
+	if      (startingX == "Sunrise" && endingX == "Sunrise") result = "Sunrise" + offset(startSunriseOffset) + " to Sunrise" + offset(endSunriseOffset)
+	else if (startingX == "Sunrise" && endingX == "Sunset") result = "Sunrise" + offset(startSunriseOffset) + " to Sunset" + offset(endSunsetOffset)
+	else if (startingX == "Sunset" && endingX == "Sunrise") result = "Sunset" + offset(startSunsetOffset) + " to Sunrise" + offset(endSunriseOffset)
+	else if (startingX == "Sunset" && endingX == "Sunset") result = "Sunset" + offset(startSunsetOffset) + " to Sunset" + offset(endSunsetOffset)
+	else if (startingX == "Sunrise" && ending) result = "Sunrise" + offset(startSunriseOffset) + " to " + hhmm(ending, "h:mm a z")
+	else if (startingX == "Sunset" && ending) result = "Sunset" + offset(startSunsetOffset) + " to " + hhmm(ending, "h:mm a z")
+	else if (starting && endingX == "Sunrise") result = hhmm(starting) + " to Sunrise" + offset(endSunriseOffset)
+	else if (starting && endingX == "Sunset") result = hhmm(starting) + " to Sunset" + offset(endSunsetOffset)
+	else if (starting && ending) result = hhmm(starting) + " to " + hhmm(ending, "h:mm a z")
+}
+
+
+
 /******************************************************************************
 	 FEEDBACK SUPPORT - GET AVERAGE										
 ******************************************************************************/

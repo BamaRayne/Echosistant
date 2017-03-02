@@ -1,7 +1,7 @@
 /* 
  * Notification - EchoSistant Add-on 
  *
- *		3/01/2017		Version:4.0 R.0.2.0		weather 2.0
+ *		3/01/2017		Version:4.0 R.0.2.1		weather 2.0, default tts messages
  *		2/27/2017		Version:4.0 R.0.0.6		time scheduling bug fix 
  *		2/17/2017		Version:4.0 R.0.0.1		Public Release
  *
@@ -65,7 +65,7 @@ page name: "mainProfilePage"
 			}
 
         if (actionType == "Custom") {
-            section ("Send this message...") {
+            section ("Send this message (optional - leave empty for defalut message") {
                 input "message", "text", title: "Play this message...", required:false, multiple: false, defaultValue: ""
                 paragraph "You can use the following variables in your custom message: &device, &action , &event and &time \n" +
                     "\nFor Example: \n&event sensor &device is &action and the event happened at &time \n" +
@@ -210,6 +210,8 @@ def initialize() {
 		state.weatherAlert
     }
 	if (myWeather) {
+    	log.debug "refreshing hourly weather"
+    	mGetCurrentWeather()
 		runEvery1Hour(mGetCurrentWeather)
         state.lastWeather
 	}    
@@ -468,13 +470,22 @@ def mGetCurrentWeather(){
         def cWeatherHum = cWeather.hourly_forecast[0].humidity + " percent"
         def cWeatherUpdate = cWeather.hourly_forecast[0].FCTTIME.civil
         def pastWeather = state.lastWeather
-        if(myWeather) {
+	if(myWeather) {
+        if(pastWeather == null) {
+			log.warn "pastWeather = ${pastWeather}"
+        	weatherData.wCond = cWeatherCondition
+            weatherData.wWind = cWeatherWind
+            weatherData.wHum = cWeatherHum
+            weatherData.wPrecip = cWeatherPrecipitation        
+            state.lastWeather = weatherData
+        }
+        else {
         def wUpdate = pastWeather.wCond != cWeatherCondition ? "current weather condition" : pastWeather.wWind != cWeatherWind ? "wind intensity" : pastWeather.wHum != cWeatherHum ? "humidity" : pastWeather.wPrecip != cWeatherPrecipitation ? "chance of precipitation" : null
 		def wChange = wUpdate == "current weather condition" ? cWeatherCondition : wUpdate == "wind intensity" ? cWeatherWind  : wUpdate == "humidity" ? cWeatherHum : wUpdate == "chance of precipitation" ? cWeatherPrecipitation : null                    
         	//something has changed
         	if(wUpdate != null){
 				log.warn "hourly weather has changed" 
-        		if (myWeather == "Any weather changes"){                   
+        		if (myWeather == "Any Weather Updates"){                   
                     result = "The hourly weather forecast has been updated. The " + wUpdate + " has been changed to "  + wChange
 					data = [value:"forecast", name: result, device:"weather"] 
 					alertsHandler(data)
@@ -502,7 +513,9 @@ def mGetCurrentWeather(){
 						alertsHandler(data)
         			}
         		}
-				weatherData.wCond = cWeatherCondition
+                // saving update
+				log.warn "saving hourly weather as it has changed" 
+                weatherData.wCond = cWeatherCondition
                 weatherData.wWind = cWeatherWind
                 weatherData.wHum = cWeatherHum
                 weatherData.wPrecip = cWeatherPrecipitation        
@@ -510,6 +523,7 @@ def mGetCurrentWeather(){
          	}       
 		}
 		log.info "updating hourly weather"  
+	}
 /*    
     }
 	catch (Throwable t) {
