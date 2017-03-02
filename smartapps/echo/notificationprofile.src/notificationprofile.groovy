@@ -202,6 +202,9 @@ def updated() {
     initialize()
 }
 def initialize() {
+	state.lastTime
+    state.lastWeatherCheck
+    state.lastAlert
 	if (timeOfDay) {
 		schedule(timeOfDay, "scheduledTimeHandler")
 	}
@@ -432,19 +435,34 @@ def mGetWeatherAlerts(){
 //    try {
 		if (getDayOk()==true && getModeOk()==true && getTimeOk()==true) {
         	def weather = getWeatherFeature("alerts", settings.wZipCode)
-        	def alert = weather.alerts.description[0]
+        	def type = weather.alerts.type[0]
+            def alert = weather.alerts.description[0]
             def expire = weather.alerts.expires[0]
-            if(expire != null) expire = expire?.replaceAll(~/ EST /, " ").replaceAll(~/ CST /, " ").replaceAll(~/ MST /, " ").replaceAll(~/ PST /, " ")
-            if(alert != null) {
-				log.warn "new weather alert = ${alert} , expire = ${expire}"
-                result = alert  + " is in effect for your area, that expires at " + expire
-				def newAlert = result != state.weatherAlert ? true : false
-                if(newAlert == true){
-                	state.weatherAlert = result
-                    data = [value:"alert", name: result, device:"weather"] 
-                	alertsHandler(data)
-             	}
-            }
+            def typeOk = myWeatherAlert?.find {a -> a == type}
+			if(typeOk){
+                if(expire != null) expire = expire?.replaceAll(~/ EST /, " ").replaceAll(~/ CST /, " ").replaceAll(~/ MST /, " ").replaceAll(~/ PST /, " ")
+                if(alert != null) {
+                    result = alert  + " is in effect for your area, that expires at " + expire
+                    if(state.weatherAlert == null){
+                        log.warn "saving the weather alert for the first time alert = ${alert} , expire = ${expire}"
+                        state.weatherAlert = result
+                        state.lastAlert = new Date(now()).format("h:mm aa", location.timeZone)
+                        data = [value:"alert", name: result, device:"weather"] 
+                        alertsHandler(data)
+                    }
+                    else {
+                        log.warn "new weather alert = ${alert} , expire = ${expire}"
+                        def newAlert = result != state.weatherAlert ? true : false
+                        if(newAlert == true){
+                            state.weatherAlert = result
+                            state.lastAlert = new Date(now()).format("h:mm aa", location.timeZone)
+                            data = [value:"alert", name: result, device:"weather"] 
+                            alertsHandler(data)
+                        }
+                    }
+                }
+         	}
+            log.warn "weather alert not selected"
     	}
 /*    
     }
@@ -462,6 +480,7 @@ def mGetCurrentWeather(){
     def data = [:]
    	def result
 //    try {
+		if (getDayOk()==true && getModeOk()==true && getTimeOk()==true) {
         //hourly updates
         def cWeather = getWeatherFeature("hourly", settings.wZipCode)
         def cWeatherCondition = cWeather.hourly_forecast[0].condition
@@ -470,60 +489,62 @@ def mGetCurrentWeather(){
         def cWeatherHum = cWeather.hourly_forecast[0].humidity + " percent"
         def cWeatherUpdate = cWeather.hourly_forecast[0].FCTTIME.civil
         def pastWeather = state.lastWeather
-	if(myWeather) {
-        if(pastWeather == null) {
-			log.warn "pastWeather = ${pastWeather}"
-        	weatherData.wCond = cWeatherCondition
-            weatherData.wWind = cWeatherWind
-            weatherData.wHum = cWeatherHum
-            weatherData.wPrecip = cWeatherPrecipitation        
-            state.lastWeather = weatherData
-        }
-        else {
-        def wUpdate = pastWeather.wCond != cWeatherCondition ? "current weather condition" : pastWeather.wWind != cWeatherWind ? "wind intensity" : pastWeather.wHum != cWeatherHum ? "humidity" : pastWeather.wPrecip != cWeatherPrecipitation ? "chance of precipitation" : null
-		def wChange = wUpdate == "current weather condition" ? cWeatherCondition : wUpdate == "wind intensity" ? cWeatherWind  : wUpdate == "humidity" ? cWeatherHum : wUpdate == "chance of precipitation" ? cWeatherPrecipitation : null                    
-        	//something has changed
-        	if(wUpdate != null){
-				log.warn "hourly weather has changed" 
-        		if (myWeather == "Any Weather Updates"){                   
-                    result = "The hourly weather forecast has been updated. The " + wUpdate + " has been changed to "  + wChange
-					data = [value:"forecast", name: result, device:"weather"] 
-					alertsHandler(data)
-				}
-                else {
-                	if (myWeather == "Weather Condition Changes" && wUpdate ==  "current weather condition"){
-                    	result = "The " + wUpdate + " has been updated to " + wChange
-						data = [value:"condition", name: result, device:"weather"] 
-						alertsHandler(data)
-        			}
-                	else if (myWeather == "Chance of Precipitation Changes" && wUpdate ==  "chance of precipitation"){
-                    	result = "The " + wUpdate + " has been updated to " + wChange
-						data = [value:"precipitation", name: result, device:"weather"] 
-						alertsHandler(data)
-                    // [ ,
-        			}        
-                	else if (myWeather == "Wind Speed Changes" && wUpdate == "wind intensity"){
-                    	result = "The " + wUpdate + " has been updated to " + wChange
-						data = [value:"wind", name: result, device:"weather"] 
-						alertsHandler(data)
-        			}         
-                	else if (myWeather == "Humidity Changes" && wUpdate == "humidity"){
-                    	result = "The " + wUpdate + " has been updated to " + wChange
-						data = [value:"humidity", name: result, device:"weather"] 
-						alertsHandler(data)
-        			}
-        		}
-                // saving update
-				log.warn "saving hourly weather as it has changed" 
+        if(myWeather) {
+            if(pastWeather == null) {
+                log.warn "pastWeather = ${pastWeather}"
                 weatherData.wCond = cWeatherCondition
                 weatherData.wWind = cWeatherWind
                 weatherData.wHum = cWeatherHum
                 weatherData.wPrecip = cWeatherPrecipitation        
                 state.lastWeather = weatherData
-         	}       
-		}
-		log.info "updating hourly weather"  
-	}
+				state.lastTime = new Date(now()).format("h:mm aa", location.timeZone)
+            }
+            else {
+            	def wUpdate = pastWeather.wCond != cWeatherCondition ? "current weather condition" : pastWeather.wWind != cWeatherWind ? "wind intensity" : pastWeather.wHum != cWeatherHum ? "humidity" : pastWeather.wPrecip != cWeatherPrecipitation ? "chance of precipitation" : null
+            	def wChange = wUpdate == "current weather condition" ? cWeatherCondition : wUpdate == "wind intensity" ? cWeatherWind  : wUpdate == "humidity" ? cWeatherHum : wUpdate == "chance of precipitation" ? cWeatherPrecipitation : null                    
+                //something has changed
+                if(wUpdate != null){
+                    // saving update
+                    log.warn "saving hourly weather as it has changed" 
+                    weatherData.wCond = cWeatherCondition
+                    weatherData.wWind = cWeatherWind
+                    weatherData.wHum = cWeatherHum
+                    weatherData.wPrecip = cWeatherPrecipitation        
+                    state.lastWeather = weatherData
+                    state.lastWeatherCheck = new Date(now()).format("h:mm aa", location.timeZone)
+                    log.warn "hourly weather changed: wChange=${wChange}" 
+                    if (myWeather == "Any Weather Updates"){                   
+                        result = "The hourly weather forecast has been updated. The " + wUpdate + " has been changed to "  + wChange
+                        data = [value:"forecast", name: result, device:"weather"] 
+                        alertsHandler(data)
+                    }
+                    else {
+                        if (myWeather == "Weather Condition Changes" && wUpdate ==  "current weather condition"){
+                            result = "The " + wUpdate + " has been updated to " + wChange
+                            data = [value:"condition", name: result, device:"weather"] 
+                            alertsHandler(data)
+                        }
+                        else if (myWeather == "Chance of Precipitation Changes" && wUpdate ==  "chance of precipitation"){
+                            result = "The " + wUpdate + " has been updated to " + wChange
+                            data = [value:"precipitation", name: result, device:"weather"] 
+                            alertsHandler(data)
+                        }        
+                        else if (myWeather == "Wind Speed Changes" && wUpdate == "wind intensity"){
+                            result = "The " + wUpdate + " has been updated to " + wChange
+                            data = [value:"wind", name: result, device:"weather"] 
+                            alertsHandler(data)
+                        }         
+                        else if (myWeather == "Humidity Changes" && wUpdate == "humidity"){
+                            result = "The " + wUpdate + " has been updated to " + wChange
+                            data = [value:"humidity", name: result, device:"weather"] 
+                            alertsHandler(data)
+                        }
+                    }
+                }       
+            }
+            log.info "updating hourly weather"  
+        }
+    }
 /*    
     }
 	catch (Throwable t) {
