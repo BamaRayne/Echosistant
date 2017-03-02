@@ -1,7 +1,7 @@
 /* 
  * EchoSistant - The Ultimate Voice and Text Messaging Assistant Using Your Alexa Enabled Device.
  *
- *		3/01/2017		Version:4.0 R.0.2.0		weather 2.0
+ *		3/02/2017		Version:4.0 R.0.2.2		weather 2.0 fixes
  *		2/28/2017		Version:4.0 R.0.1.0		Expanded doors & windows feedback
  *		2/27/2017		Version:4.0 R.0.0.9		SHM handling bug fixes
  *		2/17/2017		Version:4.0 R.0.0.0		Public Release 
@@ -168,7 +168,10 @@ page name: "mIntent"
                         		paragraph "You may enter multiple phone numbers separated by comma (E.G. 8045551122,8046663344)"
                             input "push", "bool", title: "Send Push Notification too?", required: false, defaultValue: false
                         }
-                     }                     
+                     }
+					 section ("Local Weather Information") {
+            			href "mWeatherConfig", title: "Tap here to configure Weather information on Dashboard", description: "", state: complete
+					}
                 }
         }
         page name: "mSecurity"    
@@ -180,7 +183,7 @@ page name: "mIntent"
                 }
 				if (cPIN){
                 	section("PIN Number Restrictions") {
-            			href "pRestrict", title: "Only prompt for PIN number when...", description: pRestrictComplete(), state: pRestrictSettings()
+            			href "pRestrict", title: "Only prompt for PIN number...", description: pRestrictComplete(), state: pRestrictSettings()
 					}
                     section ("Configure Security Options for Alexa") {
                     	def routines = location.helloHome?.getPhrases()*.label.sort()
@@ -220,15 +223,15 @@ page name: "mIntent"
             page name: "pRestrict"
                 def pRestrict(){
                     dynamicPage(name: "pRestrict", title: "", uninstall: false) {
-                        section ("Mode Restrictions") {
-                            input "modes", "mode", title: "Only when mode is", multiple: true, required: false
+                        section ("Location Mode") {
+                            input "modes", "mode", title: "When Location mode is...", multiple: true, required: false
                         }        
-                        section ("Days - Audio only on these days"){	
-                            input "days", title: "Only on certain days of the week", multiple: true, required: false, submitOnChange: true,
+                        section ("Days"){	
+                            input "days", title: "On Certain days of the week", multiple: true, required: false, submitOnChange: true,
                                 "enum", options: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
                         }
-                        section ("Time - Audio only during these times"){
-                            href "certainTime", title: "Only during a certain time", description: timeIntervalLabel ?: "Tap to set", state: timeIntervalLabel ? "complete" : null
+                        section ("Time"){
+                            href "certainTime", title: "During a certain time", description: timeIntervalLabel ?: "Tap to set", state: timeIntervalLabel ? "complete" : null
                         }   
                     }
                 }        
@@ -704,7 +707,7 @@ try {
             if (state.lastAction != null) {
                 def savedData = state.lastAction
  				//NEW PIN VALIDATION!!!!! ///// ADD THE THE usePIN variable below to run the PIN VALIDATION
- 				if(state.usePIN_D == true) {
+ 				if(state.usePIN_D == true && modeOk && daysOk && timeOk) { //attmpting to restrict pin prompts 3/1/2017 bobby
      				//RUN PIN VALIDATION PROCESS
                 	def pin = "undefined"
                		def command = "validation"
@@ -1778,8 +1781,8 @@ def controlDevices() {
                                 deviceMatch = cMiscDev.find {s -> s.label.toLowerCase() == ctDevice.toLowerCase()}                 
                                 if(deviceMatch) { 
                             //>>>>>>>  CHECK FOR ENABLED PIN <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-                                if(cPIN && state.usePIN_S == true && deviceMatch) {
-                                    if (debug) log.warn "PIN enabled for Switch '${deviceMatch}'"
+                                if(cPIN && state.usePIN_S == true && deviceMatch){ //(modeOk && daysOk && timeOk) { //attempting to restrict pin # 3/1/17 bobby
+                                    if (debug) log.warn "PIN enabled for Switch '${deviceMatch}', modeOk = ${modeOk}"
                                     device = deviceMatch.label
                                     if (command == "disable" || command == "deactivate"|| command == "stop") {command = "off"}
                                     if (command == "enable" || command == "activate"|| command == "start") {command = "on"}	                        
@@ -2592,18 +2595,20 @@ def controlSecurity(param) {
                     if (secCommand == "off"){
                     delay = false
                     data = [command: secCommand, delay: delay]
-                    if(cPIN && state.usePIN_SHM == true){
-                        state.lastAction = data
-                        state.pContCmdsR = "security"
-                        //RUN PIN VALIDATION PROCESS
-                        def pin = "undefined"
-                        command = "validation"
-                        def unit = "security"
-                        outputTxt = pinHandler(pin, command, num, unit)
-                        pPIN = true
-                        if (state.pinTry == 3) {pPIN = false}
-                        log.warn "try# ='${state.pinTry}'"
-                        return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
+                    if(modeOk && daysOk && timeOk){
+                        if(cPIN && state.usePIN_SHM == true){ // attempting pin restriction 3/1/17 bobby
+                            state.lastAction = data
+                            state.pContCmdsR = "security"
+                            //RUN PIN VALIDATION PROCESS
+                            def pin = "undefined"
+                            command = "validation"
+                            def unit = "security"
+                            outputTxt = pinHandler(pin, command, num, unit)
+                            pPIN = true
+                            if (state.pinTry == 3) {pPIN = false}
+                            log.warn "try# ='${state.pinTry}'"
+                            return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
+                        }
                     }
                     else {               
                         outputTxt = securityHandler(data)
@@ -2658,7 +2663,8 @@ def controlSecurity(param) {
 					def mMatch = m.replaceAll("[^a-zA-Z0-9]", "")
                     if(mMatch.toLowerCase() == control.toLowerCase()) {
                         if(currMode !=  m) {
-                            if(cPIN && state.usePIN_Mode == true) {
+                    		if(modeOk && daysOk && timeOk){
+                            if(cPIN && state.usePIN_Mode == true) { // pin restriction 3/1/17 bobby
                                 delay = false
                                 data = [command: m, delay: delay]
                                 state.lastAction = data
@@ -2671,6 +2677,7 @@ def controlSecurity(param) {
                                 pPIN = true
                                 if (state.pinTry == 3) {pPIN = false}
                                 log.warn "try# ='${state.pinTry}'"                        
+                            }
                             }
                             else { 
                                 location.setMode(m)
@@ -2698,7 +2705,7 @@ def controlSecurity(param) {
             	if(rMatch.toLowerCase() == control.toLowerCase()){
                    		if(cPIN && cRoutines) {
                          	def pinRoutine =  cRoutines.find {r1 -> r1 == r}  
-                            if (pinRoutine) {
+                            if (pinRoutine && modeOk && daysOk && timeOk) { //restriction pin 3/1/17 bobby
                                 delay = false
                                 data = [command: r, delay: delay]
                                 state.lastAction = data
@@ -2898,10 +2905,10 @@ private getAllOk() {
 }
 private getModeOk() {
     def result = !modes || modes?.contains(location.mode)
-	if(parent.debug) log.debug "modeOk = $result"
+	if(debug) log.debug "modeOk = $result"
     result
 } 
-private getDayOk() {
+private getDaysOk() {
     def result = true
 if (days) {
 		def df = new java.text.SimpleDateFormat("EEEE")
@@ -2914,7 +2921,7 @@ if (days) {
 		def day = df.format(new Date())
 		result = days.contains(day)
 	}
-	if(parent.debug) log.debug "daysOk = $result"
+	if(debug) log.debug "daysOk = $result"
 	result
 }
 private getTimeOk() {
@@ -2935,7 +2942,7 @@ private getTimeOk() {
 		else if(endingX == "Sunset") stop = s.sunset.time
 		else if(ending) stop = timeToday(ending,location.timeZone).time
 		result = start < stop ? currTime >= start && currTime <= stop : currTime <= stop || currTime >= start
-	if (parent.debug) log.trace "getTimeOk = $result."
+	if (debug) log.trace "getTimeOk = $result."
     }
     return result
 }
@@ -2960,9 +2967,6 @@ private timeIntervalLabel() {
 	else if (starting && endingX == "Sunset") result = hhmm(starting) + " to Sunset" + offset(endSunsetOffset)
 	else if (starting && ending) result = hhmm(starting) + " to " + hhmm(ending, "h:mm a z")
 }
-
-
-
 /******************************************************************************
 	 FEEDBACK SUPPORT - GET AVERAGE										
 ******************************************************************************/
@@ -4493,6 +4497,15 @@ def mSecurityD() {def text = "Tap here to configure settings"
     	text = "Configured"}
     	else text = "Tap to Configure"
 		text}
+def pRestrictSettings(){ def result = "" 
+	if (modes || runDay || hues ||startingX || endingX) {
+    	result = "complete"}
+        result}
+def pRestrictComplete() {def text = "Tap here to configure" 
+    if (modes || runDay || hues ||startingX || endingX) {
+    	text = "Configured"}
+    	else text = "Tap here to Configure"
+        text}
         
       
 
