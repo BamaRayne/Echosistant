@@ -1,7 +1,7 @@
 /* 
  * Notification - EchoSistant Add-on 
  *
- *		3/01/2017		Version:4.0 R.0.2.1		weather 2.0, default tts messages
+ *		3/02/2017		Version:4.0 R.0.2.2		weather 2.0, default tts messages
  *		2/27/2017		Version:4.0 R.0.0.6		time scheduling bug fix 
  *		2/17/2017		Version:4.0 R.0.0.1		Public Release
  *
@@ -99,7 +99,7 @@ page name: "mainProfilePage"
                     "VOL":	"Volcanic Activity Statement",
                     "HWW":	"Hurricane Wind Warning"
 					]          
-			input "myWeather", "enum", title: "Choose Hourly Weather Forecast Updates...", required: false, multiple: true, submitOnChange: true,
+			input "myWeather", "enum", title: "Choose Hourly Weather Forecast Updates...", required: false, multiple: false, submitOnChange: true,
 					options: ["Weather Condition Changes", "Chance of Precipitation Changes", "Wind Speed Changes", "Humidity Changes", "Any Weather Updates"]   
             input "myMode", "enum", title: "Choose Modes...", options: location.modes.name.sort(), multiple: true, required: false 
             input "myRoutine", "enum", title: "Choose Routines...", options: actions, multiple: true, required: false
@@ -194,7 +194,7 @@ def installed() {
 		runEvery5Minutes(mGetWeatherAlerts)
 	}
 	if (myWeather) {
-		runEvery1Hour(mGetCurrentWeather)
+		runEvery1Hour(mGetCurrentWeather) //(mGetCurrentWeather)
 	}    
 }
 def updated() { 
@@ -214,9 +214,10 @@ def initialize() {
     }
 	if (myWeather) {
     	log.debug "refreshing hourly weather"
-    	mGetCurrentWeather()
 		runEvery1Hour(mGetCurrentWeather)
-        state.lastWeather
+        state.lastWeather = null
+        state.lastWeatherCheck = null
+       	mGetCurrentWeather()
 	}    
     state.lastWeather
     if (actionType) {
@@ -338,9 +339,8 @@ def alertsHandler(evt) {
                     }
                 }
                 else {
-                	if (eDev == "weather"){eTxt = eName}
+                    if (eDev == "weather"){eTxt = eName}
                     else {eTxt = "Heads up, ${eDev} is now ${eVal}"}         
-                    log.info "last else eTxt = ${eTxt}"
                     takeAction(eTxt)
                 }
             }
@@ -351,9 +351,7 @@ def alertsHandler(evt) {
     CUSTOM SOUNDS HANDLER
 ***********************************************************************************************************************/
 private takeAction(eTxt) {
-	def sVolume
-	log.debug "received message (eTxt) = ${eTxt}"
-	
+	def sVolume	
     if (actionType == "Custom") {
 		state.sound = textToSpeech(eTxt instanceof List ? eTxt[0] : eTxt)
     }
@@ -381,58 +379,12 @@ private takeAction(eTxt) {
         }
 }
 /***********************************************************************************************************************
-    CUSTOM SOUNDS HANDLER
-***********************************************************************************************************************/
-private loadSound() {
-	switch (actionType) {
-		case "Bell 1":
-			state.sound = [uri: "http://s3.amazonaws.com/smartapp-media/sonos/bell1.mp3", duration: "10"]
-			break;
-		case "Bell 2":
-			state.sound = [uri: "http://s3.amazonaws.com/smartapp-media/sonos/bell2.mp3", duration: "10"]
-			break;
-		case "Dogs Barking":
-			state.sound = [uri: "http://s3.amazonaws.com/smartapp-media/sonos/dogs.mp3", duration: "10"]
-			break;
-		case "Fire Alarm":
-			state.sound = [uri: "http://s3.amazonaws.com/smartapp-media/sonos/alarm.mp3", duration: "17"]
-			break;
-		case "The mail has arrived":
-			state.sound = [uri: "http://s3.amazonaws.com/smartapp-media/sonos/the+mail+has+arrived.mp3", duration: "1"]
-			break;
-		case "A door opened":
-			state.sound = [uri: "http://s3.amazonaws.com/smartapp-media/sonos/a+door+opened.mp3", duration: "1"]
-			break;
-		case "There is motion":
-			state.sound = [uri: "http://s3.amazonaws.com/smartapp-media/sonos/there+is+motion.mp3", duration: "1"]
-			break;
-		case "Smartthings detected a flood":
-			state.sound = [uri: "http://s3.amazonaws.com/smartapp-media/sonos/smartthings+detected+a+flood.mp3", duration: "2"]
-			break;
-		case "Smartthings detected smoke":
-			state.sound = [uri: "http://s3.amazonaws.com/smartapp-media/sonos/smartthings+detected+smoke.mp3", duration: "1"]
-			break;
-		case "Someone is arriving":
-			state.sound = [uri: "http://s3.amazonaws.com/smartapp-media/sonos/someone+is+arriving.mp3", duration: "1"]
-			break;
-		case "Piano":
-			state.sound = [uri: "http://s3.amazonaws.com/smartapp-media/sonos/piano2.mp3", duration: "10"]
-			break;
-		case "Lightsaber":
-			state.sound = [uri: "http://s3.amazonaws.com/smartapp-media/sonos/lightsaber.mp3", duration: "10"]
-			break;
-		default:
-			state?.sound = [uri: "http://s3.amazonaws.com/smartapp-media/sonos/bell1.mp3", duration: "10"]
-			break;
-	}
-}
-/***********************************************************************************************************************
     WEATHER ALERTS
 ***********************************************************************************************************************/
 def mGetWeatherAlerts(){
 	def result = "There are no weather alerts for your area"
 	def data = [:]
-//    try {
+    try {
 		if (getDayOk()==true && getModeOk()==true && getTimeOk()==true) {
         	def weather = getWeatherFeature("alerts", settings.wZipCode)
         	def type = weather.alerts.type[0]
@@ -444,7 +396,6 @@ def mGetWeatherAlerts(){
                 if(alert != null) {
                     result = alert  + " is in effect for your area, that expires at " + expire
                     if(state.weatherAlert == null){
-                        log.warn "saving the weather alert for the first time alert = ${alert} , expire = ${expire}"
                         state.weatherAlert = result
                         state.lastAlert = new Date(now()).format("h:mm aa", location.timeZone)
                         data = [value:"alert", name: result, device:"weather"] 
@@ -462,15 +413,15 @@ def mGetWeatherAlerts(){
                     }
                 }
          	}
-            log.warn "weather alert not selected"
+            log.warn "weather alert not matched"
     	}
-/*    
+ 
     }
 	catch (Throwable t) {
 	log.error t
 	return result
 	}
-*/    
+
 }
 /***********************************************************************************************************************
     HOURLY FORECAST
@@ -479,81 +430,97 @@ def mGetCurrentWeather(){
     def weatherData = [:]
     def data = [:]
    	def result
-//    try {
+    try {
 		if (getDayOk()==true && getModeOk()==true && getTimeOk()==true) {
         //hourly updates
-        def cWeather = getWeatherFeature("hourly", settings.wZipCode)
-        def cWeatherCondition = cWeather.hourly_forecast[0].condition
-        def cWeatherPrecipitation = cWeather.hourly_forecast[0].pop + " percent"
-        def cWeatherWind = cWeather.hourly_forecast[0].wspd.english + " miles per hour"
-        def cWeatherHum = cWeather.hourly_forecast[0].humidity + " percent"
-        def cWeatherUpdate = cWeather.hourly_forecast[0].FCTTIME.civil
-        def pastWeather = state.lastWeather
-        if(myWeather) {
-            if(pastWeather == null) {
-                log.warn "pastWeather = ${pastWeather}"
-                weatherData.wCond = cWeatherCondition
+            def cWeather = getWeatherFeature("hourly", settings.wZipCode)
+            def cWeatherCondition = cWeather.hourly_forecast[0].condition
+            def cWeatherPrecipitation = cWeather.hourly_forecast[0].pop + " percent"
+            def cWeatherWind = cWeather.hourly_forecast[0].wspd.english + " miles per hour"
+            def cWeatherHum = cWeather.hourly_forecast[0].humidity + " percent"
+            def cWeatherUpdate = cWeather.hourly_forecast[0].FCTTIME.civil
+            //past hour's data
+            def pastWeather = state.lastWeather
+            //current forecast
+				weatherData.wCond = cWeatherCondition
                 weatherData.wWind = cWeatherWind
                 weatherData.wHum = cWeatherHum
-                weatherData.wPrecip = cWeatherPrecipitation        
-                state.lastWeather = weatherData
-				state.lastTime = new Date(now()).format("h:mm aa", location.timeZone)
-            }
-            else {
-            	def wUpdate = pastWeather.wCond != cWeatherCondition ? "current weather condition" : pastWeather.wWind != cWeatherWind ? "wind intensity" : pastWeather.wHum != cWeatherHum ? "humidity" : pastWeather.wPrecip != cWeatherPrecipitation ? "chance of precipitation" : null
-            	def wChange = wUpdate == "current weather condition" ? cWeatherCondition : wUpdate == "wind intensity" ? cWeatherWind  : wUpdate == "humidity" ? cWeatherHum : wUpdate == "chance of precipitation" ? cWeatherPrecipitation : null                    
-                //something has changed
-                if(wUpdate != null){
-                    // saving update
-                    log.warn "saving hourly weather as it has changed" 
-                    weatherData.wCond = cWeatherCondition
-                    weatherData.wWind = cWeatherWind
-                    weatherData.wHum = cWeatherHum
-                    weatherData.wPrecip = cWeatherPrecipitation        
+                weatherData.wPrecip = cWeatherPrecipitation
+            //last weather update
+            def lastUpdated = new Date(now()).format("h:mm aa", location.timeZone)
+            if(myWeather) {
+                if(pastWeather == null) {
                     state.lastWeather = weatherData
-                    state.lastWeatherCheck = new Date(now()).format("h:mm aa", location.timeZone)
-                    log.warn "hourly weather changed: wChange=${wChange}" 
-                    if (myWeather == "Any Weather Updates"){                   
-                        result = "The hourly weather forecast has been updated. The " + wUpdate + " has been changed to "  + wChange
-                        data = [value:"forecast", name: result, device:"weather"] 
-                        alertsHandler(data)
-                    }
-                    else {
-                        if (myWeather == "Weather Condition Changes" && wUpdate ==  "current weather condition"){
-                            result = "The " + wUpdate + " has been updated to " + wChange
-                            data = [value:"condition", name: result, device:"weather"] 
+                    state.lastWeatherCheck = lastUpdated
+                    result = "hourly weather forcast notification has been activated at " + lastUpdated + " You will now receive hourly weather updates, only if the forecast data changes" 
+                    data = [value:"precipitation", name: result, device:"weather"]
+                    alertsHandler(data)
+                }
+                else {
+                    def wUpdate = pastWeather.wCond != cWeatherCondition ? "current weather condition" : pastWeather.wWind != cWeatherWind ? "wind intensity" : pastWeather.wHum != cWeatherHum ? "humidity" : pastWeather.wPrecip != cWeatherPrecipitation ? "chance of precipitation" : null
+                    def wChange = wUpdate == "current weather condition" ? cWeatherCondition : wUpdate == "wind intensity" ? cWeatherWind  : wUpdate == "humidity" ? cWeatherHum : wUpdate == "chance of precipitation" ? cWeatherPrecipitation : null                    
+                    //something has changed
+                    if(wUpdate != null){
+                        // saving update to state
+                        state.lastWeather = weatherData
+                        state.lastWeatherCheck = lastUpdated
+                        if (myWeather == "Any Weather Updates"){
+                        	def condChanged = pastWeather.wCond != cWeatherCondition
+                            def windChanged = pastWeather.wWind != cWeatherWind
+                            def humChanged = pastWeather.wHum != cWeatherHum
+                            def precChanged = pastWeather.wPrecip != cWeatherPrecipitation
+							if(condChanged){
+                            	result = "The hourly weather forecast has been updated. The weather condition has been changed to "  + cWeatherCondition
+                            }
+                            if(windChanged){
+                            	if(result) {result = result +  " , the wind intensity to "  + cWeatherWind }
+                            	else result = "The hourly weather forecast has been updated. The wind intensity has been changed to "  + cWeatherWind
+							}
+                            if(humChanged){
+                            	if(result) {result = result +  " , the humidity to "  + cWeatherHum }
+                            	else result = "The hourly weather forecast has been updated. The humidity has been changed to "  + cWeatherHum
+							}
+                            if(precChanged){
+                            	if(result) {result = result + " , the chance of rain to "  + cWeatherPrecipitation }
+                            	else result = "The hourly weather forecast has been updated. The chance of rain has been changed to "  + cWeatherPrecipitation
+                            }
+                            data = [value:"forecast", name: result, device:"weather"]  
                             alertsHandler(data)
                         }
-                        else if (myWeather == "Chance of Precipitation Changes" && wUpdate ==  "chance of precipitation"){
-                            result = "The " + wUpdate + " has been updated to " + wChange
-                            data = [value:"precipitation", name: result, device:"weather"] 
-                            alertsHandler(data)
-                        }        
-                        else if (myWeather == "Wind Speed Changes" && wUpdate == "wind intensity"){
-                            result = "The " + wUpdate + " has been updated to " + wChange
-                            data = [value:"wind", name: result, device:"weather"] 
-                            alertsHandler(data)
-                        }         
-                        else if (myWeather == "Humidity Changes" && wUpdate == "humidity"){
-                            result = "The " + wUpdate + " has been updated to " + wChange
-                            data = [value:"humidity", name: result, device:"weather"] 
-                            alertsHandler(data)
+                        else {
+                            if (myWeather == "Weather Condition Changes" && wUpdate ==  "current weather condition"){
+                                result = "The " + wUpdate + " has been updated to " + wChange
+                                data = [value:"condition", name: result, device:"weather"]  
+                                alertsHandler(data)
+                            }
+                            else if (myWeather == "Chance of Precipitation Changes" && wUpdate ==  "chance of precipitation"){
+                                result = "The " + wUpdate + " has been updated to " + wChange
+                                data = [value:"precipitation", name: result, device:"weather"] 
+                                alertsHandler(data)
+                            }        
+                            else if (myWeather == "Wind Speed Changes" && wUpdate == "wind intensity"){
+                                result = "The " + wUpdate + " has been updated to " + wChange
+                                data = [value:"wind", name: result, device:"weather"] 
+                                alertsHandler(data)
+                            }         
+                            else if (myWeather == "Humidity Changes" && wUpdate == "humidity"){
+                                result = "The " + wUpdate + " has been updated to " + wChange
+                                data = [value:"humidity", name: result, device:"weather"] 
+                                alertsHandler(data)
+                            }
                         }
-                    }
-                }       
+                    }       
+                }
+                log.info "refreshed hourly weather forecast: past forecast = ${pastWeather}; new forecast = ${weatherData}"  
             }
-            log.info "updating hourly weather"  
-        }
-    }
-/*    
+    	}
+   
     }
 	catch (Throwable t) {
 	log.error t
 	return result
 	}
-*/ 
 }
-
 /***********************************************************************************************************************
     RESTRICTIONS HANDLER
 ***********************************************************************************************************************/
@@ -660,6 +627,53 @@ private void sendText(number, message) {
         }
     }
 }
+/***********************************************************************************************************************
+    CUSTOM SOUNDS HANDLER
+***********************************************************************************************************************/
+private loadSound() {
+	switch (actionType) {
+		case "Bell 1":
+			state.sound = [uri: "http://s3.amazonaws.com/smartapp-media/sonos/bell1.mp3", duration: "10"]
+			break;
+		case "Bell 2":
+			state.sound = [uri: "http://s3.amazonaws.com/smartapp-media/sonos/bell2.mp3", duration: "10"]
+			break;
+		case "Dogs Barking":
+			state.sound = [uri: "http://s3.amazonaws.com/smartapp-media/sonos/dogs.mp3", duration: "10"]
+			break;
+		case "Fire Alarm":
+			state.sound = [uri: "http://s3.amazonaws.com/smartapp-media/sonos/alarm.mp3", duration: "17"]
+			break;
+		case "The mail has arrived":
+			state.sound = [uri: "http://s3.amazonaws.com/smartapp-media/sonos/the+mail+has+arrived.mp3", duration: "1"]
+			break;
+		case "A door opened":
+			state.sound = [uri: "http://s3.amazonaws.com/smartapp-media/sonos/a+door+opened.mp3", duration: "1"]
+			break;
+		case "There is motion":
+			state.sound = [uri: "http://s3.amazonaws.com/smartapp-media/sonos/there+is+motion.mp3", duration: "1"]
+			break;
+		case "Smartthings detected a flood":
+			state.sound = [uri: "http://s3.amazonaws.com/smartapp-media/sonos/smartthings+detected+a+flood.mp3", duration: "2"]
+			break;
+		case "Smartthings detected smoke":
+			state.sound = [uri: "http://s3.amazonaws.com/smartapp-media/sonos/smartthings+detected+smoke.mp3", duration: "1"]
+			break;
+		case "Someone is arriving":
+			state.sound = [uri: "http://s3.amazonaws.com/smartapp-media/sonos/someone+is+arriving.mp3", duration: "1"]
+			break;
+		case "Piano":
+			state.sound = [uri: "http://s3.amazonaws.com/smartapp-media/sonos/piano2.mp3", duration: "10"]
+			break;
+		case "Lightsaber":
+			state.sound = [uri: "http://s3.amazonaws.com/smartapp-media/sonos/lightsaber.mp3", duration: "10"]
+			break;
+		default:
+			state?.sound = [uri: "http://s3.amazonaws.com/smartapp-media/sonos/bell1.mp3", duration: "10"]
+			break;
+	}
+}
+
 /************************************************************************************************************
    Page status and descriptions 
 ************************************************************************************************************/       
