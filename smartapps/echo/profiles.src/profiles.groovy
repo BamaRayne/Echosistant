@@ -1,6 +1,7 @@
 /* 
  * Message and Control Profile - EchoSistant Add-on 
  *
+ *		3/02/2017		Version:4.0 R.0.1.0		Virtual Presence check in/out
  *		2/27/2017		Version:4.0 R.0.0.9		Bug fixes for colored lights, disable switches
  *		2/17/2017		Version:4.0 R.0.0.1		Public Release
  * 
@@ -35,7 +36,6 @@ preferences {
     		page name: "pSend"          
         	page name: "pActions"
         	page name: "pConfig"
-            
             page name: "pGroups"
         	page name: "pRestrict"
   			page name: "pDeviceControl"
@@ -62,8 +62,68 @@ def mainProfilePage() {
             	href "pRestrict", title: "General Profile Restrictions", description: pRestrictComplete(), state: pRestrictSettings()
 			}
         }
+        section("Virtual Person Actions and Controls") {
+        	href "pPerson", title: "Activate Virtual Person and Actions", description: none
+        }
 	}
 }
+page name: "pPerson"
+    def pPerson(){
+        dynamicPage(name: "pPerson", title: "", uninstall: false){
+        	section ("Manage the Profile Virtual Person Device", hideWhenEmpty: true){
+                    href "pPersonCreate", title: "Tap Here to Create the Virtual Person Device ~ '${app.label}'"
+                    href "pPersonDelete", title: "Tap Here to Delete the Virtual Person Device ~ '${app.label}'"
+                    }
+                }
+            }
+			page name: "pPersonDelete"
+				def pPersonDelete(){
+                	dynamicPage(name: "pPersonDelete", title: "", uninstall: false) {
+                		section ("") {
+                    	paragraph "You have deleted a virtual presence sensor device. You will no longer see this device in your " +
+                    	" SmartThings Mobile App.  "
+						}
+            		removeChildDevices(getAllChildDevices())
+					}
+				}
+             
+			page name: "pPersonCreate"
+				def pPersonCreate(){
+    				dynamicPage(name: "pPersonCreate", title: "", uninstall: false) {
+						section ("") {
+                    	paragraph "You have created a virtual presence sensor device. You will now see this device in your 'Things' list " +
+                    	" in the SmartThings Mobile App.  You will also see it in the 'MyDevices' tab of the IDE"
+						}
+						virtualPerson()
+                        }
+            		}
+/************************************************************************************************************
+	Virtual Presence Sensor Creation Handler
+************************************************************************************************************/
+def virtualPerson() {
+log.trace "Creating EchoSistant Virtual Person Device"
+	def deviceId = "${app.label}" 
+	def d = getChildDevice("${app.label}")
+        if(!d) {
+	            d = addChildDevice("EchoSistant", "EchoSistant Simulated Presence Sensor", deviceId, null, [label:"${app.label}"])
+	            log.trace "Echosistant Virtual Person Device - Created ${app.label} "
+            }
+         else {
+            log.trace "NOTICE!!! Found that the EVPD ${d.displayName} already exists. Only one device per profile permitted"
+        }
+	}  
+
+/************************************************************************************************************
+	Virtual Presence Sensor Deletion Handler
+************************************************************************************************************/
+private removeChildDevices(delete) {
+log.debug "The Virtual Person Device '${app.label}' has been deleted from your SmartThings environment"
+    delete.each {
+        deleteChildDevice(it.deviceNetworkId)
+    }
+}               
+
+
 page name: "pSend"
     def pSend(){
         dynamicPage(name: "pSend", title: "", uninstall: false){
@@ -1384,6 +1444,14 @@ private getCommand(text){
 	def String deviceType = (String) null
     	text = text.toLowerCase()
 
+//Virtual Presence Check In/Out
+	if (text.contains ("check") || text.contains ("checking")) {
+    	deviceType = "virPres"
+        log.debug "${app.label} has arrived and the deviceType is ${deviceType} "
+        
+        }
+
+
 //Run Profile
 	if (text.startsWith ("run profile") || text.startsWith ("execute profile") || text.startsWith("run actions") || text.startsWith ("execute actions")){
     	command = "run"
@@ -1411,7 +1479,16 @@ private getCommand(text){
         }
         log.warn "deviceType = ${deviceType}, command = ${command}"
 	}
-//LIGHT SWITCHES
+//VIRTUAL PRESENCE DEVICE
+	if (deviceType == "virPres") {
+    def deviceId = "${app.label}" 
+    if (deviceId) {
+    	log.debug "I think this is where I am and the device is the ${deviceId} "
+    	command = text.contains(" checking") ? "checking" : "undefined"
+    //    deviceType = "virPres"
+        }
+        }
+//LIGHT SWITCHES        
 	if (gSwitches || gCustom1N || gCustom2N || gCustom3N || gCustom4N || gCustom5N){ // ***THIS SECTION MOD'D BY JASON ON 2/26/2017***
         if (gSwitches) {
                 command = text.contains(" on") ? "on" : text.contains(" off") ? "off" : "undefined"
@@ -1807,6 +1884,17 @@ def fillColorSettings() {
 		[ name: "Yellow Green",				rgb: "#9ACD32",		h: 80,		s: 61,		l: 50,	],
 	]
 }
+/************************************************************************************************************
+	Virtual Presence Sensor Deletion Handler
+************************************************************************************************************/
+
+//private removeChildDevices(delete) {
+//log.debug "The Virtual Person Device '${app.label}' has been deleted from your SmartThings environment"
+//    delete.each {
+//        deleteChildDevice(it.deviceNetworkId)
+//   }
+//}               
+ 
 /************************************************************************************************************
    Page status and descriptions 
 ************************************************************************************************************/       

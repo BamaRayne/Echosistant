@@ -1,7 +1,8 @@
 /* 
  * EchoSistant - The Ultimate Voice and Text Messaging Assistant Using Your Alexa Enabled Device.
  *
- *		3/02/2017		Version:4.0 R.0.2.2		weather 2.0 fixes
+ *		3/02/2017		Version:4.0 R.0.2.1		Virtual Presence check in/out added
+ *		3/01/2017		Version:4.0 R.0.2.0		weather 2.0
  *		2/28/2017		Version:4.0 R.0.1.0		Expanded doors & windows feedback
  *		2/27/2017		Version:4.0 R.0.0.9		SHM handling bug fixes
  *		2/17/2017		Version:4.0 R.0.0.0		Public Release 
@@ -168,10 +169,7 @@ page name: "mIntent"
                         		paragraph "You may enter multiple phone numbers separated by comma (E.G. 8045551122,8046663344)"
                             input "push", "bool", title: "Send Push Notification too?", required: false, defaultValue: false
                         }
-                     }
-					 section ("Local Weather Information") {
-            			href "mWeatherConfig", title: "Tap here to configure Weather information on Dashboard", description: "", state: complete
-					}
+                     }                     
                 }
         }
         page name: "mSecurity"    
@@ -183,7 +181,7 @@ page name: "mIntent"
                 }
 				if (cPIN){
                 	section("PIN Number Restrictions") {
-            			href "pRestrict", title: "Only prompt for PIN number...", description: pRestrictComplete(), state: pRestrictSettings()
+            			href "pRestrict", title: "Only prompt for PIN number when...", description: pRestrictComplete(), state: pRestrictSettings()
 					}
                     section ("Configure Security Options for Alexa") {
                     	def routines = location.helloHome?.getPhrases()*.label.sort()
@@ -223,15 +221,15 @@ page name: "mIntent"
             page name: "pRestrict"
                 def pRestrict(){
                     dynamicPage(name: "pRestrict", title: "", uninstall: false) {
-                        section ("Location Mode") {
-                            input "modes", "mode", title: "When Location mode is...", multiple: true, required: false
+                        section ("Mode Restrictions") {
+                            input "modes", "mode", title: "Only when mode is", multiple: true, required: false
                         }        
-                        section ("Days"){	
-                            input "days", title: "On Certain days of the week", multiple: true, required: false, submitOnChange: true,
+                        section ("Days - Audio only on these days"){	
+                            input "days", title: "Only on certain days of the week", multiple: true, required: false, submitOnChange: true,
                                 "enum", options: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
                         }
-                        section ("Time"){
-                            href "certainTime", title: "During a certain time", description: timeIntervalLabel ?: "Tap to set", state: timeIntervalLabel ? "complete" : null
+                        section ("Time - Audio only during these times"){
+                            href "certainTime", title: "Only during a certain time", description: timeIntervalLabel ?: "Tap to set", state: timeIntervalLabel ? "complete" : null
                         }   
                     }
                 }        
@@ -707,7 +705,7 @@ try {
             if (state.lastAction != null) {
                 def savedData = state.lastAction
  				//NEW PIN VALIDATION!!!!! ///// ADD THE THE usePIN variable below to run the PIN VALIDATION
- 				if(state.usePIN_D == true && modeOk && daysOk && timeOk) { //attmpting to restrict pin prompts 3/1/2017 bobby
+ 				if(state.usePIN_D == true) {
      				//RUN PIN VALIDATION PROCESS
                 	def pin = "undefined"
                		def command = "validation"
@@ -854,7 +852,7 @@ def feedbackHandler() {
 						if (deviceMatch == null && cPresence) {  // changed by Jason 2/24/2017
                             deviceMatch = cPresence.find {d -> d.label.toLowerCase() == fDevice.toLowerCase()}  	
                                	if(fOperand == "home" || fOperand == "here" || fOperand == "present" || fOperand == "in" || fOperand == "at home") {
-                                	outputTxt = deviceMatch.latestValue("presence").contains("not") ? "no, ${deviceMatch} is not ${fOperand}" : "yes, ${deviceMatch} is ${fOperand}"
+                                	outputTxt = deviceMatch.latestValue("presence")?.contains("not") ? "no, ${deviceMatch} is not ${fOperand}" : "yes, ${deviceMatch} is ${fOperand}"
 									}
                                 }    
                         if (deviceMatch == null && cWater) {// changed by Jason 2/24/2017
@@ -1781,8 +1779,8 @@ def controlDevices() {
                                 deviceMatch = cMiscDev.find {s -> s.label.toLowerCase() == ctDevice.toLowerCase()}                 
                                 if(deviceMatch) { 
                             //>>>>>>>  CHECK FOR ENABLED PIN <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-                                if(cPIN && state.usePIN_S == true && deviceMatch){ //(modeOk && daysOk && timeOk) { //attempting to restrict pin # 3/1/17 bobby
-                                    if (debug) log.warn "PIN enabled for Switch '${deviceMatch}', modeOk = ${modeOk}"
+                                if(cPIN && state.usePIN_S == true && deviceMatch) {
+                                    if (debug) log.warn "PIN enabled for Switch '${deviceMatch}'"
                                     device = deviceMatch.label
                                     if (command == "disable" || command == "deactivate"|| command == "stop") {command = "off"}
                                     if (command == "enable" || command == "activate"|| command == "start") {command = "on"}	                        
@@ -1959,7 +1957,21 @@ def controlDevices() {
                     }
                 }
             }
-    // >>>> DOORS CONTROL <<<<        
+    // >>>> PRESENCE CHECKIN/CHECKOUT CONTROL <<<<        
+            else if (deviceType == "cPresence") {
+                if (settings.cPresence?.size()>0) {     
+                    def deviceMatch = cPresence.find {f -> f.label.toLowerCase() == ctDevice.toLowerCase()}
+                    if (deviceMatch) {
+                            device = deviceMatch
+                                delay = false
+                                data = [type: "cPresence", command: command, device: device, unit: ctUnit, num: ctNum, delay: delay]
+                                outputTxt = controlHandler(data)
+                                return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
+                            }
+                       }
+                  }     
+                            
+// >>>> DOORS CONTROL <<<<        
             else if (deviceType == "door") {
                 if (settings.cDoor?.size()>0) {          
                     def deviceMatch = cDoor.find {d -> d.label.toLowerCase() == ctDevice.toLowerCase()}
@@ -2135,7 +2147,7 @@ def controlHandler(data) {
 //Received device control handler data: (deviceType)= cSwitch',
 //(deviceCommand) = 'undefined', (deviceD) = 'Entertainment Left', (unitU) = 'read', (numN) = '0', (delayD) = 'false'
 	state.pTryAgain = false
-	if (deviceType == "cSwitch" || deviceType == "cMiscDev"  ) {
+	if (deviceType == "cSwitch" || deviceType == "cMiscDev") {
     	if (deviceCommand == "on" || deviceCommand == "off") {
             if (delayD == true ) {
                 if(deviceType == "cSwitch") {deviceD = cSwitch?.find {s -> s.label.toLowerCase() == deviceD.toLowerCase()}}
@@ -2355,6 +2367,17 @@ def controlHandler(data) {
         else if (deviceCommand == "unlock") result = "Ok, unlocking the  " + deviceD                    
         if (delayD == false) {return result}  
 	}
+	else if (deviceType == "cPresence") {
+    	if (delayD == true || state.pinTry != null) {  
+        	deviceD = cPresence.find {l -> l.label.toLowerCase() == deviceD.toLowerCase()} 
+        }
+        state.pinTry = null
+   		deviceD."${deviceCommand}"()
+        if (deviceCommand == "arrived") result = "Ok, checking in " + deviceD
+        else if (deviceCommand == "departed") result = "Ok, checking out  " + deviceD                    
+        if (delayD == false) {return result}  
+	}
+    
     else if (deviceType == "cDoor" || deviceType == "cRelay" ) {
     	def cmd = deviceCommand
         if(degug) log.warn "pinTry = ${state.pinTry}"
@@ -2595,20 +2618,18 @@ def controlSecurity(param) {
                     if (secCommand == "off"){
                     delay = false
                     data = [command: secCommand, delay: delay]
-                    if(modeOk && daysOk && timeOk){
-                        if(cPIN && state.usePIN_SHM == true){ // attempting pin restriction 3/1/17 bobby
-                            state.lastAction = data
-                            state.pContCmdsR = "security"
-                            //RUN PIN VALIDATION PROCESS
-                            def pin = "undefined"
-                            command = "validation"
-                            def unit = "security"
-                            outputTxt = pinHandler(pin, command, num, unit)
-                            pPIN = true
-                            if (state.pinTry == 3) {pPIN = false}
-                            log.warn "try# ='${state.pinTry}'"
-                            return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
-                        }
+                    if(cPIN && state.usePIN_SHM == true){
+                        state.lastAction = data
+                        state.pContCmdsR = "security"
+                        //RUN PIN VALIDATION PROCESS
+                        def pin = "undefined"
+                        command = "validation"
+                        def unit = "security"
+                        outputTxt = pinHandler(pin, command, num, unit)
+                        pPIN = true
+                        if (state.pinTry == 3) {pPIN = false}
+                        log.warn "try# ='${state.pinTry}'"
+                        return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
                     }
                     else {               
                         outputTxt = securityHandler(data)
@@ -2663,8 +2684,7 @@ def controlSecurity(param) {
 					def mMatch = m.replaceAll("[^a-zA-Z0-9]", "")
                     if(mMatch.toLowerCase() == control.toLowerCase()) {
                         if(currMode !=  m) {
-                    		if(modeOk && daysOk && timeOk){
-                            if(cPIN && state.usePIN_Mode == true) { // pin restriction 3/1/17 bobby
+                            if(cPIN && state.usePIN_Mode == true) {
                                 delay = false
                                 data = [command: m, delay: delay]
                                 state.lastAction = data
@@ -2677,7 +2697,6 @@ def controlSecurity(param) {
                                 pPIN = true
                                 if (state.pinTry == 3) {pPIN = false}
                                 log.warn "try# ='${state.pinTry}'"                        
-                            }
                             }
                             else { 
                                 location.setMode(m)
@@ -2705,7 +2724,7 @@ def controlSecurity(param) {
             	if(rMatch.toLowerCase() == control.toLowerCase()){
                    		if(cPIN && cRoutines) {
                          	def pinRoutine =  cRoutines.find {r1 -> r1 == r}  
-                            if (pinRoutine && modeOk && daysOk && timeOk) { //restriction pin 3/1/17 bobby
+                            if (pinRoutine) {
                                 delay = false
                                 data = [command: r, delay: delay]
                                 state.lastAction = data
@@ -2905,10 +2924,10 @@ private getAllOk() {
 }
 private getModeOk() {
     def result = !modes || modes?.contains(location.mode)
-	if(debug) log.debug "modeOk = $result"
+	if(parent.debug) log.debug "modeOk = $result"
     result
 } 
-private getDaysOk() {
+private getDayOk() {
     def result = true
 if (days) {
 		def df = new java.text.SimpleDateFormat("EEEE")
@@ -2921,7 +2940,7 @@ if (days) {
 		def day = df.format(new Date())
 		result = days.contains(day)
 	}
-	if(debug) log.debug "daysOk = $result"
+	if(parent.debug) log.debug "daysOk = $result"
 	result
 }
 private getTimeOk() {
@@ -2942,7 +2961,7 @@ private getTimeOk() {
 		else if(endingX == "Sunset") stop = s.sunset.time
 		else if(ending) stop = timeToday(ending,location.timeZone).time
 		result = start < stop ? currTime >= start && currTime <= stop : currTime <= stop || currTime >= start
-	if (debug) log.trace "getTimeOk = $result."
+	if (parent.debug) log.trace "getTimeOk = $result."
     }
     return result
 }
@@ -2967,6 +2986,9 @@ private timeIntervalLabel() {
 	else if (starting && endingX == "Sunset") result = hhmm(starting) + " to Sunset" + offset(endSunsetOffset)
 	else if (starting && ending) result = hhmm(starting) + " to " + hhmm(ending, "h:mm a z")
 }
+
+
+
 /******************************************************************************
 	 FEEDBACK SUPPORT - GET AVERAGE										
 ******************************************************************************/
@@ -3093,9 +3115,9 @@ private deviceMatchHandler(fDevice) {
         deviceMatch =cPresence?.find {d -> d.label.toLowerCase() == fDevice.toLowerCase()}
             if(deviceMatch)	{
                 deviceType = "cPresence"
-                currState = deviceMatch.currentState("presence").value 
-                stateDate = deviceMatch.currentState("presence").date
-                stateTime = deviceMatch.currentState("presence").date.time
+                currState = deviceMatch.currentState("presence")?.value 
+                stateDate = deviceMatch.currentState("presence")?.date
+                stateTime = deviceMatch.currentState("presence")?.date.time
                 def timeText = getTimeVariable(stateTime, deviceType)
                 return ["deviceMatch" : deviceMatch, "deviceType": deviceType, "currState": currState, "tText": timeText.tText, , "mainCap": "presence"]
         	}
@@ -3320,7 +3342,7 @@ try {
     		def startTimeAdj = new Date(stateTime + location.timeZone.rawOffset)
     			startTimeAdj = startTimeAdj.getTime()
     		int hours = (int)((endTime - startTimeAdj) / (1000 * 60 * 60) )
-    		//int minutes = (int)((endTime - startTime) / ( 60 * 1000))
+    		int minutes = (int)((endTime - startTime) / ( 60 * 1000))
                 if ( hours > cInactiveDev ) {
                     DeviceDetails << d.displayName 
                 }
@@ -3529,7 +3551,16 @@ private getCommand(command, unit) {
                 command = "setLevel"
                 deviceType = "general"
             }
-       }
+       }     
+   //case "Virtual Person     
+            if (command == "check in" || command == "checking in"|| command == "checked in" || command == "arrived" || command == "arriving"){
+            	command = "arrived"
+                deviceType = "cPresence" //"virtualPerson"
+            }
+            if (command == "check out" || command == "checking out"|| command == "checked out"){
+            	command = "departed"
+                deviceType = "cPresence"
+            }    
 	//case "Color Commands": 
     		if (command == "reading" || command == "read" || command == "studying"){ 
             	command = "read" 
@@ -4497,15 +4528,6 @@ def mSecurityD() {def text = "Tap here to configure settings"
     	text = "Configured"}
     	else text = "Tap to Configure"
 		text}
-def pRestrictSettings(){ def result = "" 
-	if (modes || runDay || hues ||startingX || endingX) {
-    	result = "complete"}
-        result}
-def pRestrictComplete() {def text = "Tap here to configure" 
-    if (modes || runDay || hues ||startingX || endingX) {
-    	text = "Configured"}
-    	else text = "Tap here to Configure"
-        text}
         
       
 
