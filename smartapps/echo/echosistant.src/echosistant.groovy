@@ -4413,6 +4413,15 @@ private getDeviceDetails() {
 // 	description = pageName + D (E.G: description: mIntentD())
 // 	state = pageName + S (E.G: state: mIntentS(),
 /************************************************************************************************************/       
+def pRestrictSettings(){ def result = "" 
+	if (modes || runDay || hues ||startingX || endingX) {
+    	result = "complete"}
+        result}
+def pRestrictComplete() {def text = "Tap here to configure" 
+    if (modes || runDay || hues ||startingX || endingX) {
+    	text = "Configured"}
+    	else text = "Tap here to Configure"
+        text}
 /** Main Profiles Page **/
 def mIntentS(){
 	def result = ""
