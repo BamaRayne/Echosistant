@@ -1934,6 +1934,13 @@ def controlDevices() {
                     def deviceMatch = cLock.find {l -> l.label.toLowerCase() == ctDevice.toLowerCase()}             
                     if (deviceMatch) {
                         device = deviceMatch
+                    //Check Status
+                        def deviceR = device.label
+                        def cLockStatus = device.lockState.value
+                            if ((command == "lock" && cLockStatus == "locked") || (command == "unlock" && cLockStatus == "unlocked")) {
+                            outputTxt = "The " + device + " is already ${cLockStatus}"
+                            return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
+                        }
                         if(state.usePIN_L == true) { // (THIS PIN VALIDATION HAS BEEN Deprecated as of 1/23/2017)
                             if (debug) log.warn "PIN protected device type - '${deviceType}'"               		
                             delay = false
@@ -1959,7 +1966,7 @@ def controlDevices() {
                                 data = [type: "cLock", command: command, device: device, unit: ctUnit, num: ctNum, delay: delay]
                                 outputTxt = controlHandler(data)
                                 return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
-                            }
+            				}
                         }
                     }
                 }
