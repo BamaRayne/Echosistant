@@ -1,6 +1,7 @@
 /* 
  * EchoSistant - The Ultimate Voice and Text Messaging Assistant Using Your Alexa Enabled Device.
  *
+ *		3/04/2017		Version:4.0 R.0.2.4		added window shades
  *		3/03/2017		Version:4.0 R.0.2.3		misc. bug fixes
  *		3/02/2017		Version:4.0 R.0.2.1		Virtual Presence check in/out added
  *		3/01/2017		Version:4.0 R.0.2.0		weather 2.0
@@ -98,8 +99,9 @@ page name: "mIntent"
                     input "cSwitch", "capability.switch", title: "Allow These Switch(es)...", multiple: true, required: false, submitOnChange: true                   
                     input "cFan", "capability.switchLevel", title: "Allow These Fan(s)...", multiple: true, required: false
                 }     
-                section (c, hideWhenEmpty: true){ 
+                section ("Garage Doors, Window Coverings and Locks", hideWhenEmpty: true){ 
                 	input "cLock", "capability.lock", title: "Allow These Lock(s)...", multiple: true, required: false, submitOnChange: true
+                	input "cWindowCover", "capability.windowShade", title: "Allow These Window Covering Devices...", multiple: true, required: false, submitOnChange: true                    
                     input "cDoor", "capability.garageDoorControl", title: "Allow These Garage Door(s)...", multiple: true, required: false, submitOnChange: true     
 					input "cRelay", "capability.switch", title: "Allow These Garage Door Relay(s)...", multiple: false, required: false, submitOnChange: true
                     if (cRelay) input "cContactRelay", "capability.contactSensor", title: "Allow This Contact Sensor to Monitor the Garage Door Relay(s)...", multiple: false, required: false                
@@ -1995,6 +1997,8 @@ def controlDevices() {
             else if (deviceType == "door") {
                 if (settings.cDoor?.size()>0) {          
                     def deviceMatch = cDoor.find {d -> d.label.toLowerCase() == ctDevice.toLowerCase()}
+                    	if (!deviceMatch) cWindowCover.find {d -> d.label.toLowerCase() == ctDevice.toLowerCase()}
+                    log.warn "matched device deviceMatch ${deviceMatch.label}"
                     if (deviceMatch) {
                         device = deviceMatch
                     //Check Status
