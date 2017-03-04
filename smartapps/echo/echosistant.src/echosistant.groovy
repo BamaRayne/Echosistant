@@ -1,7 +1,7 @@
 /* 
  * EchoSistant - The Ultimate Voice and Text Messaging Assistant Using Your Alexa Enabled Device.
  *
- *		3/04/2017		Version:4.0 R.0.2.4b		added window shades
+ *		3/04/2017		Version:4.0 R.0.2.4b	added window shades/ bug fix for locks feedback
  *		3/03/2017		Version:4.0 R.0.2.3		misc. bug fixes
  *		3/02/2017		Version:4.0 R.0.2.1		Virtual Presence check in/out added
  *		3/01/2017		Version:4.0 R.0.2.0		weather 2.0
@@ -848,7 +848,15 @@ def feedbackHandler() {
                         if (deviceMatch == null && cContact) {// changed by Jason 2/24/2017
                             deviceMatch = cContact?.find {d -> d.label.toLowerCase() == fDevice.toLowerCase()}
                             if(deviceMatch) outputTxt =  deviceMatch.latestValue("contact").contains(fOperand) ? "yes, the ${deviceMatch} is ${fOperand}" : "no, the ${deviceMatch} is not ${fOperand}"
-                        }                    
+                        } 
+                    	if (deviceMatch == null && cLock) {// changed by Jason 2/24/2017
+                        	deviceMatch = cLock?.find {d -> d.label.toLowerCase() == fDevice.toLowerCase()}
+                        	if(deviceMatch) {
+                            	currState = deviceMatch.latestValue("lock")
+                            	currState = currState == "${fOperand}" ? "yes, the ${deviceMatch} is ${fOperand}" : "no, the ${deviceMatch} is not ${fOperand}"
+                            	outputTxt =  currState
+                        	}
+                    	}                        
                         if (deviceMatch == null && cSwitch) {// changed by Jason 2/24/2017
                             deviceMatch = cSwitch?.find {d -> d.label.toLowerCase() == fDevice.toLowerCase()} 
                             if(deviceMatch) outputTxt = deviceMatch.latestValue("switch").contains(fOperand) ? "yes, the ${deviceMatch} is ${fOperand}" : "no, the ${deviceMatch} is not ${fOperand}"
