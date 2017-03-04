@@ -1,7 +1,7 @@
 /* 
  * EchoSistant - The Ultimate Voice and Text Messaging Assistant Using Your Alexa Enabled Device.
  *
- *		3/04/2017		Version:4.0 R.0.2.4a	added window shades
+ *		3/04/2017		Version:4.0 R.0.2.4	added window shades
  *		3/03/2017		Version:4.0 R.0.2.3		misc. bug fixes
  *		3/02/2017		Version:4.0 R.0.2.1		Virtual Presence check in/out added
  *		3/01/2017		Version:4.0 R.0.2.0		weather 2.0
@@ -1995,9 +1995,9 @@ def controlDevices() {
                             
 // >>>> DOORS CONTROL <<<<        
             else if (deviceType == "door") {
-                if (settings.cDoor?.size()>0) {          
+                if (settings.cDoor?.size()>0 || cWindowCover) {          
                     def deviceMatch = cDoor.find {d -> d.label.toLowerCase() == ctDevice.toLowerCase()}
-                    	if (!deviceMatch) cWindowCover.find {d -> d.label.toLowerCase() == ctDevice.toLowerCase()}
+                    	if (!deviceMatch) deviceMatch = cWindowCover.find {d -> d.label.toLowerCase() == ctDevice.toLowerCase()}
                     log.warn "matched device deviceMatch ${deviceMatch.label}"
                     if (deviceMatch) {
                         device = deviceMatch
