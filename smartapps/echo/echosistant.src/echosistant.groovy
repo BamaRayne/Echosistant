@@ -1,7 +1,7 @@
 /* 
  * EchoSistant - The Ultimate Voice and Text Messaging Assistant Using Your Alexa Enabled Device.
  *
- *		3/04/2017		Version:4.0 R.0.2.4		added window shades
+ *		3/04/2017		Version:4.0 R.0.2.4a	added window shades
  *		3/03/2017		Version:4.0 R.0.2.3		misc. bug fixes
  *		3/02/2017		Version:4.0 R.0.2.1		Virtual Presence check in/out added
  *		3/01/2017		Version:4.0 R.0.2.0		weather 2.0
@@ -1491,7 +1491,7 @@ def feedbackHandler() {
                 }
                 else {
                 	def deviceData = deviceMatchHandler(fDevice)
-                	deviceM  = deviceData.deviceMatch  
+                	deviceM  = deviceData?.deviceMatch  
                 	outputTxt = deviceM + " was last " + fOperand + " " + deviceData.tText
                 	return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
             	}
@@ -4159,10 +4159,21 @@ def private mGetWeather(){
         def condTodayWeather = 	condWeather.current_observation.weather
 		def condTodayhumidity = condWeather.current_observation.relative_humidity
 		def condTodayUV = condWeather.current_observation.UV
+		def condTodayZip = condWeather.current_observation.display_location.zip
+        log.warn "reporting zip code: zip ${condTodayZip}"
         if(wMetric){
 			result = "Today's forecast is " + weather.forecast.txt_forecast.forecastday[0].fcttext_metric + " Tonight it will be " + weather.forecast.txt_forecast.forecastday[1].fcttext_metric
         	result = result?.toString()
             result = result?.replaceAll(/([0-9]+)C/,'$1 degrees')
+            // clean up wind direction (South)
+            result = result?.replaceAll(~/ SSW /, " South-southwest ").replaceAll(~/ SSE /, " South-southeast ").replaceAll(~/ SE /, " Southeast ").replaceAll(~/ SW /, " Southwest ")
+            // clean up wind direction (North)
+            result = result?.replaceAll(~/ NNW /, " North-northwest ").replaceAll(~/ NNE /, " North-northeast ").replaceAll(~/ NE /, " Northeast ").replaceAll(~/ NW /, " Northwest ")
+            // clean up wind direction (West)
+            result = result?.replaceAll(~/ WNW /, " West-northwest ").replaceAll(~/ WSW /, " West-southwest ")
+            // clean up wind direction (East)
+            result = result?.replaceAll(~/ ENE /, " East-northeast ").replaceAll(~/ ESE /, " East-southeast ")
+            //result = result + " humidity " + sHumidity /// simple weather example
             result = result?.toLowerCase()
         }
         else {
@@ -4205,9 +4216,23 @@ def private mGetWeatherShort(period){
         def forecast = period == "today" ? todayWeather : period == "tonight" ? tonightWeather :  period == "tomorrow" ? tomorrowWeather : null
         
         if(wMetric){
-			result = period + "'s forecast is " + forecast
+        	def todayWeather_m = 	weather.forecast.txt_forecast.forecastday[0].fcttext_metric 
+        	def tonightWeather_m = weather.forecast.txt_forecast.forecastday[1].fcttext_metric 
+			def tomorrowWeather_m = weather.forecast.txt_forecast.forecastday[2].fcttext_metric 
+        	def forecast_metric_m = period == "today" ? todayWeather_m : period == "tonight" ? tonightWeather_m :  period == "tomorrow" ? tomorrowWeather_m : null
+
+			result = period + "'s forecast is " + tomorrowWeather_m
         	result = result.toString()
             result = result.replaceAll(/([0-9]+)C/,'$1 degrees')
+            // clean up wind direction (South)
+            result = result.replaceAll(~/ SSW /, " South-southwest ").replaceAll(~/ SSE /, " South-southeast ").replaceAll(~/ SE /, " Southeast ").replaceAll(~/ SW /, " Southwest ")
+            // clean up wind direction (North)
+            result = result.replaceAll(~/ NNW /, " North-northwest ").replaceAll(~/ NNE /, " North-northeast ").replaceAll(~/ NE /, " Northeast ").replaceAll(~/ NW /, " Northwest ")
+            // clean up wind direction (West)
+            result = result.replaceAll(~/ WNW /, " West-northwest ").replaceAll(~/ WSW /, " West-southwest ")
+            // clean up wind direction (East)
+            result = result.replaceAll(~/ ENE /, " East-northeast ").replaceAll(~/ ESE /, " East-southeast ")
+            //result = result + " humidity " + sHumidity /// simple weather example
             result = result.toLowerCase()
         }
         else {
@@ -4255,13 +4280,23 @@ def private mGetWeatherElements(element){
         
         if(debug) log.debug "cWeatherUpdate = ${cWeatherUpdate}, cWeatherCondition = ${cWeatherCondition}, " +
         					"cWeatherPrecipitation = ${cWeatherPrecipitation}, cWeatherWind = ${cWeatherWind},  cWeatherHum = ${cWeatherHum}, cWeatherHum = ${condTodayUV}  "    
-        
-        if		(element == "precip" || element == "rain") {result = "The chance of precipitation is " + cWeatherPrecipitation }
-        else if	(element == "wind") {result = "The wind intensity is " + cWeatherWind }
-        else if	(element == "uv") {result = "The UV index is " + condTodayUV }
-		else if	(element == "hum") {result = "The relative humidity is " + cWeatherHum }        
-		else if	(element == "cond") {result = "The current weather condition is " + cWeatherCondition }        
-        
+
+        if(wMetric){
+        //hourly metric updates
+        def cWeatherWind_m = cWeather.hourly_forecast[0].wspd.metric + " kilometers per hour"        
+        	if		(element == "precip" || element == "rain") {result = "The chance of precipitation is " + cWeatherPrecipitation }
+        	else if	(element == "wind") {result = "The wind intensity is " + cWeatherWind_m }
+        	else if	(element == "uv") {result = "The UV index is " + condTodayUV }
+			else if	(element == "hum") {result = "The relative humidity is " + cWeatherHum }        
+			else if	(element == "cond") {result = "The current weather condition is " + cWeatherCondition }
+        }
+        else{
+        	if		(element == "precip" || element == "rain") {result = "The chance of precipitation is " + cWeatherPrecipitation }
+        	else if	(element == "wind") {result = "The wind intensity is " + cWeatherWind }
+        	else if	(element == "uv") {result = "The UV index is " + condTodayUV }
+			else if	(element == "hum") {result = "The relative humidity is " + cWeatherHum }        
+			else if	(element == "cond") {result = "The current weather condition is " + cWeatherCondition }        
+		}        
         return result
 	}
 	catch (Throwable t) {
