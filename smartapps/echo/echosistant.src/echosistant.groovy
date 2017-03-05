@@ -1,7 +1,7 @@
 /* 
  * EchoSistant - The Ultimate Voice and Text Messaging Assistant Using Your Alexa Enabled Device.
  *
- *		3/04/2017		Version:4.0 R.0.2.4c	added window shades/ bug fix for locks feedback, weather schedule
+ *		3/05/2017		Version:4.0 R.0.2.5		bug fixes: window shades/ locks feedback, weather schedule
  *		3/03/2017		Version:4.0 R.0.2.3		misc. bug fixes
  *		3/02/2017		Version:4.0 R.0.2.1		Virtual Presence check in/out added
  *		3/01/2017		Version:4.0 R.0.2.0		weather 2.0
@@ -101,7 +101,7 @@ page name: "mIntent"
                 }     
                 section ("Garage Doors, Window Coverings and Locks", hideWhenEmpty: true){ 
                 	input "cLock", "capability.lock", title: "Allow These Lock(s)...", multiple: true, required: false, submitOnChange: true
-                	input "cWindowCover", "capability.windowShade", title: "Allow These Window Covering Devices...", multiple: true, required: false, submitOnChange: true                    
+                	input "cWindowCover", "capability.windowShade", title: "Allow These Window Covering Devices...", multiple: true, required: false, submitOnChange: true                   
                     input "cDoor", "capability.garageDoorControl", title: "Allow These Garage Door(s)...", multiple: true, required: false, submitOnChange: true     
 					input "cRelay", "capability.switch", title: "Allow These Garage Door Relay(s)...", multiple: false, required: false, submitOnChange: true
                     if (cRelay) input "cContactRelay", "capability.contactSensor", title: "Allow This Contact Sensor to Monitor the Garage Door Relay(s)...", multiple: false, required: false                
@@ -813,8 +813,6 @@ def feedbackHandler() {
     				"(fQuery) = '${fQuery}', (fOperand) = '${fOperand}', (fCommand) = '${fCommand}', (fIntentName) = '${fIntentName}'"}
 	def fProcess = true
     state.pTryAgain = false
-
-//try {
 		
 	fOperand = fOperand == "lights on" ? "lights" : fOperand == "switches on" ? "lights" : fOperand == "switches" ? "lights" : fOperand
 	fCommand = fOperand == "lights on" ? "on" : fOperand == "switches on" ? "on" : fCommand
@@ -824,7 +822,8 @@ def feedbackHandler() {
 		return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]       
     }
     
-    
+try {
+
     if (fDevice == "undefined" && fQuery == "undefined" && fOperand == "undefined" && fCommand == "undefined") {
 		outputTxt = "Sorry, I didn't get that, "
         state.pTryAgain = true
@@ -1362,11 +1361,11 @@ def feedbackHandler() {
                     else if (fQuery.contains ("what") || fQuery.contains ("which")) {
                         if (devList.listSize > 0) {
                         outputTxt = "The following devices have low battery levels " + devList.listBat.sort()//.unique()
-                        return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]	
+                        //return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]	
                         }
                         else {outputTxt = "There are no devices with low battery levels "
-                        return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]	
                         } 
+                        return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]	
                     }
                  }
                  else {
@@ -1404,11 +1403,11 @@ def feedbackHandler() {
                     else if (fQuery.contains ("what") || fQuery.contains ("which")) {
                         if (devList.listSize > 0) {
                         outputTxt = "The following devices have been inactive for more than " + cInactiveDev + " hours " + devList.listDev.sort()
-                        return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
+                        //return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
                         }
                         else {outputTxt = "There are no inactive devices"
+                        }
                         return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
-                        } 
                     }
             }       
 //>>> Settings >>>>                                    
@@ -1495,14 +1494,14 @@ def feedbackHandler() {
             	fCommand = fCommand == "changed" ? "change" : fCommand
             	if (fCommand == "change" && state.filterNotif !=null ) {
                 	outputTxt = state.filterNotif
-                	return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
+                	//return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
                 }
                 else {
                 	def deviceData = deviceMatchHandler(fDevice)
                 	deviceM  = deviceData?.deviceMatch  
                 	outputTxt = deviceM + " was last " + fOperand + " " + deviceData.tText
-                	return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
             	}
+                return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
             }      
             def hText = fDevice != "undefined" ? " a device named " + fDevice : " something "           
                 if (state.pShort != true){ 
@@ -1513,14 +1512,14 @@ def feedbackHandler() {
             return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
         }
     } 
-/*
+
 }catch (Throwable t) {
         log.error t
         outputTxt = "Oh no, something went wrong. If this happens again, please reach out for help!"
         state.pTryAgain = true
         return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
 }
-*/
+
 }
 /************************************************************************************************************
    DEVICE CONTROL - from Lambda via page c
@@ -1552,7 +1551,7 @@ def controlDevices() {
 	def ctProcess = true	
     state.pTryAgain = false 
 
-//try {
+try {
 
     if (ctIntentName == "main") {
     	if (ctCommand == "this is a test"){
@@ -1626,8 +1625,6 @@ def controlDevices() {
                 deviceType = getCMD.deviceType
                 command = getCMD.command
             }
-            //Control Data: (ctCommand)= run',(ctNum) = 'undefined', (ctPIN) = 'undefined', (ctDevice) = 'bedroom', (ctUnit) = 'undefined', (ctGroup) = 'profile', (ctIntentName) = 'main'
-
     		//>>> MAIN PROCESS STARTS <<<<        
              if (ctCommand == "run" && ctDevice != "undefined" && ctGroup != "undefined"){
               	def String pintentName = (String) null
@@ -2010,41 +2007,44 @@ def controlDevices() {
                             
 // >>>> DOORS CONTROL <<<<        
             else if (deviceType == "door") {
-                if (settings.cDoor?.size()>0 || cWindowCover) {          
+                if (settings.cDoor?.size()>0 || cWindowCover) {
+                	def devMatchWin = null
                     def deviceMatch = cDoor.find {d -> d.label.toLowerCase() == ctDevice.toLowerCase()}
-                    	if (!deviceMatch) deviceMatch = cWindowCover.find {d -> d.label.toLowerCase() == ctDevice.toLowerCase()}
-                    log.warn "matched device deviceMatch ${deviceMatch.label}"
-                    if (deviceMatch) {
-                        device = deviceMatch
-                    //Check Status
-                        def deviceR = device.label
-                        def cDoorStatus = device.contactState.value
-                            if (command == "open" && cDoorStatus == "open") {
-                            outputTxt = "The " + device + " is already open, would you like to close it instead?"
-                            state.pContCmdsR = "door"
-                            def actionData = ["type": "cDoor", "command": "close" , "device": deviceR, "unit": ctUnit, "num": ctNum, delay: delayD]
-                            state.lastAction = actionData
-                            return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
+                    	if (!deviceMatch) devMatchWin = cWindowCover.find {d -> d.label.toLowerCase() == ctDevice.toLowerCase()}
+                    if (deviceMatch || devMatchWin) {
+                        if (deviceMatch){
+                            device = deviceMatch
+                        //Check Status
+                            def deviceR = device?.label
+                            def cDoorStatus = device.contactState.value
+                                if (command == "open" && cDoorStatus == "open") {
+                                outputTxt = "The " + device + " is already open, would you like to close it instead?"
+                                state.pContCmdsR = "door"
+                                def actionData = ["type": "cDoor", "command": "close" , "device": deviceR, "unit": ctUnit, "num": ctNum, delay: delayD]
+                                state.lastAction = actionData
+                                return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
+                            }
+                            if (command == "close" && cDoorStatus =="closed") {
+                                outputTxt = "The " + device + " is already closed, would you like to open it instead? "
+                                state.pContCmdsR = "door"
+                                def actionData = ["type": "cDoor", "command": "open" , "device": deviceR, "unit": ctUnit, "num": ctNum, delay: delayD]
+                                state.lastAction = actionData
+                                return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
+                            }
+                            if(state.usePIN_D == true) {
+                                //PIN VALIDATION PROCESS (Deprecated code as of 1/23/2017)
+                                if (debug) log.warn "PIN protected device type - '${deviceType}'"
+                                delay = false
+                                data = [type: "cDoor", "command": command , "device": ctDevice, "unit": ctUnit, "num": ctNum, delay: delay]
+                                state.savedPINdata = data
+                                outputTxt = "Pin number please"
+                                pPIN = true
+                                state.pinTry = 0
+                                return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
+                            }
                         }
-                        if (command == "close" && cDoorStatus =="closed") {
-                            outputTxt = "The " + device + " is already closed, would you like to open it instead? "
-                            state.pContCmdsR = "door"
-                            def actionData = ["type": "cDoor", "command": "open" , "device": deviceR, "unit": ctUnit, "num": ctNum, delay: delayD]
-                            state.lastAction = actionData
-                            return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
-                        }
-                        if(state.usePIN_D == true) {
-                            //PIN VALIDATION PROCESS (Deprecated code as of 1/23/2017)
-                            if (debug) log.warn "PIN protected device type - '${deviceType}'"
-                            delay = false
-                            data = [type: "cDoor", "command": command , "device": ctDevice, "unit": ctUnit, "num": ctNum, delay: delay]
-                            state.savedPINdata = data
-                            outputTxt = "Pin number please"
-                            pPIN = true
-                            state.pinTry = 0
-                            return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
-                        }
-                        else {                 
+                        else { 
+                        	device = devMatchWin ? devMatchWin : device
                             if (ctNum && ctUnit == "minutes") {
                                 delay = true
                                 data = [type: "cDoor", command: command, device: device, unit: ctUnit, num: ctNum, delay: delay]
@@ -2159,14 +2159,14 @@ def controlDevices() {
 		state.pTryAgain = true
 		return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
     }
-/*
+
        } catch (Throwable t) {
         log.error t
         outputTxt = "Oh no, something went wrong. If this happens again, please reach out for help!"
         state.pTryAgain = true
         return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
 	}
-*/    
+    
 }
 /************************************************************************************************************
    DEVICE CONTROL HANDLER
@@ -2183,8 +2183,6 @@ def controlHandler(data) {
     if (debug) log.debug 	"Received device control handler data: " +
         					" (deviceType)= ${deviceType}',(deviceCommand) = '${deviceCommand}', (deviceD) = '${deviceD}', " +
                             "(unitU) = '${unitU}', (numN) = '${numN}', (delayD) = '${delayD}'"  
-//Received device control handler data: (deviceType)= cSwitch',
-//(deviceCommand) = 'undefined', (deviceD) = 'Entertainment Left', (unitU) = 'read', (numN) = '0', (delayD) = 'false'
 	state.pTryAgain = false
 	if (deviceType == "cSwitch" || deviceType == "cMiscDev") {
     	if (deviceCommand == "on" || deviceCommand == "off") {
@@ -2422,9 +2420,9 @@ def controlHandler(data) {
         if(degug) log.warn "pinTry = ${state.pinTry}"
         if (delayD == true || state.pinTry != null || state.pContCmdsR == "door" ) {  
             def deviceR = cRelay.find {r -> r.label.toLowerCase() == deviceD.toLowerCase()}
-			deviceD = cDoor.find {d -> d.label.toLowerCase() == deviceD.toLowerCase()}   
-            if (deviceR) {deviceD = deviceR}
-            
+            def deviceW = cWindowCover.find {w -> w.label.toLowerCase() == deviceD.toLowerCase()}
+            deviceD = cDoor.find {d -> d.label.toLowerCase() == deviceD.toLowerCase()}   
+            if (deviceR || deviceW ) {deviceD = deviceR ?: deviceW}
         }
         if (deviceType == "cRelay") {
 		     cmd = "on"
@@ -2629,10 +2627,7 @@ def controlSecurity(param) {
         					 " (type) = '${type}', (sControl) = '${control}',(pintentName) = '${pintentName}'"
 	def sProcess = true
     state.pTryAgain = false
-//try {	
-	
-    //System Control Data: (sCommand)= disable,(sNum) = '0', (sPIN) = 'null', (type) = 'null', (sControl) = 'null',(pintentName) = 'security'
-    
+try {   
     if (pintentName == "security") { 
     log.warn "security intent"
 		if (ptts == "this is a test"){
@@ -2805,14 +2800,14 @@ def controlSecurity(param) {
             state.pTryAgain = true
             return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
     }
-/*
+
     } catch (Throwable t) {
         log.error t
         outputTxt = "Oh no, something went wrong. If this happens again, please reach out for help!"
         state.pTryAgain = true
         return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
 	}
-*/
+
 }
 /************************************************************************************************************
 	SECURITY CONTROL HANDLER
