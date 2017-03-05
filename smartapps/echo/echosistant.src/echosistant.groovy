@@ -1,7 +1,7 @@
 /* 
  * EchoSistant - The Ultimate Voice and Text Messaging Assistant Using Your Alexa Enabled Device.
  *
- *		3/04/2017		Version:4.0 R.0.2.4b	added window shades/ bug fix for locks feedback
+ *		3/04/2017		Version:4.0 R.0.2.4c	added window shades/ bug fix for locks feedback, weather schedule
  *		3/03/2017		Version:4.0 R.0.2.3		misc. bug fixes
  *		3/02/2017		Version:4.0 R.0.2.1		Virtual Presence check in/out added
  *		3/01/2017		Version:4.0 R.0.2.0		weather 2.0
@@ -573,7 +573,7 @@ mappings {
 ************************************************************************************************************/
 def installed() {
 	if (debug) log.debug "Installed with settings: ${settings}"
-    runEvery1Hour(mGetCurrentWeather)
+    runEvery1Hour(mGetWeatherUpdates)
 }
 def updated() { 
 	if (debug) log.debug "Updated with settings: ${settings}"
@@ -582,7 +582,7 @@ def updated() {
 }
 def initialize() {
         //WEATHER UPDATES
-        runEvery1Hour(mGetCurrentWeather)
+        runEvery1Hour(mGetWeatherUpdates)
         state.lastWeatherCheck
         state.lastWeatherUpdate
         //CoRE
