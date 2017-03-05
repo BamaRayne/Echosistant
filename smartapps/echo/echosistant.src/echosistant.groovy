@@ -1,7 +1,7 @@
 /* 
  * EchoSistant - The Ultimate Voice and Text Messaging Assistant Using Your Alexa Enabled Device.
  *
- *		3/05/2017		Version:4.0 R.0.2.5		bug fixes: window shades/ locks feedback, weather schedule
+ *		3/05/2017		Version:4.0 R.0.2.5a	bug fixes: window shades/ locks feedback, weather schedule, lock pin only for unlock command
  *		3/03/2017		Version:4.0 R.0.2.3		misc. bug fixes
  *		3/02/2017		Version:4.0 R.0.2.1		Virtual Presence check in/out added
  *		3/01/2017		Version:4.0 R.0.2.0		weather 2.0
@@ -230,13 +230,16 @@ page name: "mIntent"
                         section ("Mode Restrictions") {
                             input "modes", "mode", title: "Only when mode is", multiple: true, required: false
                         }        
-                        section ("Days - Audio only on these days"){	
+                        section ("Days - only on these days"){	
                             input "days", title: "Only on certain days of the week", multiple: true, required: false, submitOnChange: true,
                                 "enum", options: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
                         }
-                        section ("Time - Audio only during these times"){
+                        section ("Time - only during these times"){
                             href "certainTime", title: "Only during a certain time", description: timeIntervalLabel ?: "Tap to set", state: timeIntervalLabel ? "complete" : null
-                        }   
+                        }
+                        section ("State - only when opening/unlocking "){
+                            input "pinOnOpen", "bool", title: "Only when opening/unlocking a door", default: false, submitOnChange: true
+                        }
                     }
                 }        
         page name: "mSecuritySuite"    
@@ -1092,7 +1095,7 @@ try {
                     outputTxt = mGetWeatherShort(period)       
                     //return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]				
             }
-			if (fOperand.contains("update")){
+			if (fOperand.contains("update") ||fOperand.contains("change") || fCommand.contains("change") ){
 				outputTxt = mGetWeatherUpdates()
                 //	return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]				
             }
@@ -1934,11 +1937,12 @@ try {
                     //Check Status
                         def deviceR = device.label
                         def cLockStatus = device.lockState.value
+                        def pinCheck = (pinOnOpen == true && cLockStatus == "unlocked") ? true : (pinOnOpen == false || pinOnOpen == null) ? true : false 
                             if ((command == "lock" && cLockStatus == "locked") || (command == "unlock" && cLockStatus == "unlocked")) {
                             outputTxt = "The " + device + " is already ${cLockStatus}"
                             return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
                         }
-                        if(state.usePIN_L == true) { // (THIS PIN VALIDATION HAS BEEN Deprecated as of 1/23/2017)
+                        if(state.usePIN_L == true && pinCheck == true) { // (THIS PIN VALIDATION HAS BEEN Deprecated as of 1/23/2017)
                             if (debug) log.warn "PIN protected device type - '${deviceType}'"               		
                             delay = false
                             data = [type: "cLock", "command": command , "device": ctDevice, "unit": ctUnit, "num": ctNum, delay: delay]
@@ -2017,6 +2021,8 @@ try {
                         //Check Status
                             def deviceR = device?.label
                             def cDoorStatus = device.contactState.value
+                            def pinCheck = (pinOnOpen == true && cDoorStatus == "close") ? true : (pinOnOpen == false || pinOnOpen == null) ? true : false 
+                            log.warn " pinCheck = ${pinCheck}"
                                 if (command == "open" && cDoorStatus == "open") {
                                 outputTxt = "The " + device + " is already open, would you like to close it instead?"
                                 state.pContCmdsR = "door"
@@ -2031,7 +2037,8 @@ try {
                                 state.lastAction = actionData
                                 return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
                             }
-                            if(state.usePIN_D == true) {
+                            if(state.usePIN_D == true && pinCheck == true) {
+                            	if(pinOnOpen == true)
                                 //PIN VALIDATION PROCESS (Deprecated code as of 1/23/2017)
                                 if (debug) log.warn "PIN protected device type - '${deviceType}'"
                                 delay = false
@@ -2068,10 +2075,12 @@ try {
                     def deviceMatch = cRelay.find {s -> s.label.toLowerCase() == ctDevice.toLowerCase()}             
                     if (deviceMatch) {
                         device = deviceMatch
+                        def pinCheck
                         if (cContactRelay) {
                             if (debug) log.debug "Garage Door has a contact sensor"
                             def deviceR = device.label
-                             def cCRelayValue = cContactRelay.contactState.value
+                            def cCRelayValue = cContactRelay.contactState.value
+                            	pinCheck = (pinOnOpen == true && cCRelayValue == "close") ? true : (pinOnOpen == false || pinOnOpen == null) ? true : false 
                                 if (command == "open" && cCRelayValue == "open") {
                                     outputTxt = "The " + device + " is already open, would you like to close it instead?"
                                     state.pContCmdsR = "door"
@@ -2088,7 +2097,8 @@ try {
                                  }
                              }
                             //PIN VALIDATION PROCESS (Deprecated code as of 1/23/2017)
-                            if(state.usePIN_D == true) {
+                            log.warn " pinCheck = ${pinCheck}"
+                            if(state.usePIN_D == true && pinCheck == true) {
                                 if (debug) log.warn "PIN protected device type - '${deviceType}'"
                                 delay = false
                                 data = [type: "cRelay", "command": command , "device": ctDevice, "unit": ctUnit, "num": ctNum, delay: delay]
@@ -4370,7 +4380,7 @@ def mGetWeatherUpdates(){
     def weatherData = [:]
     def data = [:]
    	def result
-    try {
+    //try {
         //hourly updates
             def cWeather = getWeatherFeature("hourly", settings.wZipCode)
             def cWeatherCondition = cWeather.hourly_forecast[0].condition
@@ -4426,11 +4436,13 @@ def mGetWeatherUpdates(){
                         }
                 }
                 log.info "refreshed hourly weather forecast: past forecast = ${pastWeather}; new forecast = ${weatherData}"  
+    /*
     }
 	catch (Throwable t) {
 	log.error t
 	return result
 	}
+    */
 }
 /*^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 X 																											X
