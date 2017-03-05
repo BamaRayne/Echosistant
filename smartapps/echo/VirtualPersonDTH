@@ -2,6 +2,8 @@
  *
  * Taken from Infofiend's GitHub which was Taken from SmartThings base code, enhanced and bugfixed by RBoy
  *
+ * All work for this DTH code is credited to Tony @Infofiend.  Modifications performed by @BamaRayne to make
+ * the code compatible with EchoSistant.
  */
 metadata {
 	// Automatically generated. Make future change here.
@@ -12,12 +14,12 @@ metadata {
 
 		command "arrived"
 		command "departed"
-        command "away"
+        command "not present"
         command "present"
 	}
 
 	simulator {
-		status "present": "presence: 1"
+		status "presence": "presence: 1"
 		status "not present": "presence: 0"
 	}
 
