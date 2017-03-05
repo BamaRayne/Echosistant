@@ -918,6 +918,7 @@ def profileEvaluate(params) {
                                             activityId = activity.id
                                         }    	
                                     }
+                                    log.warn "starting activity id = ${activityId}, command = ${command}, lastActivity ${state.lastActivity}"
                                     sMedia."${command}"(activityId)
                                     sMedia.refresh()
                                     outputTxt = "Ok, starting " + state.lastActivity + " activity "
