@@ -3,7 +3,7 @@
  *
  *		DON'T FORGET TO UPDATE LINE 38!!!!!
  *
- *		3/06/2017		Version:4.0 R.0.2.6a	minor bug fixes, added html rendering for custom slots
+ *		3/06/2017		Version:4.0 R.0.2.6b	minor bug fixes, added html rendering for custom slots
  *		3/05/2017		Version:4.0 R.0.2.5a	bug fixes: window shades/ locks feedback, weather schedule, lock pin only for unlock command
  *		3/03/2017		Version:4.0 R.0.2.3		misc. bug fixes
  *		3/02/2017		Version:4.0 R.0.2.1		Virtual Presence check in/out added
@@ -1595,6 +1595,7 @@ def controlDevices() {
         def String activityId = (String) "undefined"
         def delay = false
         def data
+        def device
      
         ctDevice = ctDevice.replaceAll("[^a-zA-Z0-9 ]", "")
 
