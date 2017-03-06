@@ -3,7 +3,7 @@
  *
  *		DON'T FORGET TO UPDATE LINE 38!!!!!
  *
- *		3/06/2017		Version:4.0 R.0.2.6		minor bug fixes
+ *		3/06/2017		Version:4.0 R.0.2.6a	minor bug fixes, added html rendering for custom slots
  *		3/05/2017		Version:4.0 R.0.2.5a	bug fixes: window shades/ locks feedback, weather schedule, lock pin only for unlock command
  *		3/03/2017		Version:4.0 R.0.2.3		misc. bug fixes
  *		3/02/2017		Version:4.0 R.0.2.1		Virtual Presence check in/out added
@@ -38,7 +38,7 @@ definition(
 	UPDATE LINE 38 TO MATCH RECENT RELEASE
 **********************************************************************************************************************************************/
 private release() {
-	def text = "R.0.2.6"
+	def text = "R.0.2.6a"
 }
 /**********************************************************************************************************************************************/
 preferences {   
@@ -276,7 +276,6 @@ page name: "mIntent"
 				if (notifyOn) {
         			section ("Manage Notifications") {
   						href "mNotifyProfile", title: "View and Create Notification Profiles...", description: none
-            			//,image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_devices.png"            			
 				}
 			}            
 		}
@@ -356,20 +355,28 @@ page name: "mSettings"
         page name: "mDeviceDetails"
             def mDeviceDetails(){
                     dynamicPage(name: "mDeviceDetails", uninstall: false) {
-                    section ("LIST_OF_DEVICES") { 
-                        def DeviceList = getDeviceDetails()
-                            paragraph ("${DeviceList}")
-                            log.info "\nLIST_OF_DEVICES \n${DeviceList}"
-                                }
-                            }
-                        }    
+                        section ("LIST_OF_DEVICES") { 
+                            def DeviceList = getDeviceDetails()
+                            def url = "${getApiServerUrl()}/api/smartapps/installations/${app.id}/devList?access_token=${state.accessToken}"
+                                paragraph ("${DeviceList}")
+                                log.info "\nLIST_OF_DEVICES \ncopy/paste this link in a browser: " + url +
+                                "\n${DeviceList}"	
+                                href "", title: "Open LIST_OF_DEVICES in a Browser", style: "external", url: url, required: false, 
+                                description: "Click here"
+                         }
+                	}
+         }
          page name: "mControls"
             def mControls(){
                     dynamicPage(name: "mControls", uninstall: false) {
                     section ("LIST_OF_SYSTEM_CONTROLS") { 
                         def DeviceList = getControlDetails()
+                        def url = "${getApiServerUrl()}/api/smartapps/installations/${app.id}/cntrlList?access_token=${state.accessToken}"
                             paragraph ("${DeviceList}")
-                            log.info "\nLIST_OF_SYSTEM_CONTROLS \n${DeviceList}"
+                            log.info "\nLIST_OF_SYSTEM_CONTROLS \ncopy/paste this link in a browser: " + url +
+                            "\n${DeviceList}"
+                            href "", title: "Open LIST_OF_SYSTEM_CONTROLS in a Browser", style: "external", url: url, required: false, 
+                            description: "Click here"                            
                                 }
                             }
                         }
@@ -578,11 +585,38 @@ def OAuthToken(){
    LAMBDA DATA MAPPING
 ************************************************************************************************************/
 mappings {
-	path("/b") { action: [GET: "processBegin"] }
+	path("/cntrlList") {action: [GET: "controlList"]}	
+    path("/devList") {action: [GET: "deviceList"]}
+    path("/b") { action: [GET: "processBegin"] }
 	path("/c") { action: [GET: "controlDevices"] }
 	path("/f") { action: [GET: "feedbackHandler"] }
     path("/s") { action: [GET: "controlSecurity"] }
 	path("/t") { action: [GET: "processTts"] }
+}
+/*************************************************************************************************************
+   LIST OF ITEMS FOR LAMBDA
+************************************************************************************************************/
+def deviceList() {
+	def DeviceList = getDeviceHtml()
+	def html = """
+			<!DOCTYPE HTML>
+				<html>
+					<head><title>LIST_OF_DEVICES</title></head>
+						<body><p>${DeviceList}</p></body>
+				</html>
+		"""
+	render contentType: "text/html", data: html                             
+}
+def controlList() {
+	def cntrlList = getControlHtml()
+    def html = """
+		<!DOCTYPE HTML>
+				<html>
+					<head><title>LIST_OF_DEVICES</title></head>
+						<body><p>${cntrlList}</p></body>
+				</html>
+		"""
+	render contentType: "text/html", data: html                             
 }
 /************************************************************************************************************
 		Base Process
@@ -4508,6 +4542,25 @@ private getControlDetails() {
         def dUniqueListString = dUniqueList.join("")
         return dUniqueListString
 }
+private getControlHtml() {
+	def sec = [] 
+	def modes = location.modes.name.sort()
+        modes?.each { m -> 
+		sec +=m +"<br>" } 
+	def routines = location.helloHome?.getPhrases()*.label.sort()
+    	routines?.each { p -> 
+			sec +=p +"<br>" } 	
+	def security = ["off", "away", "stay", "staying", "leaving","status"]
+    	security?.each { s -> 
+			sec +=s +"<br>" }     
+    	
+        def dUniqueList = sec.unique (false)
+        dUniqueList = dUniqueList.sort()
+        def dUniqueListString = dUniqueList.join("")
+        return dUniqueListString
+}
+
+
 private getDeviceDetails() {
 	def DeviceDetails = [] 
         //switches
@@ -4545,6 +4598,45 @@ private getDeviceDetails() {
         def dUniqueListString = dUniqueList.join("")
         return dUniqueListString
 }
+private getDeviceHtml() {
+	def DeviceDetails = [] 
+        //switches
+        cSwitch?.each 		{DeviceDetails << it.displayName +"<br>"}
+        cTstat?.each 		{DeviceDetails << it.displayName +"<br>"}
+        cLock?.each 		{DeviceDetails << it.displayName +"<br>"}     
+        cMotion?.each 		{DeviceDetails << it.displayName +"<br>"}
+        cContact?.each 		{DeviceDetails << it.displayName +"<br>"}
+        cPresence?.each 	{DeviceDetails << it.displayName +"<br>"}
+        cDoor?.each 		{DeviceDetails << it.displayName +"<br>"}
+        cWater?.each 		{DeviceDetails << it.displayName +"<br>"}
+        cSpeaker?.each 		{DeviceDetails << it.displayName +"<br>"}
+        cVent?.each 		{DeviceDetails << it.displayName +"<br>"}
+        cFan?.each 			{DeviceDetails << it.displayName +"<br>"}
+		cVent?.each			{DeviceDetails << it.displayName +"<br>"}
+    	cRelay?.each		{DeviceDetails << it.displayName +"<br>"}
+        cSynth?.each		{DeviceDetails << it.displayName +"<br>"}
+        cMedia?.each		{DeviceDetails << it.displayName +"<br>"}
+        cBattery?.each		{DeviceDetails << it.displayName +"<br>"}
+        cMiscDev?.each		{DeviceDetails << it.displayName +"<br>"} // added 2/1/2017 BD
+        childApps?.each 	{DeviceDetails << it.label +"<br>"}	// added 2/23/2017 BD
+        
+        if(cMedia) {
+            cMedia?.each {a ->         
+                def activities = a.currentState("activities").value
+                def activityList = new groovy.json.JsonSlurper().parseText(activities)
+                    activityList.each { it ->  
+                    	def activity = it
+                            DeviceDetails << activity.name +"<br>"
+                    }
+            }
+        }   
+        def dUniqueList = DeviceDetails.unique(false)
+        dUniqueList = dUniqueList.sort()
+        def dUniqueListString = dUniqueList.join("")
+        return dUniqueListString
+}
+
+
 /************************************************************************************************************
    Page status and descriptions 
 ************************************************************************************************************/       
