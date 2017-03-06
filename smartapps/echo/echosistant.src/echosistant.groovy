@@ -2101,6 +2101,7 @@ try {
                         }
                         else { 
                         	device = devMatchWin ? devMatchWin : device
+                            log.warn "converted device = ${device}"
                             if (ctNum && ctUnit == "minutes") {
                                 delay = true
                                 data = [type: "cDoor", command: command, device: device, unit: ctUnit, num: ctNum, delay: delay]
@@ -2125,11 +2126,12 @@ try {
                     if (deviceMatch) {
                         device = deviceMatch
                         def pinCheck
+                        def cCRelayValue
                         if (cContactRelay) {
                             if (debug) log.debug "Garage Door has a contact sensor"
                             def deviceR = device.label
-                            def cCRelayValue = cContactRelay.contactState.value
-                            	pinCheck = (pinOnOpen == true && cCRelayValue == "close") ? true : (pinOnOpen == false || pinOnOpen == null) ? true : false 
+                            	cCRelayValue = cContactRelay.contactState.value
+                            	pinCheck = (pinOnOpen == true && cCRelayValue == "closed") ? true : (pinOnOpen == false || pinOnOpen == null) ? true : false 
                                 if (command == "open" && cCRelayValue == "open") {
                                     outputTxt = "The " + device + " is already open, would you like to close it instead?"
                                     state.pContCmdsR = "door"
@@ -2146,7 +2148,7 @@ try {
                                  }
                              }
                             //PIN VALIDATION PROCESS (Deprecated code as of 1/23/2017)
-                            log.warn " pinCheck = ${pinCheck}"
+                            log.warn " pinCheck = ${pinCheck}, cCRelayValue = ${cCRelayValue} "
                             if(state.usePIN_D == true && pinCheck == true) {
                                 if (debug) log.warn "PIN protected device type - '${deviceType}'"
                                 delay = false
