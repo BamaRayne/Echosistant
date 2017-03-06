@@ -2088,7 +2088,7 @@ try {
                                 return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
                             }
                             if(state.usePIN_D == true && pinCheck == true) {
-//                            	if(pinOnOpen == true)
+//                            	if(pinOnOpen == true)  // changed by Jason on 3/6/2017
                                 //PIN VALIDATION PROCESS (Deprecated code as of 1/23/2017)
                                 if (debug) log.warn "PIN protected device type - '${deviceType}'"
                                 delay = false
@@ -2099,7 +2099,7 @@ try {
                                 state.pinTry = 0
                                 return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
                             }
-//                        }
+//                        }  // changed by Jason on 3/6/2017
                         else { 
                         	device = devMatchWin ? devMatchWin : device
                             log.warn "converted device = ${device}"
@@ -2120,7 +2120,7 @@ try {
                         }
                     }
                 }
-                }
+            }  // changed by Jason on 3/6/2017
     	// >>>> RELAYS CONTROL <<<<            
                 if (cRelay !=null) {
                 //this is needed for Garage Doors that are set up as relays
