@@ -3,7 +3,7 @@
  *
  *		DON'T FORGET TO UPDATE LINE 38!!!!!
  *
- *		3/06/2017		Version:4.0 R.0.2.6b	minor bug fixes, added html rendering for custom slots
+ *		3/06/2017		Version:4.0 R.0.2.6c	minor bug fixes, added html rendering for custom slots
  *		3/05/2017		Version:4.0 R.0.2.5a	bug fixes: window shades/ locks feedback, weather schedule, lock pin only for unlock command
  *		3/03/2017		Version:4.0 R.0.2.3		misc. bug fixes
  *		3/02/2017		Version:4.0 R.0.2.1		Virtual Presence check in/out added
@@ -38,7 +38,7 @@ definition(
 	UPDATE LINE 38 TO MATCH RECENT RELEASE
 **********************************************************************************************************************************************/
 private release() {
-	def text = "R.0.2.6b"
+	def text = "R.0.2.6c"
 }
 /**********************************************************************************************************************************************/
 preferences {   
@@ -2088,7 +2088,7 @@ try {
                                 return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
                             }
                             if(state.usePIN_D == true && pinCheck == true) {
-                            	if(pinOnOpen == true)
+//                            	if(pinOnOpen == true)
                                 //PIN VALIDATION PROCESS (Deprecated code as of 1/23/2017)
                                 if (debug) log.warn "PIN protected device type - '${deviceType}'"
                                 delay = false
@@ -2099,7 +2099,7 @@ try {
                                 state.pinTry = 0
                                 return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
                             }
-                        }
+//                        }
                         else { 
                         	device = devMatchWin ? devMatchWin : device
                             log.warn "converted device = ${device}"
@@ -2119,6 +2119,7 @@ try {
                             }
                         }
                     }
+                }
                 }
     	// >>>> RELAYS CONTROL <<<<            
                 if (cRelay !=null) {
