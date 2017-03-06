@@ -1,6 +1,9 @@
 /* 
  * EchoSistant - The Ultimate Voice and Text Messaging Assistant Using Your Alexa Enabled Device.
  *
+ *		DON'T FORGET TO UPDATE LINE 38!!!!!
+ *
+ *		3/06/2017		Version:4.0 R.0.2.6		minor bug fixes
  *		3/05/2017		Version:4.0 R.0.2.5a	bug fixes: window shades/ locks feedback, weather schedule, lock pin only for unlock command
  *		3/03/2017		Version:4.0 R.0.2.3		misc. bug fixes
  *		3/02/2017		Version:4.0 R.0.2.1		Virtual Presence check in/out added
@@ -31,6 +34,12 @@ definition(
 	iconUrl			: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/app-Echosistant.png",
 	iconX2Url		: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/app-Echosistant@2x.png",
 	iconX3Url		: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/app-Echosistant@2x.png")
+/**********************************************************************************************************************************************
+	UPDATE LINE 38 TO MATCH RECENT RELEASE
+**********************************************************************************************************************************************/
+private release() {
+	def text = "R.0.2.6"
+}
 /**********************************************************************************************************************************************/
 preferences {   
     page name: "mainParentPage"
@@ -318,7 +327,11 @@ page name: "mSettings"
                 section ("Security Token", hideable: true, hidden: true) {
                 	paragraph ("Log into the IDE on your computer and navigate to the Live Logs tab. Leave that window open, come back here, and open this section")
                     paragraph "The Security Tokens are now displayed in the Live Logs section of the IDE"
-    				log.trace "STappID = '${app.id}' , STtoken = '${state.accessToken}'"
+    				log.trace 	"\nLAMBDA CREDENTIALS (copy/paste in Lambda code (between the breaks): \n" +
+                    			"\n---------------------------------------------------------------------------------------\n" +
+                    			"\nvar STappID = '${app.id}' \n var STtoken = '${state.accessToken}'\n" +
+                   				"var url= '${apiServerUrl("/api/smartapps/installations/")}' + STappID + '/' ;\n" +
+                                "\n---------------------------------------------------------------------------------------"
                     paragraph 	"Access token:\n"+
                                                 "${state.accessToken}\n"+
                                                 "Application ID:\n"+
@@ -581,6 +594,7 @@ def installed() {
 def updated() { 
 	if (debug) log.debug "Updated with settings: ${settings}"
     unsubscribe()
+    // unschedule(null)
     initialize()
 }
 def initialize() {
@@ -654,7 +668,8 @@ def processBegin(){
         state.lambdaReleaseTxt = releaseTxt
         state.lambdaReleaseDt = versionDate
         state.lambdatextVersion = versionTxt
-    def versionSTtxt = textVersion() 
+    def versionSTtxt = textVersion()
+    def releaseSTtxt = release()
     def pPendingAns = false 
     def pContinue = state.pMuteAlexa
     def pShort = state.pShort
@@ -778,7 +793,7 @@ try {
 	}
 	if (debug){
     	log.debug "Begining Process data: (event) = '${event}', (ver) = '${versionTxt}', (date) = '${versionDate}', (release) = '${releaseTxt}'"+ 
-      	"; data sent: pContinue = '${pContinue}', pShort = '${pShort}',  pPendingAns = '${pPendingAns}', versionSTtxt = '${versionSTtxt}', outputTxt = '${outputTxt}' ; "+
+      	"; data sent: pContinue = '${pContinue}', pShort = '${pShort}',  pPendingAns = '${pPendingAns}', versionSTtxt = '${versionSTtxt}', releaseSTtxt = '${releaseSTtxt}' outputTxt = '${outputTxt}' ; "+
         "other data: pContCmdsR = '${state.pContCmdsR}', pinTry'=${state.pinTry}' "
 	}
     return ["outputTxt":outputTxt, "pContinue":pContinue, "pShort":pShort, "pPendingAns":pPendingAns, "versionSTtxt":versionSTtxt]	 
@@ -1937,7 +1952,7 @@ try {
                     //Check Status
                         def deviceR = device.label
                         def cLockStatus = device.lockState.value
-                        def pinCheck = (pinOnOpen == true && cLockStatus == "unlocked") ? true : (pinOnOpen == false || pinOnOpen == null) ? true : false 
+                        def pinCheck = (pinOnOpen == true && cLockStatus == "locked") ? true : (pinOnOpen == false || pinOnOpen == null) ? true : false 
                             if ((command == "lock" && cLockStatus == "locked") || (command == "unlock" && cLockStatus == "unlocked")) {
                             outputTxt = "The " + device + " is already ${cLockStatus}"
                             return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
@@ -2021,7 +2036,7 @@ try {
                         //Check Status
                             def deviceR = device?.label
                             def cDoorStatus = device.contactState.value
-                            def pinCheck = (pinOnOpen == true && cDoorStatus == "close") ? true : (pinOnOpen == false || pinOnOpen == null) ? true : false 
+                            def pinCheck = (pinOnOpen == true && cDoorStatus == "closed") ? true : (pinOnOpen == false || pinOnOpen == null) ? true : false 
                             log.warn " pinCheck = ${pinCheck}"
                                 if (command == "open" && cDoorStatus == "open") {
                                 outputTxt = "The " + device + " is already open, would you like to close it instead?"
