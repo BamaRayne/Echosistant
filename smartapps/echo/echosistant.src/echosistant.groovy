@@ -2,7 +2,7 @@
  * EchoSistant - The Ultimate Voice and Text Messaging Assistant Using Your Alexa Enabled Device.
  *
  *		DON'T FORGET TO UPDATE LINE 38!!!!!
- *
+ *		3/06/2017		Version:4.0 R.0.2.7		bug fixes
  *		3/06/2017		Version:4.0 R.0.2.6c	minor bug fixes, added html rendering for custom slots
  *		3/05/2017		Version:4.0 R.0.2.5a	bug fixes: window shades/ locks feedback, weather schedule, lock pin only for unlock command
  *		3/03/2017		Version:4.0 R.0.2.3		misc. bug fixes
@@ -38,7 +38,7 @@ definition(
 	UPDATE LINE 38 TO MATCH RECENT RELEASE
 **********************************************************************************************************************************************/
 private release() {
-	def text = "R.0.2.6c"
+	def text = "R.0.2.7"
 }
 /**********************************************************************************************************************************************/
 preferences {   
@@ -110,8 +110,8 @@ page name: "mIntent"
                 }     
                 section ("Garage Doors, Window Coverings and Locks", hideWhenEmpty: true){ 
                 	input "cLock", "capability.lock", title: "Allow These Lock(s)...", multiple: true, required: false, submitOnChange: true
-                	input "cWindowCover", "capability.windowShade", title: "Allow These Window Covering Devices...", multiple: true, required: false, submitOnChange: true                   
-                    input "cDoor", "capability.garageDoorControl", title: "Allow These Garage Door(s)...", multiple: true, required: false, submitOnChange: true     
+                	input "cWindowCover", "capability.windowShade", title: "Allow These Window Covering Devices...", multiple: true, required: false, submitOnChange: true              
+                    input "cDoor", "capability.garageDoorControl", title: "Allow These Garage Door(s)...", multiple: true, required: false, submitOnChange: true
 					input "cRelay", "capability.switch", title: "Allow These Garage Door Relay(s)...", multiple: false, required: false, submitOnChange: true
                     if (cRelay) input "cContactRelay", "capability.contactSensor", title: "Allow This Contact Sensor to Monitor the Garage Door Relay(s)...", multiple: false, required: false                
                 }    
@@ -149,7 +149,6 @@ page name: "mIntent"
                         input "cLevel", "number", title: "Alexa Adjusts Light Levels by using a scale of 1-10 (default is +/-3)", defaultValue: 3, required: false
                         input "cVolLevel", "number", title: "Alexa Adjusts the Volume Level by using a scale of 1-10 (default is +/-2)", defaultValue: 2, required: false
                         input "cTemperature", "number", title: "Alexa Automatically Adjusts temperature by using a scale of 1-10 (default is +/-1)", defaultValue: 1, required: false						
-						//input "pMetric", "bool", title: "Use Metric Units (Celsius) for temperature", required: false, defaultValue: false
                     }
                     section ("Fan Control") {            
                         input "cHigh", "number", title: "Alexa Adjusts High Level to 99% by default", defaultValue: 99, required: false
@@ -2065,7 +2064,7 @@ try {
                 	def devMatchWin = null
                     def deviceMatch = cDoor.find {d -> d.label.toLowerCase() == ctDevice.toLowerCase()}
                     	if (!deviceMatch) devMatchWin = cWindowCover.find {d -> d.label.toLowerCase() == ctDevice.toLowerCase()}
-                    if (deviceMatch || devMatchWin) {
+                    //if (deviceMatch || devMatchWin) {
                         if (deviceMatch){
                             device = deviceMatch
                         //Check Status
@@ -2099,8 +2098,9 @@ try {
                                 return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
                             }
                         }
-                        else { 
-                        	device = devMatchWin ? devMatchWin : device
+                        if (deviceMatch || devMatchWin) {
+                        //else { 
+                        	device = devMatchWin ? devMatchWin : deviceMatch
                             log.warn "converted device = ${device}"
                             if (ctNum && ctUnit == "minutes") {
                                 delay = true
@@ -2118,7 +2118,7 @@ try {
                             }
                         }
                     }
-                }
+                //}
     	// >>>> RELAYS CONTROL <<<<            
                 if (cRelay !=null) {
                 //this is needed for Garage Doors that are set up as relays
