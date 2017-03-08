@@ -2,6 +2,7 @@
  * EchoSistant - The Ultimate Voice and Text Messaging Assistant Using Your Alexa Enabled Device.
  *
  *		DON'T FORGET TO UPDATE LINE 38!!!!!
+ *		3/06/2017		Version:4.0 R.0.2.8		bug fixes 
  *		3/06/2017		Version:4.0 R.0.2.7		bug fixes
  *		3/06/2017		Version:4.0 R.0.2.6c	minor bug fixes, added html rendering for custom slots
  *		3/05/2017		Version:4.0 R.0.2.5a	bug fixes: window shades/ locks feedback, weather schedule, lock pin only for unlock command
@@ -38,7 +39,7 @@ definition(
 	UPDATE LINE 38 TO MATCH RECENT RELEASE
 **********************************************************************************************************************************************/
 private release() {
-	def text = "R.0.2.7"
+	def text = "R.0.2.8"
 }
 /**********************************************************************************************************************************************/
 preferences {   
@@ -2920,8 +2921,8 @@ try {
 		return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]       
     }
         
-        if(ptts == "no" || ptts == "stop" || ptts == "cancel" || ptts == "kill it" || ptts == "zip it" || ptts == "yes" && state.pContCmdsR != "wrongIntent"){
-        	if(ptts == "no" || ptts == "stop" || ptts == "cancel" || ptts == "kill it" || ptts == "zip it"){
+        if(ptts.contains("no ") || ptts == "no" || ptts == "stop" || ptts == "cancel" || ptts == "kill it" || ptts == "zip it" || ptts == "yes" && state.pContCmdsR != "wrongIntent"){
+        	if(ptts == "no" || ptts == "stop" || ptts == "cancel" || ptts == "kill it" || ptts == "zip it" || ptts.contains("thank")){
                 outputTxt = "ok, I am here if you need me"
                 pContCmds = false
                 return ["outputTxt":outputTxt, "pContCmds":pContCmds, "pShort":state.pShort, "pContCmdsR":pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
@@ -4575,6 +4576,8 @@ private getDeviceDetails() {
         cDoor?.each 		{DeviceDetails << it.displayName +"\n"}
         cWater?.each 		{DeviceDetails << it.displayName +"\n"}
         cSpeaker?.each 		{DeviceDetails << it.displayName +"\n"}
+        cIndoor?.each 		{DeviceDetails << it.displayName +"\n"}
+        cOutDoor?.each 		{DeviceDetails << it.displayName +"\n"}
         cVent?.each 		{DeviceDetails << it.displayName +"\n"}
         cFan?.each 			{DeviceDetails << it.displayName +"\n"}
 		cVent?.each			{DeviceDetails << it.displayName +"\n"}
@@ -4612,7 +4615,9 @@ private getDeviceHtml() {
         cDoor?.each 		{DeviceDetails << it.displayName +"<br>"}
         cWater?.each 		{DeviceDetails << it.displayName +"<br>"}
         cSpeaker?.each 		{DeviceDetails << it.displayName +"<br>"}
-        cVent?.each 		{DeviceDetails << it.displayName +"<br>"}
+        cIndoor?.each 		{DeviceDetails << it.displayName +"<br>"}
+        cOutDoor?.each 		{DeviceDetails << it.displayName +"<br>"}        
+		cVent?.each 		{DeviceDetails << it.displayName +"<br>"}
         cFan?.each 			{DeviceDetails << it.displayName +"<br>"}
 		cVent?.each			{DeviceDetails << it.displayName +"<br>"}
     	cRelay?.each		{DeviceDetails << it.displayName +"<br>"}
