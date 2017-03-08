@@ -2,7 +2,7 @@
  * EchoSistant - The Ultimate Voice and Text Messaging Assistant Using Your Alexa Enabled Device.
  *
  *		DON'T FORGET TO UPDATE LINE 38!!!!!
- *		3/06/2017		Version:4.0 R.0.2.8		bug fixes 
+ *		3/06/2017		Version:4.0 R.0.2.9		bug fixes 
  *		3/06/2017		Version:4.0 R.0.2.7		bug fixes
  *		3/06/2017		Version:4.0 R.0.2.6c	minor bug fixes, added html rendering for custom slots
  *		3/05/2017		Version:4.0 R.0.2.5a	bug fixes: window shades/ locks feedback, weather schedule, lock pin only for unlock command
@@ -39,7 +39,7 @@ definition(
 	UPDATE LINE 38 TO MATCH RECENT RELEASE
 **********************************************************************************************************************************************/
 private release() {
-	def text = "R.0.2.8"
+	def text = "R.0.2.9"
 }
 /**********************************************************************************************************************************************/
 preferences {   
@@ -628,7 +628,7 @@ def installed() {
 def updated() { 
 	if (debug) log.debug "Updated with settings: ${settings}"
     unsubscribe()
-    // unschedule(null)
+    unschedule("null")
     initialize()
 }
 def initialize() {
