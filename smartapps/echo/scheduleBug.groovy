@@ -1,17 +1,7 @@
 /* 
  * EchoSistant - The Ultimate Voice and Text Messaging Assistant Using Your Alexa Enabled Device.
  *
- *		DON'T FORGET TO UPDATE LINE 38!!!!!
- *		3/06/2017		Version:4.0 R.0.2.8		bug fixes 
- *		3/06/2017		Version:4.0 R.0.2.7		bug fixes
- *		3/06/2017		Version:4.0 R.0.2.6c	minor bug fixes, added html rendering for custom slots
- *		3/05/2017		Version:4.0 R.0.2.5a	bug fixes: window shades/ locks feedback, weather schedule, lock pin only for unlock command
- *		3/03/2017		Version:4.0 R.0.2.3		misc. bug fixes
- *		3/02/2017		Version:4.0 R.0.2.1		Virtual Presence check in/out added
- *		3/01/2017		Version:4.0 R.0.2.0		weather 2.0
- *		2/28/2017		Version:4.0 R.0.1.0		Expanded doors & windows feedback
- *		2/27/2017		Version:4.0 R.0.0.9		SHM handling bug fixes
- *		2/17/2017		Version:4.0 R.0.0.0		Public Release 
+ *		SCHEDULING BUG FIX
  *
  *  Copyright 2016 Jason Headley & Bobby Dobrescu
  *
