@@ -1,6 +1,7 @@
 /* 
  * Message and Control Profile - EchoSistant Add-on 
  *
+ *		3/09/2017		Version:4.0 R.0.1.2		Improved Messaging recording and playback
  *		3/02/2017		Version:4.0 R.0.1.0		Virtual Presence check in/out
  *		2/27/2017		Version:4.0 R.0.0.9		Bug fixes for colored lights, disable switches
  *		2/17/2017		Version:4.0 R.0.0.1		Public Release
@@ -414,6 +415,9 @@ def initialize() {
         state.lastMessage
     	state.lastTime
         state.recording = null
+        state.recording1
+        state.recording2
+        state.recording3
         state.lastAction = null
         state.lastActivity
         state.reminderAnsPend = 0
@@ -464,8 +468,10 @@ def profileEvaluate(params) {
 	def repeat = tts.startsWith("repeat last message") ? true : tts.contains("repeat last message") ? true : tts.startsWith("repeat message") ? true : false
     def whatsUP = "what's up"
 	def play = tts.startsWith("play message") ? true : tts.startsWith("play the message") ? true : tts.startsWith("play recording") ? true : tts.startsWith("play recorded") ? true : false
-	def recordingNow = tts.startsWith("record a message")
-    def recordingNowNoA = tts.startsWith("record message")
+	def recordingNow = tts.startsWith("record a message") ? "record a message" : tts.startsWith("record message") ? "record message" : tts.startsWith("leave a message") ? "leave a message" : tts.startsWith("leave message") ? "leave message" : null
+    def whatMessages = tts.startsWith("what messages") ? true : tts.startsWith("how many messages") ? true : tts.contains("have messages") ? true : tts.contains("have any messages") ? true : false
+    def deleteMessages = tts.startsWith("delete message 1") ?  "recording" : tts.startsWith("delete message 2") ? "recording1" : tts.startsWith("delete message 3") ? "recording2" : tts.startsWith("delete all messages") ? "all" : tts.startsWith("delete messages") ? "all" : null
+	log.warn "Delete messages = ${deleteMessages}"
     //Reminders
     def reminder = tts.startsWith("set a reminder ") ? "set a reminder " : tts.startsWith("set reminder ") ? "set reminder" : tts.startsWith("remind me ") ? "remind me " : tts.startsWith("set the reminder") ? "set the reminder" : null
     def cancelReminder = tts.startsWith("cancel reminder") ? true : tts.startsWith("cancel the reminder") ? true : tts.startsWith("cancel a reminder") ? true : false
@@ -529,7 +535,12 @@ def profileEvaluate(params) {
                     return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]
                 }
                 else {
-                    outputTxt = "Your last recording was, " + state.recording
+                    def numMessages = state.recording2 != null ? "3 messages" : state.recording1 != null ? "2 messages" : state.recording != null ? "one message" : "no messages" 
+                    if (numMessages == "3 messages") outputTxt = "You have " + numMessages + " pending, " + state.recording + " , " + state.recording1 + " , " + state.recording2 + " To delete your messages, just say: delete messages"
+                    else if (numMessages == "2 messages") outputTxt = "You have " + numMessages + " pending, " + state.recording + " , " + state.recording1 + " To delete your messages, just say: delete messages"
+                    else if (numMessages == "one message") outputTxt = "You have " + numMessages + " pending, " + state.recording + " To delete your message, just say: delete messages"
+                    else if (numMessages == "no messages") outputTxt = "You have " + numMessages + " pending "
+                    //"Your last recording was, " + state.recording
                     return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]
                 }
             }  
@@ -592,12 +603,14 @@ def profileEvaluate(params) {
                     }
                 }
                 //Cancel Reminders
-                if (cancelReminder == true || cancelReminderNum != null) {
+                 if (cancelReminder == true || cancelReminderNum != null) {
                     def String cancelMeText = (String) null
-                    if (cancelReminder == true) {
-                        cancelMeText = tts.replaceAll("cancel reminder to", "")
-                        def cancelMe = cancelMeText == state.reminder1 ? "reminder1" : cancelMeText == state.reminder2 ? "reminder2" : cancelMeText == state.reminder3 ? "reminder3" : "undefined"
-                     }	
+                    if (cancelMe == "reminder2" || cancelReminderNum == "reminder2") {
+                                unschedule("reminderHandler2")
+                                cancelMeText = state.reminder2
+                                state.reminder2 = null
+                                state.reminderAnsPend = 0
+                            }
                      if(cancelMe != "undefined" || cancelReminderNum != null) {
                         if (cancelMe == "reminder1" || cancelReminderNum == "reminder1") {                        
                             unschedule("reminderHandler1")
@@ -632,17 +645,70 @@ def profileEvaluate(params) {
                     }
                 }
                 //Record a Message
-                if (recordingNow == true || reminder || whatReminders == true) {  
-                    if (recordingNow == true || recordingNowNoA == true) {
+                if (recordingNow || reminder || whatReminders == true || whatMessages == true || deleteMessages != null) {  
+                    if (recordingNow) {
                     def record
-                        if (recordingNow == true) {
-                            record = tts.replace("record a message", "")
+                    record = tts.replace("record a message", "").replace("record message", "").replace("leave a message", "").replace("leave message", "")
+                    if (parent.debug) log.debug "Recording: (record) = '${record}' for (intent) = '${intent}'" 
+                    //state.recording = record
+                    if (state.recording == null || state.recording1 == null || state.recording2 == null) {    
+                            if(state.recording == null || state.recording == "" ) {
+                                state.recording = record
+                                //state.reminderAnsPend = 1
+                            }
+                            else if(state.recording1 == null || state.recording1 == "") {
+                                state.recording1 = record
+                                //state.reminderAnsPend = 2
+                            }  
+                            else if(state.recording2 == null || state.recording2 == "") {
+                                state.recording2 = record
+                                //state.reminderAnsPend = 3
+                            }
+                            outputTxt = "Ok, message recorded. To play it later, just say: play message."
+                            return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]
                         }
-                        else record = tts.replace("record message", "")
-                        state.recording = record
-                        outputTxt = "Ok, message recorded. To play it later, just say: play message"
+                        else {
+                            pTryAgain = true
+                            outputTxt = "You have reached the maximum allowed number of recordings. Please delete one or more messages before recording another one, "
+                            return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]
+                        }            
+                    }                        
+					if (whatMessages == true) {
+                        def numMessages = state.recording2 != null ? "3 messages" : state.recording1 != null ? "2 messages" : state.recording != null ? "one message" : "no messages" 
+						if(numMessages == "3 messages") outputTxt = outputTxt = "You have " + numMessages + " pending, " + state.recording + " , " + state.recording1 + " , " + state.recording2 + " To delete your messages, just say: delete messages"
+                    	else if (numMessages == "2 messages") outputTxt = "You have " + numMessages + " pending, " + state.recording + " , " + state.recording1 + " To delete your messages, just say: delete messages"
+                    	else if (numMessages == "one message") outputTxt = "You have " + numMessages + " pending, " + state.recording + " To delete your message, just say: delete messages"
+                    	else if (numMessages == "no messages") outputTxt = "You have " + numMessages + " pending "
                         return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]
-                    }
+                    } 
+                    //Delete Messages
+					if (deleteMessages != null) {
+                        def String deleteMeText = (String) null
+                        if (deleteMessages == "recording") {
+							deleteMeText = state.recording
+                            state.recording = null
+                       	}	
+                        else {
+                        	if (deleteMessages == "recording1") {
+                                deleteMeText = state.recording1
+                                state.recording1 = null
+                         	}
+							else {
+                            	if (deleteMessages == "recording2") {
+                                    deleteMeText = state.recording2
+                                    state.recording2 = null
+                                 }
+                                 else if (deleteMessages == "all"){
+									deleteMeText = "all messages"
+                                    state.recording = null
+                                    state.recording1 = null
+                                    state.recording2 = null
+                            	}
+                            }
+                            outputTxt = "Ok, deleted " + deleteMeText
+                            return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]
+                        }
+                    }                    
                     //Set a reminder        	
                     if (reminder) {
                     def remindMe = tts.replace("${reminder}", "")
