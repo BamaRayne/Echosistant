@@ -1,7 +1,13 @@
 /* 
  * EchoSistant - The Ultimate Voice and Text Messaging Assistant Using Your Alexa Enabled Device.
+ 
+ ************************************ FOR INTERNAL USE ONLY ******************************************************
+							
+ 								DON'T FORGET TO UPDATE RELEASE NUMBER!!!!!
+ 
+ ************************************ FOR INTERNAL USE ONLY ******************************************************
  *
- *		DON'T FORGET TO UPDATE LINE 38!!!!!
+ *		3/08/2017		Version:4.0 R.0.2.10	enabled Profile Messaging retrieval
  *		3/08/2017		Version:4.0 R.0.2.9		bug fixes 
  *		3/06/2017		Version:4.0 R.0.2.7		bug fixes
  *		3/06/2017		Version:4.0 R.0.2.6c	minor bug fixes, added html rendering for custom slots
@@ -1123,38 +1129,20 @@ try {
             if (fOperand.contains("weather") || fOperand.contains("forecast")){
             //Full forecast
             if (fOperand == "weather" || fOperand == "weather forecast" || fOperand.contains("outside") || fOperand== "current forecast" || fOperand == "current weather" ){
-                    outputTxt = mGetWeather()
-                    //return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]				
+				outputTxt = mGetWeather()
             }
-			//Today's forecast
-            if (fOperand.contains("today")) { //fOperand == "today's weather" || fOperand == "weather today" || fOperand == "forecast for today" || fOperand == "forecast today" || 
-                    def period = "today"
-                    outputTxt = mGetWeatherShort(period)       
-                    //return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]				
-            }
-            //Tonight's forecast
-			if (fOperand.contains("tonight")){ //fOperand == "tonight's weather" || fOperand == "weather tonight" || fOperand == "forecast for tonight" || fOperand == "forecast tonight" || 
-                    def period = "tonight"
-                    outputTxt = mGetWeatherShort(period)       
-                    //return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]				
-            }
-            //Tomorrow's forecast
-			if (fOperand.contains("tomorrow")){ //fOperand == "tomorrow's weather" || fOperand == "weather tomorrow" || fOperand == "forecast for tomorrow" || fOperand == "forecast tomorrow"
-                    def period = "tomorrow"
-                    outputTxt = mGetWeatherShort(period)       
-                    //return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]				
+            if (fOperand.contains("today") || fOperand.contains("tonight") || fOperand.contains("tomorrow") ) {
+                def period = fOperand.contains("today") ? "today" : fOperand.contains("tonight") ? "tonight" : fOperand.contains("tomorrow") ? "tomorrow" : null
+				outputTxt = mGetWeatherShort(period)       
             }
 			if (fOperand.contains("update") ||fOperand.contains("change") || fCommand.contains("change") ){
 				outputTxt = mGetWeatherUpdates()
-                //	return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]				
             }
             if (fOperand.contains("alert") || fOperand.contains("warning")){
-                    outputTxt = mGetWeatherAlerts()
-                    return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]		
+				outputTxt = mGetWeatherAlerts()
             }
             return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]	
             }
-            
 			if (fOperand.contains("wind ") || fOperand == "windy" || fOperand.contains("rain") || fOperand == "precipitation" || fOperand.contains("UV ") || fOperand.contains("condition")){
 				def wElement = fOperand.contains("wind") ? "wind" : fOperand.contains("rain") ? "rain" : fOperand == "precipitation" ? "precip" : fOperand.contains("UV ") ? "uv" : fOperand == "weather conditions"? "cond" : null
 				outputTxt = mGetWeatherElements(wElement)
@@ -1169,6 +1157,25 @@ try {
             if (fOperand == "mode" ){
                     outputTxt = "The Current Mode is " + location.currentMode      
                     return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]			
+            }
+//>>> Profile Messages >>>>
+            if (fOperand == "messages" && fDevice != "undefined"){		
+            def pintentName
+            def ptts
+           		childApps.each {child ->
+                        def ch = child.label
+                        	ch = ch.replaceAll("[^a-zA-Z0-9]", "")
+                		if (ch.toLowerCase() == fDevice.toLowerCase()) { 
+                    		if (debug) log.debug "Found a profile"
+                            pintentName = child.label
+                    		if(fCommand == "delete") ptts = "delete all messages "
+                            else ptts = "how many messages "
+                            def dataSet = [ptts:ptts, pintentName:pintentName] 
+                    		def pResponse = child.profileEvaluate(dataSet)
+                            	outputTxt = pResponse?.outputTxt
+						}
+            	}
+                return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]	
             }
 //>>> Security >>>>
             //TO DO: restrict security based on command
@@ -1203,8 +1210,7 @@ try {
                         data.deviceType = "cSwitch"
                         state.lastAction = data
                         state.pContCmdsR = "feedback"
-                        return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]	
-
+                        //return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]	
                         }
                         else {outputTxt = "There are no switches " + fCommand}
                         return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]	
