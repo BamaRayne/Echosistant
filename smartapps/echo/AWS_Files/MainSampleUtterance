@@ -14,6 +14,7 @@ security turn the {sType} {cCommand} in {cNum}
 security {cCommand} {sControl} in {cNum} minutes
 security I am {sControl}
 security {sControl}
+security to {cCommand} {sType}
 security to {cCommand} the {sType}
 security to {cCommand} the {sType} {sControl}
 security to {cCommand} {sType} {sControl} in {cNum}
@@ -139,6 +140,10 @@ feedback {fQuery} was the last time I {fOperand} {cDevice}
 feedback {fQuery} I {fOperand} {cDevice} 
 feedback {fQuery} many {fOperand} are {cCommand}
 feedback {fQuery} {cDevice} is {fOperand}
+feedback if the {cDevice} is {fOperand}
+feedback if my {cDevice} is {fOperand}
+feedback if {cDevice} is {fOperand}
+
 feedback for {fOperand} {cCommand}
 feedback for {cCommand} {fOperand}
 feedback for {fOperand} that are {cCommand}
@@ -157,3 +162,7 @@ feedback {fQuery} was {cDevice} last {fOperand}
 feedback {fQuery} do I have to {cCommand} the filters
 feedback {fQuery} do I need to {cCommand} the filters
 feedback {fQuery} {cDevice} {fOperand}
+
+feedback {fQuery} many {fOperand} {cDevice} has
+feedback {fQuery} many {fOperand} does {cDevice} have
+feedback {fQuery} any {fOperand} for {cDevice}
