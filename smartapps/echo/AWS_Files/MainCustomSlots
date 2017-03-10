@@ -83,6 +83,7 @@ feeling romantic
 this is a test
 color
 play
+delete
 
 LIST_OF_GROUPS
 
@@ -204,6 +205,7 @@ updates to the forecast
 changes to the weather
 change in weather forecast
 changes to the forecast
+messages
 
 LIST_OF_QUERIES
 
@@ -222,12 +224,13 @@ get
 is
 is my
 is the
-if my
-if the
-if
 how
 how many
 many
+if
+if the
+if my
+what is
 
 LIST_OF_TYPES
 
@@ -254,7 +257,6 @@ timer
 reminder
 flash
 loop
-color loop
 looping
 audio
 text
@@ -280,3 +282,4 @@ red
 soft white
 warm white
 yellow
+color
