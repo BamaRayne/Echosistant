@@ -48,7 +48,10 @@ preferences {
 page name: "mainProfilePage"
     def mainProfilePage() {
         dynamicPage (name: "mainProfilePage", install: true, uninstall: true) {
-	        section ("Create a Notification") {
+		section ("Name (rename) this Profile") {
+ 		   	label title:"Profile Name ", required:false, defaultValue: "Notification Profile"  
+		} 
+            section ("Create a Notification") {
                 input "actionType", "enum", title: "Choose the message output...", required: false, defaultValue: "", submitOnChange: true, options: [
 				"Custom",
 				"Bell 1",
@@ -66,7 +69,7 @@ page name: "mainProfilePage"
 			}
 
         if (actionType == "Custom") {
-            section ("Send this message (optional - leave empty for defalut message") {
+            section ("Send this message (optional - leave empty for defalut message", hideable: true, hidden: false) {
                 input "message", "text", title: "Play this message...", required:false, multiple: false, defaultValue: ""
                 paragraph "You can use the following variables in your custom message: &device, &action , &event and &time \n" +
                     "\nFor Example: \n&event sensor &device is &action and the event happened at &time \n" +
@@ -125,9 +128,6 @@ page name: "mainProfilePage"
         section ("Using these Restrictions") {
             href "pRestrict", title: "Use these restrictions...", description: pRestComplete(), state: pRestSettings()
         }
-		section ("Name and/or Remove this Profile") {
- 		   	label title:"              Rename Profile ", required:false, defaultValue: "Notification Profile"  
-		} 
 	}
 }
 page name: "SMS"
