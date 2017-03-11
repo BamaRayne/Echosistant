@@ -1,7 +1,7 @@
 /* 
  * Message and Control Profile - EchoSistant Add-on 
  *
- *		3/10/2017		Version:4.0 R.0.1.3		Bug fix for Push Messages
+ *		3/10/2017		Version:4.0 R.0.1.3a	Bug fix for Push Messages
  *		3/09/2017		Version:4.0 R.0.1.2		Improved Messaging recording and playback
  *		3/02/2017		Version:4.0 R.0.1.0		Virtual Presence check in/out
  *		2/27/2017		Version:4.0 R.0.0.9		Bug fixes for colored lights, disable switches
@@ -1209,7 +1209,7 @@ def ttsActions(tts) {
 	//define text message
     if(pRunTextMsg){
   		ttx = settings.pRunTextMsg
-    }
+    }  
     else {
     	if (pPreTextMsg) {
 			ttx = pPreTextMsg + tts
@@ -1271,9 +1271,13 @@ def ttsActions(tts) {
 	if (pMode) {
 		setLocationMode(pMode)
 	}
-    if (push) {
-    	sendPushMessage(tts)
-    }
+    if (push && pPreTextMsg) {
+			tts = pPreTextMsg + tts
+            sendPushMessage(tts)
+		}
+        else if (push) {
+        	sendPushMessage(tts)
+            }
 }
         
 /***********************************************************************************************************************
