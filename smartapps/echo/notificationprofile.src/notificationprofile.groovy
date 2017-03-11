@@ -1,6 +1,7 @@
 /* 
  * Notification - EchoSistant Add-on 
  *
+ *		3/11/2017		Version:4.0 R.0.2.3		added ability to run Messaging and Control Profile actions
  *		3/02/2017		Version:4.0 R.0.2.2		weather 2.0, default tts messages
  *		2/27/2017		Version:4.0 R.0.0.6		time scheduling bug fix 
  *		2/17/2017		Version:4.0 R.0.0.1		Public Release
@@ -118,6 +119,9 @@ page name: "mainProfilePage"
             
             href "SMS", title: "Send SMS & Push Messages...", description: pSendComplete(), state: pSendSettings()
         }
+        section ("and run actions for this Profile..." ) {    
+            input "myProfile", "enum", title: "Choose Profile...", options: getProfileList(), multiple: false, required: false 
+		}        
         section ("Using these Restrictions") {
             href "pRestrict", title: "Use these restrictions...", description: pRestComplete(), state: pRestSettings()
         }
@@ -352,6 +356,7 @@ def alertsHandler(evt) {
 ***********************************************************************************************************************/
 private takeAction(eTxt) {
 	def sVolume	
+    if(myProfile) runProfile()
     if (actionType == "Custom") {
 		state.sound = textToSpeech(eTxt instanceof List ? eTxt[0] : eTxt)
     }
@@ -627,6 +632,28 @@ private void sendText(number, message) {
         }
     }
 }
+def runProfile() {
+//myProfile.profileEvaluate()
+
+              	def String pintentName = (String) null
+                def String pContCmdsR = (String) null
+                def String ptts = (String) null
+        		def pContCmds = false
+        		def pTryAgain = false
+        		def dataSet = [:]
+           		parent.childApps.each {child ->
+                        def ch = child.label
+                		if (ch == settings.myProfile) { 
+                    		if (debug) log.debug "Matched the profile"
+                            pintentName = child.label
+                    		ptts = "Running Profile actions from the Notification Add-on"
+                            dataSet = [ptts:ptts, pintentName:pintentName]
+                            child.profileEvaluate(dataSet)
+						}
+            	}
+                
+}
+
 /***********************************************************************************************************************
     CUSTOM SOUNDS HANDLER
 ***********************************************************************************************************************/
@@ -672,6 +699,13 @@ private loadSound() {
 			state?.sound = [uri: "http://s3.amazonaws.com/smartapp-media/sonos/bell1.mp3", duration: "10"]
 			break;
 	}
+}
+/************************************************************************************************************
+   PROFILES 
+************************************************************************************************************/       
+
+def getProfileList(){
+		return parent.getChildApps()*.label.sort()
 }
 
 /************************************************************************************************************
