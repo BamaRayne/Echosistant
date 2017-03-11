@@ -1,6 +1,7 @@
 /* 
  * Message and Control Profile - EchoSistant Add-on 
  *
+ *		3/10/2017		Version:4.0 R.0.1.3		Bug fix for Push Messages
  *		3/09/2017		Version:4.0 R.0.1.2		Improved Messaging recording and playback
  *		3/02/2017		Version:4.0 R.0.1.0		Virtual Presence check in/out
  *		2/27/2017		Version:4.0 R.0.0.9		Bug fixes for colored lights, disable switches
@@ -1269,9 +1270,12 @@ def ttsActions(tts) {
 	}
 	if (pMode) {
 		setLocationMode(pMode)
-	}    		
-
-}         
+	}
+    if (push) {
+    	sendPushMessage(tts)
+    }
+}
+        
 /***********************************************************************************************************************
     LAST MESSAGE HANDLER
 ***********************************************************************************************************************/
@@ -1361,7 +1365,7 @@ private void sendtxt(message) {
     } 
     else {
     	if (push) { 
-    		sendPush message
+    		sendPushMessage
             	if (parent.debug) log.debug "Sending push message to selected reipients"
         }
     } 
