@@ -350,11 +350,11 @@ def alertsHandler(evt) {
                 }
             }
         }
-	}
 if (push){
 	sendtxt(message)
     log.info "sent from the events handler"
-    }
+		}
+	}
 }
 /***********************************************************************************************************************
     CUSTOM SOUNDS HANDLER
