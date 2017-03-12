@@ -7,6 +7,7 @@
  
  ************************************ FOR INTERNAL USE ONLY ******************************************************
  *
+ *		3/12/2017		Version:4.0 R.0.2.11	Changed SHM status from Armed Stay to Armed Home for audio output
  *		3/08/2017		Version:4.0 R.0.2.10	enabled Profile Messaging retrieval
  *		3/08/2017		Version:4.0 R.0.2.9		bug fixes 
  *		3/06/2017		Version:4.0 R.0.2.7		bug fixes
@@ -45,7 +46,7 @@ definition(
 	UPDATE LINE 38 TO MATCH RECENT RELEASE
 **********************************************************************************************************************************************/
 private release() {
-	def text = "R.0.2.9"
+	def text = "R.0.2.11"
 }
 /**********************************************************************************************************************************************/
 preferences {   
@@ -1181,7 +1182,7 @@ try {
             //TO DO: restrict security based on command
             if (fOperand == "security" || fOperand == "smart home monitor" || fOperand == "alarm" ){
                     def sSHM = location.currentState("alarmSystemStatus")?.value       
-                    sSHM = sSHM == "off" ? "disabled" : sSHM == "away" ? "Armed Away" : sSHM == "stay" ? "Armed Stay" : "unknown"
+                    sSHM = sSHM == "off" ? "disabled" : sSHM == "away" ? "Armed Away" : sSHM == "stay" ? "Armed Home" : "unknown"
                     outputTxt = "Your Smart Home Monitor Status is " +  sSHM
                     return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]				
             }
@@ -2709,7 +2710,7 @@ try {
     	// HANDLING SHM
         if (type != "mode") { 
             if (control == "status") {      
-                    currentSHM = currentSHM == "off" ? "disabled" : currentSHM == "away" ? "Armed Away" : currentSHM == "stay" ? "Armed Stay" : "unknown"
+                    currentSHM = currentSHM == "off" ? "disabled" : currentSHM == "away" ? "Armed Away" : currentSHM == "stay" ? "Armed Home" : "unknown"
                     outputTxt = "Your Smart Home Monitor Status is " +  currentSHM
                     state.pTryAgain = false
                     return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
@@ -2996,14 +2997,14 @@ def alarmStatusHandler(evt) {
 		if (shmSynthDevice || shmSonosDevice) {
 			if (evt.value == "away") {
             	sendAwayCommand
-            	if(shmSynthDevice) shmSynthDevice?.speak("Attention, The alarm system has changed status to armed '${curEvtValue}'")
+            	if(shmSynthDevice) shmSynthDevice?.speak("Attention, The alarm system has changed status to armed away")
             	if (shmSonosDevice) 
-             	shmSonosDevice?.playTextAndRestore("Attention, The alarm system has changed status to armed '${curEvtValue}'")
+             	shmSonosDevice?.playTextAndRestore("Attention, The alarm system has changed status to armed away")
             	}
                 else if (evt.value == "stay") {
-                	if(shmSynthDevice) shmSynthDevice?.speak("Attention, The alarm system has changed status to armed '${curEvtValue}'")
+                	if(shmSynthDevice) shmSynthDevice?.speak("Attention, The alarm system has changed status to armed home'")
             		if (shmSonosDevice) 
-             		shmSonosDevice?.playTextAndRestore("Attention, The alarm system has changed status to armed '${curEvtValue}'")
+             		shmSonosDevice?.playTextAndRestore("Attention, The alarm system has changed status to armed home")
             		}
                     else if(evt.value == "off") {
                     	if(shmSynthDevice) shmSynthDevice?.speak("Attention, The alarm system has changed status to disarmed")
