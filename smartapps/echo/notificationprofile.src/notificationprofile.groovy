@@ -81,14 +81,21 @@ page name: "mainProfilePage"
         	def actions = location.helloHome?.getPhrases()*.label.sort()
             input "timeOfDay", "time", title: "At this time every day", required: false
             input "mySwitch", "capability.switch", title: "Choose Switch(es)...", required: false, multiple: true, submitOnChange: true
-            	if (mySwitch) input "switchBoth", "bool", title: "Enable to play message for on and off", required: false, defaultValue: false // Jason 2/21/2017
+            	if (mySwitch) input "mySwitchS", "enum", title: "Notify when state changes to...", options: ["on", "off", " both"], required: false, defaultValue: false // Jason 2/21/2017
             input "myContact", "capability.contactSensor", title: "Choose Doors and Windows..", required: false, multiple: true, submitOnChange: true
-            	if (myContact) input "contactBoth", "bool", title: "Enable to play message for open and close", required: false, defaultValue: false  // Jason 2/21/2017
+            	if (myContact) input "myContactS", "enum", title: "Notify when state changes to...", options: ["open", "close", " both"], required: false, defaultValue: false // Jason 2/21/2017
             input "myLocks", "capability.lock", title: "Choose Locks..", required: false, multiple: true, submitOnChange: true
-            	if (myLocks) input "locksBoth", "bool", title: "Enable to play message for lock and unlock", required: false, defaultValue: false  // Jason 2/21/2017
+            	if (myLocks) input "myLocksS", "enum", title: "Notify when state changes to...", options: ["locked", "unlocked", " both"], required: false, defaultValue: false // Jason 2/21/2017
             input "myMotion", "capability.motionSensor", title: "Choose Motion Sensors..", required: false, multiple: true, submitOnChange: true
-            input "myPresence", "capability.presenceSensor", title: "Choose Presence Sensors...", required: false, multiple: true, submitOnChange: true
+            	if (myMotion) input "myMotionS", "enum", title: "Notify when state changes to...", options: ["active", "inactive", " both"], required: false, defaultValue: false // Jason 2/21/2017
+			input "myPresence", "capability.presenceSensor", title: "Choose Presence Sensors...", required: false, multiple: true, submitOnChange: true
+            	if (myPresence) input "myPresenceS", "enum", title: "Notify when state changes to...", options: ["present", "not present", " both"], required: false, defaultValue: false // Jason 2/21/2017
             input "myTstat", "capability.thermostat", title: "Choose Thermostats...", required: false, multiple: true, submitOnChange: true
+            	if (myTstat) input "myTstatS", "enum", title: "Notify when set point changes for...", options: ["cooling", "heating", " both"], required: false, defaultValue: false // Jason 2/21/2017
+            input "mySmoke", "capability.smokeDetector", title: "Choose Smoke Detectors...", required: false, multiple: true, submitOnChange: true
+            	if (mySmoke) input "mySmokeS", "enum", title: "Notify when state changes to...", options: ["detect", "clear", " both"], required: false, defaultValue: false // Jason 2/21/2017
+            input "myWater", "capability.waterSensor", title: "Choose Water Sensors...", required: false, multiple: true, submitOnChange: true
+            	if (myWater) input "myWaterS", "enum", title: "Notify when state changes to...", options: ["wet", "dry", " both"], required: false, defaultValue: false // Jason 2/21/2017
             input "myWeatherAlert", "enum", title: "Choose Weather Alerts...", required: false, multiple: true, submitOnChange: true,
                     options: [
                     "TOR":	"Tornado Warning",
