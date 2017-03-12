@@ -1,6 +1,7 @@
 /* 
  * Notification - EchoSistant Add-on 
  *
+ *		3/12/2017		Version:4.0 R.0.2.5	    New variables
  *		3/11/2017		Version:4.0 R.0.2.4b	Bug fixes: Push msg not sending and volume incorrect in logs
  *		3/11/2017		Version:4.0 R.0.2.3		added ability to run Messaging and Control Profile actions
  *		3/02/2017		Version:4.0 R.0.2.2		weather 2.0, default tts messages
@@ -72,9 +73,10 @@ page name: "mainProfilePage"
         if (actionType == "Custom") {
             section ("Send this message (optional - leave empty for defalut message", hideable: true, hidden: false) {
                 input "message", "text", title: "Play this message...", required:false, multiple: false, defaultValue: ""
-                paragraph "You can use the following variables in your custom message: &device, &action , &event and &time \n" +
-                    "\nFor Example: \n&event sensor &device is &action and the event happened at &time \n" +
-                    "Translates to: 'Contact' sensor 'Bedroom' is 'Open' and the event happened at '1:00 PM'"
+                paragraph "You can use the following variables in your custom message: &device, &action , &event, &time and &date \n" +
+                		"NEW WEATHER VARIABLES: &today, &tonight, &tomorrow, &high, &low, &wind, &uv, &precipitation, &humidity, &conditions \n" +
+                    	"\nFor Example: \n&event sensor &device is &action and the event happened at &time \n" +
+                    	"Translates to: 'Contact' sensor 'Bedroom' is 'Open' and the event happened at '1:00 PM'"
             }
         }
         section ("Using These Triggers", hideWhenEmpty: true) {
@@ -93,7 +95,7 @@ page name: "mainProfilePage"
             input "myTstat", "capability.thermostat", title: "Choose Thermostats...", required: false, multiple: true, submitOnChange: true
             	if (myTstat) input "myTstatS", "enum", title: "Notify when set point changes for...", options: ["cooling", "heating", " both"], required: false, defaultValue: false // Jason 2/21/2017
             input "mySmoke", "capability.smokeDetector", title: "Choose Smoke Detectors...", required: false, multiple: true, submitOnChange: true
-            	if (mySmoke) input "mySmokeS", "enum", title: "Notify when state changes to...", options: ["detect", "clear", " both"], required: false, defaultValue: false // Jason 2/21/2017
+            	if (mySmoke) input "mySmokeS", "enum", title: "Notify when state changes to...", options: ["detected", "clear", " both"], required: false, defaultValue: false // Jason 2/21/2017
             input "myWater", "capability.waterSensor", title: "Choose Water Sensors...", required: false, multiple: true, submitOnChange: true
             	if (myWater) input "myWaterS", "enum", title: "Notify when state changes to...", options: ["wet", "dry", " both"], required: false, defaultValue: false // Jason 2/21/2017
             input "myWeatherAlert", "enum", title: "Choose Weather Alerts...", required: false, multiple: true, submitOnChange: true,
@@ -236,39 +238,44 @@ def initialize() {
     if (myRoutine) {subscribe(location, "routineExecuted",alertsHandler)}
     if (myMode) {subscribe(location, "mode", alertsHandler)}
    	if (mySwitch) {
-    	if (switchBoth) {  // Jason 2/21/2017
-        	subscribe(mySwitch, "switch.on", alertsHandler)
-            subscribe(mySwitch, "switch.off", alertsHandler)
-            }
-        if (!switchBoth) {
-        	subscribe(mySwitch, "switch.on", alertsHandler)
-            }
-        }    
+    	if (mySwitchS == "on")	subscribe(mySwitch, "switch.on", alertsHandler)
+    	if (mySwitchS == "off")	subscribe(mySwitch, "switch.off", alertsHandler)
+        else    				subscribe(mySwitch, "switch", alertsHandler)
+   	}    
 	if (myContact) {
-    	if (contactBoth) {  // Jason 2/21/2017
-    		subscribe(myContact, "contact.open", alertsHandler)
-            subscribe(myContact, "contact.closed", alertsHandler)
-            }
-        if (!contactBoth) {
-        	subscribe(myContact, "contact.open", alertsHandler)
-            }
-        }    
-    if (myMotion) {subscribe(myMotion, "motion.active", alertsHandler)}
+    	if (myContactS == "open")	subscribe(myContact, "contact.open", alertsHandler)
+    	if (myContactS == "closed")	subscribe(myContact, "contact.closed", alertsHandler)
+        else    					subscribe(myContact, "contact", alertsHandler)
+    }
+   	if (myMotion) {
+    	if (myMotionS == "active")		subscribe(myMotion, "motion.active", alertsHandler)
+    	if (myMotionS == "inactive")	subscribe(myMotion, "motion.inactive", alertsHandler)
+        else    						subscribe(myMotion, "motion", alertsHandler)
+    }    
     if (myLocks) {
-    	if (locksBoth) {  // Jason 2/21/2017 
-    		subscribe(myLocks, "lock.locked", alertsHandler)
-    		subscribe(myLocks, "lock.unlocked", alertsHandler)
-    		}
-    	if (!locksBoth) {
-        	subscribe(myLocks, "lock.locked", alertsHandler)
-            }
-        }    
+    	if (myLocksS == "locked")		subscribe(myLocks, "lock.locked", alertsHandler)
+    	if (myLocksS == "unlocked")		subscribe(myLocks, "lock.unlocked", alertsHandler)
+        else    						subscribe(myLocks, "lock", alertsHandler)
+    }
     if (myPresence) {
-    	subscribe(myPresence, "presence", alertsHandler)
-        }
+    	if (myPresenceS == "locked")	subscribe(myPresence, "presence.present", alertsHandler)
+    	if (myPresenceS == "unlocked")	subscribe(myPresence, "presence.not present", alertsHandler)
+        else    						subscribe(myPresence, "presence", alertsHandler)
+	}
     if (myTstat) {    
-		subscribe(myTstat, "heatingSetpoint", alertsHandler)
-        subscribe(myTstat, "coolingSetpoint", alertsHandler)
+    	if (myTstatS == "cooling")		subscribe(myTstat, "coolingSetpoint", alertsHandler)
+    	if (myTstatS == "heating")		subscribe(myTstat, "heatingSetpoint", alertsHandler)
+        else    						subscribe(myPresence, "thermostatSetpoint", alertsHandler)
+    }
+    if (mySmoke) {    
+    	if (mySmokeS == "detected")		subscribe(mySmoke, "smoke.detected", alertsHandler)
+    	if (mySmokeS == "clear")		subscribe(mySmoke, "smoke.clear", alertsHandler)
+        else    						subscribe(mySmoke, "smoke", alertsHandler)
+    }
+    if (myWater) {    
+    	if (myWaterS == "wet")		subscribe(myWater, "water.wet", alertsHandler)
+    	if (myWaterS == "dry")		subscribe(myWater, "water.dry", alertsHandler)
+        else    						subscribe(myWater, "water", alertsHandler)
     	}
     }
 }    
@@ -293,12 +300,27 @@ def alertsHandler(evt) {
     def nRoutine = false
     def eTxt	
 	def stamp = state.lastTime = new Date(now()).format("h:mm aa", location.timeZone)     
-    
+	def today = new Date(now()).format("EEEE, MMMM d, yyyy", location.timeZone) // format("EEEE, MMMM d, yyyy") REMOVED YEAR 2/8/2017
+    // define variables
     if(parent.debug) log.info "Event Data: eName ${eName}, eVal:  ${eVal}, eDev: ${eDev}, eDisplayN: ${eDisplayN}, stamp: ${stamp}"	
     if (getDayOk()==true && getModeOk()==true && getTimeOk()==true) {
-		if(eName == "coolingSetpoint" || eName == "heatingSetpoint") {
-            eVal = evt.value.toFloat() // 2/22 Bobby rounding temps
-            eVal = Math.round(eVal) // 2/22 Bobby rounding temps
+		
+        if(eName == "time of day" && message){
+				def weatherToday = mGetWeatherVar("today")
+    			def weatherTonight = mGetWeatherVar("tonight")
+    			def weatherTomorrow = mGetWeatherVar("tomorrow")
+    			def tHigh = mGetWeatherVar("high")
+    			def tLow = mGetWeatherVar("low")
+    			def tUV = mGetWeatherElements("uv")
+    			def tPrecip = mGetWeatherElements("precip")
+    			def tHum = mGetWeatherElements("hum")
+    			def tCond = mGetWeatherElements("cond")
+    			def tWind = mGetWeatherElements("wind")
+
+            	eTxt = message ? "$message".replace("&device", "${eDisplayN}").replace("&event", "routine").replace("&action", "executed").replace("&date", "${today}").replace("&time", "${stamp}") : null
+                    if(eTxt) eTxt = eTxt.replace("&today", "${weatherToday}").replace("&tonight", "${weatherTonight}").replace("&tomorrow", "${weatherTomorrow}")
+                    if(eTxt) eTxt = eTxt.replace("&high", "${tHigh}").replace("&low", "${tLow}").replace("&wind", "${tWind}").replace("&uv", "${tUV}").replace("&precipitation", "${tPrecip}")
+                    if(eTxt) eTxt = eTxt.replace("&humidity", "${tHum}").replace("&conditions", "${tCond}")
         }
         if(eName == "coolingSetpoint" || eName == "heatingSetpoint") {
             eVal = evt.value.toFloat() // 2/22 Bobby rounding temps
@@ -307,8 +329,23 @@ def alertsHandler(evt) {
         if(eName == "routineExecuted" && myRoutine) {
         	def deviceMatch = myRoutine?.find {r -> r == eDisplayN}  
             if (deviceMatch){
-            	eTxt = message ? "$message".replace("&device", "${eDisplayN}").replace("&event", "routine").replace("&action", "executed").replace("&time", "${stamp}") : null
-            	if(parent.debug) log.debug "eTxt = ${eTxt}"
+				def weatherToday = mGetWeatherVar("today")
+    			def weatherTonight = mGetWeatherVar("tonight")
+    			def weatherTomorrow = mGetWeatherVar("tomorrow")
+    			def tHigh = mGetWeatherVar("high")
+    			def tLow = mGetWeatherVar("low")
+    			def tUV = mGetWeatherElements("uv")
+    			def tPrecip = mGetWeatherElements("precip")
+    			def tHum = mGetWeatherElements("hum")
+    			def tCond = mGetWeatherElements("cond")
+    			def tWind = mGetWeatherElements("wind")
+
+            	eTxt = message ? "$message".replace("&device", "${eDisplayN}").replace("&event", "routine").replace("&action", "executed").replace("&date", "${today}").replace("&time", "${stamp}") : null
+                    if(eTxt) eTxt = eTxt.replace("&today", "${weatherToday}").replace("&tonight", "${weatherTonight}").replace("&tomorrow", "${weatherTomorrow}")
+                    if(eTxt) eTxt = eTxt.replace("&high", "${tHigh}").replace("&low", "${tLow}").replace("&wind", "${tWind}").replace("&uv", "${tUV}").replace("&precipitation", "${tPrecip}")
+                    if(eTxt) eTxt = eTxt.replace("&humidity", "${tHum}").replace("&conditions", "${tCond}")
+                
+                if(parent.debug) log.debug "eTxt = ${eTxt}"
                 if (message){
 					if(recipients?.size()>0 || sms?.size()>0) {
                     	sendtxt(eTxt)
@@ -325,8 +362,21 @@ def alertsHandler(evt) {
             if(eName == "mode" && myMode) {
                 def deviceMatch = myMode?.find {m -> m == eVal}  
                 if (deviceMatch){
-                    eTxt = message ? "$message".replace("&device", "${eVal}").replace("&event", "${eName}").replace("&action", "changed").replace("&time", "${stamp}") : null
-                    if(parent.debug) log.debug "eTxt = ${eTxt}"
+                    def weatherToday = mGetWeatherVar("today")
+    				def weatherTonight = mGetWeatherVar("tonight")
+    				def weatherTomorrow = mGetWeatherVar("tomorrow")
+    				def tHigh = mGetWeatherVar("high")
+    				def tLow = mGetWeatherVar("low")
+    				def tUV = mGetWeatherElements("uv")
+    				def tPrecip = mGetWeatherElements("precip")
+    				def tHum = mGetWeatherElements("hum")
+    				def tCond = mGetWeatherElements("cond")
+    				def tWind = mGetWeatherElements("wind")
+                    eTxt = message ? "$message".replace("&device", "${eVal}").replace("&event", "${eName}").replace("&action", "changed").replace("&date", "${today}").replace("&time", "${stamp}") : null
+                    if(eTxt) eTxt = eTxt.replace("&today", "${weatherToday}").replace("&tonight", "${weatherTonight}").replace("&tomorrow", "${weatherTomorrow}")
+                    if(eTxt) eTxt = eTxt.replace("&high", "${tHigh}").replace("&low", "${tLow}").replace("&wind", "${tWind}").replace("&uv", "${tUV}").replace("&precipitation", "${tPrecip}")
+                    if(eTxt) eTxt = eTxt.replace("&humidity", "${tHum}").replace("&conditions", "${tCond}")
+					if(parent.debug) log.debug "eTxt = ${eTxt}"
                     if (message){
                         if(recipients?.size()>0 || sms?.size()>0) {
                             sendtxt(eTxt)
@@ -341,7 +391,7 @@ def alertsHandler(evt) {
             }        
             else {
                 if (message){      
-                    eTxt = message ? "$message".replace("&device", "${eDev}").replace("&event", "${eName}").replace("&action", "${eVal}").replace("&time", "${stamp}") : null
+                    eTxt = message ? "$message".replace("&device", "${eDev}").replace("&event", "${eName}").replace("&action", "${eVal}").replace("&date", "${today}").replace("&time", "${stamp}") : null
                     if(parent.debug) log.debug "eTxt = ${eTxt}"
                     if(eTxt){
                         if(recipients?.size()>0 || sms?.size()>0) {
@@ -666,7 +716,87 @@ def runProfile() {
             	}
                 
 }
+/***********************************************************************************************************************
+    WEATHER ELEMENTS
+***********************************************************************************************************************/
+def private mGetWeatherElements(element){
+	state.pTryAgain = false
+    def result ="Current weather is not available at the moment, please try again later"
+   	try {
+        //hourly updates
+        def cWeather = getWeatherFeature("hourly", settings.wZipCode)
+        def cWeatherCondition = cWeather.hourly_forecast[0].condition
+        def cWeatherPrecipitation = cWeather.hourly_forecast[0].pop + " percent"
+        def cWeatherWind = cWeather.hourly_forecast[0].wspd.english + " miles per hour"
+        def cWeatherHum = cWeather.hourly_forecast[0].humidity + " percent"
+        def cWeatherUpdate = cWeather.hourly_forecast[0].FCTTIME.civil
+        
+        def condWeather = getWeatherFeature("conditions", settings.wZipCode)
+        def condTodayUV = condWeather.current_observation.UV
+        
+        if(debug) log.debug "cWeatherUpdate = ${cWeatherUpdate}, cWeatherCondition = ${cWeatherCondition}, " +
+        					"cWeatherPrecipitation = ${cWeatherPrecipitation}, cWeatherWind = ${cWeatherWind},  cWeatherHum = ${cWeatherHum}, cWeatherHum = ${condTodayUV}  "    
+/*
+        if(wMetric){
+        //hourly metric updates
+        def cWeatherWind_m = cWeather.hourly_forecast[0].wspd.metric + " kilometers per hour"        
+        	if		(element == "precip" || element == "rain") {result = "The chance of precipitation is " + cWeatherPrecipitation }
+        	else if	(element == "wind") {result = "The wind intensity is " + cWeatherWind_m }
+        	else if	(element == "uv") {result = "The UV index is " + condTodayUV }
+			else if	(element == "hum") {result = "The relative humidity is " + cWeatherHum }        
+			else if	(element == "cond") {result = "The current weather condition is " + cWeatherCondition }
+        }
+        else{
+        
+*/
+        
+        	if		(element == "precip" ) {result = "The chance of precipitation is " + cWeatherPrecipitation }
+        	else if	(element == "wind") {result = "The wind intensity is " + cWeatherWind }
+        	else if	(element == "uv") {result = "The UV index is " + condTodayUV }
+			else if	(element == "hum") {result = "The relative humidity is " + cWeatherHum }        
+			else if	(element == "cond") {result = "The current weather condition is " + cWeatherCondition }        
 
+	return result
+	}
+	catch (Throwable t) {
+		log.error t
+        state.pTryAgain = true
+        return result
+	} 
+}
+/***********************************************************************************************************************
+    WEATHER TEMPS
+***********************************************************************************************************************/
+def private mGetWeatherVar(var){
+	state.pTryAgain = false
+    def result
+	try {
+		def weather = getWeatherFeature("forecast", settings.wZipCode)
+        def sTodayWeather = weather.forecast.simpleforecast.forecastday[0]
+        if(var =="high") result = sTodayWeather.high.fahrenheit//.toInteger()
+        if(var == "low") result = sTodayWeather.low.fahrenheit//.toInteger()
+        if(var =="today") result = 	weather.forecast.txt_forecast.forecastday[0].fcttext 
+        if(var =="tonight") result = weather.forecast.txt_forecast.forecastday[1].fcttext 
+		if(var =="tomorrow") result = weather.forecast.txt_forecast.forecastday[2].fcttext 
+
+        
+/*
+	if(wMetric){
+                if(tHigh) result = weather.forecast.simpleforecast.forecastday[0].high.celsius//.toInteger()
+                if(tLow) result = weather.forecast.simpleforecast.forecastday[0].low.celsius//.toInteger()
+            }
+            else {
+                result = "Today's low temperature is: " + tLow  + ", with a high of " + tHigh
+        	}
+ */           
+            return result
+	}
+	catch (Throwable t) {
+        log.error t
+        state.pTryAgain = true
+        return result
+    }
+}   
 /***********************************************************************************************************************
     CUSTOM SOUNDS HANDLER
 ***********************************************************************************************************************/
