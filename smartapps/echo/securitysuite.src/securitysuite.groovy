@@ -1,6 +1,7 @@
 /** 
  * Security - EchoSistant Add-on 
  *
+ *		3/12/2017		Version:4.0 R.0.0.3		Added Garage Door capability to keypads
  *		2/23/2017		Version:4.0 R.0.0.2		Added SMS and Push message of arm/disarm 
  *		2/17/2017		Version:4.0 R.0.0.1		Public Release
  *
@@ -81,9 +82,27 @@ def rootPage() {
         href(name: "toSetupPage", title: "User Settings", page: "setupPage", description: setupPageDescription(), state: setupPageDescription() ? "complete" : "")
         href(name: "toKeypadPage", page: "keypadPage", title: "Keypad Info (optional)")
         href(name: "toNotificationPage", page: "notificationPage", title: "Notification Settings", description: notificationPageDescription(), state: notificationPageDescription() ? "complete" : "")
-      }
-    }
-  }
+        input "garage", "bool", title: "Activate Garage Door Code", required: false, defaultValue: false, submitOnChange: true
+			if (garage) {
+        		paragraph "This code is for opening and closing the garage door only, this code will not change SHM Status."
+            	input "doorPush", "bool", title: "Send Push Message when garage door is opened and closed", defaultValue: false, submitOnChange: true
+                input "sDoor1", "capability.garageDoorControl", title: "Allow These Garage Door(s)...", multiple: true, required: false, submitOnChange: true
+      			input(name: "doorName1", type: "text", title: "Name for User", required: false, submitOnChange: true)
+                input(name: "doorCode1", type: "text", title: "Code (4 digits)", required: false, refreshAfterSelection: true)
+				if (userCode1) {
+	               	input "sDoor2", "capability.garageDoorControl", title: "Allow These Garage Door(s)...", multiple: true, required: false, submitOnChange: true
+    	            input(name: "doorName2", type: "text", title: "Name for User", required: false, submitOnChange: true)
+                    input(name: "doorCode2", type: "text", title: "Code (4 digits)", required: false, refreshAfterSelection: true)
+					if (userCode2) {
+            			input "sDoor3", "capability.garageDoorControl", title: "Allow These Garage Door(s)...", multiple: true, required: false, submitOnChange: true
+                		input(name: "doorName3", type: "text", title: "Name for User", required: false, submitOnChange: true)
+                        input(name: "doorCode3", type: "text", title: "Code (4 digits)", required: false, refreshAfterSelection: true)
+                    	}
+                    }
+                }
+			}
+		}
+	}
 }
 def setupPage() {
   dynamicPage(name:"setupPage", title:"User Settings") {
@@ -467,6 +486,10 @@ def updated() {
   initialize()
 }
 private initialize() {
+	if (garage) {
+ //   subscribe(sDoor, "keypad", sendGarageEvent)
+    subscribe(keypad,"codeEntered",sendGarageEvent)
+    }
   unsubscribe()
   unschedule()
   if (startTime && !startDateTime()) {
@@ -961,6 +984,59 @@ def codeEntryHandler(evt) {
   def armMode = ''
   def currentarmMode = keypad.currentValue("armMode")
   def changedMode = 0
+  if (garage) {
+  	def message = " "
+    def stamp = state.lastTime = new Date(now()).format("h:mm aa, dd-MMMM-yyyy", location.timeZone) 
+    if (codeEntered == doorCode1 && data == "0") {
+        message = "The ${sDoor1} was closed by ${doorName1} using the ${evt.displayName} at ${stamp}"
+        if (doorPush) {
+        	sendPush(message)
+            }
+    	sDoor1?.close() 
+        log.info "${message}"
+        }
+        else if (codeEntered == doorCode2 && data == "0") {
+        	message = "The ${sDoor2} was closed by ${doorName2} using the ${evt.displayName} at ${stamp}"
+            if (doorPush) {
+        		sendPush(message)
+            	}
+            sDoor2?.close()
+            log.info "${message}"
+        	}
+            else if (codeEntered == doorCode3 && data == "0") {
+            	message = "The ${sDoor3} was closed by ${doorName3} using the ${evt.displayName} at ${stamp}"
+                if (doorPush) {
+        			sendPush(message)
+            		}
+                sDoor3?.close()
+                log.info "${message}"
+                }
+    if (codeEntered == doorCode1 && data == "3") {
+        log.info "The ${sDoor1} was opened by ${doorName1} using the ${evt.displayName} at ${stamp}"
+    	if (doorPush) {
+        	sendPush(message)
+            }
+            sDoor1?.open()
+            log.info "${message}"
+        	}
+        	else if (codeEntered == doorCode2 && data == "3") {
+        		log.info "The ${sDoor2} was opened by ${doorName2} using the ${evt.displayName} at ${stamp}"
+            	if (doorPush) {
+        			sendPush(message)
+            		}
+            		sDoor2?.open()
+                    log.info "${message}"
+        			}
+            		else if (codeEntered == doorCode3 && data == "3") {
+            			log.info "The ${sDoor3} was opened by ${doorName3} using the ${evt.displayName} at ${stamp}"
+						if (doorPush) {
+        					sendPush(message)
+            				}
+            				sDoor3?.open()
+                            log.info "${message}"
+                			}
+   						}                    
+	if (codeEntered != doorCode1 && codeEntered != doorCode2 && codeEntered != doorCode3 ) {
   if (data == '0') {
     armMode = 'off'
   }
@@ -1026,7 +1102,8 @@ def codeEntryHandler(evt) {
       send(errorMsg)
     }
     keypad.sendInvalidKeycodeResponse()
-  }
+		}
+	}
 }
 def sendArmCommand() {
   log.debug "Sending Arm Command."
