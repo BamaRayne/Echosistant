@@ -1,7 +1,7 @@
 /* 
  * Notification - EchoSistant Add-on 
  *
- *		3/11/2017		Version:4.0 R.0.2.4a	Bug fixes: Push msg not sending and volume incorrect in logs
+ *		3/11/2017		Version:4.0 R.0.2.4b	Bug fixes: Push msg not sending and volume incorrect in logs
  *		3/11/2017		Version:4.0 R.0.2.3		added ability to run Messaging and Control Profile actions
  *		3/02/2017		Version:4.0 R.0.2.2		weather 2.0, default tts messages
  *		2/27/2017		Version:4.0 R.0.0.6		time scheduling bug fix 
@@ -350,10 +350,6 @@ def alertsHandler(evt) {
                 }
             }
         }
-if (push){
-	sendtxt(message)
-    log.info "sent from the events handler"
-		}
 	}
 }
 /***********************************************************************************************************************
@@ -496,6 +492,10 @@ def mGetCurrentWeather(){
                             	if(result) {result = result + " , the chance of rain to "  + cWeatherPrecipitation }
                             	else result = "The hourly weather forecast has been updated. The chance of rain has been changed to "  + cWeatherPrecipitation
                             }
+                            if (push){
+								sendtxt(result)
+    							log.info "sent from the hourly forcast handler"
+							}
                             data = [value:"forecast", name: result, device:"weather"]  
                             alertsHandler(data)
                         }
@@ -520,11 +520,7 @@ def mGetCurrentWeather(){
                                 data = [value:"humidity", name: result, device:"weather"] 
                                 alertsHandler(data)
                             }
-                            if (push){
-								sendtxt(message)
-    							log.info "sent from the hourly forcast handler"
-							}
-                        }
+						}
                     }       
                 }
                 log.info "refreshed hourly weather forecast: past forecast = ${pastWeather}; new forecast = ${weatherData}"  
