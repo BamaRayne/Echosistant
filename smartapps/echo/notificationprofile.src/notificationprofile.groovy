@@ -1,7 +1,7 @@
 /* 
  * Notification - EchoSistant Add-on 
  *
- *		3/11/2017		Version:4.0 R.0.2.4		Bug fixes: Push msg not sending and volume incorrect in logs
+ *		3/11/2017		Version:4.0 R.0.2.4a	Bug fixes: Push msg not sending and volume incorrect in logs
  *		3/11/2017		Version:4.0 R.0.2.3		added ability to run Messaging and Control Profile actions
  *		3/02/2017		Version:4.0 R.0.2.2		weather 2.0, default tts messages
  *		2/27/2017		Version:4.0 R.0.0.6		time scheduling bug fix 
@@ -410,7 +410,11 @@ def mGetWeatherAlerts(){
                         state.lastAlert = new Date(now()).format("h:mm aa", location.timeZone)
                         data = [value:"alert", name: result, device:"weather"] 
                         alertsHandler(data)
-                    }
+                        if (push){
+							sendtxt(data)
+    						log.info "sent from the Weather Alerts handler"
+							}
+                    	}
                     else {
                         log.warn "new weather alert = ${alert} , expire = ${expire}"
                         def newAlert = result != state.weatherAlert ? true : false
@@ -425,16 +429,11 @@ def mGetWeatherAlerts(){
          	}
             log.warn "weather alert not matched"
     	}
-if (push){
-	sendtxt(message)
-    log.info "sent from the weather alerts"
-    }
     }
 	catch (Throwable t) {
 	log.error t
 	return result
 	}
-
 }
 /***********************************************************************************************************************
     HOURLY FORECAST
@@ -521,6 +520,10 @@ def mGetCurrentWeather(){
                                 data = [value:"humidity", name: result, device:"weather"] 
                                 alertsHandler(data)
                             }
+                            if (push){
+								sendtxt(message)
+    							log.info "sent from the hourly forcast handler"
+							}
                         }
                     }       
                 }
@@ -531,11 +534,7 @@ def mGetCurrentWeather(){
 	catch (Throwable t) {
 	log.error t
 	return result
-	}
-if (push){
-	sendtxt(message)
-    log.info "sent from the hourly forcast"
-    }    
+	}  
 }
 /***********************************************************************************************************************
     RESTRICTIONS HANDLER
