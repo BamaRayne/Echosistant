@@ -1,7 +1,7 @@
 /** 
  * Security - EchoSistant Add-on 
  *
- *		3/12/2017		Version:4.0 R.0.0.3		Added Garage Door capability to keypads
+ *		3/12/2017		Version:4.0 R.0.0.3a	Added Garage Door capability to keypads/ 0.3a is a bug fix for GDoor Push msg's
  *		2/23/2017		Version:4.0 R.0.0.2		Added SMS and Push message of arm/disarm 
  *		2/17/2017		Version:4.0 R.0.0.1		Public Release
  *
@@ -984,7 +984,7 @@ def codeEntryHandler(evt) {
   def armMode = ''
   def currentarmMode = keypad.currentValue("armMode")
   def changedMode = 0
-  if (garage) {
+  if (garage) {  // GARAGE DOOR OPEN/CLOSE HANDLER - done by Jason 3/12/2017
   	def message = " "
     def stamp = state.lastTime = new Date(now()).format("h:mm aa, dd-MMMM-yyyy", location.timeZone) 
     if (codeEntered == doorCode1 && data == "0") {
@@ -1011,8 +1011,8 @@ def codeEntryHandler(evt) {
                 sDoor3?.close()
                 log.info "${message}"
                 }
-    if (codeEntered == doorCode1 && data == "3") {
-        log.info "The ${sDoor1} was opened by ${doorName1} using the ${evt.displayName} at ${stamp}"
+    else if (codeEntered == doorCode1 && data == "3") {
+        message = "The ${sDoor1} was opened by ${doorName1} using the ${evt.displayName} at ${stamp}"
     	if (doorPush) {
         	sendPush(message)
             }
@@ -1020,7 +1020,7 @@ def codeEntryHandler(evt) {
             log.info "${message}"
         	}
         	else if (codeEntered == doorCode2 && data == "3") {
-        		log.info "The ${sDoor2} was opened by ${doorName2} using the ${evt.displayName} at ${stamp}"
+        		message = "The ${sDoor2} was opened by ${doorName2} using the ${evt.displayName} at ${stamp}"
             	if (doorPush) {
         			sendPush(message)
             		}
@@ -1028,7 +1028,7 @@ def codeEntryHandler(evt) {
                     log.info "${message}"
         			}
             		else if (codeEntered == doorCode3 && data == "3") {
-            			log.info "The ${sDoor3} was opened by ${doorName3} using the ${evt.displayName} at ${stamp}"
+            			message = "The ${sDoor3} was opened by ${doorName3} using the ${evt.displayName} at ${stamp}"
 						if (doorPush) {
         					sendPush(message)
             				}
