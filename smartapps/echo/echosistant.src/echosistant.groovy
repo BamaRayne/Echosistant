@@ -7,6 +7,7 @@
  
  ************************************ FOR INTERNAL USE ONLY ******************************************************
  *
+ *		3/13/2017		Version:4.0 R.0.2.11	Bug fix for Weather forcast
  *		3/12/2017		Version:4.0 R.0.2.11	Changed SHM status from Armed Stay to Armed Home for audio output
  *		3/08/2017		Version:4.0 R.0.2.10	enabled Profile Messaging retrieval
  *		3/08/2017		Version:4.0 R.0.2.9		bug fixes 
