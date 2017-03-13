@@ -133,7 +133,7 @@ page name: "pSend"
                 input "synthDevice", "capability.speechSynthesis", title: "On this Speech Synthesis Type Devices", multiple: true, required: false
                 input "sonosDevice", "capability.musicPlayer", title: "On this Sonos Type Devices", required: false, multiple: true, submitOnChange: true    
                 if (sonosDevice) {
-                    input "volume", "number", title: "Temporarily change volume", description: "0-100%", required: false
+                    input "volume", "number", title: "Temporarily change volume", description: "0-100% (default value = 30%)", required: false
                 }  
             }
             section ("Text Messages" ) {
