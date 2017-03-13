@@ -1129,7 +1129,7 @@ try {
 //>>> Weather >>>>
             if (fOperand.contains("weather") || fOperand.contains("forecast")){
             //Full forecast
-            if (fOperand == "weather" || fOperand == "weather forecast" || fOperand.contains("outside") || fOperand== "current forecast" || fOperand == "current weather" ){
+            if (fOperand == "forecast" || fOperand == "weather" || fOperand == "weather forecast" || fOperand.contains("outside") || fOperand== "current forecast" || fOperand == "current weather" ){
 				outputTxt = mGetWeather()
             }
             if (fOperand.contains("today") || fOperand.contains("tonight") || fOperand.contains("tomorrow") ) {
