@@ -7,7 +7,7 @@
  
  ************************************ FOR INTERNAL USE ONLY ******************************************************
  *
- *		3/14/2017		Version:4.0 R.0.2.13  	Bug fix for windows and doors feedback/ reconfigured
+ *		3/14/2017		Version:4.0 R.0.2.13a  	Bug fix for windows, doors, and lights feedback/ reconfigured / improved responses and commands
  *		3/13/2017		Version:4.0 R.0.2.12	Bug fix for Weather forcast
  *		3/12/2017		Version:4.0 R.0.2.11	Changed SHM status from Armed Stay to Armed Home for audio output
  *		3/08/2017		Version:4.0 R.0.2.10	enabled Profile Messaging retrieval
@@ -48,7 +48,7 @@ definition(
 	UPDATE LINE 38 TO MATCH RECENT RELEASE
 **********************************************************************************************************************************************/
 private release() {
-	def text = "R.0.2.13"
+	def text = "R.0.2.13a"
 }
 /**********************************************************************************************************************************************/
 preferences {   
@@ -1189,54 +1189,40 @@ try {
                     return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]				
             }
 //>>> Lights >>>>            
-            if (fOperand == "lights" && fCommand != "undefined") { 
-                if(cSwitch){
+            if(fOperand.contains("lights") || fOperand.contains("anything") || fOperand.contains("on") || fOperand.contains("off")) { 
+            	if(fOperand == "on" && fCommand == "undefined") {
+                	fCommand = "on" }
+                if(fOperand == "off" && fCommand == "undefined") {
+                	fCommand = "off" }
+                    if(cSwitch){
                     def devList = []
-                    if (cSwitch?.latestValue("switch").contains(fCommand)) {
+                    if (cSwitch?.latestValue("switch")?.contains(fCommand)) {
                         cSwitch?.each { deviceName ->
                                     if (deviceName.latestValue("switch")=="${fCommand}") {
                                         String device  = (String) deviceName
                                         devList += device
+                                    }
+                        		}
 							}
-                        }
-                    }
-                    if (fQuery.contains ("is") || fQuery == "what's" || fQuery == "what" || fQuery == "is" || fQuery == "how" || fQuery.contains ("if") || fQuery == "are there" || fQuery == "how many") { // removed fQuery == "undefined" 2/13/2017
+                    if (fQuery == "what's" || fQuery == "what" || fQuery == "is" || fQuery == "which" || fQuery == "any" || fQuery == "how" || fQuery== "how many" || fQuery == "are there" || fQuery.contains ("if")) { // removed fQuery == "undefined" 2/13
                         if (devList?.size() > 0) {
                             if (devList?.size() == 1) {
-                                outputTxt = "There is one light " + fCommand + " , would you like to know which one"                           			
+                                outputTxt = "There is one light " + fCommand + " , would you like to know which one? "                           			
                             }
                             else {
-                                outputTxt = "There are " + devList?.size() + " lights " + fCommand + " , would you like to know which lights"
+                                outputTxt = "There are " + devList?.size() + " lights " + fCommand + " , would you like to know which lights? "
                             }
-                        data.devices = devList
+						data.devices = devList
                         data.cmd = fCommand
                         data.deviceType = "cSwitch"
                         state.lastAction = data
                         state.pContCmdsR = "feedback"
-                  //      return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]	
                         }
                         else {outputTxt = "There are no lights " + fCommand}
                         return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]	
-
+                    	}
                     }
-                    else if (fQuery.contains ("what") || fQuery.contains ("which") || fQuery == "what's" || fQuery.contains ("is")) {
-                        def devNames = []
-                        if (cSwitch?.latestValue("switch").contains(fCommand)) {
-                            cSwitch?.each { deviceName ->
-                                        if (deviceName.latestValue("switch")=="${fCommand}") {
-                                            String device  = (String) deviceName
-                                            devNames += device
-                                        }
-                            }
-                        outputTxt = "The following lights are " + fCommand + "," + devNames.sort().unique()
-                        return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]	
-
-                        }
-                        else {outputTxt = "There are no lights " + fCommand}
-                        return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]	
-                    }     
-                }
-            }
+				}
 //>>> Doors & Windows >>>>     // Added by Jason to ask "is anything open" on 2/27/2017         
             if(fOperand.contains("anything") || fOperand.contains("open") || fOperand.contains("closed")) {
             	if(fOperand == "open" && fCommand == "undefined") {
@@ -1287,7 +1273,7 @@ try {
                         state.pContCmdsR = "feedback"
                         	}
                         else {outputTxt = "There are no doors or windows " + fCommand}
-                        log.info "This is the output that you are seeing"
+             //           log.info "This is the output that you are seeing"
                         return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]	
                     	}
 //>>> Doors >>>>     // Mod'd by Jason to ask "which windows are open" on 2/27/2017         
@@ -3082,30 +3068,32 @@ def getMoreFeedback(data) {
     }
 	if ( deviceType == "cDoor1") {    // Added by Jason to ask "are doors open" on 2/27/2017
     	if (devices?.size() == 1) {
-        log.info "This is for a single door and the door is ${devices}"
     	outputTxt = "The following door, " + devices + " is " + command 
         }
         else if (devices?.size() > 1) { 
-        log.info "This is for multiple doors and the doors are ${devices}"
         outputTxt = "The following doors are " + command + "," + devices.sort().unique()
     	}
     }
 	if (deviceType == "cWindow") {    // Added by Jason to ask "are doors open" on 2/27/2017
     	if (devices?.size() == 1) {
-        log.info "This is for a single window and the door is ${devices}"
     	outputTxt = " The following window, " + devices + " is " + command 
     	}
         else { 
-        log.info "This is for multiple windows and the doors are ${devices}"
         outputTxt = "The following windows are " + command + "," + devices.sort().unique()
     	}
     }
     if ( deviceTypeDoors == "cDoor1" && deviceTypeWindows == "cWindow") {
-    	if (data.deviceWindows?.size() == 0 && data.deviceDoors?.size() > 0) {
+    	if (data.deviceWindows?.size() == 0 && data.deviceDoors?.size() == 1) {
+        	outputTxt = "The following door is " + command + "," + deviceDoors.sort().unique()
+            }
+    	if (data.deviceWindows?.size() == 1 && data.deviceDoors?.size() == 0) {
+            outputTxt = "The following window is " + command + "," + deviceWindows.sort().unique()
+            }
+        if (data.deviceWindows?.size() == 0 && data.deviceDoors?.size() > 0) {
         	outputTxt = "The following doors are " + command + "," + deviceDoors.sort().unique()
             }
-    	else if (data.deviceWindows?.size() > 0 && data.deviceDoors?.size() == 0) { 
-        	outputTxt = "The following windows are " + command + "," + deviceWindows.sort().unique()
+    	else if (data.deviceWindows?.size() > 1 && data.deviceDoors?.size() == 0) { 
+            outputTxt = "The following windows are " + command + "," + deviceWindows.sort().unique()
             }
         else if (data.deviceWindows?.size() > 0 && data.deviceDoors?.size() > 0) {    
             outputTxt = "The following doors are " + command + "," + deviceDoors.sort().unique() + " , and the following windows are " + command + "," + deviceWindows.sort().unique() 
