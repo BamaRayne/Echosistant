@@ -1,6 +1,7 @@
 /* 
  * Message and Control Profile - EchoSistant Add-on 
  *
+ *		3/14/2017		Version:4.0 R.0.1.4 	various bug fixes and enhancements
  *		3/10/2017		Version:4.0 R.0.1.3a	Bug fix for Push Messages
  *		3/09/2017		Version:4.0 R.0.1.2		Improved Messaging recording and playback
  *		3/02/2017		Version:4.0 R.0.1.0		Virtual Presence check in/out
@@ -479,8 +480,8 @@ def profileEvaluate(params) {
     def whatReminders = tts.startsWith("what reminders")
     def cancelReminderNum = tts.startsWith("cancel reminder 1") ?  "reminder1" : tts.startsWith("cancel reminder 2") ? "reminder2" : tts.startsWith("cancel reminder 3") ? "reminder3" : null
     // Hue Scenes / Colored Lights   
-    def hueSet = tts.startsWith("set the color")
-    def hueChange = tts.startsWith("change the color") ? true : tts.startsWith("change the lights") ? true : tts.startsWith("change color") ? true : tts.startsWith("change lights to ")
+    def hueSet = tts.startsWith("set the color") ? true : tts.startsWith("set color") ? true : tts.startsWith("set lights color") ? true : tts.startsWith("set the lights to color") ? true : false
+    def hueChange = tts.startsWith("change the color") ? true : tts.startsWith("change the lights") ? true : tts.startsWith("change color") ? true : tts.startsWith("change lights to ") ? true : false
     def feelLucky = tts.startsWith("I feel lucky") ? true : tts.startsWith("I am feeling lucky") ? true : tts.startsWith("I'm feeling lucky") ? true : tts.contains("feeling lucky") ? true : tts.startsWith("pick a random color") ? true : false
     def read = tts.contains("reading") ? true : tts.contains("studying") ? true : false 
     def concentrate = tts.contains("cleaning") ? true : tts.contains("working") ? true : tts.contains("concentrate") ? true : tts.contains("concentrating") ? true : false
@@ -819,30 +820,25 @@ def profileEvaluate(params) {
                         }
                     }
                     // CHANGING COLORS
-                    if (hueSet == true || hueChange == true){
-                        def hueSetVals
-                            if(hueSet == true) {
-                                tts = tts.replace("set the color to ", "").replace("set the color lights to ", "").replace("set the colored lights to ", "")
-                                hueSetVals =  getColorName( tts , level)
-                                gHues?.setColor(hueSetVals)
-                                outputTxt =  "Ok, changing your bulbs to " + tts
-                            }
-                            if(hueChange == true) {
-                                tts = tts.replace("change the color to ", "").replace("change the lights to ", "")
-                                hueSetVals =  getColorName("${tts}", level)
-                                gHues?.setColor(hueSetVals)
-                                outputTxt =  "Ok, changing your bulbs to " + tts
-                            }
-                            if (hueSetVals == null) {
-                                outputTxt =  "Sorry, I wasn't able to change the color to " +  tts
-                                pTryAgain = true
-                                return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":pContCmdsR, "pTryAgain": pTryAgain, "pPIN":pPIN]
-                            }
-                            return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]
-                    }
+					if(hueSet == true || hueChange == true) {
+						def hueSetVals
+						tts = tts.replace("set the color to ", "").replace("set lights color to ", "").replace("set the lights to color ", "").replace("set color to ", "")
+                        tts = tts.replace("change the color to ", "").replace("change the lights to ", "").replace("change color to ", "").replace("change lights to ", "")
+                        tts = tts == "day light" ? "Daylight" : tts == "be light" ? "Daylight" : tts
+                        hueSetVals =  getColorName( tts , level)
+						if (hueSetVals) {
+							gHues?.setColor(hueSetVals)
+                            outputTxt =  "Ok, changing your bulbs to " + tts
+                       	}
+                        else {
+							outputTxt =  "Sorry, I wasn't able to change the color to " +  tts
+                            pTryAgain = true
+                        }
+						return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":pContCmdsR, "pTryAgain": pTryAgain, "pPIN":pPIN]
+					}	
 					if (command == "colorloopOn" || command == "colorloopOff") {
-                        def loopOn = command == "colorloopOn" ? true : command == "colorloopOff" ? false : null
-						if(loopOn == true){
+                        //def loopOn = command == "colorloopOn" ? true : command == "colorloopOff" ? false : null
+						if(command == "colorloopOn"){ //loopOn == true
 							outputTxt = profileLoop(app.label)
                             return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]
 						}
@@ -852,81 +848,13 @@ def profileEvaluate(params) {
 						}
                 	}
                 }
-                if (command != null && deviceType != null) {
-                //LIGHT SWITCHES
-                if (deviceType == "light" && gSwitches?.size()>0){
-                    if (command == "on" || command == "off") {
-                        gSwitches?."${command}"()
-                        outputTxt = "Ok, turning lights " + command
-                        return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]            
-                    }
-                    if (command == "decrease" || command == "increase"){
-                        dataSet =  ["command": command, "deviceType": deviceType]
-                        outputTxt = advCtrlHandler(dataSet)
-                        return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]                                  
-                    }
+                if (command != null && deviceType != null && command != "undefined" ) {
+                //LIGHT SWITCHES && CUSTOM GROUPS
+                if (deviceType == "light" || deviceType == "light1" || deviceType == "light2" || deviceType == "light3" || deviceType == "light4" || deviceType == "light5"){
+                    dataSet =  ["command": command, "deviceType": deviceType]
+                    outputTxt = advCtrlHandler(dataSet)
+                    return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]                                  
                 }
-				//CUSTOM GROUP SWITCHES     ***THIS SECTION MOD'D BY JASON ON 2/26/2017***
-               	if (deviceType == "light1" && gCustom1){
-                	if (command == "on" || command == "off") {
-                    	gCustom1?."${command}"() 
-                        outputTxt = "Ok, turning " + gCustom1N + " " + command
-                        return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]                                  
-                        }
-                   	if (command == "decrease" || command == "increase"){
-                        dataSet =  ["command": command, "deviceType": deviceType]
-                        outputTxt = advCtrlHandler(dataSet)
-                        return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]                                  
-	               }
-                }     
-               	if (deviceType == "light2" && gCustom2){
-                	if (command == "on" || command == "off") {
-                    	gCustom2?."${command}"() 
-                        outputTxt = "Ok, turning " + gCustom2N + " " + command
-                        return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]                                  
-                        }
-                   	if (command == "decrease" || command == "increase"){
-                        dataSet =  ["command": command, "deviceType": deviceType]
-                        outputTxt = advCtrlHandler(dataSet)
-                        return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]                                  
-	                    }
-                }     
-				if (deviceType == "light3" && gCustom3){ 
-					if (command == "on" || command == "off") {
-                    	gCustom3?."${command}"() 
-                        outputTxt = "Ok, turning " + gCustom3N + " " + command
-                        return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]            
-                    	}
-                    if (command == "decrease" || command == "increase"){
-                        dataSet =  ["command": command, "deviceType": deviceType]
-                        outputTxt = advCtrlHandler(dataSet)
-                        return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]                                  
-	                    }
-                 }
-               	if (deviceType == "light4" && gCustom4){
-                	if (command == "on" || command == "off") {
-                    	gCustom4?."${command}"() 
-                        outputTxt = "Ok, turning " + gCustom4N + " " + command
-                        return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]                                  
-                        }
-                   	if (command == "decrease" || command == "increase"){
-                        dataSet =  ["command": command, "deviceType": deviceType]
-                        outputTxt = advCtrlHandler(dataSet)
-                        return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]                                  
-	                    }
-                }     
-				if (deviceType == "light5" && gCustom5){ 
-					if (command == "on" || command == "off") {
-                    	gCustom5?."${command}"() 
-                        outputTxt = "Ok, turning " + gCustom5N + " " + command
-                        return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]            
-                    	}
-                    if (command == "decrease" || command == "increase"){
-                        dataSet =  ["command": command, "deviceType": deviceType]
-                        outputTxt = advCtrlHandler(dataSet)
-                        return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]                                  
-	                    }
-                 }
 				//DISABLE SWITCHES
                 if (deviceType == "disable") {
                     if (gDisable?.size()>0) {
@@ -1081,55 +1009,60 @@ def profileEvaluate(params) {
    ADVANCED CONTROL HANDLER
 ******************************************************************************************************/
 def advCtrlHandler(data) {
-
 	def deviceCommand = data.command
 	def deviceType = data.deviceType
     def result
 	if (deviceType == "light" || deviceType == "light1" || deviceType == "light2" || deviceType == "light3" || deviceType == "light4" || deviceType == "light5"){
-    	deviceType = deviceType == "light" && gSwitches ? gSwitches : deviceType == "light1" && gCustom1 ? gCustom1 : deviceType == "light2" && gCustom2 ? gCustom2 : deviceType == "light3" && gCustom3 ? gCustom3 : deviceType == "light4" && gCustom4 ? gCustom4 : deviceType == "light5" && gCustom5 ? gCustom5 : null
-		if (deviceCommand == "increase" || deviceCommand == "decrease") {
-                    deviceType.each {s ->  //gSwitches.each {s -> 
-                    	def	currLevel = s?.latestValue("level")
-                    	def currState = s?.latestValue("switch") 
-                        if (currLevel) {
-                        def newLevel = 3*10     
-                            if (deviceCommand == "increase") {
-                                if (currLevel == null){
+    deviceType = deviceType == "light" && gSwitches ? gSwitches : deviceType == "light1" && gCustom1 ? gCustom1 : deviceType == "light2" && gCustom2 ? gCustom2 : deviceType == "light3" && gCustom3 ? gCustom3 : deviceType == "light4" && gCustom4 ? gCustom4 : deviceType == "light5" && gCustom5 ? gCustom5 : null
+		if (deviceCommand == "increase" || deviceCommand == "decrease" || deviceCommand == "on" || deviceCommand == "off") {
+                    deviceType.each {s ->
+                   		if (deviceCommand == "on" || deviceCommand == "off") {
+							s?."${deviceCommand}"()
+							result = "Ok, turning lights " + deviceCommand
+                    	}
+                        else {
+                            def	currLevel = s?.latestValue("level")
+                            def currState = s?.latestValue("switch") 
+                            if (currLevel) {
+                            def newLevel = 3*10     
+                                if (deviceCommand == "increase") {
+                                    if (currLevel == null){
+                                        s?.on()
+                                        result = "Ok, turning " + app.label + " lights on"   
+                                    }
+                                    else {
+                                        newLevel =  currLevel + newLevel
+                                        newLevel = newLevel < 0 ? 0 : newLevel >100 ? 100 : newLevel
+                                    }
+                                }
+                                if (deviceCommand == "decrease") {
+                                    if (currLevel == null) {
+                                        s?.off()
+                                        result = "Ok, turning " + app.label + " lights off"                   
+                                    }
+                                    else {
+                                        newLevel =  currLevel - newLevel
+                                        newLevel = newLevel < 0 ? 0 : newLevel >100 ? 100 : newLevel
+                                    }
+                                }            
+                                if (newLevel > 0 && currState == "off") {
                                     s?.on()
-                                    result = "Ok, turning " + app.label + " lights on"   
+                                    s?.setLevel(newLevel)
                                 }
-                                else {
-                                    newLevel =  currLevel + newLevel
-                                    newLevel = newLevel < 0 ? 0 : newLevel >100 ? 100 : newLevel
-                                }
+                                else {                                    
+                                    if (newLevel == 0 && currState == "on") {
+                                    s?.off()
+                                    }
+                                    else {
+                                        s?.setLevel(newLevel)
+                                    }
+                                } 
                             }
-                            if (deviceCommand == "decrease") {
-                				if (currLevel == null) {
-                    				s?.off()
-                    				result = "Ok, turning " + app.label + " lights off"                   
-                    			}
-                             	else {
-                                	newLevel =  currLevel - newLevel
-                                    newLevel = newLevel < 0 ? 0 : newLevel >100 ? 100 : newLevel
-                              	}
-                			}            
-            				if (newLevel > 0 && currState == "off") {
-            					s?.on()
-            					s?.setLevel(newLevel)
-            				}
-            				else {                                    
-            					if (newLevel == 0 && currState == "on") {
-                            	s?.off()
-                            	}
-                				else {
-                            		s?.setLevel(newLevel)
-                            	}
-            				} 
-    					}
-                    	else if  (deviceCommand == "increase" && currState == "off") {s.on()}
-                    	else if (deviceCommand == "decrease" && currState == "on") {s.off()}
-                	}
-    				result = "Ok, adjusting the lights in the  " + app.label 
+                            else if  (deviceCommand == "increase" && currState == "off") {s?.on()}
+                            //else if (deviceCommand == "decrease" && currState == "on") {s?.off()} removed as annoying when used in conjunction with dimmable bulbs on ON/OFF switches Bobby 3/14/2017
+                            result = "Ok, adjusting the lights in the  " + app.label 
+                        } 
+    				}
                     return result
     	}
     }
@@ -1518,15 +1451,85 @@ private getCommand(text){
    	def String command = (String) null
 	def String deviceType = (String) null
     	text = text.toLowerCase()
-
+//LIGHT SWITCHES        
+	if (gSwitches || gCustom1N || gCustom2N || gCustom3N || gCustom4N || gCustom5N){
+        if (gSwitches) {
+                command = text.contains(" on") ? "on" : text.contains(" off") ? "off" : null
+                if (command == null) {
+                    command = text.contains("darker") ? "decrease" : text.contains("too bright")  ? "decrease" : text.contains("dim") ? "decrease" : text.contains("dimmer") ? "decrease" : "undefined"
+                }
+                if (command == null) {
+                    command = text.contains("not bright enough") ? "increase" : text.contains("brighter")  ? "increase" : text.contains("too dark") ? "increase" : text.contains("brighten") ? "increase" : "undefined"
+                }
+                deviceType = "light"
+        }
+        if (gCustom1N) {
+            if (text.contains(settings.gCustom1N.toLowerCase())) {
+                command = text.contains("on") ? "on" : text.contains("off") ? "off" : null
+                if (command == null) {
+                    command = text.contains("darker") ? "decrease" : text.contains("too bright")  ? "decrease" : text.contains("dim") ? "decrease" : text.contains("dimmer") ? "decrease" : "undefined"
+                }
+                if (command == null) {
+                	command = text.contains("not bright enough") ? "increase" : text.contains("brighter")  ? "increase" : text.contains("too dark") ? "increase" : text.contains("brighten") ? "increase" : "undefined"
+                }
+                deviceType = "light1"
+            }
+        }
+        if (gCustom2N) {
+            if (text.contains(settings.gCustom2N.toLowerCase())) {
+                command = text.contains("on") ? "on" : text.contains("off") ? "off" : null
+                if (command == null) {
+                    command = text.contains("darker") ? "decrease" : text.contains("too bright")  ? "decrease" : text.contains("dim") ? "decrease" : text.contains("dimmer") ? "decrease" : "undefined"
+                }
+                if (command == null) {
+                    command = text.contains("not bright enough") ? "increase" : text.contains("brighter")  ? "increase" : text.contains("too dark") ? "increase" : text.contains("brighten") ? "increase" : "undefined"
+                }
+                deviceType = "light2"
+            }
+        }
+        if (gCustom3N) {
+            if (text.contains(settings.gCustom3N.toLowerCase())) {
+                command = text.contains("on") ? "on" : text.contains("off") ? "off" : null
+                if (command == null) {
+                    command = text.contains("darker") ? "decrease" : text.contains("too bright")  ? "decrease" : text.contains("dim") ? "decrease" : text.contains("dimmer") ? "decrease" : "undefined"
+                }
+                if (command == null) {
+                    command = text.contains("not bright enough") ? "increase" : text.contains("brighter")  ? "increase" : text.contains("too dark") ? "increase" : text.contains("brighten") ? "increase" : "undefined"
+                }
+                deviceType = "light3"
+            }
+        }
+        if (gCustom4N) {
+            if (text.contains(settings.gCustom4N.toLowerCase())) {
+                command = text.contains("on") ? "on" : text.contains("off") ? "off" : null
+                if (command == null) {
+                    command = text.contains("darker") ? "decrease" : text.contains("too bright")  ? "decrease" : text.contains("dim") ? "decrease" : text.contains("dimmer") ? "decrease" : "undefined"
+                }
+                if (command == null) {
+                    command = text.contains("not bright enough") ? "increase" : text.contains("brighter")  ? "increase" : text.contains("too dark") ? "increase" : text.contains("brighten") ? "increase" : "undefined"
+                }
+                deviceType = "light4"
+            }
+        }
+        if (gCustom5N) {
+            if (text.contains(settings.gCustom5N.toLowerCase())) {
+                command = text.contains("on") ? "on" : text.contains("off") ? "off" : null
+                if (command == null) {
+                    command = text.contains("darker") ? "decrease" : text.contains("too bright")  ? "decrease" : text.contains("dim") ? "decrease" : text.contains("dimmer") ? "decrease" : "undefined"
+                }
+                if (command == null) {
+                    command = text.contains("not bright enough") ? "increase" : text.contains("brighter")  ? "increase" : text.contains("too dark") ? "increase" : text.contains("brighten") ? "increase" : "undefined"
+                }
+                deviceType = "light5"
+            }
+        }        
+    }
 //Virtual Presence Check In/Out
 	if (text.contains ("check") || text.contains ("checking")) {
-    	deviceType = "virPres"
-        log.debug "${app.label} has arrived and the deviceType is ${deviceType} "
-        
+    	//def deviceId = "${app.label}" THIS VARIABLE IS NOT USED - Bobby 3/14/2017
+        deviceType = "virPres"
+        command = "checking" //text.contains(" checking") ? "checking" : "undefined"
         }
-
-
 //Run Profile
 	if (text.startsWith ("run profile") || text.startsWith ("execute profile") || text.startsWith("run actions") || text.startsWith ("execute actions")){
     	command = "run"
@@ -1538,7 +1541,8 @@ private getCommand(text){
     	deviceType = "profile"
 	}
 //Color Loop
-	if(text.contains("loop") || text.contains("looping") || text.contains("color l") || text.contains("colored l")) {
+	if(text.contains(" loop") || text.contains(" looping") || text.contains(" color l") || text.contains(" colored l")) {
+     log.warn "color loop is true"
     	deviceType = "color"
     	if (text.startsWith ("start") || text.startsWith("play") || text.startsWith ("run")) {
         	command = "colorloopOn"
@@ -1554,101 +1558,18 @@ private getCommand(text){
         }
         log.warn "deviceType = ${deviceType}, command = ${command}"
 	}
-//VIRTUAL PRESENCE DEVICE
-	if (deviceType == "virPres") {
-    def deviceId = "${app.label}" 
-    if (deviceId) {
-    	log.debug "I think this is where I am and the device is the ${deviceId} "
-    	command = text.contains(" checking") ? "checking" : "undefined"
-    //    deviceType = "virPres"
-        }
-        }
-//LIGHT SWITCHES        
-	if (gSwitches || gCustom1N || gCustom2N || gCustom3N || gCustom4N || gCustom5N){ // ***THIS SECTION MOD'D BY JASON ON 2/26/2017***
-        if (gSwitches) {
-                command = text.contains(" on") ? "on" : text.contains(" off") ? "off" : "undefined"
-                if (command == "undefined") {
-                    command = text.contains("darker") ? "decrease" : text.contains("too bright")  ? "decrease" : text.contains("dim") ? "decrease" : text.contains("dimmer") ? "decrease" : "undefined"
-                }
-                if (command == "undefined") {
-                    command = text.contains("not bright enough") ? "increase" : text.contains("brighter")  ? "increase" : text.contains("too dark") ? "increase" : text.contains("brighten") ? "increase" : "undefined"
-                }
-                deviceType = "light"
-        }
-        if (gCustom1N) {
-            if (text.contains(settings.gCustom1N.toLowerCase())) {
-                command = text.contains("on") ? "on" : text.contains("off") ? "off" : "undefined"
-                if (command == "undefined") {
-                    command = text.contains("darker") ? "decrease" : text.contains("too bright")  ? "decrease" : text.contains("dim") ? "decrease" : text.contains("dimmer") ? "decrease" : "undefined"
-                }
-                if (command == "undefined") {
-                    command = text.contains("not bright enough") ? "increase" : text.contains("brighter")  ? "increase" : text.contains("too dark") ? "increase" : text.contains("brighten") ? "increase" : "undefined"
-                }
-                deviceType = "light1"
-            }
-        }
-        if (gCustom2N) {
-            if (text.contains(settings.gCustom2N.toLowerCase())) {
-                command = text.contains("on") ? "on" : text.contains("off") ? "off" : "undefined"
-                if (command == "undefined") {
-                    command = text.contains("darker") ? "decrease" : text.contains("too bright")  ? "decrease" : text.contains("dim") ? "decrease" : text.contains("dimmer") ? "decrease" : "undefined"
-                }
-                else if (command == "undefined") {
-                    command = text.contains("not bright enough") ? "increase" : text.contains("brighter")  ? "increase" : text.contains("too dark") ? "increase" : text.contains("brighten") ? "increase" : "undefined"
-                }
-                deviceType = "light2"
-            }
-        }
-        if (gCustom3N) {
-            if (text.contains(settings.gCustom3N.toLowerCase())) {
-                command = text.contains("on") ? "on" : text.contains("off") ? "off" : "undefined"
-                if (command == "undefined") {
-                    command = text.contains("darker") ? "decrease" : text.contains("too bright")  ? "decrease" : text.contains("dim") ? "decrease" : text.contains("dimmer") ? "decrease" : "undefined"
-                }
-                else if (command == "undefined") {
-                    command = text.contains("not bright enough") ? "increase" : text.contains("brighter")  ? "increase" : text.contains("too dark") ? "increase" : text.contains("brighten") ? "increase" : "undefined"
-                }
-                deviceType = "light3"
-            }
-        }
-        if (gCustom4N) {
-            if (text.contains(settings.gCustom4N.toLowerCase())) {
-                command = text.contains("on") ? "on" : text.contains("off") ? "off" : "undefined"
-                if (command == "undefined") {
-                    command = text.contains("darker") ? "decrease" : text.contains("too bright")  ? "decrease" : text.contains("dim") ? "decrease" : text.contains("dimmer") ? "decrease" : "undefined"
-                }
-                else if (command == "undefined") {
-                    command = text.contains("not bright enough") ? "increase" : text.contains("brighter")  ? "increase" : text.contains("too dark") ? "increase" : text.contains("brighten") ? "increase" : "undefined"
-                }
-                deviceType = "light4"
-            }
-        }
-        if (gCustom5N) {
-            if (text.contains(settings.gCustom5N.toLowerCase())) {
-                command = text.contains("on") ? "on" : text.contains("off") ? "off" : "undefined"
-                if (command == "undefined") {
-                    command = text.contains("darker") ? "decrease" : text.contains("too bright")  ? "decrease" : text.contains("dim") ? "decrease" : text.contains("dimmer") ? "decrease" : "undefined"
-                }
-                else if (command == "undefined") {
-                    command = text.contains("not bright enough") ? "increase" : text.contains("brighter")  ? "increase" : text.contains("too dark") ? "increase" : text.contains("brighten") ? "increase" : "undefined"
-                }
-                deviceType = "light5"
-            }
-        }        
-    }
 //Disable Switches
-    if (gDisable){
+    //if (gDisable){
         if (text.startsWith("disengage") || text.startsWith("disable automation") || text.startsWith("stop turning the") || text.startsWith("stop the motion sensor") || text.startsWith ("turn the motion sensor off") || text.startsWith("stop the sensor") || text.startsWith("kill the automation") || text.contains("kill the sensor") || text.contains("sensor off")){
-            command = "off"
-            deviceType = "disable"
+            	command = "off"
+                deviceType = "disable"
         }
         else if (text.startsWith("engage") ||text.contains("enable automation") || text.startsWith("start turning the") || text.startsWith("start the motion sensor") || text.startsWith("turn the motion sensor on") || text.startsWith ("start the sensor")|| text.contains("sensor on")){
             command = "on"
             deviceType = "disable"
         }
-   	}
 // Fans
-	if(gFans) {
+	//if(gFans) {
         if (text.contains("fan") || text.contains("fans")) {
             if (text.contains("on") || text.contains("start")) {
                 command = "on" 
@@ -1675,9 +1596,7 @@ private getCommand(text){
                 deviceType = "fan"
             }      
         }
-    }
 // Vents
-    if(gVents){
         if (text.contains("vent")) {  // Changed "vents" to "vent" to fix bug.  Jason 2/21/2017
             if (text.contains("open")) {
                 command = "open" 
@@ -1692,9 +1611,7 @@ private getCommand(text){
                 deviceType = "vent"
             }
         }
-    }
 //Volume
-	if(sSpeaker || sSynth){
         if  (text.contains("mute") || text.contains("be quiet") || text.contains("pause speaker")){
                 command = "mute"
                 deviceType = "volume"
@@ -1715,9 +1632,7 @@ private getCommand(text){
             command = "undefined"
             deviceType = "volume"
         }
-    }
 //Harmony
-	if(sMedia){
         if (text.contains("tv")) {
             if  (text.contains("start") || text.startsWith("turn on") || text.contains("switch to") || text.contains("on")){
                 command = "startActivity"
@@ -1732,7 +1647,6 @@ private getCommand(text){
                 deviceType = "tv"
             }
         }
-    }
     return ["deviceType":deviceType, "command":command ]
 }
 /************************************************************************************************************
@@ -1818,6 +1732,7 @@ def fillColorSettings() {
 		[ name: "Warm White",				rgb: "#DAF17E",		h: 51,		s: 20,		l: 100,	],
         [ name: "Very Warm White",			rgb: "#DAF17E",		h: 51,		s: 60,		l: 51,	],
 		[ name: "Daylight White",			rgb: "#CEF4FD",		h: 191,		s: 9,		l: 90,	],
+		[ name: "Daylight",					rgb: "#CEF4FD",		h: 191,		s: 9,		l: 90,	],        
 		[ name: "Cool White",				rgb: "#F3F6F7",		h: 187,		s: 19,		l: 96,	],
 		[ name: "White",					rgb: "#FFFFFF",		h: 0,		s: 0,		l: 100,	],
 		[ name: "Alice Blue",				rgb: "#F0F8FF",		h: 208,		s: 100,		l: 97,	],
