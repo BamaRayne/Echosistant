@@ -7,6 +7,7 @@
  
  ************************************ FOR INTERNAL USE ONLY ******************************************************
  *
+ *		3/14/2017		Version:4.0 R.0.2.13  	Bug fix for windows and doors feedback/ reconfigured
  *		3/13/2017		Version:4.0 R.0.2.12	Bug fix for Weather forcast
  *		3/12/2017		Version:4.0 R.0.2.11	Changed SHM status from Armed Stay to Armed Home for audio output
  *		3/08/2017		Version:4.0 R.0.2.10	enabled Profile Messaging retrieval
@@ -47,7 +48,7 @@ definition(
 	UPDATE LINE 38 TO MATCH RECENT RELEASE
 **********************************************************************************************************************************************/
 private release() {
-	def text = "R.0.2.12"
+	def text = "R.0.2.13"
 }
 /**********************************************************************************************************************************************/
 preferences {   
@@ -1196,29 +1197,29 @@ try {
                                     if (deviceName.latestValue("switch")=="${fCommand}") {
                                         String device  = (String) deviceName
                                         devList += device
-                                    }
+							}
                         }
                     }
-                    if (fQuery == "how" || fQuery.contains ("if") || fQuery == "are there" || fQuery == "how many") { // removed fQuery == "undefined" 2/13/2017
+                    if (fQuery.contains ("is") || fQuery == "what's" || fQuery == "what" || fQuery == "is" || fQuery == "how" || fQuery.contains ("if") || fQuery == "are there" || fQuery == "how many") { // removed fQuery == "undefined" 2/13/2017
                         if (devList?.size() > 0) {
                             if (devList?.size() == 1) {
-                                outputTxt = "There is one switch " + fCommand + " , would you like to know which one"                           			
+                                outputTxt = "There is one light " + fCommand + " , would you like to know which one"                           			
                             }
                             else {
-                                outputTxt = "There are " + devList?.size() + " switches " + fCommand + " , would you like to know which switches"
+                                outputTxt = "There are " + devList?.size() + " lights " + fCommand + " , would you like to know which lights"
                             }
                         data.devices = devList
                         data.cmd = fCommand
                         data.deviceType = "cSwitch"
                         state.lastAction = data
                         state.pContCmdsR = "feedback"
-                        //return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]	
+                  //      return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]	
                         }
-                        else {outputTxt = "There are no switches " + fCommand}
+                        else {outputTxt = "There are no lights " + fCommand}
                         return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]	
 
                     }
-                    else if (fQuery.contains ("what") || fQuery.contains ("which") || fQuery == "what's") {
+                    else if (fQuery.contains ("what") || fQuery.contains ("which") || fQuery == "what's" || fQuery.contains ("is")) {
                         def devNames = []
                         if (cSwitch?.latestValue("switch").contains(fCommand)) {
                             cSwitch?.each { deviceName ->
@@ -1227,11 +1228,11 @@ try {
                                             devNames += device
                                         }
                             }
-                        outputTxt = "The following switches are " + fCommand + "," + devNames.sort().unique()
+                        outputTxt = "The following lights are " + fCommand + "," + devNames.sort().unique()
                         return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]	
 
                         }
-                        else {outputTxt = "There are no switches " + fCommand}
+                        else {outputTxt = "There are no lights " + fCommand}
                         return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]	
                     }     
                 }
@@ -1245,155 +1246,109 @@ try {
                     def devListDoors = []
                     def devListWindows = []
                     if(cDoor1){
-                        if (cDoor1?.latestValue("contact").contains(fCommand)) {
+                        if (cDoor1?.currentValue("contact").contains(fCommand)) {
                             cDoor1?.each { deviceName ->
-                                        if (deviceName.latestValue("contact")=="${fCommand}") {
+                                        if (deviceName.currentValue("contact")=="${fCommand}") {
                                             String device  = (String) deviceName
                                             devListDoors += device
-                                        }
-                                    }
-                                 }
-                    }
+                                        	}
+                                    	}
+                                	}
+                    			}
                     if(cWindow) {
-                        if (cWindow?.latestValue("contact").contains(fCommand)) {
+                        if (cWindow?.currentValue("contact").contains(fCommand)) {
                             cWindow?.each { deviceName ->
-                                        if (deviceName.latestValue("contact")=="${fCommand}") {
+                                        if (deviceName.currentValue("contact")=="${fCommand}") {
                                             String device  = (String) deviceName
                                             devListWindows += device
-                                        }
-                                    }
-                                 }
-                    }
-                    if (fQuery == "what's" || fQuery == "what" || fQuery == "is" || fQuery == "if" && fQuery.contains ("is")) { // removed fQuery == "undefined" 2/13
-                        if (devListDoors?.size() > 0) {
-                            if (devListDoors?.size() == 1) {
-                                outputTxt = "There is " + devListDoors?.size() + " door and " + devListWindows?.size() + "windows " + fCommand + " , would you like to know which ones? "                           			
+                                        	}
+                                    	}
+                                	}
+                    			}
+                    if (fQuery == "what's" || fQuery == "what" || fQuery == "is" || fQuery == "which" || fQuery == "any" || fQuery == "how" || fQuery== "how many" || fQuery == "are there" || fQuery.contains ("if")) { // removed fQuery == "undefined" 2/13
+                        if (devListDoors?.size() == 1 && devListWindows?.size() == 1) {
+                        	outputTxt = "There is " + devListDoors?.size() + " door and " + devListWindows?.size() + " window " + fCommand + " , would you like to know which ones? "                           			
                             }
+                            else if (devListDoors?.size() > 0 && devListWindows?.size() == 0) {
+                            	outputTxt = "There is " + devListDoors?.size() + " doors " + fCommand + " , would you like to know which ones?"
+                                }
+                            else if (devListDoors?.size() == 0 && devListWindows?.size() > 0) {
+                            	outputTxt = "There is " + devListWindows?.size() + " windows " + fCommand + " , would you like to know which ones?"  
+                                }
                             else {
-                                outputTxt = "There are " + devListDoors?.size() + "doors and " + devListWindows?.size() + "windows " + fCommand + "  , would you like to know which ones? "
+                                outputTxt = "There are " + devListDoors?.size() + " doors and " + devListWindows?.size() + " windows " + fCommand + "  , would you like to now know which ones? "
                             }
-                        data.deviceDoors = devListDoors
-                        data.deviceWindows = devListWindows
                         data.cmd = fCommand
                         data.deviceTypeDoors = "cDoor1"
-                        data.deviceTypeWindows = "cWindows"
+                        data.deviceTypeWindows = "cWindow"
+                        data.deviceDoors = devListDoors
+                        data.deviceWindows = devListWindows
                         state.lastAction = data
                         state.pContCmdsR = "feedback"
-                        return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]	
-                        }
+                        	}
                         else {outputTxt = "There are no doors or windows " + fCommand}
+                        log.info "This is the output that you are seeing"
                         return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]	
                     	}
-                    }
 //>>> Doors >>>>     // Mod'd by Jason to ask "which windows are open" on 2/27/2017         
             if(fOperand.contains("door")) { 
-                    def devList = []
+                    def devListDoors = []
                     if (cDoor1?.latestValue("contact")?.contains(fCommand)) {
                         cDoor1?.each { deviceName ->
                                     if (deviceName.latestValue("contact")=="${fCommand}") {
                                         String device  = (String) deviceName
-                                        devList += device
+                                        devListDoors += device
                                     }
                         		}
 							}
-                    if (fQuery == "any" || fQuery == "how" || fQuery== "how many" || fQuery == "are there" || fQuery.contains ("if")) { // removed fQuery == "undefined" 2/13
-                        if (devList?.size() > 0) {
-                            if (devList?.size() == 1) {
+                    if (fQuery == "what's" || fQuery == "what" || fQuery == "is" || fQuery == "which" || fQuery == "any" || fQuery == "how" || fQuery== "how many" || fQuery == "are there" || fQuery.contains ("if")) { // removed fQuery == "undefined" 2/13
+                        if (devListDoors?.size() > 0) {
+                            if (devListDoors?.size() == 1) {
                                 outputTxt = "There is one door " + fCommand + " , would you like to know which one? "                           			
                             }
                             else {
-                                outputTxt = "There are " + devList?.size() + " doors " + fCommand + " , would you like to know which doors? "
+                                outputTxt = "There are " + devListDoors?.size() + " doors " + fCommand + " , would you like to know which doors? "
                             }
-                        data.devices = devList
+						data.devices = devListDoors
                         data.cmd = fCommand
                         data.deviceType = "cDoor1"
                         state.lastAction = data
                         state.pContCmdsR = "feedback"
-                        return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]	
                         }
                         else {outputTxt = "There are no doors " + fCommand}
                         return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]	
-                    }
-                    else if (fQuery.contains ("what") || fQuery.contains ("which") || fQuery == "what's") {
-                        def devNames = []
-                        fOperand = fOperand.contains("close") ? "closed" : fOperand.contains("open") ? "open" : fOperand 
-                        fCommand = fCommand.contains("close") ? "closed" : fCommand
-                        fCommand = fOperand == "closed" ? "closed" : fOperand == "open" ? "open" : fCommand                  
-                            if (cDoor1?.latestValue("contact")?.contains(fCommand)) {
-                                cDoor1?.each { deviceName ->
-                                            if (deviceName.latestValue("contact")=="${fCommand}") {
-                                                String device  = (String) deviceName
-                                                devNames += device
-                                            }
-                                }
-                                cDoor1?.each { deviceName ->
-                                            if (deviceName.latestValue("contact")=="${fCommand}") {
-                                                String device  = (String) deviceName
-                                                devNames += device
-                                            }
-                                }
-                            outputTxt = "The following doors are " + fCommand + "," + devNames.sort().unique()
-                            return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]	
-							}
-                            else {outputTxt = "There are no doors " + fCommand}
-                            return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]	
                     	}
-            		}                  
+                    }
 //>>> Windows >>>>       // Added by Jason to ask "which windows are open" on 2/27/2017     
             if(fOperand.contains("window")) { 
-                    def devList = []
+                    def devListWindows = []
                     fCommand = fOperand.contains("open") ? "open" : fOperand.contains("close") ? "closed" : fCommand // to avoid misplaced command as operand 3/3/17 Bobby
                     if (cWindow?.latestValue("contact")?.contains(fCommand)) {
                         cWindow?.each { deviceName ->
                                     if (deviceName.latestValue("contact")=="${fCommand}") {
                                         String device  = (String) deviceName
-                                        devList += device
+                                        devListWindows += device
                                     }
                         		}
 							}
-                    if (fQuery == "any" || fQuery == "how" || fQuery== "how many" || fQuery == "are there" || fQuery.contains ("if")) { // removed fQuery == "undefined" 2/13
-                        if (devList?.size() > 0) {
-                            if (devList?.size() == 1) {
+                    if (fQuery == "what's" || fQuery == "what" || fQuery == "is" || fQuery == "which" || fQuery == "any" || fQuery == "how" || fQuery== "how many" || fQuery == "are there" || fQuery.contains ("if")) { // removed fQuery == "undefined" 2/13
+                        if (devListWindows?.size() > 0) {
+                            if (devListWindows?.size() == 1) {
                                 outputTxt = "There is one window " + fCommand + " , would you like to know which one? "                           			
                             }
                             else {
-                                outputTxt = "There are " + devList?.size() + " windows " + fCommand + " , would you like to know which windows? "
+                                outputTxt = "There are " + devListWindows?.size() + " windows " + fCommand + " , would you like to know which windows? "
                             }
-                        data.devices = devList
+                        data.devices = devListWindows
                         data.cmd = fCommand
                         data.deviceType = "cWindow"
                         state.lastAction = data
                         state.pContCmdsR = "feedback"
-                        return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]	
                         }
                         else {outputTxt = "There are no windows " + fCommand}
                         return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]	
-                    }
-                    else if (fQuery.contains ("what") || fQuery.contains ("which") || fQuery == "what's") {
-                        def devNames = []
-                        fOperand = fOperand.contains("close") ? "closed" : fOperand.contains("open") ? "open" : fOperand 
-                        fCommand = fCommand.contains("close") ? "closed" : fCommand
-                        fCommand = fOperand == "closed" ? "closed" : fOperand == "open" ? "open" : fCommand                  
-                            if (cWindow?.latestValue("contact")?.contains(fCommand)) {
-                                cWindow?.each { deviceName ->
-                                            if (deviceName.latestValue("contact")=="${fCommand}") {
-                                                String device  = (String) deviceName
-                                                devNames += device
-                                            }
-                                }
-                                cWindow?.each { deviceName ->
-                                            if (deviceName.latestValue("contact")=="${fCommand}") {
-                                                String device  = (String) deviceName
-                                                devNames += device
-                                            }
-                                }
-                            outputTxt = "The following windows are " + fCommand + "," + devNames.sort().unique()
-                            return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]	
-							}
-                            else {outputTxt = "There are no windows " + fCommand}
-                            return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]	
                     	}
-            		}          
+                    }
 //>>> Battery Level >>>>                        
             if(fOperand == "batteries" || fOperand == "battery level" || fOperand == "battery" ) {
             	def cap = "bat"
@@ -3105,12 +3060,13 @@ def getAverage(device,type){
 /******************************************************************************
 	 FEEDBACK SUPPORT - ADDITIONAL FEEDBACK	
      
+                        data.deviceTypeDoors = "cDoor1"
+                        data.deviceTypeWindows = "cWindow"
                         data.deviceDoors = devListDoors
                         data.deviceWindows = devListWindows
-                        data.cmd = fCommand
-                        data.deviceTypeDoors = "cDoor1"
-                        data.deviceTypeWindows = "cWindows"
-     
+                        state.lastAction = data
+                        state.pContCmdsR = "feedback"
+    
 ******************************************************************************/
 def getMoreFeedback(data) {
     def devices = data.devices
@@ -3120,34 +3076,45 @@ def getMoreFeedback(data) {
     def deviceWindows = data.deviceWindows
     def deviceTypeWindows = data.deviceTypeWindows
     def command = data.cmd
-    def result 
+    def outputTxt = ""
 	if ( deviceType == "cSwitch") {
-    	result = "The following switches are " + command + "," + devices.sort().unique()
+    	outputTxt = "The following lights are " + command + "," + devices.sort().unique()
     }
-//	if ( deviceType == "cContact") {  // Removed by Jason 2/27/2017  no longer used
-//    	result = "The following doors or windows are " + command + "," + devices.sort().unique()
-//    }
-	if ( deviceType == "cDoor1") {    // Added by Jason to ask "are doors open" on 2/27/2017   
-    	result = "The following doors are " + command + "," + devices.sort().unique()
+	if ( deviceType == "cDoor1") {    // Added by Jason to ask "are doors open" on 2/27/2017
+    	if (devices?.size() == 1) {
+        log.info "This is for a single door and the door is ${devices}"
+    	outputTxt = "The following door, " + devices + " is " + command 
+        }
+        else if (devices?.size() > 1) { 
+        log.info "This is for multiple doors and the doors are ${devices}"
+        outputTxt = "The following doors are " + command + "," + devices.sort().unique()
+    	}
     }
-	if ( deviceType == "cWindow") {   // Added by Jason to ask "are windows open" on 2/27/2017   
-    	result = "The following windows are " + command + "," + devices.sort().unique()
+	if (deviceType == "cWindow") {    // Added by Jason to ask "are doors open" on 2/27/2017
+    	if (devices?.size() == 1) {
+        log.info "This is for a single window and the door is ${devices}"
+    	outputTxt = " The following window, " + devices + " is " + command 
+    	}
+        else { 
+        log.info "This is for multiple windows and the doors are ${devices}"
+        outputTxt = "The following windows are " + command + "," + devices.sort().unique()
+    	}
     }
-    if ( deviceTypeDoors == "cDoor1") {
-    	if (data.deviceWindows?.size() == 0) {
-        	result = "The following doors are " + command + "," + deviceDoors.sort().unique()
+    if ( deviceTypeDoors == "cDoor1" && deviceTypeWindows == "cWindow") {
+    	if (data.deviceWindows?.size() == 0 && data.deviceDoors?.size() > 0) {
+        	outputTxt = "The following doors are " + command + "," + deviceDoors.sort().unique()
             }
-    		else result = "The following doors are " + command + "," + deviceDoors.sort().unique() + " , and the following windows are " + command + "," + deviceWindows.sort().unique() 
+    	else if (data.deviceWindows?.size() > 0 && data.deviceDoors?.size() == 0) { 
+        	outputTxt = "The following windows are " + command + "," + deviceWindows.sort().unique()
+            }
+        else if (data.deviceWindows?.size() > 0 && data.deviceDoors?.size() > 0) {    
+            outputTxt = "The following doors are " + command + "," + deviceDoors.sort().unique() + " , and the following windows are " + command + "," + deviceWindows.sort().unique() 
    			}
-        else if (data.deviceDoors?.size() == 0) {
-        	result = "The following windows are " + command + "," + deviceWindows.sort().unique()
-            }
-    		else result = "The following doors are " + command + "," + deviceDoors.sort().unique() + " , and the following windows are " + command + "," + deviceWindows.sort().unique() 
-   			
     state.pContCmdsR = null 
 	state.lastAction = null
-    return result
-}
+	}
+	return outputTxt //":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]	
+}    
 /******************************************************************************
 	 FEEDBACK SUPPORT - DEVICE MATCH											
 ******************************************************************************/
