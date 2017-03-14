@@ -1,7 +1,7 @@
 /* 
  * Notification - EchoSistant Add-on 
  *
- *		3/13/2017		Version:4.0 R.0.2.6	    New variables, bug fixes
+ *		3/14/2017		Version:4.0 R.0.2.7	    Fast Response
  *		3/12/2017		Version:4.0 R.0.2.5	    New variables
  *		3/11/2017		Version:4.0 R.0.2.4b	Bug fixes: Push msg not sending and volume incorrect in logs
  *		3/11/2017		Version:4.0 R.0.2.3		added ability to run Messaging and Control Profile actions
@@ -46,7 +46,6 @@ preferences {
             page( name: "timeIntervalInput", title: "Only during a certain time")
 
 }
-
 //dynamic page methods
 page name: "mainProfilePage"
     def mainProfilePage() {
@@ -130,7 +129,7 @@ page name: "mainProfilePage"
         if (actionType == "Custom") {
             section ("Send this message (optional - leave empty for defalut message", hideable: true, hidden: false) {
                 input "message", "text", title: "Play this message...", required:false, multiple: false, defaultValue: ""
-                paragraph "You can use the following variables in your custom message: &device, &action , &event, &time and &date \n" +
+                paragraph "You can use the following variables in your custom message: &device, &action , &event, &time &date and &profile \n" +
                 		"NEW WEATHER VARIABLES: &today, &tonight, &tomorrow, &high, &low, &wind, &uv, &precipitation, &humidity, &conditions \n" +
                     	"\nFor Example: \n&event sensor &device is &action and the event happened at &time \n" +
                     	"Translates to: 'Contact' sensor 'Bedroom' is 'Open' and the event happened at '1:00 PM'"
@@ -149,7 +148,9 @@ page name: "mainProfilePage"
             }
             href "SMS", title: "Send SMS & Push Messages...", description: pSendComplete(), state: pSendSettings()
 			input "saveEchoSistant", "bool", title: "Allow Alexa to retrieve this report by its name", required: false, submitOnChange: true
-        }
+			input "fastResponse", "bool", title: "Enable Fast Notifications", required: false, submitOnChange: true
+ 				if (fastResponse) paragraph "Enable this will speed up the notifications but disables most of the features, including a custom message"
+		}
         section ("Run actions for this Profile" ) {    
             input "myProfile", "enum", title: "Choose Profile...", options: getProfileList(), multiple: false, required: false 
 		}        
@@ -226,7 +227,7 @@ def installed() {
 		runEvery5Minutes(mGetWeatherAlerts)
 	}
 	if (myWeather) {
-		runEvery1Hour(mGetCurrentWeather) //(mGetCurrentWeather)
+		runEvery1Hour(mGetCurrentWeather)
 	}    
 }
 def updated() {
@@ -241,6 +242,7 @@ def initialize() {
     state.lastAlert
     state.cycleOnH = false
     state.cycleOnL = false
+    state.lastWeather
 	if (timeOfDay) {
 		schedule(timeOfDay, "scheduledTimeHandler")
 	}
@@ -255,53 +257,70 @@ def initialize() {
         state.lastWeatherCheck = null
        	mGetCurrentWeather()
 	}    
-    state.lastWeather
-    if (actionType) {
-    if(myPower) {subscribe(myPower, "power", meterHandler)}
-    if (myRoutine) {subscribe(location, "routineExecuted",alertsHandler)}
-    if (myMode) {subscribe(location, "mode", alertsHandler)}
-   	if (mySwitch) {
-    	if (mySwitchS == "on")	subscribe(mySwitch, "switch.on", alertsHandler)
-    	if (mySwitchS == "off")	subscribe(mySwitch, "switch.off", alertsHandler)
-        else    				subscribe(mySwitch, "switch", alertsHandler)
-   	}    
-	if (myContact) {
-    	if (myContactS == "open")	subscribe(myContact, "contact.open", alertsHandler)
-    	if (myContactS == "closed")	subscribe(myContact, "contact.closed", alertsHandler)
-        else    					subscribe(myContact, "contact", alertsHandler)
+    if (actionType || fastResponse) {
+        if(myPower) 						subscribe(myPower, "power", meterHandler)
+        if (myRoutine) 						subscribe(location, "routineExecuted",alertsHandler)
+        if (myMode) 						subscribe(location, "mode", alertsHandler)
+        if (mySwitch) {
+            if (mySwitchS == "on")			subscribe(mySwitch, "switch.on", alertsHandler)
+            if (mySwitchS == "off")			subscribe(mySwitch, "switch.off", alertsHandler)
+            else    						subscribe(mySwitch, "switch", alertsHandler)
+        }    
+        if (myContact) {
+            if (myContactS == "open")		subscribe(myContact, "contact.open", alertsHandler)
+            if (myContactS == "closed")		subscribe(myContact, "contact.closed", alertsHandler)
+            else    						subscribe(myContact, "contact", alertsHandler)
+        }
+        if (myMotion) {
+            if (myMotionS == "active")		subscribe(myMotion, "motion.active", alertsHandler)
+            if (myMotionS == "inactive")	subscribe(myMotion, "motion.inactive", alertsHandler)
+            else    						subscribe(myMotion, "motion", alertsHandler)
+        }    
+        if (myLocks) {
+            if (myLocksS == "locked")		subscribe(myLocks, "lock.locked", alertsHandler)
+            if (myLocksS == "unlocked")		subscribe(myLocks, "lock.unlocked", alertsHandler)
+            else    						subscribe(myLocks, "lock", alertsHandler)
+        }
+        if (myPresence) {
+            if (myPresenceS == "locked")	subscribe(myPresence, "presence.present", alertsHandler)
+            if (myPresenceS == "unlocked")	subscribe(myPresence, "presence.not present", alertsHandler)
+            else    						subscribe(myPresence, "presence", alertsHandler)
+        }
+        if (myTstat) {    
+            if (myTstatS == "cooling")		subscribe(myTstat, "coolingSetpoint", alertsHandler)
+            if (myTstatS == "heating")		subscribe(myTstat, "heatingSetpoint", alertsHandler)
+            else    						subscribe(myPresence, "thermostatSetpoint", alertsHandler)
+        }
+        if (mySmoke) {    
+            if (mySmokeS == "detected")		subscribe(mySmoke, "smoke.detected", alertsHandler)
+            if (mySmokeS == "clear")		subscribe(mySmoke, "smoke.clear", alertsHandler)
+            else    						subscribe(mySmoke, "smoke", alertsHandler)
+        }
+        if (myWater) {    
+            if (myWaterS == "wet")			subscribe(myWater, "water.wet", alertsHandler)
+            if (myWaterS == "dry")			subscribe(myWater, "water.dry", alertsHandler)
+            else    						subscribe(myWater, "water", alertsHandler)
+      	}
     }
-   	if (myMotion) {
-    	if (myMotionS == "active")		subscribe(myMotion, "motion.active", alertsHandler)
-    	if (myMotionS == "inactive")	subscribe(myMotion, "motion.inactive", alertsHandler)
-        else    						subscribe(myMotion, "motion", alertsHandler)
-    }    
-    if (myLocks) {
-    	if (myLocksS == "locked")		subscribe(myLocks, "lock.locked", alertsHandler)
-    	if (myLocksS == "unlocked")		subscribe(myLocks, "lock.unlocked", alertsHandler)
-        else    						subscribe(myLocks, "lock", alertsHandler)
+}
+/************************************************************************************************************
+   RUNNING REPORT FROM PARENT
+************************************************************************************************************/
+def runProfile(profile) {
+	def result 
+	if (message){
+    	result = message ? "$message".replace("&today", "${getVar("today")}") : null
     }
-    if (myPresence) {
-    	if (myPresenceS == "locked")	subscribe(myPresence, "presence.present", alertsHandler)
-    	if (myPresenceS == "unlocked")	subscribe(myPresence, "presence.not present", alertsHandler)
-        else    						subscribe(myPresence, "presence", alertsHandler)
-	}
-    if (myTstat) {    
-    	if (myTstatS == "cooling")		subscribe(myTstat, "coolingSetpoint", alertsHandler)
-    	if (myTstatS == "heating")		subscribe(myTstat, "heatingSetpoint", alertsHandler)
-        else    						subscribe(myPresence, "thermostatSetpoint", alertsHandler)
-    }
-    if (mySmoke) {    
-    	if (mySmokeS == "detected")		subscribe(mySmoke, "smoke.detected", alertsHandler)
-    	if (mySmokeS == "clear")		subscribe(mySmoke, "smoke.clear", alertsHandler)
-        else    						subscribe(mySmoke, "smoke", alertsHandler)
-    }
-    if (myWater) {    
-    	if (myWaterS == "wet")		subscribe(myWater, "water.wet", alertsHandler)
-    	if (myWaterS == "dry")		subscribe(myWater, "water.dry", alertsHandler)
-        else    						subscribe(myWater, "water", alertsHandler)
-    	}
-    }
-}    
+   	return result
+}
+
+private getVar(var) {
+	def result
+if (var == "today"){
+	result = new Date(now()).format("EEEE, MMMM d, yyyy", location.timeZone)
+return result
+}
+}
 /************************************************************************************************************
    TIME OF DAY HANDLER
 ************************************************************************************************************/
@@ -312,19 +331,119 @@ def scheduledTimeHandler() {
     		alertsHandler(data)
     	}
 }
+/***********************************************************************************************************************
+    POWER HANDLER
+***********************************************************************************************************************/
+def meterHandler(evt) {
+        def data = [:]
+        def eVal = evt.value
+        def eName = evt.name
+        def eDev = evt.device
+        def eDisplayN = evt.displayName
+        int delay = minutes 
+            delay = delay ?: 0 as int
+        int meterValueRaw = evt.value as double
+            int meterValue = meterValueRaw ?: 0 as int
+        int thresholdValue = threshold == null ? 0 : threshold as int
+        int thresholdStopValue = thresholdStop == null ? 0 : thresholdStop as int
+        def cycleOnHigh = state.cycleOnH
+        def cycleOnLow = state.cycleOnL
+        if(myPowerS == "above threshold"){
+            thresholdStopValue = thresholdStopValue == 0 ? 9999 :  thresholdStopValue as int
+            if (meterValue > thresholdValue && meterValue < thresholdStopValue ) {
+                if (cycleOnHigh == false){
+                    state.cycleOnH = true
+                    log.debug "Power meter $meterValue is above threshold $thresholdValue with threshold stop $thresholdStopValue"
+                    if (delay) {
+                        log.warn "scheduling delay ${delay}, ${60*delay}"
+                        runIn(60*delay , bufferPendingH)
+                    }
+                    else {
+                        log.debug "sending notification (above)" 
+                        data = [value:"above threshold", name:"power", displayName:eDisplayN] 
+                        alertsHandler(data)
+                    }
+                }
+            }
+            else {
+                state.cycleOnH = false
+                unschedule("bufferPendingH")
+                log.debug "Power exception (above) meterValue ${meterValue}, thresholdValue ${thresholdValue}, stop ${thresholdStopValue} "
+            }
+        }
+        if(myPowerS == "below threshold"){
+            if (meterValue < thresholdValue && meterValue > thresholdStopValue) {
+                if (cycleOnLow == false){
+                    state.cycleOnL = true
+                    log.debug "Power meter $meterValue is below threshold $thresholdValue with threshold stop $thresholdStopValue"
+                    if (delay) {
+                        log.warn "scheduling delay ${delay}, ${60*delay}"
+                        runIn(60*delay, bufferPendingL)
+                    }
+                    else {
+                        log.debug "sending notification (below)" 
+                        data = [value:"below threshold", name:"power", displayName:eDisplayN]
+                        alertsHandler(data)
+                    }
+                }
+            }
+            else {
+                state.cycleOnL = false
+                unschedule("bufferPendingL")
+                log.debug "Power exception (below) meterValue ${meterValue}, thresholdValue ${thresholdValue}, stop ${thresholdStopValue}"
+            }
+        }
+	}
+def bufferPendingH() {  
+def meterValueRaw = myPower.currentValue("power") as double
+    	int meterValue = meterValueRaw ?: 0 as int
+    def thresholdValue = threshold == null ? 0 : threshold as int
+    if (meterValue >= thresholdValue) {
+		log.debug "sending notification (above)" 
+        def data = [value:"above threshold", name:"power", displayName:eDisplayN] 
+    	alertsHandler(data)
+   }
+}
+private bufferPendingL() {  
+    def meterValueRaw = myPower.currentValue("power") as double 
+		int meterValue = meterValueRaw ?: 0 as int    
+    def thresholdValue = threshold == null ? 0 : threshold as int
+    if (meterValue <= thresholdValue) {
+		log.debug "sending notification (below)" 
+       def data = [value:"below threshold", name:"power", displayName:eDisplayN] 
+    	alertsHandler(data)
+  	}
+}
 /************************************************************************************************************
    EVENTS HANDLER
 ************************************************************************************************************/
 def alertsHandler(evt) {
-	def eVal = evt.value
+	if(fastResponse){
+    	def eTxt = evt.descriptionText 
+		if(speechSynth) {
+       	speechSynth.playTextAndResume(eTxt)
+        }
+        else{
+            if(sonos) {
+                def sTxt = textToSpeech(eTxt instanceof List ? eTxt[0] : eTxt)
+                def sVolume = settings.sonosVolume ?: 30
+                sonos.playTrackAndResume(sTxt.uri, sTxt.duration, sVolume)
+            }
+        }
+  	}
+    else {
+    def event = evt.data
+    def eVal = evt.value
     def eName = evt.name
     def eDev = evt.device
     def eDisplayN = evt.displayName
+    def eDisplayT = evt.descriptionText
     def eProfile = app.label
     def nRoutine = false
-    def eTxt	
+    def eTxt = eDisplayT
 	def stamp = state.lastTime = new Date(now()).format("h:mm aa", location.timeZone)     
 	def today = new Date(now()).format("EEEE, MMMM d, yyyy", location.timeZone)
+
     // weather variables
 	def weatherToday = mGetWeatherVar("today")
 	def weatherTonight = mGetWeatherVar("tonight")
@@ -335,14 +454,15 @@ def alertsHandler(evt) {
     def tPrecip = mGetWeatherElements("precip")
     def tHum = mGetWeatherElements("hum")
     def tCond = mGetWeatherElements("cond")
-    if(parent.debug) log.info "Event Data: eName ${eName}, eVal:  ${eVal}, eDev: ${eDev}, eDisplayN: ${eDisplayN}, stamp: ${stamp}, today: ${today}, eProfile: ${eProfile}"	
-    // other variables
+
     if (getDayOk()==true && getModeOk()==true && getTimeOk()==true) {	
         if(eName == "time of day" && message){
                 eTxt = message ? "$message".replace("&device", "${eDisplayN}").replace("&event", "routine").replace("&action", "executed").replace("&date", "${today}").replace("&time", "${stamp}").replace("&profile", "${eProfile}") : null
+                    
                     if(eTxt) eTxt = eTxt.replace("&today", "${weatherToday}").replace("&tonight", "${weatherTonight}").replace("&tomorrow", "${weatherTomorrow}")
                     if(eTxt) eTxt = eTxt.replace("&high", "${tHigh}").replace("&low", "${tLow}").replace("&wind", "${tWind}").replace("&uv", "${tUV}").replace("&precipitation", "${tPrecip}")
                     if(eTxt) eTxt = eTxt.replace("&humidity", "${tHum}").replace("&conditions", "${tCond}")
+        
         }
         if(eName == "coolingSetpoint" || eName == "heatingSetpoint") {
             eVal = evt.value.toFloat()
@@ -393,9 +513,6 @@ def alertsHandler(evt) {
 					if(eTxt) eTxt = eTxt.replace("&today", "${weatherToday}").replace("&tonight", "${weatherTonight}").replace("&tomorrow", "${weatherTomorrow}")
                     if(eTxt) eTxt = eTxt.replace("&high", "${tHigh}").replace("&low", "${tLow}").replace("&wind", "${tWind}").replace("&uv", "${tUV}").replace("&precipitation", "${tPrecip}")
                     if(eTxt) eTxt = eTxt.replace("&humidity", "${tHum}").replace("&conditions", "${tCond}")
-                    
-                    
-                    
                     if(parent.debug) log.debug "eTxt = ${eTxt}"
                     if(eTxt){
                         if(recipients?.size()>0 || sms?.size()>0) {
@@ -406,95 +523,13 @@ def alertsHandler(evt) {
                 }
                 else {
                     if (eDev == "weather"){eTxt = eName}
-                    else {eTxt = "Heads up, ${eDev} is now ${eVal}"}         
+                    //else {eTxt = "Heads up, ${eDev} is now ${eVal}"}         
                     takeAction(eTxt)
                 }
             }
         }
 	}
 }
-/***********************************************************************************************************************
-    POWER HANDLER
-***********************************************************************************************************************/
-def meterHandler(evt) {
-	def data = [:]
-    def eVal = evt.value
-    def eName = evt.name
-    def eDev = evt.device
-    def eDisplayN = evt.displayName
-    int delay = minutes 
-    	delay = delay ?: 0 as int
-    int meterValueRaw = evt.value as double
-    	int meterValue = meterValueRaw ?: 0 as int
-    int thresholdValue = threshold == null ? 0 : threshold as int
-    int thresholdStopValue = thresholdStop == null ? 0 : thresholdStop as int
-    def cycleOnHigh = state.cycleOnH
-    def cycleOnLow = state.cycleOnL
-    if(myPowerS == "above threshold"){
-    	thresholdStopValue = thresholdStopValue == 0 ? 9999 :  thresholdStopValue as int
-    	if (meterValue > thresholdValue && meterValue < thresholdStopValue ) {
-    		if (cycleOnHigh == false){
-        		state.cycleOnH = true
-        		log.debug "Power meter $meterValue is above threshold $thresholdValue with threshold stop $thresholdStopValue"
-                if (delay) {
-                	log.warn "scheduling delay ${delay}, ${60*delay}"
-        			runIn(60*delay , bufferPendingH)
-				}
-                else {
-                	log.debug "sending notification (above)" 
-               		data = [value:"above threshold", name:"power", displayName:eDisplayN] 
-    				alertsHandler(data)
-            	}
-           	}
-        }
-        else {
-        	state.cycleOnH = false
-            unschedule("bufferPendingH")
-			log.debug "Power exception (above) meterValue ${meterValue}, thresholdValue ${thresholdValue}, stop ${thresholdStopValue} "
-        }
-	}
-    if(myPowerS == "below threshold"){
-    	if (meterValue < thresholdValue && meterValue > thresholdStopValue) {
-    		if (cycleOnLow == false){
-        		state.cycleOnL = true
-        		log.debug "Power meter $meterValue is below threshold $thresholdValue with threshold stop $thresholdStopValue"
-                if (delay) {
-                	log.warn "scheduling delay ${delay}, ${60*delay}"
-        			runIn(60*delay, bufferPendingL)
-				}
-                else {
-                	log.debug "sending notification (below)" 
-               		data = [value:"below threshold", name:"power", displayName:eDisplayN]
-    				alertsHandler(data)
-                }
-            }
-        }
-        else {
-        	state.cycleOnL = false
-            unschedule("bufferPendingL")
-			log.debug "Power exception (below) meterValue ${meterValue}, thresholdValue ${thresholdValue}, stop ${thresholdStopValue}"
-       	}
-	}
-}    
-def bufferPendingH() {  
-def meterValueRaw = myPower.currentValue("power") as double
-    	int meterValue = meterValueRaw ?: 0 as int
-    def thresholdValue = threshold == null ? 0 : threshold as int
-    if (meterValue >= thresholdValue) {
-		log.debug "sending notification (above)" 
-        def data = [value:"above threshold", name:"power", displayName:eDisplayN] 
-    	alertsHandler(data)
-   }
-}
-private bufferPendingL() {  
-    def meterValueRaw = myPower.currentValue("power") as double 
-		int meterValue = meterValueRaw ?: 0 as int    
-    def thresholdValue = threshold == null ? 0 : threshold as int
-    if (meterValue <= thresholdValue) {
-		log.debug "sending notification (below)" 
-       def data = [value:"below threshold", name:"power", displayName:eDisplayN] 
-    	alertsHandler(data)
-  	}
 }
 /***********************************************************************************************************************
     CUSTOM SOUNDS HANDLER
@@ -527,6 +562,7 @@ private takeAction(eTxt) {
                 }
                 sVolume = settings.sonosVolume ?: 30
                 sonos?.playTrackAndResume(sTxt.uri, sTxt.duration, sVolume)
+                state.sound = state.sound = textToSpeech(eTxt instanceof List ? eTxt[0] : eTxt)
                 //sonos?.playTrackAndResume(state.sound.uri, state.sound.duration, sVolume) // Retired to use direct variable Bobby 3/13/2017
                 log.info "Playing message on the music player '${sonos}' at volume '${sonosVolume}'"
         }
