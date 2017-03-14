@@ -1,7 +1,7 @@
 /* 
  * Message and Control Profile - EchoSistant Add-on 
  *
- *		3/14/2017		Version:4.0 R.0.1.4 	various bug fixes and enhancements
+ *		3/14/2017		Version:4.0 R.0.1.4a 	various bug fixes and enhancements
  *		3/10/2017		Version:4.0 R.0.1.3a	Bug fix for Push Messages
  *		3/09/2017		Version:4.0 R.0.1.2		Improved Messaging recording and playback
  *		3/02/2017		Version:4.0 R.0.1.0		Virtual Presence check in/out
@@ -1454,22 +1454,23 @@ private getCommand(text){
 //LIGHT SWITCHES        
 	if (gSwitches || gCustom1N || gCustom2N || gCustom3N || gCustom4N || gCustom5N){
         if (gSwitches) {
-                command = text.contains(" on") ? "on" : text.contains(" off") ? "off" : null
-                if (command == null) {
+                command = text.contains(" on") ? "on" : text.contains(" off") ? "off" : "undefined"
+                if (command == "undefined") {
                     command = text.contains("darker") ? "decrease" : text.contains("too bright")  ? "decrease" : text.contains("dim") ? "decrease" : text.contains("dimmer") ? "decrease" : "undefined"
                 }
-                if (command == null) {
+                if (command == "undefined") {
                     command = text.contains("not bright enough") ? "increase" : text.contains("brighter")  ? "increase" : text.contains("too dark") ? "increase" : text.contains("brighten") ? "increase" : "undefined"
                 }
+                log.warn "command = $command"
                 deviceType = "light"
         }
         if (gCustom1N) {
             if (text.contains(settings.gCustom1N.toLowerCase())) {
                 command = text.contains("on") ? "on" : text.contains("off") ? "off" : null
-                if (command == null) {
+                if (command == "undefined") {
                     command = text.contains("darker") ? "decrease" : text.contains("too bright")  ? "decrease" : text.contains("dim") ? "decrease" : text.contains("dimmer") ? "decrease" : "undefined"
                 }
-                if (command == null) {
+                if (command == "undefined") {
                 	command = text.contains("not bright enough") ? "increase" : text.contains("brighter")  ? "increase" : text.contains("too dark") ? "increase" : text.contains("brighten") ? "increase" : "undefined"
                 }
                 deviceType = "light1"
@@ -1478,10 +1479,10 @@ private getCommand(text){
         if (gCustom2N) {
             if (text.contains(settings.gCustom2N.toLowerCase())) {
                 command = text.contains("on") ? "on" : text.contains("off") ? "off" : null
-                if (command == null) {
+                if (command == "undefined") {
                     command = text.contains("darker") ? "decrease" : text.contains("too bright")  ? "decrease" : text.contains("dim") ? "decrease" : text.contains("dimmer") ? "decrease" : "undefined"
                 }
-                if (command == null) {
+                if (command == "undefined") {
                     command = text.contains("not bright enough") ? "increase" : text.contains("brighter")  ? "increase" : text.contains("too dark") ? "increase" : text.contains("brighten") ? "increase" : "undefined"
                 }
                 deviceType = "light2"
@@ -1490,10 +1491,10 @@ private getCommand(text){
         if (gCustom3N) {
             if (text.contains(settings.gCustom3N.toLowerCase())) {
                 command = text.contains("on") ? "on" : text.contains("off") ? "off" : null
-                if (command == null) {
+                if (command == "undefined") {
                     command = text.contains("darker") ? "decrease" : text.contains("too bright")  ? "decrease" : text.contains("dim") ? "decrease" : text.contains("dimmer") ? "decrease" : "undefined"
                 }
-                if (command == null) {
+                if (command == "undefined") {
                     command = text.contains("not bright enough") ? "increase" : text.contains("brighter")  ? "increase" : text.contains("too dark") ? "increase" : text.contains("brighten") ? "increase" : "undefined"
                 }
                 deviceType = "light3"
@@ -1502,10 +1503,10 @@ private getCommand(text){
         if (gCustom4N) {
             if (text.contains(settings.gCustom4N.toLowerCase())) {
                 command = text.contains("on") ? "on" : text.contains("off") ? "off" : null
-                if (command == null) {
+                if (command == "undefined") {
                     command = text.contains("darker") ? "decrease" : text.contains("too bright")  ? "decrease" : text.contains("dim") ? "decrease" : text.contains("dimmer") ? "decrease" : "undefined"
                 }
-                if (command == null) {
+                if (command == "undefined") {
                     command = text.contains("not bright enough") ? "increase" : text.contains("brighter")  ? "increase" : text.contains("too dark") ? "increase" : text.contains("brighten") ? "increase" : "undefined"
                 }
                 deviceType = "light4"
@@ -1514,10 +1515,10 @@ private getCommand(text){
         if (gCustom5N) {
             if (text.contains(settings.gCustom5N.toLowerCase())) {
                 command = text.contains("on") ? "on" : text.contains("off") ? "off" : null
-                if (command == null) {
+                if (command == "undefined") {
                     command = text.contains("darker") ? "decrease" : text.contains("too bright")  ? "decrease" : text.contains("dim") ? "decrease" : text.contains("dimmer") ? "decrease" : "undefined"
                 }
-                if (command == null) {
+                if (command == "undefined") {
                     command = text.contains("not bright enough") ? "increase" : text.contains("brighter")  ? "increase" : text.contains("too dark") ? "increase" : text.contains("brighten") ? "increase" : "undefined"
                 }
                 deviceType = "light5"
