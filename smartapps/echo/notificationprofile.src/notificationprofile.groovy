@@ -154,12 +154,10 @@ page name: "mainProfilePage"
             	if (sonos) {
 					input "sonosVolume", "number", title: "Temporarily change volume", description: "0-100%", required: false
 				}
-			if (actionType == "Custom" && message) {
-                input "speechSynth", "capability.speechSynthesis", title: "On this Speech Synthesis Device", required: false, multiple: true, submitOnChange: true
+			input "speechSynth", "capability.speechSynthesis", title: "On this Speech Synthesis Device", required: false, multiple: true, submitOnChange: true
                     if (speechSynth) {
                         input "speechVolume", "number", title: "Temporarily change volume", description: "0-100%", required: false
-                    }
-            }
+                }
             href "SMS", title: "Send SMS & Push Messages...", description: pSendComplete(), state: pSendSettings()
 			input "saveEchoSistant", "bool", title: "Allow Alexa to retrieve this report by its name", required: false, submitOnChange: true
 		}
@@ -550,7 +548,7 @@ private takeAction(eTxt) {
 	def sVolume
     def sTxt
     if(myProfile) runProfile()
-    if (actionType == "Custom") {
+    if (actionType == "Custom" || actionType == "Custom with Weather") {
 		//state.sound = textToSpeech(eTxt instanceof List ? eTxt[0] : eTxt) // Retired to use direct variable Bobby 3/13/2017
         sTxt = textToSpeech(eTxt instanceof List ? eTxt[0] : eTxt)
     }
