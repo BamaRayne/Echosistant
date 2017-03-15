@@ -7,7 +7,7 @@
  
  ************************************ FOR INTERNAL USE ONLY ******************************************************
  *
- *		3/14/2017		Version:4.0 R.0.2.13a  	Bug fix for windows, doors, and lights feedback/ reconfigured / improved responses and commands
+ *		3/14/2017		Version:4.0 R.0.2.13b  	Enabled running Reporting Profile, Bug fix for windows, doors, and lights feedback/ reconfigured / improved responses and commands
  *		3/13/2017		Version:4.0 R.0.2.12	Bug fix for Weather forcast
  *		3/12/2017		Version:4.0 R.0.2.11	Changed SHM status from Armed Stay to Armed Home for audio output
  *		3/08/2017		Version:4.0 R.0.2.10	enabled Profile Messaging retrieval
@@ -48,7 +48,7 @@ definition(
 	UPDATE LINE 38 TO MATCH RECENT RELEASE
 **********************************************************************************************************************************************/
 private release() {
-	def text = "R.0.2.13a"
+	def text = "R.0.2.13b"
 }
 /**********************************************************************************************************************************************/
 preferences {   
@@ -893,6 +893,20 @@ try {
         return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
 	}    
     else {
+  		if (fDevice != "undefined" && fQuery == "get"){
+            def pintentName
+           		childApps.each {child ->
+                        def ch = child.label
+                        	ch = ch.replaceAll("[^a-zA-Z0-9]", "")
+                		if (ch.toLowerCase() == fDevice.toLowerCase()) { 
+                    		if (debug) log.debug "Found a profile"
+                            pintentName = child.label
+                            def dataSet = [ptts:ptts, pintentName:pintentName] 
+                    		outputTxt = child.runProfile(pintentName)
+						}
+            	}
+                return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]	
+         }
          if (fDevice != "undefined" && fQuery != "undefined" && fOperand != "undefined") {
             if (fQuery.contains ("is ") || fQuery.contains ("if ") || fQuery == "is" || fQuery == "if" || fQuery == "is the") {
                 def deviceMatch = cRelay?.find {d -> d.label.toLowerCase() == fDevice.toLowerCase()}
