@@ -1,7 +1,7 @@
 /* 
  * Notification - EchoSistant Add-on 
  *
- *		3/14/2017		Version:4.0 R.0.2.7	    Fast Response
+ *		3/14/2017		Version:4.0 R.0.2.8	    Added Messages: Default, Custom with Weather
  *		3/12/2017		Version:4.0 R.0.2.5	    New variables
  *		3/11/2017		Version:4.0 R.0.2.4b	Bug fixes: Push msg not sending and volume incorrect in logs
  *		3/11/2017		Version:4.0 R.0.2.3		added ability to run Messaging and Control Profile actions
@@ -53,31 +53,68 @@ page name: "mainProfilePage"
 		section ("Name (rename) this Profile") {
  		   	label title:"Profile Name ", required:false, defaultValue: "Notification Profile"  
 		}
+		section ("Create a Notification") {
+                input "actionType", "enum", title: "Choose the message output...", required: false, defaultValue: "", submitOnChange: true, options: [
+                "Custom",
+                "Custom with Weather",
+                "Default",
+				"Bell 1",
+				"Bell 2",
+				"Dogs Barking",
+				"Fire Alarm",
+				"The mail has arrived",
+				"A door opened",
+				"There is motion",
+				"Smartthings detected a flood",
+				"Smartthings detected smoke",
+				"Someone is arriving",
+				"Piano",
+				"Lightsaber"]
+		}
+        if (actionType == "Custom" || actionType == "Custom with Weather" ) {
+            section ("Send this message text...", hideable: true, hidden: false) {
+                input "message", "text", title: "Play this message...", required:false, multiple: false, defaultValue: ""
+                paragraph "You can use the following variables in your custom message: &device, &action , &event, &time &date and &profile \n" +
+                    	"\nFor Example: \n&event sensor &device is &action and the event happened at &time \n" +
+                    	"Translates to: 'Contact' sensor 'Bedroom' is 'Open' and the event happened at '1:00 PM'"
+				if(actionType == "Custom with Weather"){
+                	paragraph "WEATHER VARIABLES: &today, &tonight, &tomorrow, &high, &low, &wind, &uv, &precipitation, &humidity, &conditions \n"      
+            	}
+            }
+        } 
         section ("Using These Triggers") {}
         	def actions = location.helloHome?.getPhrases()*.label.sort()
-            section ("") {
-            	input "timeOfDay", "time", title: "Choose a time of day every day", required: false
+            if(actionType != "Default"){
+                section ("") {
+                    input "timeOfDay", "time", title: "Choose a time of day every day", required: false
+                }
             }
-			section ("", hideWhenEmpty: true) {
-            	input "myMode", "enum", title: "Choose Modes...", options: location.modes.name.sort(), multiple: true, required: false 
-            	input "myRoutine", "enum", title: "Choose Routines...", options: actions, multiple: true, required: false            
-            }
+			if(actionType != "Default"){
+                section ("", hideWhenEmpty: true) {
+                    input "myMode", "enum", title: "Choose Modes...", options: location.modes.name.sort(), multiple: true, required: false 
+                    input "myRoutine", "enum", title: "Choose Routines...", options: actions, multiple: true, required: false            
+                }
+			}            
             section ("", , hideWhenEmpty: true) {
                 input "mySwitch", "capability.switch", title: "Choose Switch(es)...", required: false, multiple: true, submitOnChange: true
                     if (mySwitch) input "mySwitchS", "enum", title: "Notify when state changes to...", options: ["on", "off", " both"], required: false
+                if(actionType != "Default") {
                 input "myPower", "capability.powerMeter", title: "Choose Power Meters...", required: false, multiple: false, submitOnChange: true
                     if (myPower) input "myPowerS", "enum", title: "Notify when power is...", options: ["above threshold", "below threshold"], required: false, submitOnChange: true
                         if (myPowerS) input "threshold", "number", title: "Wattage Threshold...", required: false, description: "in watts", submitOnChange: true
                         if (threshold) input "minutes", "number", title: "Threshold Delay", required: false, description: "in minutes (optional)"
                         if (threshold) input "thresholdStop", "number", title: "...but not above/below this value", required: false, description: "in watts"
+                }
                 input "myLocks", "capability.lock", title: "Choose Locks..", required: false, multiple: true, submitOnChange: true
                     if (myLocks) input "myLocksS", "enum", title: "Notify when state changes to...", options: ["locked", "unlocked", " both"], required: false
+                if(actionType != "Default"){
                 input "myTstat", "capability.thermostat", title: "Choose Thermostats...", required: false, multiple: true, submitOnChange: true
                     if (myTstat) input "myTstatS", "enum", title: "Notify when set point changes for...", options: ["cooling", "heating", " both"], required: false
                     // attribute thermostatMode
                     if (myTstat) input "myTstatM", "enum", title: "Notify when mode changes to...", options: ["auto", "cool", " heat", "emergency heat", "off", "every mode"], required: false
                     // attribute thermostatOperatingState
                     if (myTstat) input "myTstatOS", "enum", title: "Notify when Operating State changes to...", options: ["cooling", "heating", " idle", "every state"], required: false
+            	}
             }
             section ("", hideWhenEmpty: true) {
                 input "myContact", "capability.contactSensor", title: "Choose Doors and Windows..", required: false, multiple: true, submitOnChange: true
@@ -91,6 +128,7 @@ page name: "mainProfilePage"
                 input "myWater", "capability.waterSensor", title: "Choose Water Sensors...", required: false, multiple: true, submitOnChange: true
                     if (myWater) input "myWaterS", "enum", title: "Notify when state changes to...", options: ["wet", "dry", " both"], required: false		
             }
+            if(actionType != "Default"){
             section ("") {
                 input "myWeatherAlert", "enum", title: "Choose Weather Alerts...", required: false, multiple: true, submitOnChange: true,
                         options: [
@@ -109,32 +147,8 @@ page name: "mainProfilePage"
                         ]          
                 input "myWeather", "enum", title: "Choose Hourly Weather Forecast Updates...", required: false, multiple: false, submitOnChange: true,
                         options: ["Weather Condition Changes", "Chance of Precipitation Changes", "Wind Speed Changes", "Humidity Changes", "Any Weather Updates"]   
-        	}    
-		section ("Create a Notification") {
-                input "actionType", "enum", title: "Choose the message output...", required: false, defaultValue: "", submitOnChange: true, options: [
-				"Custom",
-				"Bell 1",
-				"Bell 2",
-				"Dogs Barking",
-				"Fire Alarm",
-				"The mail has arrived",
-				"A door opened",
-				"There is motion",
-				"Smartthings detected a flood",
-				"Smartthings detected smoke",
-				"Someone is arriving",
-				"Piano",
-				"Lightsaber"]
-		}
-        if (actionType == "Custom") {
-            section ("Send this message (optional - leave empty for defalut message", hideable: true, hidden: false) {
-                input "message", "text", title: "Play this message...", required:false, multiple: false, defaultValue: ""
-                paragraph "You can use the following variables in your custom message: &device, &action , &event, &time &date and &profile \n" +
-                		"NEW WEATHER VARIABLES: &today, &tonight, &tomorrow, &high, &low, &wind, &uv, &precipitation, &humidity, &conditions \n" +
-                    	"\nFor Example: \n&event sensor &device is &action and the event happened at &time \n" +
-                    	"Translates to: 'Contact' sensor 'Bedroom' is 'Open' and the event happened at '1:00 PM'"
+        	} 
             }
-        } 
         section ("With these output methods" , hideWhenEmpty: true) {    
 			input "sonos", "capability.musicPlayer", title: "On this Music Player", required: false, multiple: true, submitOnChange: true
             	if (sonos) {
@@ -148,8 +162,6 @@ page name: "mainProfilePage"
             }
             href "SMS", title: "Send SMS & Push Messages...", description: pSendComplete(), state: pSendSettings()
 			input "saveEchoSistant", "bool", title: "Allow Alexa to retrieve this report by its name", required: false, submitOnChange: true
-			input "fastResponse", "bool", title: "Enable Fast Notifications", required: false, submitOnChange: true
- 				if (fastResponse) paragraph "Enable this will speed up the notifications but disables most of the features, including a custom message"
 		}
         section ("Run actions for this Profile" ) {    
             input "myProfile", "enum", title: "Choose Profile...", options: getProfileList(), multiple: false, required: false 
@@ -257,7 +269,7 @@ def initialize() {
         state.lastWeatherCheck = null
        	mGetCurrentWeather()
 	}    
-    if (actionType || fastResponse) {
+    if (actionType) {
         if(myPower) 						subscribe(myPower, "power", meterHandler)
         if (myRoutine) 						subscribe(location, "routineExecuted",alertsHandler)
         if (myMode) 						subscribe(location, "mode", alertsHandler)
@@ -418,51 +430,36 @@ private bufferPendingL() {
    EVENTS HANDLER
 ************************************************************************************************************/
 def alertsHandler(evt) {
-	if(fastResponse){
-    	def eTxt = evt.descriptionText 
-		if(speechSynth) {
-       	speechSynth.playTextAndResume(eTxt)
-        }
-        else{
-            if(sonos) {
-                def sTxt = textToSpeech(eTxt instanceof List ? eTxt[0] : eTxt)
-                def sVolume = settings.sonosVolume ?: 30
-                sonos.playTrackAndResume(sTxt.uri, sTxt.duration, sVolume)
-            }
-        }
-  	}
-    else {
     def event = evt.data
     def eVal = evt.value
     def eName = evt.name
     def eDev = evt.device
     def eDisplayN = evt.displayName
     def eDisplayT = evt.descriptionText
+	def eTxt = eDisplayN + " is " + eVal //evt.descriptionText 
+    if(actionType == "Default"){
+		if(speechSynth) {
+       	speechSynth.playTextAndResume(eTxt)
+        sendtxt(eTxt)
+        }
+        else{
+            if(sonos) {
+                def sTxt = textToSpeech(eTxt instanceof List ? eTxt[0] : eTxt)
+                def sVolume = settings.sonosVolume ?: 30
+                sonos.playTrackAndResume(sTxt.uri, sTxt.duration, sVolume)
+                sendtxt(eTxt)
+            }
+        }
+  	}
+    else {
     def eProfile = app.label
     def nRoutine = false
-    def eTxt = eDisplayT
 	def stamp = state.lastTime = new Date(now()).format("h:mm aa", location.timeZone)     
 	def today = new Date(now()).format("EEEE, MMMM d, yyyy", location.timeZone)
-
-    // weather variables
-	def weatherToday = mGetWeatherVar("today")
-	def weatherTonight = mGetWeatherVar("tonight")
-    def weatherTomorrow = mGetWeatherVar("tomorrow")
-    def tHigh = mGetWeatherVar("high")
-    def tLow = mGetWeatherVar("low")
-    def tUV = mGetWeatherElements("uv")
-    def tPrecip = mGetWeatherElements("precip")
-    def tHum = mGetWeatherElements("hum")
-    def tCond = mGetWeatherElements("cond")
-
     if (getDayOk()==true && getModeOk()==true && getTimeOk()==true) {	
         if(eName == "time of day" && message){
                 eTxt = message ? "$message".replace("&device", "${eDisplayN}").replace("&event", "routine").replace("&action", "executed").replace("&date", "${today}").replace("&time", "${stamp}").replace("&profile", "${eProfile}") : null
-                    
-                    if(eTxt) eTxt = eTxt.replace("&today", "${weatherToday}").replace("&tonight", "${weatherTonight}").replace("&tomorrow", "${weatherTomorrow}")
-                    if(eTxt) eTxt = eTxt.replace("&high", "${tHigh}").replace("&low", "${tLow}").replace("&wind", "${tWind}").replace("&uv", "${tUV}").replace("&precipitation", "${tPrecip}")
-                    if(eTxt) eTxt = eTxt.replace("&humidity", "${tHum}").replace("&conditions", "${tCond}")
-        
+                    if(actionType == "Custom with Weather") eTxt = getWeatherVar(eTxt)
         }
         if(eName == "coolingSetpoint" || eName == "heatingSetpoint") {
             eVal = evt.value.toFloat()
@@ -472,9 +469,7 @@ def alertsHandler(evt) {
         	def deviceMatch = myRoutine?.find {r -> r == eDisplayN}  
             if (deviceMatch){
             	eTxt = message ? "$message".replace("&device", "${eDisplayN}").replace("&event", "routine").replace("&action", "executed").replace("&date", "${today}").replace("&time", "${stamp}").replace("&profile", "${eProfile}") : null
-                    if(eTxt) eTxt = eTxt.replace("&today", "${weatherToday}").replace("&tonight", "${weatherTonight}").replace("&tomorrow", "${weatherTomorrow}")
-                    if(eTxt) eTxt = eTxt.replace("&high", "${tHigh}").replace("&low", "${tLow}").replace("&wind", "${tWind}").replace("&uv", "${tUV}").replace("&precipitation", "${tPrecip}")
-                    if(eTxt) eTxt = eTxt.replace("&humidity", "${tHum}").replace("&conditions", "${tCond}")
+                    if(actionType == "Custom with Weather") eTxt = getWeatherVar(eTxt)
                     if (message){
 						if(recipients?.size()>0 || sms?.size()>0) {
                     		sendtxt(eTxt)
@@ -492,9 +487,7 @@ def alertsHandler(evt) {
                 def deviceMatch = myMode?.find {m -> m == eVal}  
                 if (deviceMatch){
                     eTxt = message ? "$message".replace("&device", "${eVal}").replace("&event", "${eName}").replace("&action", "changed").replace("&date", "${today}").replace("&time", "${stamp}").replace("&profile", "${eProfile}") : null
-                    if(eTxt) eTxt = eTxt.replace("&today", "${weatherToday}").replace("&tonight", "${weatherTonight}").replace("&tomorrow", "${weatherTomorrow}")
-                    if(eTxt) eTxt = eTxt.replace("&high", "${tHigh}").replace("&low", "${tLow}").replace("&wind", "${tWind}").replace("&uv", "${tUV}").replace("&precipitation", "${tPrecip}")
-                    if(eTxt) eTxt = eTxt.replace("&humidity", "${tHum}").replace("&conditions", "${tCond}")
+                    if(actionType == "Custom with Weather") eTxt = getWeatherVar(eTxt)
                     if (message){
                         if(recipients?.size()>0 || sms?.size()>0) {
                             sendtxt(eTxt)
@@ -510,10 +503,7 @@ def alertsHandler(evt) {
             else {
                 if (message){      
                     eTxt = message ? "$message".replace("&device", "${eDev}").replace("&event", "${eName}").replace("&action", "${eVal}").replace("&date", "${today}").replace("&time", "${stamp}").replace("&profile", "${eProfile}") : null
-					if(eTxt) eTxt = eTxt.replace("&today", "${weatherToday}").replace("&tonight", "${weatherTonight}").replace("&tomorrow", "${weatherTomorrow}")
-                    if(eTxt) eTxt = eTxt.replace("&high", "${tHigh}").replace("&low", "${tLow}").replace("&wind", "${tWind}").replace("&uv", "${tUV}").replace("&precipitation", "${tPrecip}")
-                    if(eTxt) eTxt = eTxt.replace("&humidity", "${tHum}").replace("&conditions", "${tCond}")
-                    if(parent.debug) log.debug "eTxt = ${eTxt}"
+                    if(actionType == "Custom with Weather") eTxt = getWeatherVar(eTxt)
                     if(eTxt){
                         if(recipients?.size()>0 || sms?.size()>0) {
                             sendtxt(eTxt)
@@ -523,13 +513,35 @@ def alertsHandler(evt) {
                 }
                 else {
                     if (eDev == "weather"){eTxt = eName}
-                    //else {eTxt = "Heads up, ${eDev} is now ${eVal}"}         
+                    log.info "sending message: $eTxt"
                     takeAction(eTxt)
                 }
             }
         }
 	}
 }
+}
+/***********************************************************************************************************************
+    CUSTOM WEATHER VARIABLES
+***********************************************************************************************************************/
+private getWeatherVar(eTxt){
+	def result
+    // weather variables
+	def weatherToday = mGetWeatherVar("today")
+	def weatherTonight = mGetWeatherVar("tonight")
+    def weatherTomorrow = mGetWeatherVar("tomorrow")
+    def tHigh = mGetWeatherVar("high")
+    def tLow = mGetWeatherVar("low")
+    def tUV = mGetWeatherElements("uv")
+    def tPrecip = mGetWeatherElements("precip")
+    def tHum = mGetWeatherElements("hum")
+    def tCond = mGetWeatherElements("cond")
+    
+    result = eTxt.replace("&today", "${weatherToday}").replace("&tonight", "${weatherTonight}").replace("&tomorrow", "${weatherTomorrow}")
+	if(result) result = result.replace("&high", "${tHigh}").replace("&low", "${tLow}").replace("&wind", "${tWind}").replace("&uv", "${tUV}").replace("&precipitation", "${tPrecip}")
+	if(result) result = result.replace("&humidity", "${tHum}").replace("&conditions", "${tCond}")
+
+return result
 }
 /***********************************************************************************************************************
     CUSTOM SOUNDS HANDLER
