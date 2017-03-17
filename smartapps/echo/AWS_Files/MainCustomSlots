@@ -151,8 +151,6 @@ raining
 rain
 rain fall
 rainfall
-report
-reports
 running
 security
 settings
@@ -196,7 +194,6 @@ weather updates
 wet
 wind
 wind intensity
-windows
 windy
 hot outside
 cold outside
@@ -209,6 +206,7 @@ changes to the weather
 change in weather forecast
 changes to the forecast
 messages
+report
 
 LIST_OF_QUERIES
 
@@ -234,6 +232,8 @@ if
 if the
 if my
 what is
+create
+generate
 
 LIST_OF_TYPES
 
