@@ -7,19 +7,7 @@
  
  ************************************ FOR INTERNAL USE ONLY ******************************************************
  *
- *		3/14/2017		Version:4.0 R.0.2.13b  	Enabled running Reporting Profile, Bug fix for windows, doors, and lights feedback/ reconfigured / improved responses and commands
- *		3/13/2017		Version:4.0 R.0.2.12	Bug fix for Weather forcast
- *		3/12/2017		Version:4.0 R.0.2.11	Changed SHM status from Armed Stay to Armed Home for audio output
- *		3/08/2017		Version:4.0 R.0.2.10	enabled Profile Messaging retrieval
- *		3/08/2017		Version:4.0 R.0.2.9		bug fixes 
- *		3/06/2017		Version:4.0 R.0.2.7		bug fixes
- *		3/06/2017		Version:4.0 R.0.2.6c	minor bug fixes, added html rendering for custom slots
- *		3/05/2017		Version:4.0 R.0.2.5a	bug fixes: window shades/ locks feedback, weather schedule, lock pin only for unlock command
- *		3/03/2017		Version:4.0 R.0.2.3		misc. bug fixes
- *		3/02/2017		Version:4.0 R.0.2.1		Virtual Presence check in/out added
- *		3/01/2017		Version:4.0 R.0.2.0		weather 2.0
- *		2/28/2017		Version:4.0 R.0.1.0		Expanded doors & windows feedback
- *		2/27/2017		Version:4.0 R.0.0.9		SHM handling bug fixes
+ *		3/14/2017		Version:4.0 R.0.3.0  	Enabled running Reporting Profile, Bug fix for windows, doors, and lights feedback/ reconfigured / improved responses and commands
  *		2/17/2017		Version:4.0 R.0.0.0		Public Release 
  *
  *  Copyright 2016 Jason Headley & Bobby Dobrescu
@@ -47,8 +35,11 @@ definition(
 /**********************************************************************************************************************************************
 	UPDATE LINE 38 TO MATCH RECENT RELEASE
 **********************************************************************************************************************************************/
+private def textVersion() {
+	def text = "4.0"
+}
 private release() {
-	def text = "R.0.2.13b"
+    def text = "R.0.3.0"
 }
 /**********************************************************************************************************************************************/
 preferences {   
@@ -279,12 +270,12 @@ page name: "mIntent"
 	page name: "mProfiles"    
         def mProfiles() {
             dynamicPage(name: "mProfiles", title:"", install: true, uninstall: false) {
-				section ("Messaging and Control Profiles") {
-                	href "mMainProfile", title: "View and Create Messaging and Control Profiles...", description: none
+				section ("Messaging & Control") {
+                	href "mMainProfile", title: "View and Create Messaging & Control Profiles...", description: none
                     }
 				if (notifyOn) {
-        			section ("Manage Notifications") {
-  						href "mNotifyProfile", title: "View and Create Notification Profiles...", description: none
+        			section ("Notifications & Reporting") {
+  						href "mNotifyProfile", title: "View and Create Notification & Reporting Profiles...", description: none
 				}
 			}            
 		}
@@ -293,14 +284,14 @@ page name: "mIntent"
             def mNotifyProfile() {
                 dynamicPage (name: "mNotifyProfile", title: "", install: true, uninstall: false) {
                     if (childApps?.size()) {  
-                        section("Notifications",  uninstall: false){
-                            app(name: "notification", appName: "NotificationProfile", namespace: "Echo", title: "Create a new Notifications Profile", multiple: true,  uninstall: false)
+                        section("Notifications & Reporting",  uninstall: false){
+                            app(name: "notification", appName: "NotificationProfile", namespace: "Echo", title: "Create a new Notification & Reporting Profile", multiple: true,  uninstall: false)
                         }
                     }
                     else {
-                        section("Notifications",  uninstall: false){
-                            paragraph "NOTE: Looks like you haven't created any Notifications yet.\n \nPlease make sure you have installed the Rooms Smart App Add-on before creating a new Room!"
-                            app(name: "notification", appName: "NotificationProfile", namespace: "Echo", title: "Create a new Notifications Profile", multiple: true,  uninstall: false)
+                        section("Notifications & Reporting",  uninstall: false){
+                            paragraph "NOTE: Looks like you haven't created any Notifications yet.\n \nPlease make sure you have installed the Echo : NotificationProfile Add-on before creating a new Room!"
+                            app(name: "notification", appName: "NotificationProfile", namespace: "Echo", title: "Create a new Notification & Reporting Profile", multiple: true,  uninstall: false)
                         }
                     }
              	}
@@ -309,14 +300,14 @@ page name: "mIntent"
             def mMainProfile() {
                 dynamicPage (name: "mMainProfile", title: "", install: true, uninstall: false) {
                     if (childApps?.size()>0) {  
-                        section("Message and Control Profiles",  uninstall: false){
-                            app(name: "Profiles", appName: "Profiles", namespace: "Echo", title: "Create a New Message & Control Profile", multiple: true,  uninstall: false)
+                        section("Messaging & Control",  uninstall: false){
+                            app(name: "Profiles", appName: "Profiles", namespace: "Echo", title: "Create a New Messaging & Control Profile", multiple: true,  uninstall: false)
                         }
                     }
                     else {
-                        section("Profiles",  uninstall: false){
-                            paragraph "NOTE: Looks like you haven't created any Profiles yet.\n \nPlease make sure you have installed the Profiles Smart App Add-on before creating a new Profile!"
-                            app(name: "Profiles", appName: "Profiles", namespace: "Echo", title: "Create a New Message & Control Profile", multiple: true,  uninstall: false)
+                        section("Messaging & Control",  uninstall: false){
+                            paragraph "NOTE: Looks like you haven't created any Profiles yet.\n \nPlease make sure you have installed the  Echo : Profiles Add-on before creating a new Profile!"
+                            app(name: "Profiles", appName: "Profiles", namespace: "Echo", title: "Create a New Messaging & Control Profile", multiple: true,  uninstall: false)
 						}
 					}
 				}
@@ -632,6 +623,7 @@ def controlList() {
 ************************************************************************************************************/
 def installed() {
 	if (debug) log.debug "Installed with settings: ${settings}"
+    state.ParentRelease = release()
     runEvery1Hour(mGetWeatherUpdates)
 }
 def updated() { 
@@ -718,9 +710,10 @@ def processBegin(){
     def pShort = state.pShort
     def String outputTxt = (String) null 
     	state.pTryAgain = false
-	
+
     if (debug) log.debug "^^^^____LAUNCH REQUEST___^^^^" 
-    if (debug) log.debug "Launch Data: (event) = '${event}', (ver) = '${versionTxt}', (date) = '${versionDate}', (release) = '${releaseTxt}'"
+    if (debug) log.debug "Launch Data: (event) = '${event}', (Lambda version) = '${versionTxt}', (Lambda release) = '${releaseTxt}', (ST Main App release) = '${releaseSTtxt}'" +
+    						" (ST Child App Release) = $childRelease}"
 
 try {
     if (event == "noAction") {//event == "AMAZON.NoIntent" removed 1/20/17
@@ -827,7 +820,7 @@ try {
      if (!event.startsWith("AMAZON") && event != "main" && event != "security" && event != "feedback" && event != "profile" && event != "noAction"){
 		childApps?.each {child ->
 			if (child?.label.toLowerCase() == event.toLowerCase()) { 
-                pContinue = child?.checkState()   
+                pContinue = child?.checkState()  
             }
        	}
         //if Alexa is muted from the child, then mute the parent too / MOVED HERE ON 2/9/17
@@ -883,7 +876,7 @@ def feedbackHandler() {
 		return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]       
     }
     
-try {
+//try {
 
     if (fDevice == "undefined" && fQuery == "undefined" && fOperand == "undefined" && fCommand == "undefined") {
 		outputTxt = "Sorry, I didn't get that, "
@@ -893,7 +886,7 @@ try {
         return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
 	}    
     else {
-  		if (fDevice != "undefined" && fQuery == "get"){
+  		if (fDevice != "undefined" && (fQuery == "get" ||  fQuery == "create" || fQuery == "generate" || fQuery == "give")){
             def pintentName
            		childApps.each {child ->
                         def ch = child.label
@@ -902,7 +895,9 @@ try {
                     		if (debug) log.debug "Found a profile"
                             pintentName = child.label
                             def dataSet = [ptts:ptts, pintentName:pintentName] 
-                    		outputTxt = child.runProfile(pintentName)
+                            def childRelease = child?.checkRelease()
+                            log.warn "childRelease = $childRelease"
+                            outputTxt = child.runProfile(pintentName)
 						}
             	}
                 return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]	
@@ -1187,6 +1182,8 @@ try {
                             pintentName = child.label
                     		if(fCommand == "delete") ptts = "delete all messages "
                             else ptts = "how many messages "
+							def childRelease = child?.checkRelease()
+                            log.warn "childRelease = $childRelease"
                             def dataSet = [ptts:ptts, pintentName:pintentName] 
                     		def pResponse = child.profileEvaluate(dataSet)
                             	outputTxt = pResponse?.outputTxt
@@ -1527,14 +1524,14 @@ try {
             return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
         }
     } 
-
+/*
 }catch (Throwable t) {
         log.error t
         outputTxt = "Oh no, something went wrong. If this happens again, please reach out for help!"
         state.pTryAgain = true
         return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
 }
-
+*/
 }
 /************************************************************************************************************
    DEVICE CONTROL - from Lambda via page c
@@ -1657,7 +1654,9 @@ try {
                             pintentName = child.label
                     		ptts = "Running Profile actions from the main home"
                             dataSet = [ptts:ptts, pintentName:pintentName] 
-                    		def pResponse = child.profileEvaluate(dataSet)
+							def childRelease = child.checkRelease()
+                            log.warn "childRelease = $childRelease"
+                            def pResponse = child.profileEvaluate(dataSet)
                             	outputTxt = pResponse?.outputTxt
                                 pContCmds = pResponse?.pContCmds
                                 pContCmdsR = pResponse?.pContCmdsR
@@ -2906,6 +2905,8 @@ try {
                     state.lastIntent = pintentName
                     state.lastTime = new Date(now()).format("h:mm aa", location.timeZone)
                     dataSet = [ptts:ptts, pintentName:pintentName] 
+					def childRelease = child.checkRelease()
+					log.warn "childRelease = $childRelease"
                     def pResponse = child.profileEvaluate(dataSet)
                     outputTxt = pResponse?.outputTxt
                     pContCmds = pResponse?.pContCmds
@@ -4483,10 +4484,6 @@ X                        																					X
 ************************************************************************************************************/
 private def textAppName() {
 	def text = app.label // Parent Name
-}
-//UPDATE VERSION
-private def textVersion() {
-	def text = "4.0"
 }
 private def textLicense() {
 	def text =
