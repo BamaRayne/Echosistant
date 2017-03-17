@@ -1,11 +1,13 @@
 /* 
  * Message and Control Profile - EchoSistant Add-on 
+ ************************************ FOR INTERNAL USE ONLY ******************************************************
+							
+ 								DON'T FORGET TO UPDATE RELEASE NUMBER!!!!!
+ 
+ ************************************ FOR INTERNAL USE ONLY ******************************************************
  *
- *		3/14/2017		Version:4.0 R.0.1.4a 	various bug fixes and enhancements
- *		3/10/2017		Version:4.0 R.0.1.3a	Bug fix for Push Messages
- *		3/09/2017		Version:4.0 R.0.1.2		Improved Messaging recording and playback
- *		3/02/2017		Version:4.0 R.0.1.0		Virtual Presence check in/out
- *		2/27/2017		Version:4.0 R.0.0.9		Bug fixes for colored lights, disable switches
+ *
+ *		3/15/2017		Version:4.0 R.0.3.0 	minor bug fixes
  *		2/17/2017		Version:4.0 R.0.0.1		Public Release
  * 
  *  Copyright 2016 Jason Headley & Bobby Dobrescu
@@ -31,8 +33,10 @@ definition(
 	iconX2Url		: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/app-Echosistant@2x.png",
 	iconX3Url		: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/app-Echosistant@2x.png")
 /**********************************************************************************************************************************************/
-
-
+private release() {
+	def text = "R.0.3.0"
+}
+/**********************************************************************************************************************************************/
 preferences {
 
     page name: "mainProfilePage"
@@ -42,6 +46,7 @@ preferences {
             page name: "pGroups"
         	page name: "pRestrict"
   			page name: "pDeviceControl"
+            page name: "pPerson"
 }
 
 //dynamic page methods
@@ -404,11 +409,13 @@ page name: "certainTime"
 		Base Process
 ************************************************************************************************************/    
 def installed() {
-	log.debug "Installed with settings: ${settings}"
+	log.debug "Installed with settings: ${settings}, current app version: ${release()}"
+    state.ProfileRelease ="Profile: "  + release()
 }
 
 def updated() {
-	log.debug "Updated with settings: ${settings}"
+	log.debug "Updated with settings: ${settings}, current app version: ${release()}"
+    state.ProfileRelease = "Profile: " + release()
 	unsubscribe()
 	initialize()
 }
@@ -444,6 +451,9 @@ def initialize() {
 ******************************************************************************************************/
 def checkState() {
 return state.pMuteAlexa
+}
+def checkRelease() {
+return state.ProfileRelease
 }
 /******************************************************************************************************
    SPEECH AND TEXT PROCESSING INTERNAL
@@ -493,7 +503,7 @@ def profileEvaluate(params) {
     	muteAlexa = tts.contains("enable Alexa") ? "unmute" : tts.contains("start Alexa") ? "unmute" : tts.contains("unmute Alexa") ? "unmute" : muteAll
 	def test = tts.contains("this is a test") ? true : tts.contains("a test") ? true : false
     
-    if (parent.debug) log.debug "Message received from Parent with: (tts) = '${tts}', (intent) = '${intent}', (childName) = '${childName}'"  
+    if (parent.debug) log.debug "Message received from Parent with: (tts) = '${tts}', (intent) = '${intent}', (childName) = '${childName}', current app version: ${release()}"  
     
     if (pSendSettings() == "complete" || pGroupSettings() == "complete"){
         if (intent == childName){
@@ -1173,7 +1183,7 @@ def ttsActions(tts) {
                         if (parent.debug) log.warn "speaker is on mute, sending unmute command"
                         sonosDevice.unmute()
                     }
-                def sVolume = settings.volume ?: 30
+                def sVolume = settings.volume ?: 20
                 sonosDevice?.playTrackAndResume(state.sound.uri, state.sound.duration, sVolume)
                 if (parent.debug) log.info "Playing message on the music player '${sonosDevice}' at volume '${volume}'" 
             }

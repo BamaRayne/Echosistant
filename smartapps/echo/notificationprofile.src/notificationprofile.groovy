@@ -1,13 +1,7 @@
 /* 
  * Notification - EchoSistant Add-on 
  *
- *		3/14/2017		Version:4.0 R.0.2.8	    Added Messages: Default, Custom with Weather
- *		3/12/2017		Version:4.0 R.0.2.5	    New variables
- *		3/11/2017		Version:4.0 R.0.2.4b	Bug fixes: Push msg not sending and volume incorrect in logs
- *		3/11/2017		Version:4.0 R.0.2.3		added ability to run Messaging and Control Profile actions
- *		3/02/2017		Version:4.0 R.0.2.2		weather 2.0, default tts messages
- *		2/27/2017		Version:4.0 R.0.0.6		time scheduling bug fix 
- *		2/17/2017		Version:4.0 R.0.0.1		Public Release
+ *		3/16/2017		Version:4.0 R.0.3.0	    Cron Scheduling and Reporting
  *
  *  Copyright 2016 Jason Headley & Bobby Dobrescu
  *
@@ -32,7 +26,9 @@ definition(
 	iconX2Url		: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/app-Echosistant@2x.png",
 	iconX3Url		: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/app-Echosistant@2x.png")
 /**********************************************************************************************************************************************/
-
+private release() {
+	def text = "R.0.3.0"
+}
 
 preferences {
 
@@ -54,7 +50,9 @@ page name: "mainProfilePage"
  		   	label title:"Profile Name ", required:false, defaultValue: "Notification Profile"  
 		}
 		section ("Create a Notification") {
-                input "actionType", "enum", title: "Choose the message output...", required: false, defaultValue: "", submitOnChange: true, options: [
+                
+                input "actionType", "enum", title: "Choose the message output...", required: false, defaultValue: "Default", submitOnChange: true, options: [
+                "Ad-Hoc Report",
                 "Custom",
                 "Custom with Weather",
                 "Default",
@@ -71,104 +69,151 @@ page name: "mainProfilePage"
 				"Piano",
 				"Lightsaber"]
 		}
-        if (actionType == "Custom" || actionType == "Custom with Weather" ) {
-            section ("Send this message text...", hideable: true, hidden: false) {
+        if (actionType == "Custom" || actionType == "Custom with Weather" || actionType == "Ad-Hoc Report" ) {
+            section ("Send this message text...") {
                 input "message", "text", title: "Play this message...", required:false, multiple: false, defaultValue: ""
-                paragraph "You can use the following variables in your custom message: &device, &action , &event, &time &date and &profile \n" +
-                    	"\nFor Example: \n&event sensor &device is &action and the event happened at &time \n" +
-                    	"Translates to: 'Contact' sensor 'Bedroom' is 'Open' and the event happened at '1:00 PM'"
-				if(actionType == "Custom with Weather"){
-                	paragraph "WEATHER VARIABLES: &today, &tonight, &tomorrow, &high, &low, &wind, &uv, &precipitation, &humidity, &conditions \n"      
-            	}
+            }
+            section ("Tap here to see available variables", hideable: true, hidden: true) {    
+                if (actionType != "Ad-Hoc Report") paragraph 	"You can use the following variables in your custom message: "+
+                												"&device, &action , &event, &time &date and &profile \n" +
+                    											"\nFor Example: \n&event sensor &device is &action and the event happened at &time \n" +
+                    											"Translates to: 'Contact' sensor 'Bedroom' is 'Open' and the event happened at '1:00 PM'"
+				if(actionType == "Custom with Weather" || actionType == "Ad-Hoc Report" ){
+                	paragraph "WEATHER VARIABLES: &today, &tonight, &tomorrow, &high, &low, &wind, &uv, &precipitation, &humidity, &conditions \n"                    
+                }
+                if(actionType == "Ad-Hoc Report"){
+                	paragraph "REPORTING VARIABLES: &time, &date, &profile, &mode, &shm, &power, &lights, &doors, &windows, &open, &garage, &unlocked, &temperature, &running, &present"
+                }
             }
         } 
-        section ("Using These Triggers") {}
-        	def actions = location.helloHome?.getPhrases()*.label.sort()
-            if(actionType != "Default"){
-                section ("") {
-                    input "timeOfDay", "time", title: "Choose a time of day every day", required: false
-                }
+        section ("Using These Devices/Triggers") {
+			href "triggers", title: "Select Trigger(s)", description: triggersComplete(), state: triggersSettings()
+        }    
+            section ("With these output methods" , hideWhenEmpty: true) {    
+                input "sonos", "capability.musicPlayer", title: "On this Music Player", required: false, multiple: true, submitOnChange: true
+                    if (sonos) {
+                        input "sonosVolume", "number", title: "Temporarily change volume", description: "0-100%", required: false
+                    	input "resumePlaying", "bool", title: "Resume currently playing music after notification", required: false, defaultValue: false
+                    }
+                input "speechSynth", "capability.speechSynthesis", title: "On this Speech Synthesis Device", required: false, multiple: true, submitOnChange: true
+                        if (speechSynth) {
+                            input "speechVolume", "number", title: "Temporarily change volume", description: "0-100%", required: false
+                    }
+                href "SMS", title: "Send SMS & Push Messages...", description: pSendComplete(), state: pSendSettings()
             }
-			if(actionType != "Default"){
-                section ("", hideWhenEmpty: true) {
+            section ("Run actions for this Profile" ) {    
+                input "myProfile", "enum", title: "Choose Profile...", options: getProfileList(), multiple: false, required: false 
+            }        
+            section ("Using these Restrictions") {
+                href "pRestrict", title: "Use these restrictions...", description: pRestComplete(), state: pRestSettings()
+            }
+		}
+	}
+page name: "triggers"
+	def triggers(){
+		dynamicPage(name: "triggers", title: "", uninstall: false) {
+            def actions = location.helloHome?.getPhrases()*.label.sort()
+            if(actionType != "Default" && actionType != "Ad-Hoc Report" ){
+                section("Time") {
+                    input "frequency", "enum", title: "Choose a Frequency", submitOnChange: true, required: fale, 
+            			options: ["Minutes", "Hourly", "Daily", "Weekly", "Monthly", "Yearly"]
+                	if(frequency == "Minutes"){
+                        input "xMinutes", "number", title: "Every X minute(s) - maximum 60", range: "1..59", submitOnChange: true, required: false
+                	}
+                    if(frequency == "Hourly"){
+                        input "xHours", "number", title: "Every X hour(s) - maximum 24", range: "1..23", submitOnChange: true, required: false
+                    }	
+                    if(frequency == "Daily"){
+                        input "xDays", "number", title: "Every X day(s) - maximum 31", range: "1..31", submitOnChange: true, required: false
+						input "xDaysWeekDay", "bool", title: "OR Every Week Day (MON-FRI)", required: false, defaultValue: false
+                        if(xDays || xDaysWeekDay){input "xDaysStarting", "time", title: "starting at time...", submitOnChange: true, required: true}
+                    }
+                    if(frequency == "Weekly"){
+						input "xWeeks", "enum", title: "Every selected day(s) of the week", submitOnChange: true, required: false, multiple: true,
+							options: ["SUN": "Sunday", "MON": "Monday", "TUE": "Tuesday", "WED": "Wednesday", "THU": "Thursday", "FRI": "Friday", "SAT": "Saturday"]                        
+                        if(xWeeks){input "xWeeksStarting", "time", title: "starting at time...", submitOnChange: true, required: true}
+                    }
+                    if(frequency == "Monthly"){
+                    	//TO DO add every (First-Fourth), (Mon-Fri) of every (X) month
+                        input "xMonths", "number", title: "Every X month(s) - maximum 12", range: "1..12", submitOnChange: true, required: false
+                        if(xMonths){
+                            input "xMonthsDay", "number", title: "...on this day of the month", range: "1..31", submitOnChange: true, required: true
+                            input "xMonthsStarting", "time", title: "starting at time...", submitOnChange: true, required: true
+                        }
+                    }
+                    if(frequency == "Yearly"){
+                    	//TO DO add the (First-Fourth), (Mon-Fri) of (Jan-Dec)
+                        input "xYears", "enum", title: "Every selected month of the year", submitOnChange: true, required: false, multiple: false,
+                        	options: ["1": "January", "2":"February", "3":"March", "4":"April", "5":"May", "6":"June", "7":"July", "8":"August", "9":"September", "10":"October", "11":"November", "12":"December"]
+                        if(xYears){
+                            input "xYearsDay", "number", title: "...on this day of the month", range: "1..31", submitOnChange: true, required: true
+                            input "xYearsStarting", "time", title: "starting at time...", submitOnChange: true, required: true                     
+						}
+                	}
+                }
+			}                
+            if(actionType != "Default"){
+                section ("Location Event", hideWhenEmpty: true) {
                     input "myMode", "enum", title: "Choose Modes...", options: location.modes.name.sort(), multiple: true, required: false 
-                    input "myRoutine", "enum", title: "Choose Routines...", options: actions, multiple: true, required: false            
+                    if (actionType != "Ad-Hoc Report") input "myRoutine", "enum", title: "Choose Routines...", options: actions, multiple: true, required: false            
                 }
 			}            
-            section ("", , hideWhenEmpty: true) {
+            section ("Device State", , hideWhenEmpty: true) {
                 input "mySwitch", "capability.switch", title: "Choose Switch(es)...", required: false, multiple: true, submitOnChange: true
-                    if (mySwitch) input "mySwitchS", "enum", title: "Notify when state changes to...", options: ["on", "off", " both"], required: false
+                    if (mySwitch && actionType != "Ad-Hoc Report") input "mySwitchS", "enum", title: "Notify when state changes to...", options: ["on", "off", " both"], required: false
                 if(actionType != "Default") {
                 input "myPower", "capability.powerMeter", title: "Choose Power Meters...", required: false, multiple: false, submitOnChange: true
-                    if (myPower) input "myPowerS", "enum", title: "Notify when power is...", options: ["above threshold", "below threshold"], required: false, submitOnChange: true
+                    if (myPower && actionType != "Ad-Hoc Report") input "myPowerS", "enum", title: "Notify when power is...", options: ["above threshold", "below threshold"], required: false, submitOnChange: true
                         if (myPowerS) input "threshold", "number", title: "Wattage Threshold...", required: false, description: "in watts", submitOnChange: true
                         if (threshold) input "minutes", "number", title: "Threshold Delay", required: false, description: "in minutes (optional)"
                         if (threshold) input "thresholdStop", "number", title: "...but not above/below this value", required: false, description: "in watts"
                 }
                 input "myLocks", "capability.lock", title: "Choose Locks..", required: false, multiple: true, submitOnChange: true
-                    if (myLocks) input "myLocksS", "enum", title: "Notify when state changes to...", options: ["locked", "unlocked", " both"], required: false
+                    if (myLocks && actionType != "Ad-Hoc Report") input "myLocksS", "enum", title: "Notify when state changes to...", options: ["locked", "unlocked", " both"], required: false
                 if(actionType != "Default"){
                 input "myTstat", "capability.thermostat", title: "Choose Thermostats...", required: false, multiple: true, submitOnChange: true
-                    if (myTstat) input "myTstatS", "enum", title: "Notify when set point changes for...", options: ["cooling", "heating", " both"], required: false
+                    if (myTstat && actionType != "Ad-Hoc Report") input "myTstatS", "enum", title: "Notify when set point changes for...", options: ["cooling", "heating", " both"], required: false
                     // attribute thermostatMode
-                    if (myTstat) input "myTstatM", "enum", title: "Notify when mode changes to...", options: ["auto", "cool", " heat", "emergency heat", "off", "every mode"], required: false
+                    if (myTstat && actionType != "Ad-Hoc Report") input "myTstatM", "enum", title: "Notify when mode changes to...", options: ["auto", "cool", " heat", "emergency heat", "off", "every mode"], required: false
                     // attribute thermostatOperatingState
-                    if (myTstat) input "myTstatOS", "enum", title: "Notify when Operating State changes to...", options: ["cooling", "heating", " idle", "every state"], required: false
+                    if (myTstat && actionType != "Ad-Hoc Report") input "myTstatOS", "enum", title: "Notify when Operating State changes to...", options: ["cooling", "heating", " idle", "every state"], required: false
             	}
             }
-            section ("", hideWhenEmpty: true) {
+            section ("Sensor Status", hideWhenEmpty: true) {
                 input "myContact", "capability.contactSensor", title: "Choose Doors and Windows..", required: false, multiple: true, submitOnChange: true
-                    if (myContact) input "myContactS", "enum", title: "Notify when state changes to...", options: ["open", "close", " both"], required: false
+                    if (myContact && actionType != "Ad-Hoc Report") input "myContactS", "enum", title: "Notify when state changes to...", options: ["open", "close", " both"], required: false
                 input "myMotion", "capability.motionSensor", title: "Choose Motion Sensors..", required: false, multiple: true, submitOnChange: true
-                    if (myMotion) input "myMotionS", "enum", title: "Notify when state changes to...", options: ["active", "inactive", " both"], required: false
+                    if (myMotion && actionType != "Ad-Hoc Report") input "myMotionS", "enum", title: "Notify when state changes to...", options: ["active", "inactive", " both"], required: false
                 input "myPresence", "capability.presenceSensor", title: "Choose Presence Sensors...", required: false, multiple: true, submitOnChange: true
-                    if (myPresence) input "myPresenceS", "enum", title: "Notify when state changes to...", options: ["present", "not present", " both"], required: false
+                    if (myPresence && actionType != "Ad-Hoc Report") input "myPresenceS", "enum", title: "Notify when state changes to...", options: ["present", "not present", " both"], required: false
                 input "mySmoke", "capability.smokeDetector", title: "Choose Smoke Detectors...", required: false, multiple: true, submitOnChange: true
-                    if (mySmoke) input "mySmokeS", "enum", title: "Notify when state changes to...", options: ["detected", "clear", " both"], required: false
+                    if (mySmoke && actionType != "Ad-Hoc Report") input "mySmokeS", "enum", title: "Notify when state changes to...", options: ["detected", "clear", " both"], required: false
                 input "myWater", "capability.waterSensor", title: "Choose Water Sensors...", required: false, multiple: true, submitOnChange: true
-                    if (myWater) input "myWaterS", "enum", title: "Notify when state changes to...", options: ["wet", "dry", " both"], required: false		
+                    if (myWater && actionType != "Ad-Hoc Report") input "myWaterS", "enum", title: "Notify when state changes to...", options: ["wet", "dry", " both"], required: false		
             }
-            if(actionType != "Default"){
-            section ("") {
-                input "myWeatherAlert", "enum", title: "Choose Weather Alerts...", required: false, multiple: true, submitOnChange: true,
-                        options: [
-                        "TOR":	"Tornado Warning",
-                        "TOW":	"Tornado Watch",
-                        "WRN":	"Severe Thunderstorm Warning",
-                        "SEW":	"Severe Thunderstorm Watch",
-                        "WIN":	"Winter Weather Advisory",
-                        "FLO":	"Flood Warning",
-                        "WND":	"High Wind Advisoryt",
-                        "HEA":	"Heat Advisory",
-                        "FOG":	"Dense Fog Advisory",
-                        "FIR":	"Fire Weather Advisory",
-                        "VOL":	"Volcanic Activity Statement",
-                        "HWW":	"Hurricane Wind Warning"
-                        ]          
-                input "myWeather", "enum", title: "Choose Hourly Weather Forecast Updates...", required: false, multiple: false, submitOnChange: true,
-                        options: ["Weather Condition Changes", "Chance of Precipitation Changes", "Wind Speed Changes", "Humidity Changes", "Any Weather Updates"]   
-        	} 
-            }
-        section ("With these output methods" , hideWhenEmpty: true) {    
-			input "sonos", "capability.musicPlayer", title: "On this Music Player", required: false, multiple: true, submitOnChange: true
-            	if (sonos) {
-					input "sonosVolume", "number", title: "Temporarily change volume", description: "0-100%", required: false
-				}
-			input "speechSynth", "capability.speechSynthesis", title: "On this Speech Synthesis Device", required: false, multiple: true, submitOnChange: true
-                    if (speechSynth) {
-                        input "speechVolume", "number", title: "Temporarily change volume", description: "0-100%", required: false
-                }
-            href "SMS", title: "Send SMS & Push Messages...", description: pSendComplete(), state: pSendSettings()
-			input "saveEchoSistant", "bool", title: "Allow Alexa to retrieve this report by its name", required: false, submitOnChange: true
+            if(actionType != "Default" && actionType != "Ad-Hoc Report"){
+                section ("Weather Events") {
+                    input "myWeatherAlert", "enum", title: "Choose Weather Alerts...", required: false, multiple: true, submitOnChange: true,
+                            options: [
+                            "TOR":	"Tornado Warning",
+                            "TOW":	"Tornado Watch",
+                            "WRN":	"Severe Thunderstorm Warning",
+                            "SEW":	"Severe Thunderstorm Watch",
+                            "WIN":	"Winter Weather Advisory",
+                            "FLO":	"Flood Warning",
+                            "WND":	"High Wind Advisoryt",
+                            "HEA":	"Heat Advisory",
+                            "FOG":	"Dense Fog Advisory",
+                            "FIR":	"Fire Weather Advisory",
+                            "VOL":	"Volcanic Activity Statement",
+                            "HWW":	"Hurricane Wind Warning"
+                            ]          
+                    input "myWeather", "enum", title: "Choose Hourly Weather Forecast Updates...", required: false, multiple: false, submitOnChange: true,
+                            options: ["Weather Condition Changes", "Chance of Precipitation Changes", "Wind Speed Changes", "Humidity Changes", "Any Weather Updates"]   
+                } 
+            }        
 		}
-        section ("Run actions for this Profile" ) {    
-            input "myProfile", "enum", title: "Choose Profile...", options: getProfileList(), multiple: false, required: false 
-		}        
-        section ("Using these Restrictions") {
-            href "pRestrict", title: "Use these restrictions...", description: pRestComplete(), state: pRestSettings()
-        }
 	}
-}
 page name: "SMS"
     def SMS(){
         dynamicPage(name: "SMS", title: "Send SMS and/or Push Messages...", uninstall: false) {
@@ -229,10 +274,9 @@ page name: "certainTime"
 		
 ************************************************************************************************************/
 def installed() {
-	log.debug "Installed with settings: ${settings}"
-	if (timeOfDay) {
-		schedule(timeOfDay, "scheduledTimeHandler")
-	}
+	log.debug "Installed with settings: ${settings}, current app version: ${release()}"
+    state.NotificationRelease = "Notification: " + release()
+
 	if (myWeatherAlert) {
 		runEvery5Minutes(mGetWeatherAlerts)
 	}
@@ -241,9 +285,11 @@ def installed() {
 	}    
 }
 def updated() {
+	log.debug "Updated with settings: ${settings}, current app version: ${release()}"
+	state.NotificationRelease = "Notification: " + release()
+    state.lastPlayed = now()
 	unschedule()
     unsubscribe()
-	log.debug "Updated with settings: ${settings}"
     initialize()
 }
 def initialize() {
@@ -253,10 +299,8 @@ def initialize() {
     state.cycleOnH = false
     state.cycleOnL = false
     state.lastWeather
-	if (timeOfDay) {
-		schedule(timeOfDay, "scheduledTimeHandler")
-	}
-	if (myWeatherAlert) {
+    if (frequency) cronHandler(frequency)
+    if (myWeatherAlert) {
 		runEvery5Minutes(mGetWeatherAlerts)
 		state.weatherAlert
     }
@@ -267,7 +311,7 @@ def initialize() {
         state.lastWeatherCheck = null
        	mGetCurrentWeather()
 	}    
-    if (actionType) {
+    if (actionType && actionType != "Ad-Hoc Report") {
         if(myPower) 						subscribe(myPower, "power", meterHandler)
         if (myRoutine) 						subscribe(location, "routineExecuted",alertsHandler)
         if (myMode) 						subscribe(location, "mode", alertsHandler)
@@ -292,8 +336,8 @@ def initialize() {
             else    						subscribe(myLocks, "lock", alertsHandler)
         }
         if (myPresence) {
-            if (myPresenceS == "locked")	subscribe(myPresence, "presence.present", alertsHandler)
-            if (myPresenceS == "unlocked")	subscribe(myPresence, "presence.not present", alertsHandler)
+            if (myPresenceS == "present")	subscribe(myPresence, "presence.present", alertsHandler)
+            if (myPresenceS == "not present")	subscribe(myPresence, "presence.not present", alertsHandler)
             else    						subscribe(myPresence, "presence", alertsHandler)
         }
         if (myTstat) {    
@@ -313,23 +357,210 @@ def initialize() {
       	}
     }
 }
+/******************************************************************************************************
+   PARENT STATUS CHECKS
+******************************************************************************************************/
+def checkRelease() {
+return state.NotificationRelease
+}
 /************************************************************************************************************
    RUNNING REPORT FROM PARENT
 ************************************************************************************************************/
 def runProfile(profile) {
 	def result 
-	if (message){
-    	result = message ? "$message".replace("&today", "${getVar("today")}") : null
+	if (actionType == "Ad-Hoc Report" &&  message){
+    	result = message ? "$message".replace("&date", "${getVar("date")}").replace("&time", "${getVar("time")}").replace("&profile", "${getVar("profile")}") : null
+		result = result ? "$result".replace("&power", "${getVar("power")}").replace("&open", "${getVar("open")}").replace("&lights", "${getVar("lights")}") : null
+        result = result ? "$result".replace("&garage", "${getVar("garage")}").replace("&unlocked", "${getVar("unlocked")}").replace("&present", "${getVar("present")}") : null
+        // location variables
+        result = result ? "$result".replace("&mode", "${getVar("mode")}").replace("&shm", "${getVar("shm")}") : null
+		//thermostat variables
+        result = result ? "$result".replace("&thermostat", "${getVar("thermostat")}").replace("&running", "${getVar("running")}").replace("&temperature", "${getVar("temperature")}")  : null
+		//weather variables
+        result = getWeatherVar(result) 
     }
-   	return result
+    else "Sorry you can only generate an ad-hoc report that has a custom message"
+ 	log.warn "sending result to Alexa: $result"
+    return result
 }
-
+/************************************************************************************************************
+   REPORT VARIABLES
+************************************************************************************************************/
 private getVar(var) {
-	def result
-if (var == "today"){
-	result = new Date(now()).format("EEEE, MMMM d, yyyy", location.timeZone)
-return result
-}
+	def devList = []
+    def result
+    if (var == "time"){
+        result = new Date(now()).format("h:mm aa", location.timeZone) 
+    	return result
+    }
+    if (var == "date"){
+        result = new Date(now()).format("EEEE, MMMM d, yyyy", location.timeZone)
+    	return result    
+    }
+    if (var == "profile"){
+        result = app.label
+    	return result 	
+    }
+    if (var == "mode"){
+        result = location?.currentMode
+    	return result 	    
+    }
+	if (var == "shm"){ 
+		def sSHM = location?.currentState("alarmSystemStatus")?.value       
+		sSHM = sSHM == "off" ? "disabled" : sSHM == "away" ? "Armed Away" : sSHM == "stay" ? "Armed Home" : "unknown"
+		result = sSHM
+        return result
+    }    
+    if (var == "power"){
+        if (myPower){
+            def meterValueRaw = myPower?.currentValue("power") as double
+            int meter = meterValueRaw ?: 0 as int        
+            result = meter
+            return result
+        }
+    }
+    if (var == "open"){
+    	if (myContact){
+            if (myContact?.latestValue("contact")?.contains("open")) {
+                myContact?.each { deviceName ->
+                    if (deviceName.latestValue("contact")=="open") {
+                        String device  = (String) deviceName
+                        devList += device
+                    }
+                }
+            }
+            if (devList?.size() == 1)  result = devList?.size() + " sensor"
+            else if (devList?.size() > 0) result = devList?.size() + " sensors"
+            else if (!devList) result = "no sensors"
+            return result
+    	}	
+    }
+    if (var == "doors"){
+		if(parent.cDoor1){
+			if (parent.cDoor1?.currentValue("contact").contains("open")) {
+            	parent.cDoor1?.each { deviceName ->
+                	if (deviceName.currentValue("contact")=="${"open"}") {
+                    	String device  = (String) deviceName
+                        devList += device
+                    }
+                }
+            }
+            if (devList?.size() == 1)  result = devList?.size() + " door"
+            else if (devList?.size() > 0) result = devList?.size() + " doors"
+            else if (!devList) result = "no doors"
+            return result
+    	}	
+    }
+    if (var == "windows"){                    
+		if(parent.cWindow) {
+			if (parent.cWindow?.currentValue("contact").contains("open")) {
+            	parent.cWindow?.each { deviceName ->
+                	if (deviceName.currentValue("contact")=="${"open"}") {
+                    	String device  = (String) deviceName
+                        devList += device
+                    }
+                }
+            }
+            if (devList?.size() == 1)  result = devList?.size() + " window"
+            else if (devList?.size() > 0) result = devList?.size() + " windows"
+            else if (!devList) result = "no windows"
+            return result
+    	}	
+    }
+    if (var == "unlocked"){                    
+		if(myLocks) {
+			if (myLocks.currentValue("lock").contains("unlocked")) {
+            	myLocks.each { deviceName ->
+                	if (deviceName.currentValue("lock")=="${"unlocked"}") {
+                    	String device  = (String) deviceName
+                        devList += device
+                    }
+                }
+            }
+            if (devList?.size() == 1)  result = devList?.size() + " door"
+            else if (devList?.size() > 0) result = devList?.size() + " doors"
+            else if (!devList) result = "no doors"
+            return result
+    	}	
+    }
+    if (var == "present"){                    
+		if(myPresence) {
+			if (myPresence.currentValue("presence").contains("present")) {
+            	myPresence.each { deviceName ->
+                	if (deviceName.currentValue("presence")=="${"present"}") {
+                    	String device  = (String) deviceName
+                        devList += device
+                    }
+                }
+            }
+            if (devList?.size() == 1)  result = devList?.size() + " person"
+            else if (devList?.size() > 0) result = devList?.size() + " people"
+            else if (!devList) result = "no people"
+            return result
+    	}	
+    }    
+    if (var == "lights"){
+        if(mySwitch){
+				mySwitch.each { deviceName ->
+                    if (deviceName.latestValue("switch")=="on") {
+                    	String device  = (String) deviceName
+                        devList += device
+                    }
+				}
+            if (devList?.size() == 1) result = devList?.size() + " switch"
+            else if (devList?.size() > 0) result = devList?.size() + " switches"  
+            else if (!devList) result = "no switches"
+            return result
+  		}
+    }
+    if (var == "thermostat"){    
+        if(myTstat){
+        def currentMode
+				myTstat.each { deviceName ->
+                	String device  = (String) deviceName
+                    currentMode = deviceName.currentValue("thermostatMode") 
+                        devList += device + " is set to "+ currentMode  
+               	}
+                if (!devList) result = "unknown"
+                else if (devList) result = devList
+                return result
+   		}
+   	}
+    if (var == "running"){    
+        if(myTstat){
+        def currentOS
+				myTstat.each { deviceName ->
+                	String device  = (String) deviceName
+                    currentOS = deviceName.currentValue("thermostatOperatingState")
+                        devList += currentOS
+               	}
+                def tSize = devList?.size()
+                log.warn "size = $tSize, $currentOS, $devList "
+                if (devList && !devList.contains("idle")) result = "running"
+                else if (devList && (devList.contains("cooling") || devList.contains("heating")))  result = "running"
+                else if (devList && devList.contains("idle") && !devList.contains("cooling") && !devList.contains("heating")) result = "not running"
+                else if (devList && devList.contains("fan only"))  result = "running the fan only"
+                else result = "unknown"
+                return result
+   		}
+   	}    
+    if (var == "temperature"){    
+    	if(myTstat){
+           	def total = 0
+    		myTstat?.each {total += it.currentValue("temperature")}
+           int avgT = total as Integer
+        result = Math.round(total/myTstat?.size())
+        return result
+		}
+    }
+    if (var == "garage"){    
+    	if(parent.cDoor){
+            result = parent.cDoor.latestValue("contact").contains("open") ? "open" : "closed"  
+    	}
+        else if (parent.cRelay && parent.cContactRelay)
+        	result = parent.cContactRelay.latestValue("contact").contains("open") ? "open" : "closed"  
+        return result
+	}
 }
 /************************************************************************************************************
    TIME OF DAY HANDLER
@@ -442,9 +673,10 @@ def alertsHandler(evt) {
         }
         else{
             if(sonos) {
+                def sCommand = resumePlaying == true ? "playTrackAndResume" : "playTrackAndRestore"
                 def sTxt = textToSpeech(eTxt instanceof List ? eTxt[0] : eTxt)
-                def sVolume = settings.sonosVolume ?: 30
-                sonos.playTrackAndResume(sTxt.uri, sTxt.duration, sVolume)
+                def sVolume = settings.sonosVolume ?: 20
+                sonos."${sCommand}"(sTxt.uri, sTxt.duration, sVolume)
                 sendtxt(eTxt)
             }
         }
@@ -511,7 +743,7 @@ def alertsHandler(evt) {
                 }
                 else {
                     if (eDev == "weather"){eTxt = eName}
-                    log.info "sending message: $eTxt"
+                    //log.info "sending message: $eTxt"
                     takeAction(eTxt)
                 }
             }
@@ -563,19 +795,43 @@ private takeAction(eTxt) {
                 log.info "Playing message on the speech synthesizer'${speechSynth}' at volume '${sVolume}'"
         }
         if (sonos) { 
-            def currVolLevel = sonos.latestValue("level")
+            def currVolLevel = sonos.latestValue("level") //as Integer
+            currVolLevel = currVolLevel[0]
             def currMuteOn = sonos.latestValue("mute").contains("muted")
-                log.debug "currVolSwitchOff = ${currVolSwitchOff}, vol level = ${currVolLevel}, currMuteOn = ${currMuteOn} "
+                log.debug "current vol level = ${currVolLevel}, muted = ${currMuteOn} "
                 if (currMuteOn) { 
                     log.warn "speaker is on mute, sending unmute command"
                     sonos.unmute()
                 }
-                sVolume = settings.sonosVolume ?: 30
-                sonos?.playTrackAndResume(sTxt.uri, sTxt.duration, sVolume)
-                state.sound = state.sound = textToSpeech(eTxt instanceof List ? eTxt[0] : eTxt)
-                //sonos?.playTrackAndResume(state.sound.uri, state.sound.duration, sVolume) // Retired to use direct variable Bobby 3/13/2017
-                log.info "Playing message on the music player '${sonos}' at volume '${sonosVolume}'"
+                sVolume = settings.sonosVolume ?: 20
+                sVolume = sVolume == 20 && currVolLevel == 0 ? sVolume : currVolLevel
+                def elapsed = now() - state.lastPlayed
+                log.warn "elapsed = $elapsed"
+                def sCommand = resumePlaying == true ? "playTrackAndResume" : "playTrackAndRestore"
+                //playTrackAndRestore(state.sound.uri, state.sound.duration, desiredVolume)
+                    if(elapsed < 5000 ){
+                        //state.sound = sTxt // backup
+                        //def delaySound = Math.max((state.sound.duration as Integer),3) // backup
+                        log.error "message is already playing, delaying new message by 2 seconds"
+                		//runIn(delaySound, "delayMessage") // backup
+						//sonos?.playTrackAndResume(sTxt.uri, Math.max((sTxt.duration as Integer),2), sVolume, [delay: 2000])
+						sonos?."${sCommand}"(sTxt.uri, Math.max((sTxt.duration as Integer),2), sVolume, [delay: 2000])
+                        state.lastPlayed = now()
+                	}
+                    else {                
+                		sonos?."${sCommand}"(sTxt.uri, Math.max((sTxt.duration as Integer),2), sVolume)
+                        //sonos?.playTrackAndResume(sTxt.uri, Math.max((sTxt.duration as Integer),2), sVolume)  
+                        //state.sound = sTxt // backup
+                        state.lastPlayed = now()
+                	}
+                log.info "Playing $sTxt on the music player $sonos at volume $sVolume"
         }
+}
+def delayMessage() {
+	log.warn "delay fired"
+	def sVolume = settings.sonosVolume ?: 20
+		sonos?.playTrackAndResume(state.sound.uri, Math.max((state.sound.duration as Integer),2), sVolume)
+		state.sound = null
 }
 /***********************************************************************************************************************
     WEATHER ALERTS
@@ -805,7 +1061,61 @@ def private mGetWeatherVar(var){
         state.pTryAgain = true
         return result
     }
-}   
+} 
+/***********************************************************************************************************************
+    CRON HANDLER
+***********************************************************************************************************************/
+def cronHandler(var) {
+	def result
+		if(var == "Minutes") {
+        //	0 0/3 * 1/1 * ? *
+        	if(xMinutes) result = "0 0/${xMinutes} * 1/1 * ? *"
+            else log.error " unable to schedule your reminder due to missing required variables"
+        }
+		if(var == "Hourly") {
+        //	0 0 0/6 1/1 * ? *
+			if(xHours) result = "0 0 0/${xHours} 1/1 * ? *"
+            else log.error " unable to schedule your reminder due to missing required variables"
+		}
+		if(var == "Daily") {
+        // 0 0 1 1/7 * ? *
+            def hrmn = hhmm(xDaysStarting, "HH:mm")
+            def hr = hrmn[0..1] 
+            def mn = hrmn[3..4]
+        	if(xDays) result = "0 $mn $hr 1/${xDays} * ? *"
+            if(xDaysWeekDay && xDaysStarting) result = "0 $mn $hr 1/${xDays} * MON-FRI *"
+            else log.error " unable to schedule your reminder due to missing required variables"
+		}
+        if(var == "Weekly") {
+        // 	0 0 2 ? * TUE,SUN *
+        	def hrmn = hhmm(xWeeksStarting, "HH:mm")
+            def hr = hrmn[0..1]
+            def mn = hrmn[3..4]
+            def weekDaysList = [] 
+            	xWeeks?.each {weekDaysList << it }
+            def weekDays = weekDaysList.join(",")
+            if(xWeeks && xWeeksStarting) { result = "0 $mn $hr ? * ${weekDays} *" }
+            else log.error " unable to schedule your reminder due to missing required variables"
+		}
+		if(var == "Monthly") { 
+        // 0 30 5 6 1/2 ? *
+        	def hrmn = hhmm(xMonthsStarting, "HH:mm")
+            def hr = hrmn[0..1]
+            def mn = hrmn[3..4]
+        	if(xMonths && xMonthsDay) { result = "0 $mn $hr ${xMonthsDay} 1/${xMonths} ? *"}
+            else log.error "unable to schedule your reminder due to missing required variables"
+		}
+		if(var == "Yearly") {
+        //0 0 4 1 4 ? *
+        	def hrmn = hhmm(xYearsStarting, "HH:mm")
+            def hr = hrmn[0..1]
+            def mn = hrmn[3..4]           
+        	if(xYears) {result = "0 $mn $hr ${xYearsDay} ${xYears} ? *"}
+            else log.error "unable to schedule your reminder due to missing required variables"
+		}
+    log.info "scheduled $var recurring event" //time period with expression: $result"
+    schedule(result, "scheduledTimeHandler")
+}
 /***********************************************************************************************************************
     RESTRICTIONS HANDLER
 ***********************************************************************************************************************/
@@ -980,11 +1290,9 @@ private loadSound() {
 /************************************************************************************************************
    PROFILES 
 ************************************************************************************************************/       
-
 def getProfileList(){
 		return parent.getChildApps()*.label.sort()
 }
-
 /************************************************************************************************************
    Page status and descriptions 
 ************************************************************************************************************/       
@@ -997,6 +1305,16 @@ def pSendComplete() {def text = "Tap here to configure settings"
     	text = "Configured"}
     	else text = "Tap to Configure"
 		text}
+def triggersSettings() {def result = ""
+    if (myWeather || myWeatherAlert || myWater || mySmoke || myPresence || myMotion || myContact || mySwitch || myPower || myLocks || myTstat || myMode || myRoutine || frequency) {
+    	result = "complete"}
+   		result}
+def triggersComplete() {def text = "Tap here to configure settings" 
+    if (myWeather || myWeatherAlert || myWater || mySmoke || myPresence || myMotion || myContact || mySwitch || myPower || myLocks || myTstat || myMode || myRoutine || frequency) {
+    	text = "Configured"}
+    	else text = "Tap to Configure"
+		text} 
+
 def pRestSettings() {def result = ""
     if (modes || days) {
     	result = "complete"}
@@ -1014,35 +1332,4 @@ def pTimeComplete() {def text = "Tap here to configure settings"
     if (startingX || endingX) {
     	text = "Configured"}
     	else text = "Tap to Configure"
-		text}                
-
-
-
-def playTextAndResume(text, volume=null) {
-def sound = externalTTS ? textToSpeechT(text) : safeTextToSpeech(text)
-playByMode(sound.uri, Math.max((sound.duration as Integer),1), volume)
-}
-
-def textToSpeechT(message){
-if (message) {
-if (ttsApiKey){
-[uri: "x-rincon-mp3radio://api.voicerss.org/" + "?key=$ttsApiKey&hl=en-us&r=0&f=48khz_16bit_mono&src=" + URLEncoder.encode(message, "UTF-8").replaceAll(/+/,'%20') +"&sf=//s3.amazonaws.com/smartapp-" , duration: "${5 + Math.max(Math.round(message.length()/12),2)}"]
-}else{
-message = message.length() >100 ? message[0..90] :message
-[uri: "x-rincon-mp3radio://www.translate.google.com/translate_tts?tl=en&client=t&q=" + URLEncoder.encode(message, "UTF-8").replaceAll(/+/,'%20') +"&sf=//s3.amazonaws.com/smartapp-", duration: "${5 + Math.max(Math.round(message.length()/12),2)}"]
-}
-}else{
-[uri: "https://s3.amazonaws.com/smartapp-media/tts/633e22db83b7469c960ff1de955295f57915bd9a.mp3", duration: "10"]
-}
-}
-
-private safeTextToSpeech(message) {
-message = message?:"You selected the Text to Speech Function but did not enter a Message"
-try {
-textToSpeech(message)
-}
-catch (Throwable t) {
-log.error t
-textToSpeechT(message)
-}
-}
+		text}
