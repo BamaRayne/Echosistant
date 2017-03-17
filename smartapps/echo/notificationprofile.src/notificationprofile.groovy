@@ -82,7 +82,7 @@ page name: "mainProfilePage"
                 	paragraph "WEATHER VARIABLES: &today, &tonight, &tomorrow, &high, &low, &wind, &uv, &precipitation, &humidity, &conditions \n"                    
                 }
                 if(actionType == "Ad-Hoc Report"){
-                	paragraph "REPORTING VARIABLES: &time, &date, &profile, &mode, &shm, &power, &lights, &doors, &windows, &open, &garage, &unlocked, &temperature, &running, &present"
+                	paragraph "REPORTING VARIABLES: &time, &date, &profile, &mode, &shm, &power, &lights, &doors, &windows, &open, &garage, &unlocked, &temperature, &running, &thermostat, &present"
                 }
             }
         } 
@@ -385,6 +385,9 @@ def runProfile(profile) {
 }
 /************************************************************************************************************
    REPORT VARIABLES
+   
+   &time, &date, &profile, &mode, &shm, &power, &lights, &doors, &windows, &open, &garage, &unlocked, &temperature, &running, &present
+   
 ************************************************************************************************************/
 private getVar(var) {
 	def devList = []
