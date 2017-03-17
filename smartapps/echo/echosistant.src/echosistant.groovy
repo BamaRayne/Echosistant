@@ -890,7 +890,7 @@ def feedbackHandler() {
             def pintentName
            		childApps.each {child ->
                         def ch = child.label
-                        	ch = ch.replaceAll("[^a-zA-Z0-9]", "")
+                        	ch = ch.replaceAll("[^a-zA-Z0-9 ]", "")
                 		if (ch.toLowerCase() == fDevice.toLowerCase()) { 
                     		if (debug) log.debug "Found a profile"
                             pintentName = child.label
