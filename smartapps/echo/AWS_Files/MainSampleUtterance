@@ -1,30 +1,3 @@
-security {cCommand} {sType} {sControl}
-security {cCommand} the {sType} {sControl}
-security {cCommand} {sControl} in {cNum} minutes
-security {cCommand} {sControl} in {cNum} minute
-security {cCommand} {sType} in {cNum} minutes
-security {cCommand} {sType} in {cNum} minute
-security {cCommand} {sType} {sControl} in {cNum} minutes
-security {cCommand} {sType} {sControl} in {cNum} minute
-security turn {cCommand} the {sType} {sControl}
-security turn the {sType} {cCommand}
-security turn {sType} {cCommand}
-security turn the {sType} {sControl} {cCommand} in {cNum}
-security turn the {sType} {cCommand} in {cNum}
-security {cCommand} {sControl} in {cNum} minutes
-security I am {sControl}
-security {sControl}
-security to {cCommand} {sType}
-security to {cCommand} the {sType}
-security to {cCommand} the {sType} {sControl}
-security to {cCommand} {sType} {sControl} in {cNum}
-security what's my {sType} {sControl}
-security what is my {sType} {sControl}
-security what's the {sType} {sControl}
-security what is the {sType} {sControl}
-security about the {sType} {sControl}
-security get the {sControl} of my {sType} 
-
 main {cPIN}
 main {cUnit}
 main is {cCommand} {cDevice}
@@ -78,7 +51,6 @@ main to {cCommand} the {cUnit} for {cGroup}
 main to {cCommand} the {cUnit} number for {cGroup}
 main to {cCommand} the {cGroup}
 main to {cCommand} the {cGroup} in {cNum} {cUnit}
-
 main to set {cDevice} to {cUnit}
 main to set the {cDevice} to {cUnit}
 main to set the {cDevice} to {cCommand} {cUnit}
@@ -88,7 +60,6 @@ main to {cCommand} the {cDevice} {cUnit}
 main to {cCommand} {cDevice} {cUnit} 
 main to {cCommand} the {cDevice} to {cUnit} 
 main to {cCommand} {cDevice} to {cUnit}
-
 main {cCommand} {cDevice} {cGroup} to {cUnit}
 main {cCommand} the {cDevice} {cGroup} to {cUnit}
 main set {cDevice} {cGroup} to {cUnit}
@@ -101,7 +72,6 @@ main to {cCommand} the {cDevice} {cGroup} {cUnit}
 main to {cCommand} {cDevice} {cGroup} {cUnit} 
 main to {cCommand} the {cDevice} {cGroup} to {cUnit} 
 main to {cCommand} {cDevice} {cGroup} to {cUnit}
-
 main turn {cDevice} light {cCommand}
 main turn {cCommand} {cDevice} light
 main turn {cCommand} the {cDevice} light
@@ -143,7 +113,6 @@ feedback {fQuery} {cDevice} is {fOperand}
 feedback if the {cDevice} is {fOperand}
 feedback if my {cDevice} is {fOperand}
 feedback if {cDevice} is {fOperand}
-
 feedback for {fOperand} {cCommand}
 feedback for {cCommand} {fOperand}
 feedback for {fOperand} that are {cCommand}
@@ -162,7 +131,33 @@ feedback {fQuery} was {cDevice} last {fOperand}
 feedback {fQuery} do I have to {cCommand} the filters
 feedback {fQuery} do I need to {cCommand} the filters
 feedback {fQuery} {cDevice} {fOperand}
-
 feedback {fQuery} many {fOperand} {cDevice} has
 feedback {fQuery} many {fOperand} does {cDevice} have
 feedback {fQuery} any {fOperand} for {cDevice}
+
+security {cCommand} {sType} {sControl}
+security {cCommand} the {sType} {sControl}
+security {cCommand} {sControl} in {cNum} minutes
+security {cCommand} {sControl} in {cNum} minute
+security {cCommand} {sType} in {cNum} minutes
+security {cCommand} {sType} in {cNum} minute
+security {cCommand} {sType} {sControl} in {cNum} minutes
+security {cCommand} {sType} {sControl} in {cNum} minute
+security turn {cCommand} the {sType} {sControl}
+security turn the {sType} {cCommand}
+security turn {sType} {cCommand}
+security turn the {sType} {sControl} {cCommand} in {cNum}
+security turn the {sType} {cCommand} in {cNum}
+security {cCommand} {sControl} in {cNum} minutes
+security I am {sControl}
+security {sControl}
+security to {cCommand} {sType}
+security to {cCommand} the {sType}
+security to {cCommand} the {sType} {sControl}
+security to {cCommand} {sType} {sControl} in {cNum}
+security what's my {sType} {sControl}
+security what is my {sType} {sControl}
+security what's the {sType} {sControl}
+security what is the {sType} {sControl}
+security about the {sType} {sControl}
+security get the {sControl} of my {sType} 
