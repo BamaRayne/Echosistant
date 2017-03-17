@@ -900,6 +900,7 @@ def feedbackHandler() {
                             outputTxt = child.runProfile(pintentName)
 						}
             	}
+                if(!outputTxt)outputTxt = "Sorry I wasn't able to find a report named " + fDevice
                 return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]	
          }
          if (fDevice != "undefined" && fQuery != "undefined" && fOperand != "undefined") {

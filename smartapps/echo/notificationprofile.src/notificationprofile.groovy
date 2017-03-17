@@ -369,10 +369,15 @@ return state.NotificationRelease
 def runProfile(profile) {
 	def result 
 	if (actionType == "Ad-Hoc Report" &&  message){
-    	result = message ? "$message".replace("&date", "${getVar("date")}").replace("&time", "${getVar("time")}").replace("&profile", "${getVar("profile")}") : null
-		result = result ? "$result".replace("&power", "${getVar("power")}").replace("&open", "${getVar("open")}").replace("&lights", "${getVar("lights")}") : null
+    	// date, time and profile variables
+        result = message ? "$message".replace("&date", "${getVar("date")}").replace("&time", "${getVar("time")}").replace("&profile", "${getVar("profile")}") : null
+        // power variables
+        result = result ? "$result".replace("&power", "${getVar("power")}").replace("&lights", "${getVar("lights")}") : null
+        // garage doors, locks and precence variables
         result = result ? "$result".replace("&garage", "${getVar("garage")}").replace("&unlocked", "${getVar("unlocked")}").replace("&present", "${getVar("present")}") : null
-        // location variables
+		// doors and windows variables
+        result = result ? "$result".replace("&doors", "${getVar("doors")}").replace("&windows", "${getVar("windows")}").replace("&open", "${getVar("open")}") : null
+		// location variables
         result = result ? "$result".replace("&mode", "${getVar("mode")}").replace("&shm", "${getVar("shm")}") : null
 		//thermostat variables
         result = result ? "$result".replace("&thermostat", "${getVar("thermostat")}").replace("&running", "${getVar("running")}").replace("&temperature", "${getVar("temperature")}")  : null
