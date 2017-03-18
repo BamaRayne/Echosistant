@@ -7,7 +7,7 @@
  
  ************************************ FOR INTERNAL USE ONLY ******************************************************
  *
- *		3/18/2017		Version:4.0 R.0.3.1		Addition of the Zwave Thermostat Manager Add-On Module
+ *		3/18/2017		Version:4.0 R.0.3.1a	Addition of the Zwave Thermostat Manager Add-On Module
  *		3/14/2017		Version:4.0 R.0.3.0  	Enabled running Reporting Profile, Bug fix for windows, doors, and lights feedback/ reconfigured / improved responses and commands
  *		2/17/2017		Version:4.0 R.0.0.0		Public Release 
  *
@@ -843,7 +843,7 @@ try {
 // >>> Handling a Profile Intent <<<<      
      if (!event.startsWith("AMAZON") && event != "main" && event != "security" && event != "feedback" && event != "profile" && event != "noAction"){
 		childApps?.each {child ->
-			if (child?.label.toLowerCase() == event.toLowerCase()) { 
+			if (child?.label.toLowerCase() == event?.toLowerCase()) { 
                 pContinue = child?.checkState()  
             }
        	}
@@ -915,7 +915,7 @@ def feedbackHandler() {
            		childApps.each {child ->
                         def ch = child.label
                         	ch = ch.replaceAll("[^a-zA-Z0-9 ]", "")
-                		if (ch.toLowerCase() == fDevice.toLowerCase()) { 
+                		if (ch.toLowerCase() == fDevice?.toLowerCase()) { 
                     		if (debug) log.debug "Found a profile"
                             pintentName = child.label
                             def dataSet = [ptts:ptts, pintentName:pintentName] 
@@ -929,22 +929,22 @@ def feedbackHandler() {
          }
          if (fDevice != "undefined" && fQuery != "undefined" && fOperand != "undefined") {
             if (fQuery.contains ("is ") || fQuery.contains ("if ") || fQuery == "is" || fQuery == "if" || fQuery == "is the") {
-                def deviceMatch = cRelay?.find {d -> d.label.toLowerCase() == fDevice.toLowerCase()}
+                def deviceMatch = cRelay?.find {d -> d.label.toLowerCase() == fDevice?.toLowerCase()}
                     if(deviceMatch && cContactRelay) {// changed by Jason 2/24/2017
                         outputTxt =  cContactRelay.latestValue("contact").contains(fOperand) ? "yes, the ${deviceMatch} is ${fOperand}" : "no, the ${deviceMatch} is not ${fOperand}"
                         return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
                     }
                     else {
                         if (deviceMatch == null && cDoor) {// changed by Jason 2/24/2017
-                            deviceMatch = cDoor?.find {d -> d.label.toLowerCase() == fDevice.toLowerCase()}
+                            deviceMatch = cDoor?.find {d -> d.label.toLowerCase() == fDevice?.toLowerCase()}
                              if(deviceMatch) outputTxt =  deviceMatch.latestValue("contact").contains(fOperand) ? "yes, the ${deviceMatch} is ${fOperand}" : "no, the ${deviceMatch} is not ${fOperand}"
                         }
                         if (deviceMatch == null && cContact) {// changed by Jason 2/24/2017
-                            deviceMatch = cContact?.find {d -> d.label.toLowerCase() == fDevice.toLowerCase()}
+                            deviceMatch = cContact?.find {d -> d.label.toLowerCase() == fDevice?.toLowerCase()}
                             if(deviceMatch) outputTxt =  deviceMatch.latestValue("contact").contains(fOperand) ? "yes, the ${deviceMatch} is ${fOperand}" : "no, the ${deviceMatch} is not ${fOperand}"
                         } 
                     	if (deviceMatch == null && cLock) {// changed by Jason 2/24/2017
-                        	deviceMatch = cLock?.find {d -> d.label.toLowerCase() == fDevice.toLowerCase()}
+                        	deviceMatch = cLock?.find {d -> d.label.toLowerCase() == fDevice?.toLowerCase()}
                         	if(deviceMatch) {
                             	currState = deviceMatch.latestValue("lock")
                             	currState = currState == "${fOperand}" ? "yes, the ${deviceMatch} is ${fOperand}" : "no, the ${deviceMatch} is not ${fOperand}"
@@ -952,11 +952,11 @@ def feedbackHandler() {
                         	}
                     	}                        
                         if (deviceMatch == null && cSwitch) {// changed by Jason 2/24/2017
-                            deviceMatch = cSwitch?.find {d -> d.label.toLowerCase() == fDevice.toLowerCase()} 
+                            deviceMatch = cSwitch?.find {d -> d.label.toLowerCase() == fDevice?.toLowerCase()} 
                             if(deviceMatch) outputTxt = deviceMatch.latestValue("switch").contains(fOperand) ? "yes, the ${deviceMatch} is ${fOperand}" : "no, the ${deviceMatch} is not ${fOperand}"
                         }
                         if (deviceMatch == null && cMotion) {// changed by Jason 2/24/2017
-                            deviceMatch = cMotion?.find {d -> d.label.toLowerCase() == fDevice.toLowerCase()}
+                            deviceMatch = cMotion?.find {d -> d.label.toLowerCase() == fDevice?.toLowerCase()}
                             if(deviceMatch) {
                                 currState = deviceMatch.currentValue("motion")
                                 currState = currState == "active" ? "yes, the ${deviceMatch} is ${fOperand}" : "no, the ${deviceMatch} is not ${fOperand}"
@@ -964,21 +964,21 @@ def feedbackHandler() {
                             }
                         }
 						if (deviceMatch == null && cPresence) {  // changed by Jason 2/24/2017
-                            deviceMatch = cPresence.find {d -> d.label.toLowerCase() == fDevice.toLowerCase()}  	
+                            deviceMatch = cPresence.find {d -> d.label.toLowerCase() == fDevice?.toLowerCase()}  	
                                	if(fOperand == "home" || fOperand == "here" || fOperand == "present" || fOperand == "in" || fOperand == "at home") {
                                 	outputTxt = deviceMatch.latestValue("presence")?.contains("not") ? "no, ${deviceMatch} is not ${fOperand}" : "yes, ${deviceMatch} is ${fOperand}"
 									}
                                 }    
                         if (deviceMatch == null && cWater) {// changed by Jason 2/24/2017
-                            deviceMatch = cWater?.find {d -> d.label.toLowerCase() == fDevice.toLowerCase()}	
+                            deviceMatch = cWater?.find {d -> d.label.toLowerCase() == fDevice?.toLowerCase()}	
                             if(deviceMatch) outputTxt =  deviceMatch.latestValue("water").contains(fOperand) ? "yes, the ${deviceMatch} is ${fOperand}" : "no, the ${deviceMatch} is not ${fOperand}"
                         }
                         if (deviceMatch == null && cSpeaker) {// changed by Jason 2/24/2017
-                            deviceMatch = cSpeaker?.find {d -> d.label.toLowerCase() == fDevice.toLowerCase()}	
+                            deviceMatch = cSpeaker?.find {d -> d.label.toLowerCase() == fDevice?.toLowerCase()}	
                             if(deviceMatch) outputTxt =  deviceMatch.latestValue("mute").contains(fOperand) ? "yes, the ${deviceMatch} is ${fOperand}" : "no, the ${deviceMatch} is not ${fOperand}"
                         }
                         if (deviceMatch == null && fOperand == "running" && cTstat ) {// changed by Jason 2/24/2017
-                            deviceMatch = cTstat?.find {d -> d.label.toLowerCase() == fDevice.toLowerCase()}
+                            deviceMatch = cTstat?.find {d -> d.label.toLowerCase() == fDevice?.toLowerCase()}
                             if(deviceMatch) {
                                 currState = deviceMatch.latestValue("thermostatOperatingState")
                                 currState = currState == "cooling" ? "yes, ${deviceMatch} is ${fOperand}" : currState == "heating" ? "yes, the ${deviceMatch} is ${fOperand}" : "no, the ${deviceMatch} is not ${fOperand}"
@@ -1012,7 +1012,7 @@ def feedbackHandler() {
             }
         }   
         if (fOperand == "undefined" && fQuery != "undefined" && fQuery != "who" && !fQuery.contains ("when")) {        
-                def deviceMatch=cTstat?.find {d -> d.label.toLowerCase() == fDevice.toLowerCase()}
+                def deviceMatch=cTstat?.find {d -> d.label.toLowerCase() == fDevice?.toLowerCase()}
                     if(deviceMatch)	{
                             deviceType = "cTstat"
                             def currentMode = deviceMatch.latestValue("thermostatMode")
@@ -1066,7 +1066,7 @@ def feedbackHandler() {
             if(fOperand == "temperature") {
                 if(cTstat){
                     cTstat?.find {s -> 
-                        if(s.label.toLowerCase() == fDevice.toLowerCase()){
+                        if(s.label.toLowerCase() == fDevice?.toLowerCase()){
                             deviceType = "cTstat"
                             def currentTMP = s.latestValue("temperature")
                             int temp = currentTMP
@@ -1082,7 +1082,7 @@ def feedbackHandler() {
                 }
                 if(cMotion){
                     cMotion.find {s -> 
-                        if(s.label.toLowerCase() == fDevice.toLowerCase()){
+                        if(s.label.toLowerCase() == fDevice?.toLowerCase()){
                             deviceType = "cTstat"
                             def currentTMP = s.latestValue("temperature")
                             int temp = currentTMP
@@ -1098,7 +1098,7 @@ def feedbackHandler() {
                 }
                 if(cWater){
                     cWater.find {s -> 
-                        if(s.label.toLowerCase() == fDevice.toLowerCase()){
+                        if(s.label.toLowerCase() == fDevice?.toLowerCase()){
                             deviceType = "cWater"
                             def currentTMP = s.latestValue("temperature")
                             int temp = currentTMP
@@ -1202,7 +1202,7 @@ def feedbackHandler() {
            		childApps.each {child ->
                         def ch = child.label
                         	ch = ch.replaceAll("[^a-zA-Z0-9]", "")
-                		if (ch.toLowerCase() == fDevice.toLowerCase()) { 
+                		if (ch.toLowerCase() == fDevice?.toLowerCase()) { 
                     		if (debug) log.debug "Found a profile"
                             pintentName = child.label
                     		if(fCommand == "delete") ptts = "delete all messages "
@@ -1674,7 +1674,7 @@ try {
            		childApps.each {child ->
                         def ch = child.label
                         	ch = ch.replaceAll("[^a-zA-Z0-9]", "")
-                		if (ch.toLowerCase() == ctDevice.toLowerCase()) { 
+                		if (ch.toLowerCase() == ctDevice?.toLowerCase()) { 
                     		if (debug) log.debug "Found a profile"
                             pintentName = child.label
                     		ptts = "Running Profile actions from the main home"
@@ -3156,7 +3156,7 @@ private deviceMatchHandler(fDevice) {
     def result
     	state.pTryAgain = false
 		if(cTstat){
-           deviceMatch = cTstat?.find {d -> d.label.toLowerCase() == fDevice.toLowerCase()}
+           deviceMatch = cTstat?.find {d -> d.label.toLowerCase() == fDevice?.toLowerCase()}
 			if(deviceMatch){
 				deviceType = "cTstat"
                 currState = deviceMatch.currentState("thermostatOperatingState").value
@@ -3167,7 +3167,7 @@ private deviceMatchHandler(fDevice) {
             }
         }
         if (cSwitch){
-		deviceMatch = cSwitch?.find {d -> d.label.toLowerCase() == fDevice.toLowerCase()}
+		deviceMatch = cSwitch?.find {d -> d.label.toLowerCase() == fDevice?.toLowerCase()}
 			if(deviceMatch){
 				deviceType = "cSwitch" 
 				currState = deviceMatch.currentState("switch").value
@@ -3178,7 +3178,7 @@ private deviceMatchHandler(fDevice) {
         	}
         }
         if (cContact){
-        deviceMatch =cContact?.find {d -> d.label.toLowerCase() == fDevice.toLowerCase()}
+        deviceMatch =cContact?.find {d -> d.label.toLowerCase() == fDevice?.toLowerCase()}
             if(deviceMatch)	{
                 deviceType = "cContact" 
 				currState = deviceMatch.currentState("contact").value
@@ -3189,7 +3189,7 @@ private deviceMatchHandler(fDevice) {
             }
         }
         if (cMotion){
-        deviceMatch =cMotion?.find {d -> d.label.toLowerCase() == fDevice.toLowerCase()}
+        deviceMatch =cMotion?.find {d -> d.label.toLowerCase() == fDevice?.toLowerCase()}
             if(deviceMatch)	{
                 deviceType = "cMotion" 
                 currState = deviceMatch.currentState("motion").value 
@@ -3200,7 +3200,7 @@ private deviceMatchHandler(fDevice) {
         	}
         } 
         if (cLock){
-        deviceMatch =cLock?.find {d -> d.label.toLowerCase() == fDevice.toLowerCase()}
+        deviceMatch =cLock?.find {d -> d.label.toLowerCase() == fDevice?.toLowerCase()}
             if(deviceMatch)	{
                 deviceType = "cLock"
                 currState = deviceMatch.currentState("lock").value 
@@ -3211,7 +3211,7 @@ private deviceMatchHandler(fDevice) {
         	}
         }        
         if (cPresence){
-        deviceMatch =cPresence?.find {d -> d.label.toLowerCase() == fDevice.toLowerCase()}
+        deviceMatch =cPresence?.find {d -> d.label.toLowerCase() == fDevice?.toLowerCase()}
             if(deviceMatch)	{
                 deviceType = "cPresence"
                 currState = deviceMatch.currentState("presence")?.value 
@@ -3222,7 +3222,7 @@ private deviceMatchHandler(fDevice) {
         	}
         }  
         if (cDoor){
-        deviceMatch =cDoor?.find {d -> d.label.toLowerCase() == fDevice.toLowerCase()}
+        deviceMatch =cDoor?.find {d -> d.label.toLowerCase() == fDevice?.toLowerCase()}
             if(deviceMatch)	{
                 deviceType = "cDoor"
                 currState = deviceMatch.currentState("door").value 
@@ -3233,7 +3233,7 @@ private deviceMatchHandler(fDevice) {
         	}
         }  
         if (cVent){
-		deviceMatch =cVent?.find {d -> d.label.toLowerCase() == fDevice.toLowerCase()}
+		deviceMatch =cVent?.find {d -> d.label.toLowerCase() == fDevice?.toLowerCase()}
             if(deviceMatch)	{
                 deviceType = "cVent"
                 currState = deviceMatch.currentState("switch").value 
@@ -3245,7 +3245,7 @@ private deviceMatchHandler(fDevice) {
         	}
         }
         if (cWater){
-		deviceMatch =cWater?.find {d -> d.label.toLowerCase() == fDevice.toLowerCase()}
+		deviceMatch =cWater?.find {d -> d.label.toLowerCase() == fDevice?.toLowerCase()}
             if(deviceMatch)	{
                 deviceType = "cWater"
                 currState = deviceMatch.currentState("water").value 
@@ -3260,7 +3260,7 @@ private deviceMatchHandler(fDevice) {
                 deviceMatch = cMedia.first()
             }
             else {
-                deviceMatch =cMedia?.find {d -> d.label.toLowerCase() == fDevice.toLowerCase()}
+                deviceMatch =cMedia?.find {d -> d.label.toLowerCase() == fDevice?.toLowerCase()}
             }   
             if(deviceMatch)	{
                 deviceType = "cMedia"
@@ -3273,7 +3273,7 @@ private deviceMatchHandler(fDevice) {
             }
         }        
         if (cFan){
-		deviceMatch =cFan?.find {d -> d.label.toLowerCase() == fDevice.toLowerCase()}
+		deviceMatch =cFan?.find {d -> d.label.toLowerCase() == fDevice?.toLowerCase()}
             if(deviceMatch)	{
                 deviceType = "cFan"
                 currState = deviceMatch.currentState("switch").value 
@@ -3284,7 +3284,7 @@ private deviceMatchHandler(fDevice) {
             }
         }         
         if (cRelay){
-		deviceMatch =cRelay?.find {d -> d.label.toLowerCase() == fDevice.toLowerCase()}
+		deviceMatch =cRelay?.find {d -> d.label.toLowerCase() == fDevice?.toLowerCase()}
             if(deviceMatch)	{
 				deviceType == "cRelay"
                 if (cContactRelay) {
@@ -3297,7 +3297,7 @@ private deviceMatchHandler(fDevice) {
 			}
         }
         if (cBattery){
-        deviceMatch =cBattery?.find {d -> d.label.toLowerCase() == fDevice.toLowerCase()}
+        deviceMatch =cBattery?.find {d -> d.label.toLowerCase() == fDevice?.toLowerCase()}
             if(deviceMatch)	{
                 deviceType = "cBattery"
                 currState = cBattery.currentState("battery").value
