@@ -7,7 +7,7 @@
  
  ************************************ FOR INTERNAL USE ONLY ******************************************************
  *
- *		3/18/2017		Version:4.0 R.0.3.1a	Addition of the Zwave Thermostat Manager Add-On Module
+ *		3/18/2017		Version:4.0 R.0.3.1b	Addition of the Zwave Thermostat Manager Add-On Module and feedback bug fix
  *		3/14/2017		Version:4.0 R.0.3.0  	Enabled running Reporting Profile, Bug fix for windows, doors, and lights feedback/ reconfigured / improved responses and commands
  *		2/17/2017		Version:4.0 R.0.0.0		Public Release 
  *
@@ -40,7 +40,7 @@ private def textVersion() {
 	def text = "4.0"
 }
 private release() {
-    def text = "R.0.3.1"
+    def text = "R.0.3.1b"
 }
 /**********************************************************************************************************************************************/
 preferences {   
@@ -1287,19 +1287,19 @@ def feedbackHandler() {
                                     	}
                                 	}
                     			}
-                    if (fQuery == "what's" || fQuery == "what" || fQuery == "is" || fQuery == "which" || fQuery == "any" || fQuery == "how" || fQuery== "how many" || fQuery == "are there" || fQuery.contains ("if")) { // removed fQuery == "undefined" 2/13
+                    if (fQuery == "what's" || fQuery == "what" || fQuery == "is" || fQuery == "which" || fQuery == "any" || fQuery.contains ("if")) { // removed fQuery == "undefined" 2/13
                         if (devListDoors?.size() == 1 && devListWindows?.size() == 1) {
-                        	outputTxt = "There is " + devListDoors?.size() + " door and " + devListWindows?.size() + " window " + fCommand + " , would you like to know which ones? "                           			
+                            outputTxt = "The following " + devListDoors?.size() + " door is open, " + devListDoors + " , as well as the following " + devListWindows?.size() + " window, " + devListWindows
                             }
                             else if (devListDoors?.size() > 0 && devListWindows?.size() == 0) {
-                            	outputTxt = "There is " + devListDoors?.size() + " doors " + fCommand + " , would you like to know which ones?"
+                            	outputTxt = "The following " + devListDoors?.size() + " doors are open, " + devListDoors
                                 }
                             else if (devListDoors?.size() == 0 && devListWindows?.size() > 0) {
-                            	outputTxt = "There is " + devListWindows?.size() + " windows " + fCommand + " , would you like to know which ones?"  
+                            	outputTxt = "The following " + devListWindows?.size() + " windows are open, " + devListWindows  
                                 }
                             else {
-                                outputTxt = "There are " + devListDoors?.size() + " doors and " + devListWindows?.size() + " windows " + fCommand + "  , would you like to now know which ones? "
-                            }
+                            outputTxt = "The following " + devListDoors?.size() + " doors are open, " + devListDoors + " , as well as the following " + devListWindows?.size() + " windows, " + devListWindows                      
+                      }
                         data.cmd = fCommand
                         data.deviceTypeDoors = "cDoor1"
                         data.deviceTypeWindows = "cWindow"
@@ -1307,6 +1307,7 @@ def feedbackHandler() {
                         data.deviceWindows = devListWindows
                         state.lastAction = data
                         state.pContCmdsR = "feedback"
+                        return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]	
                         	}
                         else {outputTxt = "There are no doors or windows " + fCommand}
              //           log.info "This is the output that you are seeing"
@@ -1314,63 +1315,113 @@ def feedbackHandler() {
                     	}
 //>>> Doors >>>>     // Mod'd by Jason to ask "which windows are open" on 2/27/2017         
             if(fOperand.contains("door")) { 
-                    def devListDoors = []
+                    def devList = []
                     if (cDoor1?.latestValue("contact")?.contains(fCommand)) {
                         cDoor1?.each { deviceName ->
                                     if (deviceName.latestValue("contact")=="${fCommand}") {
                                         String device  = (String) deviceName
-                                        devListDoors += device
+                                        devList += device
                                     }
                         		}
 							}
-                    if (fQuery == "what's" || fQuery == "what" || fQuery == "is" || fQuery == "which" || fQuery == "any" || fQuery == "how" || fQuery== "how many" || fQuery == "are there" || fQuery.contains ("if")) { // removed fQuery == "undefined" 2/13
-                        if (devListDoors?.size() > 0) {
-                            if (devListDoors?.size() == 1) {
+                    if (fQuery == "how" || fQuery== "how many" || fQuery == "are there" || fQuery == "any" || fQuery.contains ("if")) { // removed fQuery == "undefined" 2/13
+                        if (devList?.size() > 0) {
+                            if (devList?.size() == 1) {
                                 outputTxt = "There is one door " + fCommand + " , would you like to know which one? "                           			
                             }
                             else {
-                                outputTxt = "There are " + devListDoors?.size() + " doors " + fCommand + " , would you like to know which doors? "
+                                outputTxt = "There are " + devList?.size() + " doors " + fCommand + " , would you like to know which doors? "
                             }
-						data.devices = devListDoors
+                        data.devices = devList
                         data.cmd = fCommand
                         data.deviceType = "cDoor1"
                         state.lastAction = data
                         state.pContCmdsR = "feedback"
+                        return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]	
                         }
                         else {outputTxt = "There are no doors " + fCommand}
                         return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]	
-                    	}
                     }
+                    else if (fQuery.contains ("what") || fQuery.contains ("which") || fQuery == "what's") {
+                        def devNames = []
+                        fOperand = fOperand.contains("close") ? "closed" : fOperand.contains("open") ? "open" : fOperand 
+                        fCommand = fCommand.contains("close") ? "closed" : fCommand
+                        fCommand = fOperand == "closed" ? "closed" : fOperand == "open" ? "open" : fCommand                  
+                            if (cDoor1?.latestValue("contact")?.contains(fCommand)) {
+                                cDoor1?.each { deviceName ->
+                                            if (deviceName.latestValue("contact")=="${fCommand}") {
+                                                String device  = (String) deviceName
+                                                devNames += device
+                                            }
+                                }
+                                cDoor1?.each { deviceName ->
+                                            if (deviceName.latestValue("contact")=="${fCommand}") {
+                                                String device  = (String) deviceName
+                                                devNames += device
+                                            }
+                                }
+                            outputTxt = "The following doors are " + fCommand + "," + devNames.sort().unique()
+                            return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]	
+							}
+                            else {outputTxt = "There are no doors " + fCommand}
+                            return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]	
+                    	}
+            		}                  
 //>>> Windows >>>>       // Added by Jason to ask "which windows are open" on 2/27/2017     
             if(fOperand.contains("window")) { 
-                    def devListWindows = []
+                    def devList = []
                     fCommand = fOperand.contains("open") ? "open" : fOperand.contains("close") ? "closed" : fCommand // to avoid misplaced command as operand 3/3/17 Bobby
                     if (cWindow?.latestValue("contact")?.contains(fCommand)) {
                         cWindow?.each { deviceName ->
                                     if (deviceName.latestValue("contact")=="${fCommand}") {
                                         String device  = (String) deviceName
-                                        devListWindows += device
+                                        devList += device
                                     }
                         		}
 							}
-                    if (fQuery == "what's" || fQuery == "what" || fQuery == "is" || fQuery == "which" || fQuery == "any" || fQuery == "how" || fQuery== "how many" || fQuery == "are there" || fQuery.contains ("if")) { // removed fQuery == "undefined" 2/13
-                        if (devListWindows?.size() > 0) {
-                            if (devListWindows?.size() == 1) {
+                    if (fQuery == "any" || fQuery == "how" || fQuery== "how many" || fQuery == "are there" || fQuery.contains ("if")) { // removed fQuery == "undefined" 2/13
+                        if (devList?.size() > 0) {
+                            if (devList?.size() == 1) {
                                 outputTxt = "There is one window " + fCommand + " , would you like to know which one? "                           			
                             }
                             else {
-                                outputTxt = "There are " + devListWindows?.size() + " windows " + fCommand + " , would you like to know which windows? "
+                                outputTxt = "There are " + devList?.size() + " windows " + fCommand + " , would you like to know which windows? "
                             }
-                        data.devices = devListWindows
+                        data.devices = devList
                         data.cmd = fCommand
                         data.deviceType = "cWindow"
                         state.lastAction = data
                         state.pContCmdsR = "feedback"
+                        return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]	
                         }
                         else {outputTxt = "There are no windows " + fCommand}
                         return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]	
-                    	}
                     }
+                    else if (fQuery.contains ("what") || fQuery.contains ("which") || fQuery == "what's") {
+                        def devNames = []
+                        fOperand = fOperand.contains("close") ? "closed" : fOperand.contains("open") ? "open" : fOperand 
+                        fCommand = fCommand.contains("close") ? "closed" : fCommand
+                        fCommand = fOperand == "closed" ? "closed" : fOperand == "open" ? "open" : fCommand                  
+                            if (cWindow?.latestValue("contact")?.contains(fCommand)) {
+                                cWindow?.each { deviceName ->
+                                            if (deviceName.latestValue("contact")=="${fCommand}") {
+                                                String device  = (String) deviceName
+                                                devNames += device
+                                            }
+                                }
+                                cWindow?.each { deviceName ->
+                                            if (deviceName.latestValue("contact")=="${fCommand}") {
+                                                String device  = (String) deviceName
+                                                devNames += device
+                                            }
+                                }
+                            outputTxt = "The following windows are " + fCommand + "," + devNames.sort().unique()
+                            return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]	
+							}
+                            else {outputTxt = "There are no windows " + fCommand}
+                            return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]	
+                    	}
+            		}    
 //>>> Battery Level >>>>                        
             if(fOperand == "batteries" || fOperand == "battery level" || fOperand == "battery" ) {
             	def cap = "bat"
@@ -3141,7 +3192,9 @@ def getMoreFeedback(data) {
     state.pContCmdsR = null 
 	state.lastAction = null
 	}
-	return outputTxt //":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]	
+//    return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]	
+
+	return outputTxt  //":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN	
 }    
 /******************************************************************************
 	 FEEDBACK SUPPORT - DEVICE MATCH											
