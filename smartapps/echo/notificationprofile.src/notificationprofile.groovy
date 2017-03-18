@@ -1,6 +1,7 @@
 /* 
  * Notification - EchoSistant Add-on 
  *
+ *		3/18/2017		Version:4.0 R.0.3.1	    added: &motion, &cooling, &heating
  *		3/16/2017		Version:4.0 R.0.3.0	    Cron Scheduling and Reporting
  *
  *  Copyright 2016 Jason Headley & Bobby Dobrescu
@@ -27,7 +28,7 @@ definition(
 	iconX3Url		: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/app-Echosistant@2x.png")
 /**********************************************************************************************************************************************/
 private release() {
-	def text = "R.0.3.0"
+	def text = "R.0.3.1"
 }
 
 preferences {
@@ -83,7 +84,11 @@ page name: "mainProfilePage"
                 	paragraph "WEATHER VARIABLES: &today, &tonight, &tomorrow, &high, &low, &wind, &uv, &precipitation, &humidity, &conditions \n"                    
                 }
                 if(actionType == "Ad-Hoc Report"){
-                	paragraph "REPORTING VARIABLES: &time, &date, &profile, &mode, &shm, &power, &lights, &doors, &windows, &open, &garage, &unlocked, &temperature, &running, &thermostat, &present"
+                	paragraph "REPORTING VARIABLES: \n"+
+                                                    "Location: &time, &date, &profile, &mode, &shm \n"+
+                                                    "Device Status: &power, &lights, &unlocked \n"+
+                                                    "Sensors: &doors, &windows, &open, &garage, &present \n"+
+                                                    "Thermostats: &temperature, &running, &thermostat, &cooling, &heating"
                 }
             }
         } 
@@ -177,9 +182,7 @@ page name: "triggers"
                 if(actionType != "Default"){
                 input "myTstat", "capability.thermostat", title: "Choose Thermostats...", required: false, multiple: true, submitOnChange: true
                     if (myTstat && actionType != "Ad-Hoc Report") input "myTstatS", "enum", title: "Notify when set point changes for...", options: ["cooling", "heating", "both"], required: false
-                    // attribute thermostatMode
                     if (myTstat && actionType != "Ad-Hoc Report") input "myTstatM", "enum", title: "Notify when mode changes to...", options: ["auto", "cool", " heat", "emergency heat", "off", "every mode"], required: false
-                    // attribute thermostatOperatingState
                     if (myTstat && actionType != "Ad-Hoc Report") input "myTstatOS", "enum", title: "Notify when Operating State changes to...", options: ["cooling", "heating", " idle", "every state"], required: false
             	}
             }
@@ -398,7 +401,9 @@ def runProfile(profile) {
         result = result ? "$result".replace("&mode", "${getVar("mode")}").replace("&shm", "${getVar("shm")}") : null
 		//thermostat variables
         result = result ? "$result".replace("&thermostat", "${getVar("thermostat")}").replace("&running", "${getVar("running")}").replace("&temperature", "${getVar("temperature")}")  : null
-		//weather variables
+		//thermostat setPoints
+        result = result ? "$result".replace("&heating", "${getVar("heating")}").replace("&cooling", "${getVar("cooling")}").replace("&motion", "${getVar("motion")}")  : null
+        //weather variables
         result = getWeatherVar(result) 
     }
     else result = "Sorry you can only generate an ad-hoc report that has a custom message"
@@ -551,7 +556,33 @@ private getVar(var) {
                 return result
    		}
    	}
-    if (var == "running"){    
+    if (var == "heating"){    
+        if(myTstat){
+        def currentMode
+				myTstat.each { deviceName ->
+                	String device  = (String) deviceName
+                    currentMode = deviceName.currentValue("heatingSetpoint") 
+                        devList += device + " heating set point is "+ currentMode  
+               	}
+                if (!devList) result = "unknown"
+                else if (devList) result = devList
+                return result
+   		}
+   	}
+    if (var == "cooling"){    
+        if(myTstat){
+        def currentMode
+				myTstat.each { deviceName ->
+                	String device  = (String) deviceName
+                    currentMode = deviceName.currentValue("coolingSetpoint") 
+                        devList += device + " cooling set point is "+ currentMode  
+               	}
+                if (!devList) result = "unknown"
+                else if (devList) result = devList
+                return result
+   		}
+   	}
+	if (var == "running"){    
         if(myTstat){
         def currentOS
 				myTstat.each { deviceName ->
@@ -578,6 +609,25 @@ private getVar(var) {
         return result
 		}
     }
+    if (var == "motion"){
+		if(parent.cMotion){
+			if (parent.cMotion?.currentValue("motion").contains("active")) {
+            	parent.cMotion?.each { deviceName ->
+                	if (deviceName.currentValue("motion")=="${"active"}") {
+                    	String device  = (String) deviceName
+                        devList += device
+                    }
+                }
+            }
+            if (devList?.size() == 1)  result = devList?.size() + " motion sensor"
+            else if (devList?.size() > 0) result = devList?.size() + " motion sensors"
+            else if (!devList) result = "no motion sensors"
+            return result
+    	}	
+    }
+    
+    
+    
     if (var == "garage"){    
     	if(parent.cDoor){
             result = parent.cDoor.latestValue("contact").contains("open") ? "open" : "closed"  
