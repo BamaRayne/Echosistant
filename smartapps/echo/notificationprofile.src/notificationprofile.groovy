@@ -45,7 +45,7 @@ preferences {
 //dynamic page methods
 page name: "mainProfilePage"
     def mainProfilePage() {
-        dynamicPage (name: "mainProfilePage", install: true, uninstall: true) {
+ 	dynamicPage (name: "mainProfilePage", install: true, uninstall: true) {
 		section ("Name (rename) this Profile") {
  		   	label title:"Profile Name ", required:false, defaultValue: "Notification Profile"  
 		}
@@ -53,6 +53,7 @@ page name: "mainProfilePage"
                 
                 input "actionType", "enum", title: "Choose the message output...", required: false, defaultValue: "Default", submitOnChange: true, options: [
                 "Ad-Hoc Report",
+                "Triggered Report",
                 "Custom",
                 "Custom with Weather",
                 "Default",
@@ -69,7 +70,7 @@ page name: "mainProfilePage"
 				"Piano",
 				"Lightsaber"]
 		}
-        if (actionType == "Custom" || actionType == "Custom with Weather" || actionType == "Ad-Hoc Report" ) {
+        if (actionType == "Custom" || actionType == "Custom with Weather" || actionType == "Ad-Hoc Report") {
             section ("Send this message text...") {
                 input "message", "text", title: "Play this message...", required:false, multiple: false, defaultValue: ""
             }
@@ -86,9 +87,11 @@ page name: "mainProfilePage"
                 }
             }
         } 
-        section ("Using These Devices/Triggers") {
-			href "triggers", title: "Select Trigger(s)", description: triggersComplete(), state: triggersSettings()
+		def sTitle = actionType != "Ad-Hoc Report" ? "Trigger(s)" : "Device(s)"
+        section ("Using These ${sTitle}") {
+			href "triggers", title: "Select ${sTitle}", description: triggersComplete(), state: triggersSettings()
         }    
+        if (actionType != "Ad-Hoc Report"){
             section ("With these output methods" , hideWhenEmpty: true) {    
                 input "sonos", "capability.musicPlayer", title: "On this Music Player", required: false, multiple: true, submitOnChange: true
                     if (sonos) {
@@ -108,7 +111,8 @@ page name: "mainProfilePage"
                 href "pRestrict", title: "Use these restrictions...", description: pRestComplete(), state: pRestSettings()
             }
 		}
-	}
+ 	}
+}
 page name: "triggers"
 	def triggers(){
 		dynamicPage(name: "triggers", title: "", uninstall: false) {
@@ -312,48 +316,60 @@ def initialize() {
        	mGetCurrentWeather()
 	}    
     if (actionType && actionType != "Ad-Hoc Report") {
-        if(myPower) 						subscribe(myPower, "power", meterHandler)
-        if (myRoutine) 						subscribe(location, "routineExecuted",alertsHandler)
-        if (myMode) 						subscribe(location, "mode", alertsHandler)
+        if(myPower) 							subscribe(myPower, "power", meterHandler)
+        if (myRoutine) 							subscribe(location, "routineExecuted",alertsHandler)
+        if (myMode) 							subscribe(location, "mode", alertsHandler)
         if (mySwitch) {
-            if (mySwitchS == "on")			subscribe(mySwitch, "switch.on", alertsHandler)
-            if (mySwitchS == "off")			subscribe(mySwitch, "switch.off", alertsHandler)
-            else    						subscribe(mySwitch, "switch", alertsHandler)
+            if (mySwitchS == "on")				subscribe(mySwitch, "switch.on", alertsHandler)
+            if (mySwitchS == "off")				subscribe(mySwitch, "switch.off", alertsHandler)
+            if (mySwitchS == "both")			subscribe(mySwitch, "switch", alertsHandler)
         }    
         if (myContact) {
-            if (myContactS == "open")		subscribe(myContact, "contact.open", alertsHandler)
-            if (myContactS == "closed")		subscribe(myContact, "contact.closed", alertsHandler)
-            else    						subscribe(myContact, "contact", alertsHandler)
+            if (myContactS == "open")			subscribe(myContact, "contact.open", alertsHandler)
+            if (myContactS == "closed")			subscribe(myContact, "contact.closed", alertsHandler)
+            if (myContactS == "both")			subscribe(myContact, "contact", alertsHandler)
         }
         if (myMotion) {
-            if (myMotionS == "active")		subscribe(myMotion, "motion.active", alertsHandler)
-            if (myMotionS == "inactive")	subscribe(myMotion, "motion.inactive", alertsHandler)
-            else    						subscribe(myMotion, "motion", alertsHandler)
+            if (myMotionS == "active")			subscribe(myMotion, "motion.active", alertsHandler)
+            if (myMotionS == "inactive")		subscribe(myMotion, "motion.inactive", alertsHandler)
+            if (myMotionS == "both")			subscribe(myMotion, "motion", alertsHandler)
         }    
         if (myLocks) {
-            if (myLocksS == "locked")		subscribe(myLocks, "lock.locked", alertsHandler)
-            if (myLocksS == "unlocked")		subscribe(myLocks, "lock.unlocked", alertsHandler)
-            else    						subscribe(myLocks, "lock", alertsHandler)
+            if (myLocksS == "locked")			subscribe(myLocks, "lock.locked", alertsHandler)
+            if (myLocksS == "unlocked")			subscribe(myLocks, "lock.unlocked", alertsHandler)
+            if (myLocksS == "both")				subscribe(myLocks, "lock", alertsHandler)
         }
         if (myPresence) {
-            if (myPresenceS == "present")	subscribe(myPresence, "presence.present", alertsHandler)
+            if (myPresenceS == "present")		subscribe(myPresence, "presence.present", alertsHandler)
             if (myPresenceS == "not present")	subscribe(myPresence, "presence.not present", alertsHandler)
-            else    						subscribe(myPresence, "presence", alertsHandler)
+            if (myPresenceS == "both")			subscribe(myPresence, "presence", alertsHandler)
         }
         if (myTstat) {    
-            if (myTstatS == "cooling")		subscribe(myTstat, "coolingSetpoint", alertsHandler)
-            if (myTstatS == "heating")		subscribe(myTstat, "heatingSetpoint", alertsHandler)
-            else    						subscribe(myPresence, "thermostatSetpoint", alertsHandler)
-        }
+            if (myTstatS == "cooling")			subscribe(myTstat, "coolingSetpoint", alertsHandler)
+            if (myTstatS == "heating")			subscribe(myTstat, "heatingSetpoint", alertsHandler)
+            if (myTstatS == "both")				subscribe(myPresence, "thermostatSetpoint", alertsHandler)
+        
+            if (myTstatM == "auto")				subscribe(myTstat, "thermostatMode.auto", alertsHandler)
+            if (myTstatM == "cool")				subscribe(myTstat, "thermostatMode.auto.cool", alertsHandler)
+            if (myTstatM == "heat")				subscribe(myPresence, "thermostatMode.heat", alertsHandler)        
+            if (myTstatM == "off")				subscribe(myTstat, "thermostatMode.off", alertsHandler)
+            if (myTstatM == "every mode")		subscribe(myPresence, "thermostatMode", alertsHandler)
+            
+            
+            if (myTstatOS == "cooling")			subscribe(myTstat, "thermostatOperatingState.cooling", alertsHandler)
+            if (myTstatOS == "heating")			subscribe(myTstat, "thermostatOperatingState.heating", alertsHandler)
+            if (myTstatOS == "idle")			subscribe(myTstat, "thermostatOperatingState.idle", alertsHandler)
+            if (myTstatOS == "every state")		subscribe(myTstat, "thermostatOperatingState", alertsHandler)
+		}
         if (mySmoke) {    
-            if (mySmokeS == "detected")		subscribe(mySmoke, "smoke.detected", alertsHandler)
-            if (mySmokeS == "clear")		subscribe(mySmoke, "smoke.clear", alertsHandler)
-            else    						subscribe(mySmoke, "smoke", alertsHandler)
+            if (mySmokeS == "detected")			subscribe(mySmoke, "smoke.detected", alertsHandler)
+            if (mySmokeS == "clear")			subscribe(mySmoke, "smoke.clear", alertsHandler)
+            if (mySmokeS == "both")				subscribe(mySmoke, "smoke", alertsHandler)
         }
         if (myWater) {    
-            if (myWaterS == "wet")			subscribe(myWater, "water.wet", alertsHandler)
-            if (myWaterS == "dry")			subscribe(myWater, "water.dry", alertsHandler)
-            else    						subscribe(myWater, "water", alertsHandler)
+            if (myWaterS == "wet")				subscribe(myWater, "water.wet", alertsHandler)
+            if (myWaterS == "dry")				subscribe(myWater, "water.dry", alertsHandler)
+            if (myWaterS == "both")				subscribe(myWater, "water", alertsHandler)
       	}
     }
 }
@@ -367,6 +383,7 @@ return state.NotificationRelease
    RUNNING REPORT FROM PARENT
 ************************************************************************************************************/
 def runProfile(profile) {
+	log.warn "received command from the Parent for $profile"
 	def result 
 	if (actionType == "Ad-Hoc Report" &&  message){
     	// date, time and profile variables
@@ -384,8 +401,8 @@ def runProfile(profile) {
 		//weather variables
         result = getWeatherVar(result) 
     }
-    else "Sorry you can only generate an ad-hoc report that has a custom message"
- 	log.warn "sending result to Alexa: $result"
+    else result = "Sorry you can only generate an ad-hoc report that has a custom message"
+ 	log.warn "sending Report to Main App: $result"
     return result
 }
 /************************************************************************************************************
@@ -644,7 +661,7 @@ def meterHandler(evt) {
         }
 	}
 def bufferPendingH() {  
-def meterValueRaw = myPower.currentValue("power") as double
+	def meterValueRaw = myPower.currentValue("power") as double
     	int meterValue = meterValueRaw ?: 0 as int
     def thresholdValue = threshold == null ? 0 : threshold as int
     if (meterValue >= thresholdValue) {
@@ -690,6 +707,10 @@ def alertsHandler(evt) {
         }
   	}
     else {
+    if (actionType == "Triggered Report" && myProfile) {
+    	eTxt = parent.runReport(myProfile)
+        log.warn "eTxt = $eTxt"
+    }
     def eProfile = app.label
     def nRoutine = false
 	def stamp = state.lastTime = new Date(now()).format("h:mm aa", location.timeZone)     
@@ -739,9 +760,11 @@ def alertsHandler(evt) {
                 }
             }        
             else {
-                if (message){      
+                if (message || actionType == "Triggered Report"){      
+                    if(message){
                     eTxt = message ? "$message".replace("&device", "${eDev}").replace("&event", "${eName}").replace("&action", "${eVal}").replace("&date", "${today}").replace("&time", "${stamp}").replace("&profile", "${eProfile}") : null
                     if(actionType == "Custom with Weather") eTxt = getWeatherVar(eTxt)
+                    }
                     if(eTxt){
                         if(recipients?.size()>0 || sms?.size()>0) {
                             sendtxt(eTxt)
@@ -751,7 +774,7 @@ def alertsHandler(evt) {
                 }
                 else {
                     if (eDev == "weather"){eTxt = eName}
-                    //log.info "sending message: $eTxt"
+                    log.info "sending message: $eTxt"
                     takeAction(eTxt)
                 }
             }
@@ -787,10 +810,11 @@ return result
 private takeAction(eTxt) {
 	def sVolume
     def sTxt
-    if(myProfile) runProfile()
-    if (actionType == "Custom" || actionType == "Custom with Weather") {
+    if(myProfile && actionType != "Triggered Report") runProfileActions()   
+    if (actionType == "Custom" || actionType == "Custom with Weather" || actionType == "Triggered Report") {
 		//state.sound = textToSpeech(eTxt instanceof List ? eTxt[0] : eTxt) // Retired to use direct variable Bobby 3/13/2017
         sTxt = textToSpeech(eTxt instanceof List ? eTxt[0] : eTxt)
+    log.warn "sTxt is $sTxt, eTxt is $eTxt"
     }
     else loadSound()
     //Playing Audio Message
@@ -1230,10 +1254,12 @@ private void sendText(number, message) {
         }
     }
 }
-def runProfile() {
+def runProfileActions() {
               	def String pintentName = (String) null
                 def String pContCmdsR = (String) null
                 def String ptts = (String) null
+                //def childMasterApp
+                //childMasterApp = child.app.name
         		def pContCmds = false
         		def pTryAgain = false
         		def dataSet = [:]
@@ -1298,7 +1324,7 @@ private loadSound() {
 /************************************************************************************************************
    PROFILES 
 ************************************************************************************************************/       
-def getProfileList(){
+def getProfileList(){        
 		return parent.getChildApps()*.label.sort()
 }
 /************************************************************************************************************
