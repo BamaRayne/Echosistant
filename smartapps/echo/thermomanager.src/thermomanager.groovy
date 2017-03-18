@@ -1,5 +1,9 @@
 /**
- *  Zwave Thermostat Manager
+ *  Zwave Thermostat Manager - EchoSistant Add-on
+ *  
+ *
+ *		3/18/2017		Version:4.0 R.0.0.1		Modified and Released as an EchoSistant Add-On Module
+ *
  * 
  * Credits and Kudos: 	this app is largely based on the more popular Thermostat Director SA by Tim Slagle - 
  * 						many thanks to @slagle for his continued support. 
