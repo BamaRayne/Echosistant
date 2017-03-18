@@ -443,7 +443,7 @@ def temperatureHandler(evt) {
                 if (debug) log.debug "Data check (avg temp: ${currentTemp}, num of sensors:${sensors}, app status: ${lastStatus})"
             }
             else {
-            	currentTemp = thermostat.latestValue("temperature")
+            	currentTemp = thermostat?.latestValue("temperature")
                  if (debug) log.debug "Thermostat data (curr temp: ${currentTemp},status: ${lastStatus}"
             }        
             if(setLow > setHigh){

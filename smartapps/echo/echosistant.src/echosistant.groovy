@@ -292,13 +292,13 @@ page name: "mIntent"
             	dynamicPage (name: "mThermoManager", title: "", install: true, uninstall: false) {
                 	if (childApps?.size()) {
                     	section("Zwave Thermostat Manager", uninstall: false){
-                        	app(name: "ZWave Thermostat Manager", appName: "ThermoManager", namespace: "Echo", title: "Configure and Manage your Zwave Thermostats", multiple: false, uninstall: false)
+                        	app(name: "ZWave Thermostat Manager", appName: "ThermoManager", namespace: "Echo", title: "Configure and Manage your Zwave Thermostats", multiple: true, uninstall: false)
                             }
                         }
                         else {
                         	section("Zwave Thermostat Manager", uninstall: false){
                             paragraph "NOTE: Looks like you haven't initialized the Thermostat Manager yet.\n \nPlease make sure you have installed the Echo : Thermostat Manager Add-on before creating a new Room!"
-                        	app(name: "ZWave Thermostat Manager", appName: "ThermoManager", namespace: "Echo", title: "Configure and Manage your Zwave Thermostats", multiple: false, uninstall: false)
+                        	app(name: "ZWave Thermostat Manager", appName: "ThermoManager", namespace: "Echo", title: "Configure and Manage your Zwave Thermostats", multiple: true, uninstall: false)
                         }
                     }
              	}
