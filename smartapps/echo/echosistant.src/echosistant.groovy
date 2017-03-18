@@ -7,6 +7,7 @@
  
  ************************************ FOR INTERNAL USE ONLY ******************************************************
  *
+ *		3/18/2017		Version:4.0 R.0.3.1		Addition of the Zwave Thermostat Manager Add-On Module
  *		3/14/2017		Version:4.0 R.0.3.0  	Enabled running Reporting Profile, Bug fix for windows, doors, and lights feedback/ reconfigured / improved responses and commands
  *		2/17/2017		Version:4.0 R.0.0.0		Public Release 
  *
@@ -39,7 +40,7 @@ private def textVersion() {
 	def text = "4.0"
 }
 private release() {
-    def text = "R.0.3.0"
+    def text = "R.0.3.1"
 }
 /**********************************************************************************************************************************************/
 preferences {   
@@ -49,8 +50,9 @@ preferences {
                 page name: "mDefaults" 
             	page name: "mSHMSec"
                 	page name: "mSecuritySuite" // links Parent to Security Add-ON
-    			page name: "mNotifyProfile" // links Parent to Notification Add-ON
-            page name: "mProfiles" // links Parent to Profiles Add-ON 
+    				page name: "mNotifyProfile" // links Parent to Notification Add-ON
+                    page name: "mThermoManager" // links Parent to Thermostat Manager Add-ON
+            		page name: "mProfiles" // links Parent to Profiles Add-ON 
             page name: "mSupport"
             page name: "mSettings"
            		page name: "mSkill"
@@ -276,11 +278,32 @@ page name: "mIntent"
 				if (notifyOn) {
         			section ("Notifications & Reporting") {
   						href "mNotifyProfile", title: "View and Create Notification & Reporting Profiles...", description: none
+					}
+                if (thermoOn) {
+                	section ("Zwave Thermostat Manager") {
+                    	href "mThermoManager", title: "Configure and Manage your Zwave Thermostats...", description: none
+                    }    
 				}
-			}            
+            }            
 		}
 	}
-	page name: "mNotifyProfile"    
+    page name: "mThermoManager"
+    		def mThermoManager() {
+            	dynamicPage (name: "mThermoManager", title: "", install: true, uninstall: false) {
+                	if (childApps?.size()) {
+                    	section("Zwave Thermostat Manager", uninstall: false){
+                        	app(name: "ZWave Thermostat Manager", appName: "ThermoManager", namespace: "Echo", title: "Configure and Manage your Zwave Thermostats", multiple: false, uninstall: false)
+                            }
+                        }
+                        else {
+                        	section("Zwave Thermostat Manager", uninstall: false){
+                            paragraph "NOTE: Looks like you haven't initialized the Thermostat Manager yet.\n \nPlease make sure you have installed the Echo : Thermostat Manager Add-on before creating a new Room!"
+                        	app(name: "ZWave Thermostat Manager", appName: "ThermoManager", namespace: "Echo", title: "Configure and Manage your Zwave Thermostats", multiple: false, uninstall: false)
+                        }
+                    }
+             	}
+	        }
+		page name: "mNotifyProfile"    
             def mNotifyProfile() {
                 dynamicPage (name: "mNotifyProfile", title: "", install: true, uninstall: false) {
                     if (childApps?.size()) {  
@@ -295,7 +318,7 @@ page name: "mIntent"
                         }
                     }
              	}
-        }
+	        }
         page name: "mMainProfile"    
             def mMainProfile() {
                 dynamicPage (name: "mMainProfile", title: "", install: true, uninstall: false) {
@@ -437,6 +460,7 @@ page name: "mSupport"
             	paragraph "For the notifications and room feedback to be operational, they must be installed in the ST IDE and the toggles below must be activated"
                 input "notifyOn", "bool", title: "Is the Notifications Module Installed? ", required: true, defaultValue: false
  				input "securityOn", "bool", title: "Is the Security Suite Module Installed?", required: true, defaultValue: false
+                input "thermoOn", "bool", title: "Is the Zwave Thermostat Manager Module Installed?", required: true, defaultValue: false
                 }
                 section ("Amazon AWS Skill Details") {
 					href "mSkill", title: "Tap to view setup data for the AWS Main Intent Skill...", description: ""
@@ -509,7 +533,7 @@ page name: "mDashboard"
         if ("${mode1}" == "heat")
             paragraph "The ${tStat1} is ${temp1}°. The thermostat is set to ${setPH1}°, is in ${mode1} mode and is currently ${oper1}."
         if ("${mode1}" == "off")
-        	paragraph "The ${tStat1} thermostat is currently ${mode1}" 
+        	paragraph "The ${tStat1} thermostat is currently ${mode1}, and the temperature is ${temp1}°." 
 		if ("${mode2}" == "auto") 
         	paragraph "The ${tStat2} is ${temp2}°. The thermostat is in ${mode2} mode, the heat is set to ${setPH2}°, the cooling is set to ${setPC2}°, and it is currently ${oper2}."
         if ("${mode2}" == "cool")
@@ -517,7 +541,7 @@ page name: "mDashboard"
         if ("${mode2}" == "heat")
             paragraph "The ${tStat2} is ${temp2}°. The thermostat is set to ${setPH2}°, is in ${mode2} mode and is currently ${oper2}."
         if ("${mode2}" == "off")
-        	paragraph "The ${tStat2} thermostat is currently ${mode2}" 
+        	paragraph "The ${tStat2} thermostat is currently ${mode2}, and the temperature is ${temp2}°." 
 		}
 		section ("Temperature Sensors") {
         	def Sens1temp = (tempSens1?.currentValue("temperature"))
