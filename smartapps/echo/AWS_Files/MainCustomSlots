@@ -110,30 +110,43 @@ at home
 audio
 batteries
 battery
+change in weather forecast
+changes to the forecast
+changes to the weather
 close
 closed
+cold outside
 current condition
 current conditions
 current forecast
 current temperature
 current weather
+door
 doors
+doors open
 dry
 fed
 feed
+forecast for today
+forecast for tomorrow
+forecast for tonight
+forecast update
+forecast updates
 here
 home
 home monitor
+hot outside
 hourly forcast
 humid is outside
-humidity outside
 humidity
+humidity outside
 in
 inactive
 indoor temperature
 light
 lights
 locked
+messages
 mode
 muted
 not here
@@ -147,10 +160,11 @@ outside humidity
 precipitation
 precipitation for the next hour
 present
-raining
 rain
 rain fall
 rainfall
+raining
+report
 running
 security
 settings
@@ -163,24 +177,20 @@ temperature outside
 text
 thunderstorm
 today
-today's weather
 today's forecast
-weather today
-forecast for today
+today's weather
 tomorrow
-tomorrow's weather
 tomorrow's forecast
-weather tomorrow
-forecast for tomorrow
+tomorrow's weather
 tonight
-tonight's weather
 tonight's forecast
-weather tonight
-forecast for tonight
+tonight's weather
 tornado
 unlock
 unlocked
 unmuted
+updates to the forecast
+updates to the weather
 UV
 uv index
 warning
@@ -190,23 +200,17 @@ weather alert
 weather alerts
 weather condition for the next hour
 weather conditions
+weather today
+weather tomorrow
+weather tonight
+weather update
 weather updates
 wet
 wind
 wind intensity
+window
+windows
 windy
-hot outside
-cold outside
-weather update
-forecast update
-forecast updates
-updates to the weather
-updates to the forecast
-changes to the weather
-change in weather forecast
-changes to the forecast
-messages
-report
 
 LIST_OF_QUERIES
 
