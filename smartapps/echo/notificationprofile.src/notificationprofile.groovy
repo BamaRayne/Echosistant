@@ -164,7 +164,7 @@ page name: "triggers"
 			}            
             section ("Device State", , hideWhenEmpty: true) {
                 input "mySwitch", "capability.switch", title: "Choose Switch(es)...", required: false, multiple: true, submitOnChange: true
-                    if (mySwitch && actionType != "Ad-Hoc Report") input "mySwitchS", "enum", title: "Notify when state changes to...", options: ["on", "off", " both"], required: false
+                    if (mySwitch && actionType != "Ad-Hoc Report") input "mySwitchS", "enum", title: "Notify when state changes to...", options: ["on", "off", "both"], required: false
                 if(actionType != "Default") {
                 input "myPower", "capability.powerMeter", title: "Choose Power Meters...", required: false, multiple: false, submitOnChange: true
                     if (myPower && actionType != "Ad-Hoc Report") input "myPowerS", "enum", title: "Notify when power is...", options: ["above threshold", "below threshold"], required: false, submitOnChange: true
@@ -173,10 +173,10 @@ page name: "triggers"
                         if (threshold) input "thresholdStop", "number", title: "...but not above/below this value", required: false, description: "in watts"
                 }
                 input "myLocks", "capability.lock", title: "Choose Locks..", required: false, multiple: true, submitOnChange: true
-                    if (myLocks && actionType != "Ad-Hoc Report") input "myLocksS", "enum", title: "Notify when state changes to...", options: ["locked", "unlocked", " both"], required: false
+                    if (myLocks && actionType != "Ad-Hoc Report") input "myLocksS", "enum", title: "Notify when state changes to...", options: ["locked", "unlocked", "both"], required: false
                 if(actionType != "Default"){
                 input "myTstat", "capability.thermostat", title: "Choose Thermostats...", required: false, multiple: true, submitOnChange: true
-                    if (myTstat && actionType != "Ad-Hoc Report") input "myTstatS", "enum", title: "Notify when set point changes for...", options: ["cooling", "heating", " both"], required: false
+                    if (myTstat && actionType != "Ad-Hoc Report") input "myTstatS", "enum", title: "Notify when set point changes for...", options: ["cooling", "heating", "both"], required: false
                     // attribute thermostatMode
                     if (myTstat && actionType != "Ad-Hoc Report") input "myTstatM", "enum", title: "Notify when mode changes to...", options: ["auto", "cool", " heat", "emergency heat", "off", "every mode"], required: false
                     // attribute thermostatOperatingState
@@ -185,15 +185,15 @@ page name: "triggers"
             }
             section ("Sensor Status", hideWhenEmpty: true) {
                 input "myContact", "capability.contactSensor", title: "Choose Doors and Windows..", required: false, multiple: true, submitOnChange: true
-                    if (myContact && actionType != "Ad-Hoc Report") input "myContactS", "enum", title: "Notify when state changes to...", options: ["open", "close", " both"], required: false
+                    if (myContact && actionType != "Ad-Hoc Report") input "myContactS", "enum", title: "Notify when state changes to...", options: ["open", "close", "both"], required: false
                 input "myMotion", "capability.motionSensor", title: "Choose Motion Sensors..", required: false, multiple: true, submitOnChange: true
-                    if (myMotion && actionType != "Ad-Hoc Report") input "myMotionS", "enum", title: "Notify when state changes to...", options: ["active", "inactive", " both"], required: false
+                    if (myMotion && actionType != "Ad-Hoc Report") input "myMotionS", "enum", title: "Notify when state changes to...", options: ["active", "inactive", "both"], required: false
                 input "myPresence", "capability.presenceSensor", title: "Choose Presence Sensors...", required: false, multiple: true, submitOnChange: true
-                    if (myPresence && actionType != "Ad-Hoc Report") input "myPresenceS", "enum", title: "Notify when state changes to...", options: ["present", "not present", " both"], required: false
+                    if (myPresence && actionType != "Ad-Hoc Report") input "myPresenceS", "enum", title: "Notify when state changes to...", options: ["present", "not present", "both"], required: false
                 input "mySmoke", "capability.smokeDetector", title: "Choose Smoke Detectors...", required: false, multiple: true, submitOnChange: true
-                    if (mySmoke && actionType != "Ad-Hoc Report") input "mySmokeS", "enum", title: "Notify when state changes to...", options: ["detected", "clear", " both"], required: false
+                    if (mySmoke && actionType != "Ad-Hoc Report") input "mySmokeS", "enum", title: "Notify when state changes to...", options: ["detected", "clear", "both"], required: false
                 input "myWater", "capability.waterSensor", title: "Choose Water Sensors...", required: false, multiple: true, submitOnChange: true
-                    if (myWater && actionType != "Ad-Hoc Report") input "myWaterS", "enum", title: "Notify when state changes to...", options: ["wet", "dry", " both"], required: false		
+                    if (myWater && actionType != "Ad-Hoc Report") input "myWaterS", "enum", title: "Notify when state changes to...", options: ["wet", "dry", "both"], required: false		
             }
             if(actionType != "Default" && actionType != "Ad-Hoc Report"){
                 section ("Weather Events") {
