@@ -1,8 +1,8 @@
 /* 
  * Notification - EchoSistant Add-on 
  *
- *		3/18/2017		Version:4.0 R.0.3.1	    added: &motion, &cooling, &heating
- *		3/16/2017		Version:4.0 R.0.3.0	    Cron Scheduling and Reporting
+ *		3/18/2017		Version:4.0 R.0.3.1a	    added: &motion, &cooling, &heating
+ *		3/16/2017		Version:4.0 R.0.3.0	    	Cron Scheduling and Reporting
  *
  *  Copyright 2016 Jason Headley & Bobby Dobrescu
  *
@@ -411,10 +411,7 @@ def runProfile(profile) {
     return result
 }
 /************************************************************************************************************
-   REPORT VARIABLES
-   
-   &time, &date, &profile, &mode, &shm, &power, &lights, &doors, &windows, &open, &garage, &unlocked, &temperature, &running, &present
-   
+   REPORT VARIABLES   
 ************************************************************************************************************/
 private getVar(var) {
 	def devList = []
@@ -625,9 +622,6 @@ private getVar(var) {
             return result
     	}	
     }
-    
-    
-    
     if (var == "garage"){    
     	if(parent.cDoor){
             result = parent.cDoor.latestValue("contact").contains("open") ? "open" : "closed"  
@@ -880,40 +874,24 @@ private takeAction(eTxt) {
             def currVolLevel = sonos.latestValue("level") //as Integer
             currVolLevel = currVolLevel[0]
             def currMuteOn = sonos.latestValue("mute").contains("muted")
-                log.debug "current vol level = ${currVolLevel}, muted = ${currMuteOn} "
                 if (currMuteOn) { 
-                    log.warn "speaker is on mute, sending unmute command"
+                    log.error "speaker is on mute, sending unmute command"
                     sonos.unmute()
                 }
                 sVolume = settings.sonosVolume ?: 20
-                sVolume = sVolume == 20 && currVolLevel == 0 ? sVolume : currVolLevel
+                sVolume = (sVolume == 20 && currVolLevel == 0) ? sVolume : sVolume !=20 ? sVolume: currVolLevel
                 def elapsed = now() - state.lastPlayed
-                log.warn "elapsed = $elapsed"
                 def sCommand = resumePlaying == true ? "playTrackAndResume" : "playTrackAndRestore"
-                //playTrackAndRestore(state.sound.uri, state.sound.duration, desiredVolume)
                     if(elapsed < 5000 ){
-                        //state.sound = sTxt // backup
-                        //def delaySound = Math.max((state.sound.duration as Integer),3) // backup
-                        log.error "message is already playing, delaying new message by 2 seconds"
-                		//runIn(delaySound, "delayMessage") // backup
-						//sonos?.playTrackAndResume(sTxt.uri, Math.max((sTxt.duration as Integer),2), sVolume, [delay: 2000])
-						sonos?."${sCommand}"(sTxt.uri, Math.max((sTxt.duration as Integer),2), sVolume, [delay: 2000])
+                        log.error "message is already playing, delaying new message by 3 seconds"
+						sonos?."${sCommand}"(sTxt.uri, Math.max((sTxt.duration as Integer),2), sVolume, [delay: 3000])
                         state.lastPlayed = now()
                 	}
                     else {                
                 		sonos?."${sCommand}"(sTxt.uri, Math.max((sTxt.duration as Integer),2), sVolume)
-                        //sonos?.playTrackAndResume(sTxt.uri, Math.max((sTxt.duration as Integer),2), sVolume)  
-                        //state.sound = sTxt // backup
                         state.lastPlayed = now()
                 	}
-                log.info "Playing $sTxt on the music player $sonos at volume $sVolume"
         }
-}
-def delayMessage() {
-	log.warn "delay fired"
-	def sVolume = settings.sonosVolume ?: 20
-		sonos?.playTrackAndResume(state.sound.uri, Math.max((state.sound.duration as Integer),2), sVolume)
-		state.sound = null
 }
 /***********************************************************************************************************************
     WEATHER ALERTS
@@ -1308,8 +1286,6 @@ def runProfileActions() {
               	def String pintentName = (String) null
                 def String pContCmdsR = (String) null
                 def String ptts = (String) null
-                //def childMasterApp
-                //childMasterApp = child.app.name
         		def pContCmds = false
         		def pTryAgain = false
         		def dataSet = [:]
