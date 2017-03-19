@@ -1297,6 +1297,9 @@ def feedbackHandler() {
                             else if (devListDoors?.size() == 0 && devListWindows?.size() > 0) {
                             	outputTxt = "The following " + devListWindows?.size() + " windows are open, " + devListWindows  
                                 }
+                            else if (devListDoors?.size() == 0 && devListWindows?.size() > 0) {
+                            	outputTxt = "There are no doors or windows open"
+                                }
                             else {
                             outputTxt = "The following " + devListDoors?.size() + " doors are open, " + devListDoors + " , as well as the following " + devListWindows?.size() + " windows, " + devListWindows                      
                       		}
