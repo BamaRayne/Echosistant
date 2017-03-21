@@ -1,6 +1,7 @@
 /* 
  * Notification - EchoSistant Add-on 
  *
+ *		3/21/2017		Version:4.0 R.0.3.2	    	added: &set (sunset), &rise (sunrise)
  *		3/18/2017		Version:4.0 R.0.3.1a	    added: &motion, &cooling, &heating
  *		3/16/2017		Version:4.0 R.0.3.0	    	Cron Scheduling and Reporting
  *
@@ -28,7 +29,7 @@ definition(
 	iconX3Url		: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/app-Echosistant@2x.png")
 /**********************************************************************************************************************************************/
 private release() {
-	def text = "R.0.3.1"
+	def text = "R.0.3.2"
 }
 
 preferences {
@@ -81,7 +82,7 @@ page name: "mainProfilePage"
                     											"\nFor Example: \n&event sensor &device is &action and the event happened at &time \n" +
                     											"Translates to: 'Contact' sensor 'Bedroom' is 'Open' and the event happened at '1:00 PM'"
 				if(actionType == "Custom with Weather" || actionType == "Ad-Hoc Report" ){
-                	paragraph "WEATHER VARIABLES: &today, &tonight, &tomorrow, &high, &low, &wind, &uv, &precipitation, &humidity, &conditions \n"                    
+                	paragraph "WEATHER VARIABLES: &today, &tonight, &tomorrow, &high, &low, &wind, &uv, &precipitation, &humidity, &conditions, &set (for sunset), &rise (for sunrise) \n"                    
                 }
                 if(actionType == "Ad-Hoc Report"){
                 	paragraph "REPORTING VARIABLES: \n"+
@@ -841,10 +842,14 @@ private getWeatherVar(eTxt){
     def tPrecip = mGetWeatherElements("precip")
     def tHum = mGetWeatherElements("hum")
     def tCond = mGetWeatherElements("cond")
-    
+    def tWind = mGetWeatherElements("wind")
+    def tSunset = mGetWeatherElements("set")
+    def tSunrise = mGetWeatherElements("rise")
+    //def tWind = mGetWeatherElements("moonphase")
+
     result = eTxt.replace("&today", "${weatherToday}").replace("&tonight", "${weatherTonight}").replace("&tomorrow", "${weatherTomorrow}")
 	if(result) result = result.replace("&high", "${tHigh}").replace("&low", "${tLow}").replace("&wind", "${tWind}").replace("&uv", "${tUV}").replace("&precipitation", "${tPrecip}")
-	if(result) result = result.replace("&humidity", "${tHum}").replace("&conditions", "${tCond}")
+	if(result) result = result.replace("&humidity", "${tHum}").replace("&conditions", "${tCond}").replace("&set", "${tSunset}").replace("&rise", "${tSunrise}")
 
 return result
 }
@@ -1058,7 +1063,18 @@ def private mGetWeatherElements(element){
         
         def condWeather = getWeatherFeature("conditions", settings.wZipCode)
         def condTodayUV = condWeather.current_observation.UV
-        
+  		
+        def s = getSunriseAndSunset(zipCode: zipCode, sunriseOffset: startSunriseOffset, sunsetOffset: startSunsetOffset)
+		def sunrise = s.sunrise.time
+		def sunset = s.sunset.time
+       
+        //def condSun = getWeatherFeature("astronomy", settings.wZipCode)
+		//def sunset = condSun.hour 
+        //def sunrise = 
+        //def moonPhase = 
+
+  
+  
         if(debug) log.debug "cWeatherUpdate = ${cWeatherUpdate}, cWeatherCondition = ${cWeatherCondition}, " +
         					"cWeatherPrecipitation = ${cWeatherPrecipitation}, cWeatherWind = ${cWeatherWind},  cWeatherHum = ${cWeatherHum}, cWeatherHum = ${condTodayUV}  "    
 /*
