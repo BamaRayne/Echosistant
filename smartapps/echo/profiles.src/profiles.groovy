@@ -6,8 +6,7 @@
  
  ************************************ FOR INTERNAL USE ONLY ******************************************************
  *
- *
- *		3/21/2017		Version:4.0 R.0.3.1		Added Curtains/blinds/shades
+ *		3/21/2017		Version:4.0 R.0.3.1 	added window covering group
  *		3/15/2017		Version:4.0 R.0.3.0 	minor bug fixes
  *		2/17/2017		Version:4.0 R.0.0.1		Public Release
  * 
@@ -35,7 +34,7 @@ definition(
 	iconX3Url		: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/app-Echosistant@2x.png")
 /**********************************************************************************************************************************************/
 private release() {
-	def text = "R.0.3.0"
+	def text = "R.0.3.1"
 }
 /**********************************************************************************************************************************************/
 preferences {
@@ -291,7 +290,7 @@ page name: "pDeviceControl"
     page name: "pGroups"
         def pGroups() {
             dynamicPage(name: "pGroups", title: "",install: false, uninstall: false) {
-                section ("Group These Switches", hideWhenEmpty: false){
+                section ("Group These Switches", hideWhenEmpty: true){
                         input "gSwitches", "capability.switch", title: "Group Dimmers and Switches...", multiple: true, required: false, submitOnChange: true
                         if (gSwitches) {
                             paragraph "You can now control this group by speaking commands to Alexa:  \n" +
@@ -315,18 +314,18 @@ page name: "pDeviceControl"
                         }
                     	href "gCustom", title: "Create Custom Groups", description: "Tap to set"               
                 }       
-               section ("Climate Control", hideWhenEmpty: false){ 
-                    input "gVents", "capability.switchLevel", title: "Group Smart Vent(s)...", multiple: true, required: false
+               section ("Vents and Window Coverings", hideWhenEmpty: true){ 
+                    input "gVents", "capability.switchLevel", title: "Group Smart Vent(s)...", multiple: true, required: false, submitOnChange: true
 						if (sVent) {
                             paragraph "You can now control this group by speaking commands to Alexa:  \n" +
                             " E.G: Alexa open/close the vents in the " + app.label
                         }
-                        input "gWinCov", "capability.windowShade", title: "Group Window Coverings...", multiple: true, required: false, submitOnChange: true
-                        if (gWinCov) {
-                        	paragraph "You can now control this group by speaking commands to Alexa:  \n" +
-                            " E.G: Alexa, open/close the curtains/blinds/shades in the " + app.label
-                        }    
-				}                
+					input "gShades",  "capability.windowShade", title: "Group These Window Covering Devices...", multiple: true, required: false   
+                    	if (gShades) {
+                            paragraph "You can now control this group by speaking commands to Alexa:  \n" +
+                            " E.G: Alexa open/close the blinds/curtains/window coverings in the " + app.label
+                        }
+                }                
                 section ("Media" , hideWhenEmpty: true){
 					input "sMedia", "capability.mediaController", title: "Use This Media Controller", multiple: false, required: false, submitOnChange: true
                     	if (sMedia) {
@@ -898,39 +897,33 @@ def profileEvaluate(params) {
                             return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]
                     }     
                 }          
-                //VENTS CONTROL
-                if (deviceType == "vent") {  
-                    if(gVents?.size()>0) {
+                //VENTS AND WINDOWS CONTROL
+                if (deviceType == "vent" || deviceType == "shade") { 
                         if (command == "open"  || command == "close") {
                             if (command == "open") {
+                            	if(deviceType == "vent"){
                                 gVents.on()
-                                gVents.setLevel(100)
-                                outputTxt = "Ok, opening the vents"
-                                return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]
+                                	gVents.setLevel(100)
+                                	outputTxt = "Ok, opening the vents"
+                                }
+                                else {
+                                	gShades.open()
+                                	outputTxt = "Ok, opening the window coverings"
+                            	}
                             }
-                            else {
-                                gVents.off()
-                                outputTxt = "Ok, closing the vents"
-                                return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]
-                            }
+                            else {   
+                            	if(deviceType == "vent"){
+                                	gVents.off()
+                                	outputTxt = "Ok, closing the vents"
+                                }
+                                else {
+                                	gShades.close()
+                                    outputTxt = "Ok, closing the window coverings"
+                            	}
+                           }  
+                           return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]
                         }
-                    }
-                    if(gWinCov?.size()>0) {
-                    	if (command == "open"  || command == "close") {
-                            if (command == "open") {
-                                gWinCov.on()
-                                gWinCov.setLevel(100)
-                                outputTxt = "Ok, opening the shades"
-                                return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]
-                            }
-                            else {
-                                gWinCov.off()
-                                outputTxt = "Ok, closing the shades"
-                                return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]
-                            }
-                        }
-                    }
-                }
+                } 
                 if (deviceType == "tv") {
                     if(sMedia){
                         if (command == "startActivity"){
@@ -1629,7 +1622,7 @@ private getCommand(text){
             }      
         }
 // Vents
-        if (text.contains("vent") || text.contains("blind") || text.contains("shades") || text.contains("curtain")) {  // Changed "vents" to "vent" to fix bug.  Jason 2/21/2017
+        if (text.contains("vent")) {  // Changed "vents" to "vent" to fix bug.  Jason 2/21/2017
             if (text.contains("open")) {
                 command = "open" 
                 deviceType = "vent"
@@ -1641,6 +1634,21 @@ private getCommand(text){
             else { 
                 command = "undefined"
                 deviceType = "vent"
+            }
+        }
+// Shades
+        if (text.contains("shade") || text.contains("blinds") || text.contains("curtains") ) {  // Changed "vents" to "vent" to fix bug.  Jason 2/21/2017
+            if (text.contains("open")) {
+                command = "open" 
+                deviceType = "shade"
+            }
+            else if (text.contains("close")) {
+                command = "close" 
+                deviceType = "shade"
+            }
+            else { 
+                command = "undefined"
+                deviceType = "shade"
             }
         }
 //Volume
