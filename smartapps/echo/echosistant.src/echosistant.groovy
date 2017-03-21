@@ -6,7 +6,7 @@
  								DON'T FORGET TO UPDATE RELEASE NUMBER!!!!!
  
  ************************************ FOR INTERNAL USE ONLY ******************************************************
- *
+ *		3/21/2017		Version:4.0 R.0.3.2		minor bug fixes
  *		3/18/2017		Version:4.0 R.0.3.1c	Addition of the Zwave Thermostat Manager Add-On Module and feedback bug fix
  *		3/14/2017		Version:4.0 R.0.3.0  	Enabled running Reporting Profile, Bug fix for windows, doors, and lights feedback/ reconfigured / improved responses and commands
  *		2/17/2017		Version:4.0 R.0.0.0		Public Release 
@@ -40,7 +40,7 @@ private def textVersion() {
 	def text = "4.0"
 }
 private release() {
-    def text = "R.0.3.1c"
+    def text = "R.0.3.2"
 }
 /**********************************************************************************************************************************************/
 preferences {   
@@ -280,8 +280,8 @@ page name: "mIntent"
   						href "mNotifyProfile", title: "View and Create Notification & Reporting Profiles...", description: none
 					}
                 if (thermoOn) {
-                	section ("Zwave Thermostat Manager") {
-                    	href "mThermoManager", title: "Configure and Manage your Zwave Thermostats...", description: none
+                	section ("Climate Control") {
+                    	href "mThermoManager", title: "View and Create Climate Control Profiles...", description: none
                     }    
 				}
             }            
@@ -291,14 +291,14 @@ page name: "mIntent"
     		def mThermoManager() {
             	dynamicPage (name: "mThermoManager", title: "", install: true, uninstall: false) {
                 	if (childApps?.size()) {
-                    	section("Zwave Thermostat Manager", uninstall: false){
-                        	app(name: "ZWave Thermostat Manager", appName: "ThermoManager", namespace: "Echo", title: "Configure and Manage your Zwave Thermostats", multiple: true, uninstall: false)
+                    	section("Climate Control", uninstall: false){
+                        	app(name: "ZWave Thermostat Manager", appName: "ThermoManager", namespace: "Echo", title: "View and Create Climate Control Profiles...", multiple: true, uninstall: false)
                             }
                         }
                         else {
                         	section("Zwave Thermostat Manager", uninstall: false){
-                            paragraph "NOTE: Looks like you haven't initialized the Thermostat Manager yet.\n \nPlease make sure you have installed the Echo : Thermostat Manager Add-on before creating a new Room!"
-                        	app(name: "ZWave Thermostat Manager", appName: "ThermoManager", namespace: "Echo", title: "Configure and Manage your Zwave Thermostats", multiple: true, uninstall: false)
+                            paragraph "NOTE: Looks like you haven't initialized the Thermostat Manager Add-on yet.\n \nPlease make sure you have installed the Echo : Thermostat Manager Add-on before creating a new Room!"
+                        	app(name: "ZWave Thermostat Manager", appName: "ThermoManager", namespace: "Echo", title: "View and Create Climate Control Profiles...", multiple: true, uninstall: false)
                         }
                     }
              	}
@@ -1425,31 +1425,39 @@ def feedbackHandler() {
             	def dMatch = deviceMatchHandler(fDevice)	
                 if (dMatch?.deviceMatch == null) { 		
                 def devList = getCapabilities(cap)
-                if (fQuery == "how" || fQuery== "how many" || fQuery == "undefined" || fQuery == "are there" || fCommand == "low" || fQuery == "give" || fQuery == "get") {
-                        if (devList.listSize > 0) {
-                            if (devList.listSize == 1) {
-                                outputTxt = "There is one device with low battery level , would you like to know which one"                           			
+					if(devList instanceof String){
+                	outputTxt = devList
+                	log.error " devList = ${devList}"
+					
+                    return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]	
+                	}
+                	else {
+                   		if (fQuery == "how" || fQuery== "how many" || fQuery == "undefined" || fQuery == "are there" || fCommand == "low" || fQuery == "give" || fQuery == "get") {
+                            if (devList.listSize > 0) {
+                                if (devList.listSize == 1) {
+                                    outputTxt = "There is one device with low battery level , would you like to know which one"                           			
+                                }
+                                else {
+                                    outputTxt = "There are " + devList.listSize + " devices with low battery levels, would you like to know which devices"
+                                }
+                            def sdevices = devList?.listBat
+                            def devListString = sdevices.join(",")
+                            data.list = devListString
+                            state.lastAction = devListString
+                            state.pContCmdsR = "bat"
+                            return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]	
                             }
-                            else {
-                                outputTxt = "There are " + devList.listSize + " devices with low battery levels, would you like to know which devices"
+                            else {outputTxt = "There are no devices with low battery levels"}
+                            return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]	
+                        }
+                        else if (fQuery.contains ("what") || fQuery.contains ("which")) {
+                            if (devList.listSize > 0) {
+                            outputTxt = "The following devices have low battery levels " + devList.listBat.sort()//.unique()
                             }
-                        def sdevices = devList?.listBat
-                        def devListString = sdevices.join(",")
-                        data.list = devListString
-                        state.lastAction = devListString
-                        state.pContCmdsR = "bat"
-                        return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]	
+                            else {outputTxt = "There are no devices with low battery levels "
+                            } 
+                            return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]	
                         }
-                        else {outputTxt = "There are no devices with low battery levels"}
-                        return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]	
-                    }
-                    else if (fQuery.contains ("what") || fQuery.contains ("which")) {
-                        if (devList.listSize > 0) {
-                        outputTxt = "The following devices have low battery levels " + devList.listBat.sort()//.unique()
-                        }
-                        else {outputTxt = "There are no devices with low battery levels "
-                        } 
-                        return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]	
                     }
                  }
                  else {
@@ -1465,7 +1473,13 @@ def feedbackHandler() {
             if(fOperand == "inactive" || fOperand.contains("inactive") ||  fCommand == "inactive" || fCommand == "enacted" ) { //devices inactive
             	def cap = "act"
             	def devList = getCapabilities(cap)
-                log.warn " devList = ${devList}"
+                if(devList instanceof String){
+                	outputTxt = devList
+                	log.error " devList = ${devList}"
+                    state.pTryAgain = true
+					return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
+                }
+                else{
                 if (fQuery == "how" || fQuery== "how many" || fQuery == "undefined" || fQuery == "are there" || fQuery == "give" || fQuery == "get") {
                         if (devList?.listSize > 0) {
                             if (devList?.listSize == 1) {
@@ -1479,20 +1493,18 @@ def feedbackHandler() {
                         data.list = devListString
                         state.lastAction = devListString
                         state.pContCmdsR = "act"
-                        return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
                         }
                         else {outputTxt = "There are no inactive devices"}
-                        return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
                     }
                     else if (fQuery.contains ("what") || fQuery.contains ("which")) {
-                        if (devList.listSize > 0) {
-                        outputTxt = "The following devices have been inactive for more than " + cInactiveDev + " hours " + devList.listDev.sort()
-                        //return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
-                        }
-                        else {outputTxt = "There are no inactive devices"
-                        }
-                        return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
+                        	if (devList?.listSize > 0) {
+                        		outputTxt = "The following devices have been inactive for more than " + cInactiveDev + " hours " + devList.listDev.sort()
+                        	}
+                        	else {outputTxt = "There are no inactive devices"
+                        	}
                     }
+					return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
+                }
             }       
 //>>> Settings >>>>                                    
             if(fOperand == "settings") {
@@ -1506,7 +1518,6 @@ def feedbackHandler() {
                 def pin_S = state.usePIN_S 			== true ? "active" : "inactive"
                 def pin_SHM = state.usePIN_SHM 		== true ? "active" : "inactive"
                 def pin_Mode = state.usePIN_Mode 	== true ? "active" : "inactive" 
-
                 def activePin 	= pin_D 	== "active" ? "doors" : null
                     activePin  	= pin_L 	== "active" ? activePin + ", locks" : activePin
                     activePin  	= pin_S 	== "active" ? activePin + ", switches" : activePin
@@ -1587,13 +1598,14 @@ def feedbackHandler() {
             	}
                 return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
             }      
+            
             def hText = fDevice != "undefined" ? " a device named " + fDevice : " something "           
                 if (state.pShort != true){ 
 					outputTxt = "Sorry, I heard that you were looking for feedback on " + hText + " but Echosistant wasn't able to help, "        
                 }
                 else {outputTxt = "I've heard " + hText +  " but I wasn't able to provide any feedback "} 
-            state.pTryAgain = true
-            return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
+            	state.pTryAgain = true
+            	return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
         }
     } 
 /*
@@ -2242,8 +2254,9 @@ try {
                     }
                 }
             }
-            def hText = ctDevice != "undefined" && ctCommand != "undefined" ? ctCommand + " the " + ctDevice :  ctDevice != "undefined" ? " control " + ctDevice : ctCommand != "undefined" ? ctCommand + " something" : "control something" 
-			def sText = ctDevice != "undefined" && ctCommand != "undefined" ? "the command " + ctCommand + " and device " + ctDevice : ctDevice != "undefined" ? " device named " + ctDevice : ctCommand != "undefined" ? " command named " + ctCommand : " something " 
+            ctCommand = ctCommand == "on" ? "turn on" : ctCommand == "off" ? "turn off" : ctCommand
+            def hText = ctDevice != "undefined" && ctCommand != "undefined" ? ctCommand + " the " + ctDevice :  ctDevice != "undefined" && ctCommand == "undefined" ? " control " + ctDevice : ctDevice == "undefined"  && ctCommand != "undefined" ? ctCommand + " something" : "control something" 
+			def sText = ctDevice != "undefined" && ctCommand != "undefined" ? "the command " + ctCommand + " and device " + ctDevice : ctDevice != "undefined" && ctCommand == "undefined" ? " device named " + ctDevice : ctDevice == "undefined" && ctCommand != "undefined" ? " command named " + ctCommand : " something " 
             if (state.pShort != true){ 
             		outputTxt = "Sorry, I heard that you were looking to " + hText + " but Echosistant wasn't able to take any actions "
                 }
@@ -3458,8 +3471,15 @@ try {
         result = [listSize: listSize, listBat: listBat]
         return result //dUniqueListString
 	}
+	} catch (Throwable t) {
+        log.error t
+        result = "Oh no, something went wrong. If this happens again, please reach out for help!"
+        state.pTryAgain = true
+        return result
+	}       
 //activity	
-    if (cap == "act") {
+try{
+    if (cap == "act") {    
         cMotion?.each 	{ d ->
         	def stateTime = d.currentState("motion").date.time
 			def endTime = now() + location.timeZone.rawOffset
@@ -3472,6 +3492,30 @@ try {
                 }
         }
         cContact?.each 	{ d ->
+        def attrValue = d.latestValue("contact") 
+        	def stateTime = d.currentState("contact").date.time
+			def endTime = now() + location.timeZone.rawOffset
+    		def startTimeAdj = new Date(stateTime + location.timeZone.rawOffset)
+    			startTimeAdj = startTimeAdj.getTime()
+    		int hours = (int)((endTime - startTimeAdj) / (1000 * 60 * 60) )
+    		//int minutes = (int)((endTime - startTime) / ( 60 * 1000))
+                if ( hours > cInactiveDev ) {
+                    DeviceDetails << d.displayName 
+                }
+        }
+        cWindow?.each 	{ d ->
+        def attrValue = d.latestValue("contact") 
+        	def stateTime = d.currentState("contact").date.time
+			def endTime = now() + location.timeZone.rawOffset
+    		def startTimeAdj = new Date(stateTime + location.timeZone.rawOffset)
+    			startTimeAdj = startTimeAdj.getTime()
+    		int hours = (int)((endTime - startTimeAdj) / (1000 * 60 * 60) )
+    		//int minutes = (int)((endTime - startTime) / ( 60 * 1000))
+                if ( hours > cInactiveDev ) {
+                    DeviceDetails << d.displayName 
+                }
+        }
+        cDoor1?.each 	{ d ->
         def attrValue = d.latestValue("contact") 
         	def stateTime = d.currentState("contact").date.time
 			def endTime = now() + location.timeZone.rawOffset
@@ -3521,16 +3565,17 @@ try {
         }
         cLock?.each 	{ d ->
         def attrValue = d.latestValue("lock") 
-        	def stateTime = d.currentState("lock").date.time
-			def endTime = now() + location.timeZone.rawOffset
-    		def startTimeAdj = new Date(stateTime + location.timeZone.rawOffset)
+			def stateTime = d.currentState("lock").date.time
+            def endTime = now() + location.timeZone.rawOffset
+            def startTimeAdj = new Date(stateTime + location.timeZone.rawOffset)
     			startTimeAdj = startTimeAdj.getTime()
-    		int hours = (int)((endTime - startTimeAdj) / (1000 * 60 * 60) )
-    		//int minutes = (int)((endTime - startTime) / ( 60 * 1000))
+            int hours = (int)((endTime - startTimeAdj) / (1000 * 60 * 60) )
+            //int minutes = (int)((endTime - startTime) / ( 60 * 1000))
                 if ( hours > cInactiveDev ) {
                     DeviceDetails << d.displayName 
                 }
         }
+         log.warn "locks devices = $DeviceDetails"
         cSwitch?.each 	{ d ->
         	def attrValue = d.latestValue("switch") 
             if (d?.currentState("switch") != null) {
@@ -3544,7 +3589,8 @@ try {
                     DeviceDetails << d.displayName 
                 }
            	}
-        }        
+        } 
+         log.warn "switch devices = $DeviceDetails"
         def dUniqueList = DeviceDetails.unique (false)
         dUniqueList = dUniqueList.sort()       
         def listSize = dUniqueList?.size()
@@ -3552,13 +3598,16 @@ try {
         result = [listSize: listSize, listDev: listDev]
         return result //dUniqueListString
 	}
-
-    	} catch (Throwable t) {
+		}catch(Exception ex) {
+         log.error "exception: $ex"
+		 result = "Looks like you might have an improper built device type that is missing a standard filed."
+      	}
+		catch (Throwable t) {
         log.error t
-        result = "Oh no, something went wrong. If this happens again, please reach out for help!"
+        result = "Looks like you might have an improper built device type that is missing a standard filed."
         state.pTryAgain = true
         return result
-	}
+		}
 
 }
 /************************************************************************************************************
