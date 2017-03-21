@@ -7,6 +7,7 @@
  ************************************ FOR INTERNAL USE ONLY ******************************************************
  *
  *
+ *		3/21/2017		Version:4.0 R.0.3.1		Added Curtains/blinds/shades
  *		3/15/2017		Version:4.0 R.0.3.0 	minor bug fixes
  *		2/17/2017		Version:4.0 R.0.0.1		Public Release
  * 
@@ -290,7 +291,7 @@ page name: "pDeviceControl"
     page name: "pGroups"
         def pGroups() {
             dynamicPage(name: "pGroups", title: "",install: false, uninstall: false) {
-                section ("Group These Switches", hideWhenEmpty: true){
+                section ("Group These Switches", hideWhenEmpty: false){
                         input "gSwitches", "capability.switch", title: "Group Dimmers and Switches...", multiple: true, required: false, submitOnChange: true
                         if (gSwitches) {
                             paragraph "You can now control this group by speaking commands to Alexa:  \n" +
@@ -314,13 +315,18 @@ page name: "pDeviceControl"
                         }
                     	href "gCustom", title: "Create Custom Groups", description: "Tap to set"               
                 }       
-               section ("Climate Control", hideWhenEmpty: true){ 
+               section ("Climate Control", hideWhenEmpty: false){ 
                     input "gVents", "capability.switchLevel", title: "Group Smart Vent(s)...", multiple: true, required: false
 						if (sVent) {
                             paragraph "You can now control this group by speaking commands to Alexa:  \n" +
                             " E.G: Alexa open/close the vents in the " + app.label
                         }
-                }                
+                        input "gWinCov", "capability.windowShade", title: "Group Window Coverings...", multiple: true, required: false, submitOnChange: true
+                        if (gWinCov) {
+                        	paragraph "You can now control this group by speaking commands to Alexa:  \n" +
+                            " E.G: Alexa, open/close the curtains/blinds/shades in the " + app.label
+                        }    
+				}                
                 section ("Media" , hideWhenEmpty: true){
 					input "sMedia", "capability.mediaController", title: "Use This Media Controller", multiple: false, required: false, submitOnChange: true
                     	if (sMedia) {
@@ -905,6 +911,21 @@ def profileEvaluate(params) {
                             else {
                                 gVents.off()
                                 outputTxt = "Ok, closing the vents"
+                                return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]
+                            }
+                        }
+                    }
+                    if(gWinCov?.size()>0) {
+                    	if (command == "open"  || command == "close") {
+                            if (command == "open") {
+                                gWinCov.on()
+                                gWinCov.setLevel(100)
+                                outputTxt = "Ok, opening the shades"
+                                return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]
+                            }
+                            else {
+                                gWinCov.off()
+                                outputTxt = "Ok, closing the shades"
                                 return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]
                             }
                         }
@@ -1608,7 +1629,7 @@ private getCommand(text){
             }      
         }
 // Vents
-        if (text.contains("vent")) {  // Changed "vents" to "vent" to fix bug.  Jason 2/21/2017
+        if (text.contains("vent") || text.contains("blind") || text.contains("shades") || text.contains("curtain")) {  // Changed "vents" to "vent" to fix bug.  Jason 2/21/2017
             if (text.contains("open")) {
                 command = "open" 
                 deviceType = "vent"
