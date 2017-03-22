@@ -1,7 +1,7 @@
 /* 
  * Notification - EchoSistant Add-on 
  *
- *		3/21/2017		Version:4.0 R.0.3.3	    	added: &current for current temperature
+ *		3/21/2017		Version:4.0 R.0.3.3	    	added: &current for current temperature, frequency restriction
  *		3/21/2017		Version:4.0 R.0.3.2	    	added: &set (sunset), &rise (sunrise)
  *		3/18/2017		Version:4.0 R.0.3.1a	    added: &motion, &cooling, &heating
  *		3/16/2017		Version:4.0 R.0.3.0	    	Cron Scheduling and Reporting
@@ -52,9 +52,9 @@ page name: "mainProfilePage"
 		section ("Name (rename) this Profile") {
  		   	label title:"Profile Name ", required:false, defaultValue: "Notification Profile"  
 		}
-		section ("Create a Notification") {
-                
-                input "actionType", "enum", title: "Choose the message output...", required: false, defaultValue: "Default", submitOnChange: true, options: [
+		section ("Create a Notification") {  
+                input "actionType", "enum", title: "Choose the message output...", required: false, defaultValue: "Default", submitOnChange: true, 
+                options: [
                 "Ad-Hoc Report",
                 "Triggered Report",
                 "Custom",
@@ -112,13 +112,15 @@ page name: "mainProfilePage"
                     }
                 href "SMS", title: "Send SMS & Push Messages...", description: pSendComplete(), state: pSendSettings()
             }
-            section ("Run actions for this Profile" ) {    
-                input "myProfile", "enum", title: "Choose Profile...", options: getProfileList(), multiple: false, required: false 
-            }        
-            section ("Using these Restrictions") {
-                href "pRestrict", title: "Use these restrictions...", description: pRestComplete(), state: pRestSettings()
-            }
-		}
+            if(actionType != "Default" && actionType != null){
+                section ("Run actions for this Profile" ) {    
+                    input "myProfile", "enum", title: "Choose Profile...", options: getProfileList(), multiple: false, required: false 
+                }        
+                section ("Using these Restrictions") {
+                    href "pRestrict", title: "Use these restrictions...", description: pRestComplete(), state: pRestSettings()
+                }
+			}
+        }
  	}
 }
 page name: "triggers"
@@ -271,7 +273,11 @@ page name: "pRestrict"
             }
             section ("Time - Audio only during these times"){
                 href "certainTime", title: "Only during a certain time", description: pTimeComplete(), state: pTimeSettings()
-            }   
+            }
+            section ("Frequency (audio only)"){
+                input "onceDaily", "bool", title: "Play notification only once daily", required: false, defaultValue: false
+				input "everyXmin", "number", title: "Minimum time between notifications", description: "Minutes", required: false
+            }              
 	    }
 	}
 page name: "certainTime"
@@ -312,7 +318,7 @@ def installed() {
 def updated() {
 	log.debug "Updated with settings: ${settings}, current app version: ${release()}"
 	state.NotificationRelease = "Notification: " + release()
-    state.lastPlayed = now()
+    state.lastPlayed //= now()
 	unschedule()
     unsubscribe()
     initialize()
@@ -660,7 +666,7 @@ private getVar(var) {
 ************************************************************************************************************/
 def scheduledTimeHandler() {
 	def data = [:]
-		if (getDayOk()==true && getModeOk()==true && getTimeOk()==true) {	
+		if (getDayOk()==true && getModeOk()==true && getTimeOk()==true && getFrequencyOk()==true) {	
 			data = [value:"time", name:"time of day", device:"schedule"] 
     		alertsHandler(data)
     	}
@@ -785,7 +791,9 @@ def alertsHandler(evt) {
     def nRoutine = false
 	def stamp = state.lastTime = new Date(now()).format("h:mm aa", location.timeZone)     
 	def today = new Date(now()).format("EEEE, MMMM d, yyyy", location.timeZone)
-    if (getDayOk()==true && getModeOk()==true && getTimeOk()==true) {	
+    
+    
+    if (getDayOk()==true && getModeOk()==true && getTimeOk()==true && getFrequencyOk()==true) {	
         if(eName == "time of day" && message){
                 eTxt = message ? "$message".replace("&device", "${eDisplayN}").replace("&event", "routine").replace("&action", "executed").replace("&date", "${today}").replace("&time", "${stamp}").replace("&profile", "${eProfile}") : null
                     if(actionType == "Custom with Weather") eTxt = getWeatherVar(eTxt)
@@ -889,7 +897,7 @@ private takeAction(eTxt) {
     if (actionType == "Custom" || actionType == "Custom with Weather" || actionType == "Triggered Report") {
         if (speechSynth || sonos) sTxt = textToSpeech(eTxt instanceof List ? eTxt[0] : eTxt)
     }
-    else loadSound()
+    else loadSound() 
     //Playing Audio Message
         if (speechSynth) {
             def currVolLevel = speechSynth.latestValue("level")
@@ -897,6 +905,7 @@ private takeAction(eTxt) {
                 log.debug "vol switch = ${currVolSwitch}, vol level = ${currVolLevel}, currMute = ${currMute} "
                 sVolume = settings.speechVolume ?: 30 
                 speechSynth?.playTextAndResume(eTxt, sVolume)
+                state.lastPlayed = now()
                 log.info "Playing message on the speech synthesizer'${speechSynth}' at volume '${sVolume}'"
         }
         if (sonos) { 
@@ -920,7 +929,7 @@ private takeAction(eTxt) {
                 		sonos?."${sCommand}"(sTxt.uri, Math.max((sTxt.duration as Integer),2), sVolume)
                         state.lastPlayed = now()
                 	}
-        }
+        }      
 }
 /***********************************************************************************************************************
     WEATHER TRIGGERS
@@ -930,7 +939,7 @@ def mGetWeatherTrigger(){
     def myTrigger
 	def process = false
 	try{  
-		if (getDayOk()==true && getModeOk()==true && getTimeOk()==true) {
+		if (getDayOk()==true && getModeOk()==true && getTimeOk()==true && getFrequencyOk()==true) {
         	if(getMetric() == false){
             def cWeather = getWeatherFeature("conditions", settings.wZipCode)
             def cTempF = cWeather.current_observation.temp_f.toDouble()
@@ -989,7 +998,7 @@ def mGetWeatherAlerts(){
 	def result = "There are no weather alerts for your area"
 	def data = [:]
     try {
-		if (getDayOk()==true && getModeOk()==true && getTimeOk()==true) {
+		if (getDayOk()==true && getModeOk()==true && getTimeOk()==true && getFrequencyOk()==true) {
         	def weather = getWeatherFeature("alerts", settings.wZipCode)
         	def type = weather.alerts.type[0]
             def alert = weather.alerts.description[0]
@@ -1037,7 +1046,7 @@ def mGetCurrentWeather(){
     def data = [:]
    	def result
     try {
-		if (getDayOk()==true && getModeOk()==true && getTimeOk()==true) {
+		if (getDayOk()==true && getModeOk()==true && getTimeOk()==true && getFrequencyOk()==true) {
         //hourly updates
             def cWeather = getWeatherFeature("hourly", settings.wZipCode)
             def cWeatherCondition = cWeather.hourly_forecast[0].condition
@@ -1279,6 +1288,37 @@ def cronHandler(var) {
 /***********************************************************************************************************************
     RESTRICTIONS HANDLER
 ***********************************************************************************************************************/
+def getFrequencyOk() {
+    def lastPlayed = state.lastPlayed
+    def result = false
+	if (onceDailyOk(lastPlayed)) {
+			if (everyXmin) {
+				if (lastPlayed == null || now() - lastPlayed >= everyXmin * 60000) {
+					result = true
+				}
+				else {
+					log.debug "Not taking action because $everyXmin minutes have not passed since last notification"
+				}
+			}
+			else {
+				result = true
+			}
+		}
+		else {
+			log.debug "Not taking action because the notification was already played once today"
+		}
+        result
+}
+private onceDailyOk(Long lastPlayed) {
+	def result = true
+	if (onceDaily) {
+    	def today = new Date(now()).format("EEEE, MMMM d, yyyy", location.timeZone)
+        def lastTime = new Date(lastPlayed).format("EEEE, MMMM d, yyyy", location.timeZone) 
+		result = lastPlayed ? today != lastTime : true
+		log.trace "oncePerDayOk = $result"
+	}
+	result
+}
 private getMetric(){
    	def result = location.temperatureScale == "C"
     log.debug "getMetric = $result"
@@ -1481,11 +1521,11 @@ def triggersComplete() {def text = "Tap here to configure settings"
 		text} 
 
 def pRestSettings() {def result = ""
-    if (modes || days) {
+    if (modes || days ||pTimeSettings() || onceDaily || everyXmin) {
     	result = "complete"}
    		result}
 def pRestComplete() {def text = "Tap here to configure settings" 
-    if (modes || days) {
+    if (modes || days || pTimeSettings() || everyXmin ) {
     	text = "Configured"}
     	else text = "Tap to Configure"
 		text}     
