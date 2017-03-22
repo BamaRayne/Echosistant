@@ -1865,13 +1865,13 @@ try {
                                 dType = "v"}
                             }
                             if (deviceMatch == null && settings.cSynth?.size()>0) {
-                                deviceMatch = cSynth.find {s -> s.label.toLowerCase() == ctDevice.toLowerCase()}                 
+                                deviceMatch = cSynth?.find {s -> s.label.toLowerCase() == ctDevice.toLowerCase()}                 
                                 if(deviceMatch) {dType = "v"}
                             }
 							//HARMONY PROCESS//
 							if (deviceMatch == null && settings.cMedia?.size()>0) {
                                 //deviceMatch = cMedia.first()
-                                deviceMatch = cMedia.find {s -> s.label.toLowerCase() == ctDevice.toLowerCase()}                 
+                                deviceMatch = cMedia?.find {s -> s.label.toLowerCase() == ctDevice.toLowerCase()}                 
                                 if(deviceMatch) {
                                     dType = "m"
                                 }
@@ -1898,11 +1898,11 @@ try {
                                 deviceMatch = cMedia?.first()                   
                             }    
                             if (deviceMatch == null && settings.cSwitch?.size()>0 && state.pinTry == null) {
-                                deviceMatch = cSwitch.find {s -> s.label.toLowerCase() == ctDevice.toLowerCase()}                 
+                                deviceMatch = cSwitch?.find {s -> s.label.toLowerCase() == ctDevice.toLowerCase()}                 
                                 if(deviceMatch) {dType = "s"}
                             }
                             if (deviceMatch == null && settings.cMiscDev?.size()>0 && state.pinTry == null) {
-                                deviceMatch = cMiscDev.find {s -> s.label.toLowerCase() == ctDevice.toLowerCase()}                 
+                                deviceMatch = cMiscDev?.find {s -> s.label.toLowerCase() == ctDevice.toLowerCase()}                 
                                 if(deviceMatch) { 
                             //>>>>>>>  CHECK FOR ENABLED PIN <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
                                 if(cPIN && state.usePIN_S == true && deviceMatch) {
