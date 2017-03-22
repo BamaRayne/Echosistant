@@ -218,6 +218,21 @@ page name: "triggers"
                             ]          
                     input "myWeather", "enum", title: "Choose Hourly Weather Forecast Updates...", required: false, multiple: false, submitOnChange: true,
                             options: ["Weather Condition Changes", "Chance of Precipitation Changes", "Wind Speed Changes", "Humidity Changes", "Any Weather Updates"]   
+					input "myWeatherTriggers", "enum", title: "Choose Weather Element as Trigger...", required: false, multiple: false, submitOnChange: true,
+						options: ["Chance of Precipitation (%)", "Wind Speed (MPH/kPH)", "Humidity (%)", "Temperature (F/C)"]   
+						if (myWeatherTriggers) input "myWeatherTriggersS", "enum", title: "Notify when Weather Element changes...", 
+                        	options: ["above", "below"], required: false, submitOnChange: true
+						if (myWeatherTriggersS) input "myWeatherThreshold", "number", title: "Weather Variable Threshold...", required: false, submitOnChange: true
+						if (myWeatherThreshold) input "myWeatherCheck", "enum", title: "How Often to Check for Weather Changes...", required: true, multiple: false, submitOnChange: true,
+                				options: [
+                                    "runEvery1Minute": "Every Minute",
+                                    "runEvery5Minutes": "Every 5 Minutes",
+                                    "runEvery10Minutes": "Every 10 Minutes",
+                                    "runEvery15Minutes": "Every 15 Minutes",
+                                    "runEvery30Minutes": "Every 30 Minutes",
+                                    "runEvery1Hour": "Every Hour",
+                                    "runEvery3Hours": "Every 3 Hours"
+                					]
                 } 
             }        
 		}
@@ -312,6 +327,12 @@ def initialize() {
 		runEvery5Minutes(mGetWeatherAlerts)
 		state.weatherAlert
     }
+    if (myWeatherTriggers) {
+
+    	"${myWeatherCheck}"(mGetWeatherTrigger)
+        
+            mGetWeatherTrigger()
+    }     
 	if (myWeather) {
     	log.debug "refreshing hourly weather"
 		runEvery1Hour(mGetCurrentWeather)
@@ -736,6 +757,7 @@ def alertsHandler(evt) {
     def eDisplayN = evt.displayName
     def eDisplayT = evt.descriptionText
 	def eTxt = eDisplayN + " is " + eVal //evt.descriptionText 
+    
     if(actionType == "Default"){
 		if(speechSynth) {
        	speechSynth.playTextAndResume(eTxt)
@@ -897,6 +919,54 @@ private takeAction(eTxt) {
                         state.lastPlayed = now()
                 	}
         }
+}
+/***********************************************************************************************************************
+    WEATHER TRIGGERS
+***********************************************************************************************************************/
+def mGetWeatherTrigger(){
+    def data = [:]
+	def process = false
+	try{  
+		if (getDayOk()==true && getModeOk()==true && getTimeOk()==true) {	
+            def cWeather = getWeatherFeature("conditions", settings.wZipCode)
+            def cTempF = cWeather.current_observation.temp_f.toDouble()
+            	int tempF = cTempF as Integer
+            def cTempC = cWeather.current_observation.temp_c.toDouble()
+            def cRelativeHum = cWeather.current_observation.relative_humidity 
+            	cRelativeHum = cRelativeHum?.replaceAll("%", "")
+                int humid = cRelativeHum as Integer
+            def cWindGustM = cWeather.current_observation.wind_gust_mph.toDouble()
+            	int wind = cWindGustM as Integer
+            def cWindGustK = cWeather.current_observation.wind_gust_kph.toDouble()
+            def cPrecipIn = cWeather.current_observation.precip_1hr_in.toDouble()
+            	int precip = cPrecipIn as Integer
+            def cPrecipM = cWeather.current_observation.precip_1hr_metric.toDouble()
+    		log.warn " cTempF = $cTempF, cTempC = $cTempC, cRelativeHum = $cRelativeHum, cWindGustM = $cWindGustM, cWindGustK = $cWindGustK, cPrecipIn = $cPrecipIn"
+			def myTrigger = myWeatherTriggers == "Chance of Precipitation (%)" ? precip : myWeatherTriggers == "Wind Speed (MPH/kPH)" ? wind : myWeatherTriggers == "Humidity (%)" ? humid : myWeatherTriggers == "Temperature (F/C)" ? tempF : null
+   			//cTempF = 65.2, cTempC = 18.4, cRelativeHum = 51%, cWindGustM = 6.1, cWindGustK = 9.8, cPrecipIn = 0.00
+            if (myWeatherTriggersS == "above"){
+            	def var = myTrigger > myWeatherThreshold
+            	log.warn  " myTrigger = $myTrigger , myWeatherThreshold = $myWeatherThreshold AND var = $var"
+                if(myTrigger > myWeatherThreshold) process = true 
+       		}
+     		if (myWeatherTriggersS == "below"){
+				def var = myTrigger < myWeatherThreshold
+            	log.warn  " myTrigger = $myTrigger , myWeatherThreshold = $myWeatherThreshold AND var = $var"
+        		if(myTrigger < myWeatherThreshold){process = true}                
+       		}
+       		if(process == true){
+				data = [value:"${myTrigger}", name:"${myWeatherTriggers}", device:"${myWeatherTriggers}"] 
+    			alertsHandler(data)
+            }
+            else{
+            	log.debug "refreshed weather triggers, but trigger is $process"
+   			}
+		}
+    }
+	catch (Throwable t) {
+	log.error t
+	return result
+	}  
 }
 /***********************************************************************************************************************
     WEATHER ALERTS
