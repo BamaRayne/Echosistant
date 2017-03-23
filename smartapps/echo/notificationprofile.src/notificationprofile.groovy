@@ -1,7 +1,7 @@
 /* 
  * Notification - EchoSistant Add-on 
  *
- *		3/23/2017		Version:4.0 R.0.3.4	    	bug fix: custom sound
+ *		3/23/2017		Version:4.0 R.0.3.4a	    	bug fix: custom sound
  *		3/21/2017		Version:4.0 R.0.3.3	    	added: &current for current temperature, frequency restriction
  *		3/21/2017		Version:4.0 R.0.3.2	    	added: &set (sunset), &rise (sunrise)
  *		3/18/2017		Version:4.0 R.0.3.1a	    added: &motion, &cooling, &heating
@@ -31,7 +31,7 @@ definition(
 	iconX3Url		: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/app-Echosistant@2x.png")
 /**********************************************************************************************************************************************/
 private release() {
-	def text = "R.0.3.4"
+	def text = "R.0.3.4a"
 }
 
 preferences {
@@ -331,6 +331,8 @@ def initialize() {
     state.lastAlert
     state.cycleOnH = false
     state.cycleOnL = false
+    state.cycleOnA = false
+    state.cycleOnB = false
     state.lastWeather
     if (frequency) cronHandler(frequency)
     if (myWeatherAlert) {
@@ -863,33 +865,6 @@ def alertsHandler(evt) {
 }
 }
 /***********************************************************************************************************************
-    CUSTOM WEATHER VARIABLES
-***********************************************************************************************************************/
-private getWeatherVar(eTxt){
-	def result
-    // weather variables
-	def weatherToday = mGetWeatherVar("today")
-	def weatherTonight = mGetWeatherVar("tonight")
-    def weatherTomorrow = mGetWeatherVar("tomorrow")
-    def tHigh = mGetWeatherVar("high")
-    def tLow = mGetWeatherVar("low")
-    def tUV = mGetWeatherElements("uv")
-    def tPrecip = mGetWeatherElements("precip")
-    def tHum = mGetWeatherElements("hum")
-    def tCond = mGetWeatherElements("cond")
-    def tWind = mGetWeatherElements("wind")
-    def tSunset = mGetWeatherElements("set")
-    def tSunrise = mGetWeatherElements("rise")
-    def tTemp = mGetWeatherElements("current")
-    //def tWind = mGetWeatherElements("moonphase")
-
-    result = eTxt.replace("&today", "${weatherToday}").replace("&tonight", "${weatherTonight}").replace("&tomorrow", "${weatherTomorrow}")
-	if(result) result = result.replace("&high", "${tHigh}").replace("&low", "${tLow}").replace("&wind", "${tWind}").replace("&uv", "${tUV}").replace("&precipitation", "${tPrecip}")
-	if(result) result = result.replace("&humidity", "${tHum}").replace("&conditions", "${tCond}").replace("&set", "${tSunset}").replace("&rise", "${tSunrise}").replace("&current", "${tTemp}")
-
-return result
-}
-/***********************************************************************************************************************
     TAKE ACTIONS HANDLER
 ***********************************************************************************************************************/
 private takeAction(eTxt) {
@@ -938,6 +913,33 @@ private takeAction(eTxt) {
         }      
 }
 /***********************************************************************************************************************
+    CUSTOM WEATHER VARIABLES
+***********************************************************************************************************************/
+private getWeatherVar(eTxt){
+	def result
+    // weather variables
+	def weatherToday = mGetWeatherVar("today")
+	def weatherTonight = mGetWeatherVar("tonight")
+    def weatherTomorrow = mGetWeatherVar("tomorrow")
+    def tHigh = mGetWeatherVar("high")
+    def tLow = mGetWeatherVar("low")
+    def tUV = mGetWeatherElements("uv")
+    def tPrecip = mGetWeatherElements("precip")
+    def tHum = mGetWeatherElements("hum")
+    def tCond = mGetWeatherElements("cond")
+    def tWind = mGetWeatherElements("wind")
+    def tSunset = mGetWeatherElements("set")
+    def tSunrise = mGetWeatherElements("rise")
+    def tTemp = mGetWeatherElements("current")
+    //def tWind = mGetWeatherElements("moonphase")
+
+    result = eTxt.replace("&today", "${weatherToday}").replace("&tonight", "${weatherTonight}").replace("&tomorrow", "${weatherTomorrow}")
+	if(result) result = result.replace("&high", "${tHigh}").replace("&low", "${tLow}").replace("&wind", "${tWind}").replace("&uv", "${tUV}").replace("&precipitation", "${tPrecip}")
+	if(result) result = result.replace("&humidity", "${tHum}").replace("&conditions", "${tCond}").replace("&set", "${tSunset}").replace("&rise", "${tSunrise}").replace("&current", "${tTemp}")
+
+	return result
+}
+/***********************************************************************************************************************
     WEATHER TRIGGERS
 ***********************************************************************************************************************/
 def mGetWeatherTrigger(){
@@ -973,16 +975,24 @@ def mGetWeatherTrigger(){
             myTrigger = myWeatherTriggers == "Chance of Precipitation (%)" ? precipC : myWeatherTriggers == "Wind Speed (MPH/kPH)" ? windC : myWeatherTriggers == "Humidity (%)" ? humid : myWeatherTriggers == "Temperature (F/C)" ? tempC : null
             }
             
-            if (myWeatherTriggersS == "above"){
+            if (myWeatherTriggersS == "above" && state.cycleOnA == false){
             	def var = myTrigger > myWeatherThreshold
             	log.warn  " myTrigger = $myTrigger , myWeatherThreshold = $myWeatherThreshold, myWeatherTriggersS = $myWeatherTriggersS, var = $var"
-                if(myTrigger > myWeatherThreshold) process = true 
-       		}
-     		if (myWeatherTriggersS == "below"){
+                if(myTrigger > myWeatherThreshold) {
+                	process = true
+                    state.cycleOnA = process
+                    state.cycleOnB = false
+       			}
+            }
+     		if (myWeatherTriggersS == "below" && state.cycleOnB == false){
 				def var = myTrigger < myWeatherThreshold
             	log.warn  " myTrigger = $myTrigger , myWeatherThreshold = $myWeatherThreshold myWeatherTriggersS = $myWeatherTriggersS, var = $var"
-        		if(myTrigger < myWeatherThreshold) process = true             
-       		}
+        		if(myTrigger < myWeatherThreshold) {
+                	process = true
+					state.cycleOnA = false
+                    state.cycleOnB = process
+       			}
+            }
        		if(process == true){
 				data = [value:"${myTrigger}", name:"${myWeatherTriggers}", device:"${myWeatherTriggers}"] 
     			alertsHandler(data)
@@ -991,6 +1001,7 @@ def mGetWeatherTrigger(){
             	log.debug "refreshed weather triggers, but trigger is $process"
    			}
 		}
+    
     }
 	catch (Throwable t) {
 	log.error t
