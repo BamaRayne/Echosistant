@@ -1,6 +1,7 @@
 /* 
  * Notification - EchoSistant Add-on 
  *
+ *		3/23/2017		Version:4.0 R.0.3.4	    	bug fix: custom sound
  *		3/21/2017		Version:4.0 R.0.3.3	    	added: &current for current temperature, frequency restriction
  *		3/21/2017		Version:4.0 R.0.3.2	    	added: &set (sunset), &rise (sunrise)
  *		3/18/2017		Version:4.0 R.0.3.1a	    added: &motion, &cooling, &heating
@@ -30,7 +31,7 @@ definition(
 	iconX3Url		: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/app-Echosistant@2x.png")
 /**********************************************************************************************************************************************/
 private release() {
-	def text = "R.0.3.3"
+	def text = "R.0.3.4"
 }
 
 preferences {
@@ -307,7 +308,7 @@ page name: "certainTime"
 def installed() {
 	log.debug "Installed with settings: ${settings}, current app version: ${release()}"
     state.NotificationRelease = "Notification: " + release()
-
+	state.sound
 	if (myWeatherAlert) {
 		runEvery5Minutes(mGetWeatherAlerts)
 	}
@@ -319,6 +320,7 @@ def updated() {
 	log.debug "Updated with settings: ${settings}, current app version: ${release()}"
 	state.NotificationRelease = "Notification: " + release()
     state.lastPlayed //= now()
+    state.sound
 	unschedule()
     unsubscribe()
     initialize()
@@ -897,7 +899,11 @@ private takeAction(eTxt) {
     if (actionType == "Custom" || actionType == "Custom with Weather" || actionType == "Triggered Report") {
         if (speechSynth || sonos) sTxt = textToSpeech(eTxt instanceof List ? eTxt[0] : eTxt)
     }
-    else loadSound() 
+    else {
+    	loadSound()
+        state.lastPlayed = now()
+        sTxt = state.sound
+    }
     //Playing Audio Message
         if (speechSynth) {
             def currVolLevel = speechSynth.latestValue("level")
