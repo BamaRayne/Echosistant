@@ -1,7 +1,7 @@
 /* 
  * Notification - EchoSistant Add-on 
  *
- *		3/23/2017		Version:4.0 R.0.3.4a	    	bug fix: custom sound
+ *		3/24/2017		Version:4.0 R.0.3.5	    	bug fix: custom sound, minor fixes
  *		3/21/2017		Version:4.0 R.0.3.3	    	added: &current for current temperature, frequency restriction
  *		3/21/2017		Version:4.0 R.0.3.2	    	added: &set (sunset), &rise (sunrise)
  *		3/18/2017		Version:4.0 R.0.3.1a	    added: &motion, &cooling, &heating
@@ -31,7 +31,7 @@ definition(
 	iconX3Url		: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/app-Echosistant@2x.png")
 /**********************************************************************************************************************************************/
 private release() {
-	def text = "R.0.3.4a"
+	def text = "R.0.3.5"
 }
 
 preferences {
@@ -224,8 +224,8 @@ page name: "triggers"
                     input "myWeather", "enum", title: "Choose Hourly Weather Forecast Updates...", required: false, multiple: false, submitOnChange: true,
                             options: ["Weather Condition Changes", "Chance of Precipitation Changes", "Wind Speed Changes", "Humidity Changes", "Any Weather Updates"]   
 					input "myWeatherTriggers", "enum", title: "Choose Weather Element as Trigger...", required: false, multiple: false, submitOnChange: true,
-						options: ["Chance of Precipitation (%)", "Wind Speed (MPH/kPH)", "Humidity (%)", "Temperature (F/C)"]   
-						if (myWeatherTriggers) input "myWeatherTriggersS", "enum", title: "Notify when Weather Element changes...", 
+						options: ["Chance of Precipitation (in/mm)", "Wind Gust (MPH/kPH)", "Humidity (%)", "Temperature (F/C)"]   
+                        if (myWeatherTriggers) input "myWeatherTriggersS", "enum", title: "Notify when Weather Element changes...", 
                         	options: ["above", "below"], required: false, submitOnChange: true
 						if (myWeatherTriggersS) input "myWeatherThreshold", "number", title: "Weather Variable Threshold...", required: false, submitOnChange: true
 						if (myWeatherThreshold) input "myWeatherCheck", "enum", title: "How Often to Check for Weather Changes...", required: true, multiple: false, submitOnChange: true,
@@ -319,7 +319,7 @@ def installed() {
 def updated() {
 	log.debug "Updated with settings: ${settings}, current app version: ${release()}"
 	state.NotificationRelease = "Notification: " + release()
-    state.lastPlayed //= now()
+    state.lastPlayed = now()
     state.sound
 	unschedule()
     unsubscribe()
@@ -946,7 +946,7 @@ def mGetWeatherTrigger(){
     def data = [:]
     def myTrigger
 	def process = false
-	try{  
+//	try{  
 		if (getDayOk()==true && getModeOk()==true && getTimeOk()==true && getFrequencyOk()==true) {
         	if(getMetric() == false){
             def cWeather = getWeatherFeature("conditions", settings.wZipCode)
@@ -959,7 +959,7 @@ def mGetWeatherTrigger(){
             	int wind = cWindGustM as Integer
             def cPrecipIn = cWeather.current_observation.precip_1hr_in.toDouble()
             	int precip = cPrecipIn as Integer
-			myTrigger = myWeatherTriggers == "Chance of Precipitation (%)" ? precip : myWeatherTriggers == "Wind Speed (MPH/kPH)" ? wind : myWeatherTriggers == "Humidity (%)" ? humid : myWeatherTriggers == "Temperature (F/C)" ? tempF : null
+			myTrigger = myWeatherTriggers == "Chance of Precipitation (in/mm)" ? precip : myWeatherTriggers == "Wind Gust (MPH/kPH)" ? wind : myWeatherTriggers == "Humidity (%)" ? humid : myWeatherTriggers == "Temperature (F/C)" ? tempF : null
 			}
             else {
 			def cWeather = getWeatherFeature("conditions", settings.wZipCode)   
@@ -972,7 +972,7 @@ def mGetWeatherTrigger(){
             	int windC = cWindGustK as Integer
             def cPrecipM = cWeather.current_observation.precip_1hr_metric.toDouble()
     			int precipC = cPrecipM as Integer
-            myTrigger = myWeatherTriggers == "Chance of Precipitation (%)" ? precipC : myWeatherTriggers == "Wind Speed (MPH/kPH)" ? windC : myWeatherTriggers == "Humidity (%)" ? humid : myWeatherTriggers == "Temperature (F/C)" ? tempC : null
+            myTrigger = myWeatherTriggers == "Chance of Precipitation (in/mm)" ? precipC : myWeatherTriggers == "Wind Gust (MPH/kPH)" ? windC : myWeatherTriggers == "Humidity (%)" ? humid : myWeatherTriggers == "Temperature (F/C)" ? tempC : null
             }
             
             if (myWeatherTriggersS == "above" && state.cycleOnA == false){
@@ -1001,12 +1001,13 @@ def mGetWeatherTrigger(){
             	log.debug "refreshed weather triggers, but trigger is $process"
    			}
 		}
-    
+/*    
     }
 	catch (Throwable t) {
 	log.error t
 	return result
 	}  
+*/
 }
 /***********************************************************************************************************************
     WEATHER ALERTS
