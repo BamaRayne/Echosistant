@@ -30,8 +30,9 @@ definition(
 	description: "Adjust zwave thermostats based on a temperature range of a specific temperature sensor",
     parent: "Echo:EchoSistant", 
 	category: "My apps",
-	iconUrl: "http://icons.iconarchive.com/icons/icons8/windows-8/512/Science-Temperature-icon.png",
-	iconX2Url: "http://icons.iconarchive.com/icons/icons8/windows-8/512/Science-Temperature-icon.png"
+	iconUrl			: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/app-Echosistant.png",
+	iconX2Url		: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/app-Echosistant@2x.png",
+	iconX3Url		: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/app-Echosistant@2x.png"
 )
 
 preferences {
@@ -56,10 +57,10 @@ def pageSetup() {
 
 	return dynamicPage(pageProperties) {
         section("General Settings") {
-            href "TemperatureSettings", title: "Ambiance", description: "", state:greyedOut()
-            href "ThermostatandDoors", title: "Disabled Mode", description: "", state: greyedOutTherm()
-            href "ThermostatAway", title: "Away Mode", description: "", state: greyedOutTherm2()
-			href "Settings", title: "Other Settings", description: "", state: greyedOutSettings()
+            href "TemperatureSettings", title: "Ambiance", description: TemperatureSettingsParams(), state:greyedOut()
+            href "ThermostatandDoors", title: "Disabled Mode", description: ThermostatandDoorsParams(), state: greyedOutDoors()
+            href "ThermostatAway", title: "Away Mode", description: ThermostatAwayParams(), state: greyedOutAway()
+			href "Settings", title: "Other Settings", description: SettingsParams(), state: greyedOutSettings()
          }
         section([title:"Options", mobileOnly:true]) {
             label title:"Assign a name", required:false       
@@ -74,7 +75,7 @@ def TemperatureSettings() {
         name:       "sensor",
         type:       "capability.temperatureMeasurement",
         title:      "Which Temperature Sensor(s)?",
-        multiple:   false,
+        multiple:   true,
         required:   false
     ]
     def thermostat = [
@@ -388,7 +389,6 @@ def Settings() {
     }
     
 }
-
 def installed(){
 	if (debug) log.debug "Installed called with $settings"
 	init()
@@ -401,7 +401,7 @@ def updated(){
 }
 
 def init(){
-	state.lastStatus = null
+    state.lastStatus = null
     runIn(60, "temperatureHandler")
     	if (debug) log.debug "Temperature will be evaluated in one minute"
      	if(sensor) {
@@ -436,14 +436,14 @@ def temperatureHandler(evt) {
     if(modeOk && daysOk && timeOk && modeNotAwayOk)  {
     		
             if(sensor){            
-                //f sensors = sensor.size()
-            	//def tempAVG = sensor ? getAverage(sensor, "temperature") : "undefined device"
-            	//currentTemp = tempAVG
-                currentTemp = sensor.latestValue("temperature")
+                def sensors = sensor.size()
+            	def tempAVG = sensor ? getAverage(sensor, "temperature") : "undefined device"
+            	currentTemp = tempAVG
+                //currentTemp = sensor.latestValue("temperature")
                 if (debug) log.debug "Data check (avg temp: ${currentTemp}, num of sensors:${sensors}, app status: ${lastStatus})"
             }
             else {
-            	currentTemp = thermostat?.latestValue("temperature")
+            	currentTemp = thermostat.latestValue("temperature")
                  if (debug) log.debug "Thermostat data (curr temp: ${currentTemp},status: ${lastStatus}"
             }        
             if(setLow > setHigh){
@@ -735,16 +735,20 @@ private hhmm(time, fmt = "h:mm a")
 	f.setTimeZone(location.timeZone ?: timeZone(time))
 	f.format(t)
 }
-def greyedOut(){
-	def result = ""
-    if (sensor) {
-    	result = "complete"	
+
+def getAlexaReport() {
+    def result = ""
+    if (thermostat) {
+    def disable = doors ? "active" : "not active" 
+        text = "The ambiance mode for ${thermostat} is to adjust the thermostat if the temperature falls below ${setLow} or raises above ${setHigh}. "+
+        		"The disable mode is ${disable} and the away mode is set when thermostat to away mode when Location Mode changes to: ${away}."
     }
-    result
+    return result
 }
 
-def greyedOutTherm(){
-	def result = ""
+def greyedOut(){
+    //state.var ? "complete": ""   
+    def result = ""
     if (thermostat) {
     	result = "complete"	
     }
@@ -752,13 +756,45 @@ def greyedOutTherm(){
 }
 
 
-def greyedOutTherm2(){
+def TemperatureSettingsParams() {
+    def text = "Tap here to configure settings"
+    if (thermostat) {
+        text = "Current settings: adjust thermostat if temperature falls below ${setLow} or raises above ${setHigh}. Tap here to change settings"
+    }
+    text
+}
+
+
+def greyedOutDoors(){
 	def result = ""
-    if (modes2) {
+    if (doors) {
     	result = "complete"	
     }
     result
 }
+
+def ThermostatandDoorsParams() {
+    def text = "Tap here to configure settings"
+    if (doors) {
+        text = "Current settings: thermostat turns off when ${doors} are open for more than ${turnOffDelay} minutes. Tap here to change settings"
+    }
+    text
+}
+def greyedOutAway(){
+	def result = ""
+    if (away) {
+    	result = "complete"	
+    }
+    result
+}
+def ThermostatAwayParams() {
+    def text = "Tap here to configure settings"
+    if (away) {
+        text = "Current settings: adjust thermostat to away mode when Location Mode is set to: ${away}. Tap here to change settings"
+    }
+    text
+}
+
 
 def greyedOutSettings(){
 	def result = ""
@@ -767,6 +803,15 @@ def greyedOutSettings(){
     }
     result
 }
+
+def SettingsParams() {
+    def text = "Tap here to configure settings"
+    if (starting || ending || days || modes || push) {
+        text = "Other Settings have been configured. Tap here to change settings"
+    }
+    text
+}
+
 
 def greyedOutTime(starting, ending){
 	def result = ""
@@ -778,7 +823,6 @@ def greyedOutTime(starting, ending){
 
 private anyoneIsHome() {
   def result = false
-
   if(people.findAll { it?.currentPresence == "present" }) {
     result = true
   }
@@ -789,11 +833,9 @@ private anyoneIsHome() {
 }
 
 
-
-
 page(name: "timeIntervalInput", title: "Only during a certain time", refreshAfterSelection:true) {
 		section {
 			input "starting", "time", title: "Starting (both are required)", required: false 
 			input "ending", "time", title: "Ending (both are required)", required: false 
 		}
-        }
+}
