@@ -40,7 +40,7 @@ private def textVersion() {
 	def text = "4.0"
 }
 private release() {
-    def text = "R.0.3.2"
+    def text = "R.0.3.2 debugON"
 }
 /**********************************************************************************************************************************************/
 preferences {   
@@ -1648,7 +1648,7 @@ def controlDevices() {
 	def ctProcess = true	
     state.pTryAgain = false 
 
-try {
+//try {
 
     if (ctIntentName == "main") {
     	if (ctCommand == "this is a test"){
@@ -2268,14 +2268,14 @@ try {
 		state.pTryAgain = true
 		return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
     }
-
+/*
        } catch (Throwable t) {
         log.error t
         outputTxt = "Oh no, something went wrong. If this happens again, please reach out for help!"
         state.pTryAgain = true
         return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
 	}
-    
+*/    
 }
 /************************************************************************************************************
    DEVICE CONTROL HANDLER
