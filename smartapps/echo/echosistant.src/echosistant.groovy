@@ -6,6 +6,7 @@
  								DON'T FORGET TO UPDATE RELEASE NUMBER!!!!!
  
  ************************************ FOR INTERNAL USE ONLY ******************************************************
+ *		3/28/2017		Version:4.0 R.0.3.3		minor bug fixes
  *		3/21/2017		Version:4.0 R.0.3.2		minor bug fixes
  *		3/18/2017		Version:4.0 R.0.3.1c	Addition of the Zwave Thermostat Manager Add-On Module and feedback bug fix
  *		3/14/2017		Version:4.0 R.0.3.0  	Enabled running Reporting Profile, Bug fix for windows, doors, and lights feedback/ reconfigured / improved responses and commands
@@ -40,7 +41,7 @@ private def textVersion() {
 	def text = "4.0"
 }
 private release() {
-    def text = "R.0.3.2 debugON"
+    def text = "R.0.3.3"
 }
 /**********************************************************************************************************************************************/
 preferences {   
@@ -1897,28 +1898,13 @@ def controlDevices() {
                             	dType = "m"
                                 deviceMatch = cMedia?.first()                   
                             }    
-		            
-		    if (deviceMatch == null && settings.cSwitch?.size()>0 && state.pinTry == null) {
-                                def switchProblem
-                                deviceMatch = cSwitch.find {s -> 
-                                	switchProblem = s.label
-                                    log.warn "switch with problem is = $switchProblem"
-                                	s.label?.toLowerCase() == ctDevice?.toLowerCase()}     
-                                if(deviceMatch) {dType = "s"}
-                            }
-		    
-		    
-		    
-		    /*
-		    if (deviceMatch == null && settings.cSwitch?.size()>0 && state.pinTry == null) {
+		    	    if (deviceMatch == null && settings.cSwitch?.size()>0 && state.pinTry == null) {
                                 log.error "ctDevice = $ctDevice"
-				deviceMatch = cSwitch?.find {s -> s.label.toLowerCase() == ctDevice.toLowerCase()}                 
+				deviceMatch = cSwitch?.find {s -> s.label?.toLowerCase() == ctDevice.toLowerCase()}                 
                                 if(deviceMatch) {dType = "s"}
                             }
-
-		*/
                             if (deviceMatch == null && settings.cMiscDev?.size()>0 && state.pinTry == null) {
-                                deviceMatch = cMiscDev?.find {s -> s.label.toLowerCase() == ctDevice.toLowerCase()}                 
+                                deviceMatch = cMiscDev?.find {s -> s?.toLowerCase() == ctDevice.toLowerCase()}                 
                                 if(deviceMatch) { 
                             //>>>>>>>  CHECK FOR ENABLED PIN <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
                                 if(cPIN && state.usePIN_S == true && deviceMatch) {
