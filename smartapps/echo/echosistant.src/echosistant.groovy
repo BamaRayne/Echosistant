@@ -1897,10 +1897,26 @@ def controlDevices() {
                             	dType = "m"
                                 deviceMatch = cMedia?.first()                   
                             }    
-                            if (deviceMatch == null && settings.cSwitch?.size()>0 && state.pinTry == null) {
-                                deviceMatch = cSwitch?.find {s -> s.label.toLowerCase() == ctDevice.toLowerCase()}                 
+		            
+		    if (deviceMatch == null && settings.cSwitch?.size()>0 && state.pinTry == null) {
+                                def switchProblem
+                                deviceMatch = cSwitch.find {s -> 
+                                	switchProblem = s.label
+                                    log.warn "switch with problem is = $switchProblem"
+                                	s.label?.toLowerCase() == ctDevice?.toLowerCase()}     
                                 if(deviceMatch) {dType = "s"}
                             }
+		    
+		    
+		    
+		    /*
+		    if (deviceMatch == null && settings.cSwitch?.size()>0 && state.pinTry == null) {
+                                log.error "ctDevice = $ctDevice"
+				deviceMatch = cSwitch?.find {s -> s.label.toLowerCase() == ctDevice.toLowerCase()}                 
+                                if(deviceMatch) {dType = "s"}
+                            }
+
+		*/
                             if (deviceMatch == null && settings.cMiscDev?.size()>0 && state.pinTry == null) {
                                 deviceMatch = cMiscDev?.find {s -> s.label.toLowerCase() == ctDevice.toLowerCase()}                 
                                 if(deviceMatch) { 
