@@ -6,6 +6,7 @@
  								DON'T FORGET TO UPDATE RELEASE NUMBER!!!!!
  
  ************************************ FOR INTERNAL USE ONLY ******************************************************
+ *		3/29/2017		Version:4.0 R.0.3.3a	change to virtual person commands
  *		3/28/2017		Version:4.0 R.0.3.3		minor bug fixes
  *		3/21/2017		Version:4.0 R.0.3.2		minor bug fixes
  *		3/18/2017		Version:4.0 R.0.3.1c	Addition of the Zwave Thermostat Manager Add-On Module and feedback bug fix
@@ -28,7 +29,7 @@ definition(
 	name			: "EchoSistant",
     namespace		: "Echo",
     author			: "JH/BD",
-	description		: "The Ultimate Voice Controlled Assistant Using Alexa Enabled Devices.",
+	description		: "Version 4.1. The Ultimate Voice Controlled Assistant Using Alexa Enabled Devices.",
 	category		: "My Apps",
     singleInstance	: true,
 	iconUrl			: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/app-Echosistant.png",
@@ -41,7 +42,7 @@ private def textVersion() {
 	def text = "4.0"
 }
 private release() {
-    def text = "R.0.3.3"
+    def text = "R.0.3.3a"
 }
 /**********************************************************************************************************************************************/
 preferences {   
@@ -2521,8 +2522,8 @@ def controlHandler(data) {
         }
         state.pinTry = null
    		deviceD."${deviceCommand}"()
-        if (deviceCommand == "arrived") result = "Ok, checking in " + deviceD
-        else if (deviceCommand == "departed") result = "Ok, checking out  " + deviceD                    
+        if (deviceCommand == "arrived") result = "Ok, " + deviceD + " is here"
+        else if (deviceCommand == "departed") result = "Ok, " + deviceD + " is leaving"                  
         if (delayD == false) {return result}  
 	}
     
@@ -3273,7 +3274,7 @@ private deviceMatchHandler(fDevice) {
                 def timeText = getTimeVariable(stateTime, deviceType)
                 return ["deviceMatch" : deviceMatch, "deviceType": deviceType, "currState": currState, "tText": timeText.tText, "mainCap": "lock"]
         	}
-        }        
+        }
         if (cPresence){
         deviceMatch =cPresence?.find {d -> d.label.toLowerCase() == fDevice?.toLowerCase()}
             if(deviceMatch)	{
@@ -3754,11 +3755,11 @@ private getCommand(command, unit) {
             }
        }     
    //case "Virtual Person     
-            if (command == "check in" || command == "checking in"|| command == "checked in" || command == "arrived" || command == "arriving"){
+            if (command == "check in" || command == "checking in"|| command == "checked in" || command == "arrived" || command == "arriving" || command == "here"){
             	command = "arrived"
                 deviceType = "cPresence" //"virtualPerson"
             }
-            if (command == "check out" || command == "checking out"|| command == "checked out"){
+            if (command == "check out" || command == "checking out"|| command == "checked out" || command == "departing"){
             	command = "departed"
                 deviceType = "cPresence"
             }    
