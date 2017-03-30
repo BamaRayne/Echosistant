@@ -128,11 +128,30 @@ exports.handler = function( event, context ) {
                     var fQuery = event.request.intent.slots.fQuery.value;
                     var fOperand = event.request.intent.slots.fOperand.value;
                     var fCommand = event.request.intent.slots.cCommand.value;
-
                     url += 'f?fDevice=' + fDevice + '&fCommand=' + fCommand + '&fQuery=' + fQuery + '&fOperand=' + fOperand + '&intentName=' + intentName;
                     process = true;
                     cardName = "EchoSistant Feedback";
                 }
+//-------- Reminder Type Request------------------------------------------------------------------
+                else if (intentName == "message"){           
+                    var rMessage = event.request.intent.slots.ttstext.value;
+                    url += 'r?rMessage=' + rMessage  + '&intentName=' + intentName;
+                    process = true;
+                    cardName = "EchoSistant Event Message";
+                } 
+                else if (intentName == "mDetails"){           
+                    var rCalendarName = event.request.intent.slots.calendarName.value;
+                    var rType = event.request.intent.slots.type.value;
+                    var rFrequency = event.request.intent.slots.unit.value;
+                    var rStartingDate = event.request.intent.slots.startingD.value;
+                    var rStartingTime = event.request.intent.slots.startingT.value;
+                    var rEndingDate = event.request.intent.slots.endingD.value;
+                    var rDuration = event.request.intent.slots.duration.value;
+                    var rProfile = event.request.intent.slots.profile.value;
+                    url += 'r?rCalendarName=' + rCalendarName + '&rType=' + rType + '&rFrequency=' + rFrequency + '&rStartingDate=' + rStartingDate + '&rStartingTime=' + rStartingTime + '&rEndingDate=' + rEndingDate + '&rDuration=' + rDuration + '&intentName=' + intentName;
+                    process = true;
+                    cardName = "EchoSistant Event Details";
+                }                
 //-------- TTS Type Request------------------------------------------------------------------
                 else if (intentName != "main" || intentName != "security" || intentName != "feedback") {
                     var ttstext = event.request.intent.slots.ttstext.value;
@@ -161,7 +180,7 @@ exports.handler = function( event, context ) {
                         }
                         else if (pMuteAlexa === true && pTryAgain !== true) {
                             areWeDone=true;
-                            return output("", context, cardName, areWeDone);
+                            //return output("", context, cardName, areWeDone);
                         }    
                         else if (pContCmds === true && pContCmdsR == "profile" ) { 
                             areWeDone=false;
