@@ -6,7 +6,7 @@
  								DON'T FORGET TO UPDATE RELEASE NUMBER!!!!!
  
  ************************************ FOR INTERNAL USE ONLY ******************************************************
- *		3/29/2017		Version:4.0 R.0.3.3a	change to virtual person commands
+ *		3/29/2017		Version:4.0 R.0.3.3b	change to virtual person commands
  *		3/28/2017		Version:4.0 R.0.3.3		minor bug fixes
  *		3/21/2017		Version:4.0 R.0.3.2		minor bug fixes
  *		3/18/2017		Version:4.0 R.0.3.1c	Addition of the Zwave Thermostat Manager Add-On Module and feedback bug fix
@@ -42,7 +42,7 @@ private def textVersion() {
 	def text = "4.0"
 }
 private release() {
-    def text = "R.0.3.3a"
+    def text = "R.0.3.3b"
 }
 /**********************************************************************************************************************************************/
 preferences {   
@@ -3755,11 +3755,11 @@ private getCommand(command, unit) {
             }
        }     
    //case "Virtual Person     
-            if (command == "check in" || command == "checking in"|| command == "checked in" || command == "arrived" || command == "arriving" || command == "here"){
+            if (command == "check in" || command == "checking in"|| command == "checked in" || command == "arrived" || command == "arriving"){
             	command = "arrived"
                 deviceType = "cPresence" //"virtualPerson"
             }
-            if (command == "check out" || command == "checking out"|| command == "checked out" || command == "departing"){
+            if (command == "check out" || command == "checking out"|| command == "checked out" || command == "departed" || command == "departing" || command == "leaving" || command == "left"){
             	command = "departed"
                 deviceType = "cPresence"
             }    
