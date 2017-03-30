@@ -902,7 +902,7 @@ def feedbackHandler() {
 		return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]       
     }
     
-//try {
+try {
 
     if (fDevice == "undefined" && fQuery == "undefined" && fOperand == "undefined" && fCommand == "undefined") {
 		outputTxt = "Sorry, I didn't get that, "
@@ -1610,14 +1610,14 @@ def feedbackHandler() {
             	return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
         }
     } 
-/*
+
 }catch (Throwable t) {
         log.error t
         outputTxt = "Oh no, something went wrong. If this happens again, please reach out for help!"
         state.pTryAgain = true
         return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
 }
-*/
+
 }
 /************************************************************************************************************
    DEVICE CONTROL - from Lambda via page c
@@ -1650,7 +1650,7 @@ def controlDevices() {
 	def ctProcess = true	
     state.pTryAgain = false 
 
-//try {
+try {
 
     if (ctIntentName == "main") {
     	if (ctCommand == "this is a test"){
@@ -2271,14 +2271,14 @@ def controlDevices() {
 		state.pTryAgain = true
 		return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
     }
-/*
+
        } catch (Throwable t) {
         log.error t
         outputTxt = "Oh no, something went wrong. If this happens again, please reach out for help!"
         state.pTryAgain = true
         return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
 	}
-*/    
+    
 }
 /************************************************************************************************************
    DEVICE CONTROL HANDLER
@@ -4550,7 +4550,7 @@ def mGetWeatherUpdates(){
     def weatherData = [:]
     def data = [:]
    	def result
-    //try {
+    try {
         //hourly updates
             def cWeather = getWeatherFeature("hourly", settings.wZipCode)
             def cWeatherCondition = cWeather.hourly_forecast[0].condition
@@ -4606,13 +4606,13 @@ def mGetWeatherUpdates(){
                         }
                 }
                 log.info "refreshed hourly weather forecast: past forecast = ${pastWeather}; new forecast = ${weatherData}"  
-    /*
+    
     }
 	catch (Throwable t) {
 	log.error t
 	return result
 	}
-    */
+    
 }
 /*^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 X 																											X
