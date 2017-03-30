@@ -1,23 +1,53 @@
 LIST_OF_COMMANDS
 
-departing
+activate
+all off
 arrived
-has arrived
 arriving
+brighten
 brighter
+cancel
+change
+changed
 check in
-checked in  
-checking in
 check out
+checked in  
 checked out
+checking in
 checking out
+chilling
+cleaning
+close
 closed
 colder
+color
+concentrate
+concentrating
 cooler
 darker
-hotter
+deactivate
+decrease
+delete
+departed
+departing
+dim
+disable
 down
+enable
+energize
+feeling lucky
+feeling romantic
 freezing
+going home
+high
+hotter
+increase
+leaving
+left
+lock
+low
+medium
+mute
 not bright enough
 not cold enough
 not dark enough
@@ -25,66 +55,40 @@ not hot enough
 not loud enough
 off
 on
+open
+play
+quiet
+reading
+relax
+relaxing
 repeat
+replace
+replaced
+run
+slow down
+speed up
+start
+stop
+switch
+this is a test
 too bright
 too chilly
 too cold
 too dark
+too fast
 too hot
 too loud
-too warm
-too fast
-too slow
 too quiet
+too slow
+too warm
+trigger 
+try again
+unlock
+unmute
 up
 warmer
-increase
-decrease
-dim
-brighten
-mute
-unmute
-quiet
-cancel
-run
-trigger 
-change
-changed
-open
-close
-lock
-unlock
-speed up
-slow down
-stop
-disable
-enable
-start
-high
-low
-medium
-activate
-deactivate
-replace
-replaced
-try again
-switch
-all off
-reading
 working
-relax
-relaxing
-chilling
-energize
-cleaning
-concentrate
-concentrating
-feeling lucky
-feeling romantic
-this is a test
-color
-play
-delete
+
 
 
 LIST_OF_GROUPS
@@ -217,6 +221,7 @@ wind intensity
 window
 windows
 windy
+
 
 
 LIST_OF_QUERIES
