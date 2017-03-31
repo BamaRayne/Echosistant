@@ -261,13 +261,13 @@ page name: "mIntent"
                         dynamicPage (name: "mSecuritySuite", title: "", install: true, uninstall: false) {
                             if (childApps?.size()) {  
                                 section("Security Suite",  uninstall: false){
-                                    app(name: "security", appName: "SecuritySuite", namespace: "Echo", title: "Configure Security Suite", multiple: false,  uninstall: false)
+                                    app(name: "security", appName: "SecuritySuite", namespace: "Echo", title: "Configure Security Suite", multiple: true,  uninstall: false)
                                 }
                             }
                             else {
                                 section("Security Suite",  uninstall: false){
                                     paragraph "NOTE : Looks like you haven't created any Profiles yet.\n \nPlease make sure you have installed the Rooms Smart App Add-on before creating a new Room!"
-                                    app(name: "security", appName: "SecuritySuite", namespace: "Echo", title: "Configure Security Suite", multiple: false,  uninstall: false)
+                                    app(name: "security", appName: "SecuritySuite", namespace: "Echo", title: "Configure Security Suite", multiple: true,  uninstall: false)
                                 }
                             }
                        }
