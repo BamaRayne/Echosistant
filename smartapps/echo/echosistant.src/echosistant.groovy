@@ -1,11 +1,14 @@
 /* 
  * EchoSistant - The Ultimate Voice and Text Messaging Assistant Using Your Alexa Enabled Device.
  
+ 
  ************************************ FOR INTERNAL USE ONLY ******************************************************
 							
  								DON'T FORGET TO UPDATE RELEASE NUMBER!!!!!
  
  ************************************ FOR INTERNAL USE ONLY ******************************************************
+ *
+ *		4/03/2017		Version:4.0 R.0.3.3c 	Bug Fixes and various other things
  *		3/29/2017		Version:4.0 R.0.3.3b	change to virtual person commands
  *		3/28/2017		Version:4.0 R.0.3.3		minor bug fixes
  *		3/21/2017		Version:4.0 R.0.3.2		minor bug fixes
@@ -29,7 +32,7 @@ definition(
 	name			: "EchoSistant",
     namespace		: "Echo",
     author			: "JH/BD",
-	description		: "Version 4.1. The Ultimate Voice Controlled Assistant Using Alexa Enabled Devices.",
+	description		: "The Ultimate Voice Controlled Assistant Using Alexa Enabled Devices.",
 	category		: "My Apps",
     singleInstance	: true,
 	iconUrl			: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/app-Echosistant.png",
@@ -42,7 +45,7 @@ private def textVersion() {
 	def text = "4.0"
 }
 private release() {
-    def text = "R.0.3.3b"
+    def text = "R.0.3.3c"
 }
 /**********************************************************************************************************************************************/
 preferences {   
@@ -68,6 +71,7 @@ preferences {
                 	page name: "mDashConfig"
                     page name: "pageTwo"
                     page name: "mWeatherConfig"
+                    page name: "scheduled"
 }            
 //dynamic page methods
 page name: "mainParentPage"
@@ -220,9 +224,9 @@ page name: "mIntent"
                             	if(uPIN_L == true)  {paragraph "You can also say: Alexa enable/disable the pin number for Locks"}                             
                     }
                 }
-                    section ("Access Security Suite") {
-                        href "mSecuritySuite", title: "Tap to configure your Home Security Suite module", description: ""
-                    } 
+// Moved to                   section ("Access Security Suite") {
+// location of                       href "mSecuritySuite", title: "Tap to configure your Home Security Suite module", description: ""
+// other profiles                   } 
                         	
                 section ("Smart Home Monitor Status Change Feedback", hideWhenEmpty: true, hideable: true, hidden: true){
                     input "fSecFeed", "bool", title: "Activate SHM status change announcements.", default: false, submitOnChange: true
@@ -260,13 +264,13 @@ page name: "mIntent"
                         dynamicPage (name: "mSecuritySuite", title: "", install: true, uninstall: false) {
                             if (childApps?.size()) {  
                                 section("Security Suite",  uninstall: false){
-                                    app(name: "security", appName: "SecuritySuite", namespace: "Echo", title: "Configure Security Suite", multiple: false,  uninstall: false)
+                                    app(name: "security", appName: "SecuritySuite", namespace: "Echo", title: "Configure Security Suite", multiple: true,  uninstall: false)
                                 }
                             }
                             else {
                                 section("Security Suite",  uninstall: false){
                                     paragraph "NOTE : Looks like you haven't created any Profiles yet.\n \nPlease make sure you have installed the Rooms Smart App Add-on before creating a new Room!"
-                                    app(name: "security", appName: "SecuritySuite", namespace: "Echo", title: "Configure Security Suite", multiple: false,  uninstall: false)
+                                    app(name: "security", appName: "SecuritySuite", namespace: "Echo", title: "Configure Security Suite", multiple: true,  uninstall: false)
                                 }
                             }
                        }
@@ -274,53 +278,32 @@ page name: "mIntent"
 	page name: "mProfiles"    
         def mProfiles() {
             dynamicPage(name: "mProfiles", title:"", install: true, uninstall: false) {
-				section ("Messaging & Control") {
+				
+                section ("Messaging & Control (${getChildSize("Profiles")})") {
                 	href "mMainProfile", title: "View and Create Messaging & Control Profiles...", description: none
                     }
 				if (notifyOn) {
-        			section ("Notifications & Reporting") {
+        			section ("Notifications & Reporting (${getChildSize("NotificationProfile")})") {
   						href "mNotifyProfile", title: "View and Create Notification & Reporting Profiles...", description: none
 					}
+                }               
                 if (thermoOn) {
-                	section ("Climate Control") {
+                	section ("Climate Control (${getChildSize("ThermoManager")})") {
                     	href "mThermoManager", title: "View and Create Climate Control Profiles...", description: none
                     }    
 				}
+				if (remindOn) {
+        			section ("Reminders & Events") {
+  						app(name: "reminder", appName: "Reminders", namespace: "Echo", title: "Access Reminders & Events...", multiple: false,  uninstall: false)
+					}
+                }    
+                if (securityOn) {
+                	section ("Security Suite") {
+                    	href "mSecuritySuite", title: "View and Configure the Security Suite Profiles...", description: ""
+                    }    
+                }                   
             }            
 		}
-	}
-    page name: "mThermoManager"
-    		def mThermoManager() {
-            	dynamicPage (name: "mThermoManager", title: "", install: true, uninstall: false) {
-                	if (childApps?.size()) {
-                    	section("Climate Control", uninstall: false){
-                        	app(name: "ZWave Thermostat Manager", appName: "ThermoManager", namespace: "Echo", title: "View and Create Climate Control Profiles...", multiple: true, uninstall: false)
-                            }
-                        }
-                        else {
-                        	section("Zwave Thermostat Manager", uninstall: false){
-                            paragraph "NOTE: Looks like you haven't initialized the Thermostat Manager Add-on yet.\n \nPlease make sure you have installed the Echo : Thermostat Manager Add-on before creating a new Room!"
-                        	app(name: "ZWave Thermostat Manager", appName: "ThermoManager", namespace: "Echo", title: "View and Create Climate Control Profiles...", multiple: true, uninstall: false)
-                        }
-                    }
-             	}
-	        }
-		page name: "mNotifyProfile"    
-            def mNotifyProfile() {
-                dynamicPage (name: "mNotifyProfile", title: "", install: true, uninstall: false) {
-                    if (childApps?.size()) {  
-                        section("Notifications & Reporting",  uninstall: false){
-                            app(name: "notification", appName: "NotificationProfile", namespace: "Echo", title: "Create a new Notification & Reporting Profile", multiple: true,  uninstall: false)
-                        }
-                    }
-                    else {
-                        section("Notifications & Reporting",  uninstall: false){
-                            paragraph "NOTE: Looks like you haven't created any Notifications yet.\n \nPlease make sure you have installed the Echo : NotificationProfile Add-on before creating a new Room!"
-                            app(name: "notification", appName: "NotificationProfile", namespace: "Echo", title: "Create a new Notification & Reporting Profile", multiple: true,  uninstall: false)
-                        }
-                    }
-             	}
-	        }
         page name: "mMainProfile"    
             def mMainProfile() {
                 dynamicPage (name: "mMainProfile", title: "", install: true, uninstall: false) {
@@ -336,7 +319,40 @@ page name: "mIntent"
 						}
 					}
 				}
-            }        
+            }  
+		page name: "mNotifyProfile"    
+            def mNotifyProfile() {
+                dynamicPage (name: "mNotifyProfile", title: "", install: true, uninstall: false) {
+                    if (childApps?.size()) {  
+                        section("Notifications & Reporting",  uninstall: false){
+                            app(name: "notification", appName: "NotificationProfile", namespace: "Echo", title: "Create a new Notification & Reporting Profile", multiple: true,  uninstall: false)
+                        }
+                    }
+                    else {
+                        section("Notifications & Reporting",  uninstall: false){
+                            paragraph "NOTE: Looks like you haven't created any Notifications yet.\n \nPlease make sure you have installed the Echo : NotificationProfile Add-on before creating a new Room!"
+                            app(name: "notification", appName: "NotificationProfile", namespace: "Echo", title: "Create a new Notification & Reporting Profile", multiple: true,  uninstall: false)
+                        }
+                    }
+             	}
+	        }       
+    page name: "mThermoManager"
+    		def mThermoManager() {
+            	dynamicPage (name: "mThermoManager", title: "", install: true, uninstall: false) {
+                	if (childApps?.size()) {
+                    	section("Climate Control", uninstall: false){
+                        	app(name: "ZWave Thermostat Manager", appName: "ThermoManager", namespace: "Echo", title: "View and Create Climate Control Profiles...", multiple: true, uninstall: false)
+                            }
+                        }
+                        else {
+                        	section("Climate Control", uninstall: false){
+                            paragraph "NOTE: Looks like you haven't initialized the Thermostat Manager Add-on yet.\n \nPlease make sure you have installed the Echo : Thermostat Manager Add-on before creating a new Room!"
+                        	app(name: "ZWave Thermostat Manager", appName: "ThermoManager", namespace: "Echo", title: "View and Create Climate Control Profiles...", multiple: true, uninstall: false)
+                        }
+                    }
+             	}
+	        }
+        
 page name: "mSettings"  
 	def mSettings(){
         dynamicPage(name: "mSettings", uninstall: true) {
@@ -461,8 +477,9 @@ page name: "mSupport"
         	section ("EchoSistant Modules") {
             	paragraph "For the notifications and room feedback to be operational, they must be installed in the ST IDE and the toggles below must be activated"
                 input "notifyOn", "bool", title: "Is the Notifications Module Installed? ", required: true, defaultValue: false
- 				input "securityOn", "bool", title: "Is the Security Suite Module Installed?", required: true, defaultValue: false
-                input "thermoOn", "bool", title: "Is the Zwave Thermostat Manager Module Installed?", required: true, defaultValue: false
+                input "remindOn", "bool", title: "Is the Reminders Module Installed? ", required: true, defaultValue: false
+                input "securityOn", "bool", title: "Is the Security Suite Module Installed?", required: true, defaultValue: false
+                input "thermoOn", "bool", title: "Is the Climate Control Module Installed?", required: true, defaultValue: false
                 }
                 section ("Amazon AWS Skill Details") {
 					href "mSkill", title: "Tap to view setup data for the AWS Main Intent Skill...", description: ""
@@ -504,8 +521,11 @@ page name: "mBonus"
 page name: "mDashboard"
 	def mDashboard(){
         dynamicPage(name: "mDashboard", uninstall: false) {
+        section("Scheduled Reminders and Events"){
+        	href "scheduled", title: "Tap here to view scheduled reminders and events", description: "", state: complete
+            }
         if (mLocalWeather) {
-            section("Today's Forecat"){
+            section("Today's Forecast"){
                 paragraph (mGetWeather())
         }
         }
@@ -563,7 +583,25 @@ page name: "mDashboard"
             	paragraph "The temperature of the ${tempSens5} is ${Sens5temp}°."
 			}
 		} 
-	} 
+	}
+page name: "scheduled"  // display scheduled events on the dashboard add by JH 3/26/2017
+	def scheduled(){
+    	dynamicPage(name: "scheduled", uninstall: false) {
+    	def remMsg = state.esEvent.eText
+        def remDate = state.esEvent.eStartingDate
+        def remTime = state.esEvent.eStartingTime
+    	section ("Scheduled Events") {
+        	if (state.filterNotif != null) {
+            paragraph "${state.filterNotif}"
+            }
+        }
+        section ("Upcoming Reminders") {
+			if (remMsg != null) {
+			paragraph "Reminder Scheduled: $remMsg on $remDate at $remTime"
+            }
+    	}
+    }    
+}
 page name: "mDashConfig"
 	def mDashConfig(){
         dynamicPage(name: "mDashConfig", uninstall: false) {
@@ -616,7 +654,8 @@ mappings {
     path("/b") { action: [GET: "processBegin"] }
 	path("/c") { action: [GET: "controlDevices"] }
 	path("/f") { action: [GET: "feedbackHandler"] }
-    path("/s") { action: [GET: "controlSecurity"] }
+	path("/r") { action: [GET: "remindersHandler"] }
+	path("/s") { action: [GET: "controlSecurity"] }
 	path("/t") { action: [GET: "processTts"] }
 }
 /*************************************************************************************************************
@@ -651,11 +690,13 @@ def installed() {
 	if (debug) log.debug "Installed with settings: ${settings}"
     state.ParentRelease = release()
     runEvery1Hour(mGetWeatherUpdates)
+    //Reminders
+    state.esEvent = [:]
 }
 def updated() { 
 	if (debug) log.debug "Updated with settings: ${settings}"
     unsubscribe()
-    unschedule("null")
+    state.esEvent = [:]
     initialize()
 }
 def initialize() {
@@ -677,9 +718,9 @@ def initialize() {
 			//def event = [name:"alarmSystemStatus", value: location.currentState("alarmSystemStatus").value, //removed as event no longer used // ...2/18/17 Bobby 
 			//			displayed: true, description: "System Status is ${evt.value}"]
         //State Variables            
-            state.lastMessage = null
-            state.lastIntent  = null
-            state.lastTime  = null
+//            state.lastMessage = null
+//            state.lastIntent  = null
+//            state.lastTime  = null
             state.lambdaReleaseTxt = "Not Set"
             state.lambdaReleaseDt = "Not Set" 
             state.lambdatextVersion = "Not Set"
@@ -700,11 +741,13 @@ def initialize() {
             state.pinTry = null
         //Other Settings
             state.scheduledHandler
-            state.filterNotif = null
-            state.lastAction = null
-			state.lastActivity = null
-			unschedule("startLoop")
-            unschedule("continueLoop")            
+//            state.filterNotif = null
+//            state.lastAction = null
+//			state.lastActivity = null
+			state.pendingConfirmation = false
+            unschedule("startLoop")
+            unschedule("continueLoop")
+
             
 	}
 /************************************************************************************************************
@@ -718,6 +761,19 @@ def childUninstalled() {
 	if (debug) log.debug "Profile has been deleted, refreshing Profiles for CoRE, ${getChildApps()*.label}"
     sendLocationEvent(name: "echoSistant", value: "refresh", data: [profiles: getProfileList()] , isStateChange: true, descriptionText: "echoSistant Profile list refresh")
 } 
+
+def getChildSize(child) {
+	def childList = []
+	def childMasterApp
+    childApps.each {ch ->
+        	childMasterApp = ch.app.name
+		if (childMasterApp == child) {
+        	String children  = (String) ch.label
+            childList += children
+      	}
+ 	}
+    return childList.size()
+}
 /************************************************************************************************************
 		Begining Process - Lambda via page b
 ************************************************************************************************************/
@@ -738,10 +794,9 @@ def processBegin(){
     	state.pTryAgain = false
 
     if (debug) log.debug "^^^^____LAUNCH REQUEST___^^^^" 
-    if (debug) log.debug "Launch Data: (event) = '${event}', (Lambda version) = '${versionTxt}', (Lambda release) = '${releaseTxt}', (ST Main App release) = '${releaseSTtxt}'" +
-    						" (ST Child App Release) = $childRelease}"
+    if (debug) log.debug "Launch Data: (event) = '${event}', (Lambda version) = '${versionTxt}', (Lambda release) = '${releaseTxt}', (ST Main App release) = '${releaseSTtxt}'"
 
-try {
+//try {
     if (event == "noAction") {//event == "AMAZON.NoIntent" removed 1/20/17
     	state.pinTry = null
         state.savedPINdata = null
@@ -860,13 +915,14 @@ try {
 	}
     return ["outputTxt":outputTxt, "pContinue":pContinue, "pShort":pShort, "pPendingAns":pPendingAns, "versionSTtxt":versionSTtxt]	 
 
-} catch (Throwable t) {
+} 
+/*catch (Throwable t) {
         log.error t
         outputTxt = "Oh no, something went wrong. If this happens again, please reach out for help!"
         state.pTryAgain = true
         return ["outputTxt":outputTxt, "pContinue":pContinue, "pShort":pShort, "pPendingAns":pPendingAns, "versionSTtxt":versionSTtxt]
 	}
-}   
+}   */
 /************************************************************************************************************
 		FEEDBACK - from Lambda via page f
 ************************************************************************************************************/
@@ -901,9 +957,7 @@ def feedbackHandler() {
 		outputTxt = "Congratulations! Your EchoSistant is now setup properly" 
 		return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]       
     }
-    
-try {
-
+//try {
     if (fDevice == "undefined" && fQuery == "undefined" && fOperand == "undefined" && fCommand == "undefined") {
 		outputTxt = "Sorry, I didn't get that, "
         state.pTryAgain = true
@@ -1611,14 +1665,14 @@ try {
         }
     } 
 
-}catch (Throwable t) {
+}
+/*catch (Throwable t) {
         log.error t
         outputTxt = "Oh no, something went wrong. If this happens again, please reach out for help!"
         state.pTryAgain = true
         return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
-}
-
-}
+	}
+}	*/
 /************************************************************************************************************
    DEVICE CONTROL - from Lambda via page c
 ************************************************************************************************************/
@@ -1650,7 +1704,7 @@ def controlDevices() {
 	def ctProcess = true	
     state.pTryAgain = false 
 
-try {
+//try {
 
     if (ctIntentName == "main") {
     	if (ctCommand == "this is a test"){
@@ -1766,7 +1820,7 @@ try {
             if (deviceType == "color"){
             def color = command == "read"  ? "Warm White" : command == "concentrate" ? "Daylight White" : command == "relax" ? "Very Warm White" : command
                 if(ctDevice != "undefined" && ctGroup != "profile"){
-                    def deviceMatch = cSwitch.find {s -> s.label.toLowerCase() == ctDevice.toLowerCase()}
+                    def deviceMatch = cSwitch.find {s -> s.label?.toLowerCase() == ctDevice.toLowerCase()}
                     if(deviceMatch){
                     	def capMatch = deviceMatch.capabilities.name.contains("Color Control") ?: null
                         def availableCommands = deviceMatch.supportedCommands.contains("colorloop") ?: null
@@ -1861,19 +1915,19 @@ try {
                         //def activityId = null 2/11/2017 moved as global variable
                         def dType = null
                             if (settings.cSpeaker?.size()>0) {
-                                deviceMatch = cSpeaker?.find {s -> s.label.toLowerCase() == ctDevice.toLowerCase()}
+                                deviceMatch = cSpeaker?.find {s -> s.label?.toLowerCase() == ctDevice.toLowerCase()}
                                 if(deviceMatch) {
                                 if (debug) log.debug "found a speaker "
                                 dType = "v"}
                             }
                             if (deviceMatch == null && settings.cSynth?.size()>0) {
-                                deviceMatch = cSynth?.find {s -> s.label?.toLowerCase() == ctDevice.toLowerCase()}                 
+                                deviceMatch = cSynth.find {s -> s.label?.toLowerCase() == ctDevice.toLowerCase()}                 
                                 if(deviceMatch) {dType = "v"}
                             }
 							//HARMONY PROCESS//
 							if (deviceMatch == null && settings.cMedia?.size()>0) {
                                 //deviceMatch = cMedia.first()
-                                deviceMatch = cMedia?.find {s -> s.label?.toLowerCase() == ctDevice.toLowerCase()}                 
+                                deviceMatch = cMedia.find {s -> s.label?.toLowerCase() == ctDevice.toLowerCase()}                 
                                 if(deviceMatch) {
                                     dType = "m"
                                 }
@@ -1899,13 +1953,13 @@ try {
                             	dType = "m"
                                 deviceMatch = cMedia?.first()                   
                             }    
-		    	    if (deviceMatch == null && settings.cSwitch?.size()>0 && state.pinTry == null) {
-                                log.error "ctDevice = $ctDevice"
-				deviceMatch = cSwitch?.find {s -> s.label?.toLowerCase() == ctDevice.toLowerCase()}                 
+                            if (deviceMatch == null && settings.cSwitch?.size()>0 && state.pinTry == null) {
+                                def switchProblem
+                                deviceMatch = cSwitch.find {s -> s.label?.toLowerCase() == ctDevice?.toLowerCase()}     
                                 if(deviceMatch) {dType = "s"}
                             }
                             if (deviceMatch == null && settings.cMiscDev?.size()>0 && state.pinTry == null) {
-                                deviceMatch = cMiscDev?.find {s -> s.label?.toLowerCase() == ctDevice.toLowerCase()}                 
+                                deviceMatch = cMiscDev.find {s -> s.label?.toLowerCase() == ctDevice.toLowerCase()}                 
                                 if(deviceMatch) { 
                             //>>>>>>>  CHECK FOR ENABLED PIN <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
                                 if(cPIN && state.usePIN_S == true && deviceMatch) {
@@ -1995,7 +2049,7 @@ try {
     // >>>> THERMOSTAT CONTROL <<<<
             else if (deviceType == "temp") {
                     if (settings.cTstat?.size() > 0) {           
-                        def deviceMatch = cTstat.find {t -> t.label.toLowerCase() == ctDevice.toLowerCase()}
+                        def deviceMatch = cTstat.find {t -> t.label?.toLowerCase() == ctDevice.toLowerCase()}
                         if (deviceMatch) {
                             device = deviceMatch 
                             if(state.usePIN_T == true) { // (THIS PIN VALIDATION HAS BEEN Deprecated as of 1/23/2017)
@@ -2030,7 +2084,7 @@ try {
     // >>>> LOCKS CONTROL <<<<
             else if (deviceType == "lock") {
                 if (settings.cLock?.size()>0) {   
-                    def deviceMatch = cLock.find {l -> l.label.toLowerCase() == ctDevice.toLowerCase()}             
+                    def deviceMatch = cLock.find {l -> l.label?.toLowerCase() == ctDevice.toLowerCase()}             
                     if (deviceMatch) {
                         device = deviceMatch
                     //Check Status
@@ -2074,7 +2128,7 @@ try {
     // >>>> FANS CONTROL <<<<        
             else if (deviceType == "fan") {
                 if (settings.cFan?.size()>0) {     
-                    def deviceMatch = cFan.find {f -> f.label.toLowerCase() == ctDevice.toLowerCase()}
+                    def deviceMatch = cFan.find {f -> f.label?.toLowerCase() == ctDevice.toLowerCase()}
                     if (deviceMatch) {
                             device = deviceMatch
                             if (ctNum && ctUnit == "minutes") {
@@ -2097,7 +2151,7 @@ try {
     // >>>> PRESENCE CHECKIN/CHECKOUT CONTROL <<<<        
             else if (deviceType == "cPresence") {
                 if (settings.cPresence?.size()>0) {     
-                    def deviceMatch = cPresence.find {f -> f.label.toLowerCase() == ctDevice.toLowerCase()}
+                    def deviceMatch = cPresence.find {f -> f.label?.toLowerCase() == ctDevice.toLowerCase()}
                     if (deviceMatch) {
                             device = deviceMatch
                                 delay = false
@@ -2112,8 +2166,8 @@ try {
             else if (deviceType == "door") {
                 if (settings.cDoor?.size()>0 || cWindowCover) {
                 	def devMatchWin = null
-                    def deviceMatch = cDoor.find {d -> d.label.toLowerCase() == ctDevice.toLowerCase()}
-                    	if (!deviceMatch) devMatchWin = cWindowCover.find {d -> d.label.toLowerCase() == ctDevice.toLowerCase()}
+                    def deviceMatch = cDoor.find {d -> d.label?.toLowerCase() == ctDevice.toLowerCase()}
+                    	if (!deviceMatch) devMatchWin = cWindowCover.find {d -> d.label?.toLowerCase() == ctDevice.toLowerCase()}
                     //if (deviceMatch || devMatchWin) {
                         if (deviceMatch){
                             device = deviceMatch
@@ -2172,7 +2226,7 @@ try {
     	// >>>> RELAYS CONTROL <<<<            
                 if (cRelay !=null) {
                 //this is needed for Garage Doors that are set up as relays
-                    def deviceMatch = cRelay.find {s -> s.label.toLowerCase() == ctDevice.toLowerCase()}             
+                    def deviceMatch = cRelay.find {s -> s.label?.toLowerCase() == ctDevice.toLowerCase()}             
                     if (deviceMatch) {
                         device = deviceMatch
                         def pinCheck
@@ -2232,7 +2286,7 @@ try {
     	// >>>> VENTS CONTROL <<<<            
                 if (settings.cVent?.size()>0) {
                 //this is needed to enable open/close command for Vents group
-                    def deviceMatch = cVent.find {s -> s.label.toLowerCase() == ctDevice.toLowerCase()}             
+                    def deviceMatch = cVent.find {s -> s.label?.toLowerCase() == ctDevice.toLowerCase()}             
                     if (deviceMatch) {
                         if (command == "open") {command = "onD"}
                         if (command == "close") {command = "offD"}
@@ -2271,15 +2325,14 @@ try {
 		state.pTryAgain = true
 		return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
     }
-
-       } catch (Throwable t) {
+} 
+       /*catch (Throwable t) {
         log.error t
         outputTxt = "Oh no, something went wrong. If this happens again, please reach out for help!"
         state.pTryAgain = true
         return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
-	}
-    
-}
+	}    
+}	*/
 /************************************************************************************************************
    DEVICE CONTROL HANDLER
 ************************************************************************************************************/      
@@ -2299,9 +2352,9 @@ def controlHandler(data) {
 	if (deviceType == "cSwitch" || deviceType == "cMiscDev") {
     	if (deviceCommand == "on" || deviceCommand == "off") {
             if (delayD == true ) {
-                if(deviceType == "cSwitch") {deviceD = cSwitch?.find {s -> s.label.toLowerCase() == deviceD.toLowerCase()}}
+                if(deviceType == "cSwitch") {deviceD = cSwitch?.find {s -> s.label?.toLowerCase() == deviceD.toLowerCase()}}
                 if (deviceType == "cMiscDev") {
-                	deviceD = cMiscDev?.find {s -> s.label.toLowerCase() == deviceD.toLowerCase()}            
+                	deviceD = cMiscDev?.find {s -> s.label?.toLowerCase() == deviceD.toLowerCase()}            
                 	deviceD."${deviceCommand}"()
                     result = "Ok, turning " + deviceD + " " + deviceCommand 
                 	return result          
@@ -2326,8 +2379,8 @@ def controlHandler(data) {
         }        
         else if (deviceCommand == "increase" || deviceCommand == "decrease" || deviceCommand == "setLevel" || deviceCommand == "set") {
  			if (delayD == true) {
-            	if(deviceType == "cSwitch") {deviceD = cSwitch?.find {s -> s.label.toLowerCase() == deviceD.toLowerCase()}}
-                else if (deviceType == "cMiscDev") {deviceD = cMiscDev?.find {s -> s.label.toLowerCase() == deviceD.toLowerCase()}}            
+            	if(deviceType == "cSwitch") {deviceD = cSwitch?.find {s -> s.label?.toLowerCase() == deviceD.toLowerCase()}}
+                else if (deviceType == "cMiscDev") {deviceD = cMiscDev?.find {s -> s.label?.toLowerCase() == deviceD.toLowerCase()}}            
             }            
             if(state.pContCmdsR == "repeat") {state.pContCmdsR == "level"}
             def currLevel = deviceD.latestValue("level")
@@ -2403,7 +2456,7 @@ def controlHandler(data) {
 	}
 	else if (deviceType == "cTstat") {
  		if (delayD == true || state.pinTry != null) {  
-                deviceD = cTstat.find {t -> t.label.toLowerCase() == deviceD.toLowerCase()} 
+                deviceD = cTstat.find {t -> t.label?.toLowerCase() == deviceD.toLowerCase()} 
         }
         state.pinTry = null
     	def currentMode = deviceD.latestValue("thermostatMode")
@@ -2445,6 +2498,16 @@ def controlHandler(data) {
                     	return result 
                     }
 		}
+        if (deviceCommand == "off") {
+        	deviceD?."off"()
+            result = "Ok, turning off the " + deviceD
+            return result
+            }
+        if (deviceCommand == "on") {
+        	deviceD?."auto"()
+            result = "Ok, turning the " + deviceD + " to auto mode"
+            return result
+            }    
 		if (deviceCommand == "increase") {
 			newSetPoint = currentTMP + cTemperature
 			newSetPoint = newSetPoint < 60 ? 60 : newSetPoint >85 ? 85 : newSetPoint
@@ -2522,8 +2585,8 @@ def controlHandler(data) {
         }
         state.pinTry = null
    		deviceD."${deviceCommand}"()
-        if (deviceCommand == "arrived") result = "Ok, " + deviceD + " is here"
-        else if (deviceCommand == "departed") result = "Ok, " + deviceD + " is leaving"                  
+        if (deviceCommand == "arrived") result = "Ok, checking in " + deviceD
+        else if (deviceCommand == "departed") result = "Ok, checking out  " + deviceD                    
         if (delayD == false) {return result}  
 	}
     
@@ -2739,7 +2802,7 @@ def controlSecurity(param) {
         					 " (type) = '${type}', (sControl) = '${control}',(pintentName) = '${pintentName}'"
 	def sProcess = true
     state.pTryAgain = false
-try {   
+//try {   
     if (pintentName == "security") { 
     log.warn "security intent"
 		if (ptts == "this is a test"){
@@ -2913,14 +2976,14 @@ try {
             return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
     }
 
-    } catch (Throwable t) {
+    } 
+    /*catch (Throwable t) {
         log.error t
         outputTxt = "Oh no, something went wrong. If this happens again, please reach out for help!"
         state.pTryAgain = true
         return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
 	}
-
-}
+}	*/
 /************************************************************************************************************
 	SECURITY CONTROL HANDLER
 ************************************************************************************************************/ 
@@ -2964,7 +3027,7 @@ def processTts() {
                 
         pContCmdsR = "profile"
 		def tProcess = true
-try {
+//try {
         
 	if (ptts == "this is a test"){
 		outputTxt = "Congratulations! Your EchoSistant is now setup properly" 
@@ -3023,14 +3086,450 @@ try {
 			return ["outputTxt":outputTxt, "pContCmds":pContCmds, "pShort":state.pShort, "pContCmdsR":pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]              
     	}
 
-} catch (Throwable t) {
+} 
+/*catch (Throwable t) {
         log.error t
         outputTxt = "Oh no, something went wrong. If this happens again, please reach out for help!"
         state.pTryAgain = true
         return ["outputTxt":outputTxt, "pContCmds":pContCmds, "pShort":state.pShort, "pContCmdsR":pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
     } 
+}	*/
+/************************************************************************************************************
+   REMINDERS AND EVENTS PROCESS - Lambda via page r
+************************************************************************************************************/
+def remindersHandler() {
+		//LAMBDA VARIABLES
+	def rCalendarName = params.rCalendarName 
+	def rProfile = params.rProfile   
+	def rType = params.rType //type of event
+	def rFrequency = params.rFrequency //units/frequency 
+	def rStartingDate = params.rStartingDate 
+	def rStartingTime = params.rStartingTime 
+	def rDuration = params.rDuration // number
+	def rMessage = params.rMessage  
+        //OTHER VARIABLES
+        def String outputTxt = (String) null 
+ 		def String pContCmdsR = (String) null
+        def pContCmds = false
+        def pTryAgain = false
+        def pPIN = false
+        def String messageType  = state.esEvent.eType //(String) null
+		def multiCalendar = false
+		def String calendar = (String) null
+        String newTime
+        String newDate
+        def data = [:]
+//try {
+        if (debug) log.debug 	"Reminders & Events Profile Data: (rCalendarName) = $rCalendarName,(rType) = $rType, (rFrequency) = $rFrequency, (rStartingDate) = $rStartingDate," +
+        						" (rStartingTime) = $rStartingTime,(rDuration) = $rDuration,(rMessage) = $rMessage"
+	
+    if(!state.esEvent.eStartingDate && rStartingDate != "undefined" &&  rStartingDate != null) {
+		state.esEvent.eStartingDate = rStartingDate
+	}
 
-}
+//WHEN TYPE COMES IN    
+    if (rType != "undefined" &&  rType != null){
+    def String missingField = (String) null 
+    	rType = rType.contains("event") ? "event" : rType.contains("recurring") ? "recurring" : rType.contains("a reminder") ? "reminder" : rType
+        state.esEvent.eType = rType
+        if(rStartingDate && !state.esEvent.eStartingDate && rStartingDate != "undefined" ) state.esEvent.eStartingDate = rStartingDate
+        if(rStartingTime && !state.esEvent.eStartingTime && rStartingTime != "undefined") state.esEvent.eStartingTime = rStartingTime
+			if(state.esEvent.eStartingDate && state.esEvent.eStartingTime){
+                def olddate = state.esEvent.eStartingDate + " " + state.esEvent.eStartingTime
+                Date date = Date.parse("yyyy-MM-dd HH:mm",olddate)
+                newTime = date.format( "h:mm aa" )
+                newDate = date.format( 'MM/dd/yyyy' )
+        	}
+		if(state.esEvent.eType == "event"){
+        	if (state.esEvent.eText && state.esEvent.eStartingDate && state.esEvent.eStartingTime && state.esEvent.eCalendar && state.esEvent.eDuration){
+            	outputTxt = "Ok, scheduling event to $state.esEvent.eText on $newDate at $newTime, is that correct?"
+        	}
+        	else missingField = !state.esEvent.eText ? "What is the event?" : !state.esEvent.eStartingDate ? "Starting on what date?" : !state.esEvent.eStartingTime ? "Starting at what time?" : !state.esEvent.eCalendar ? "Which calendar?" : !state.esEvent.eDuration ? "For fow long?" : null
+		}
+        if(state.esEvent.eType == "reminder") {
+			if (state.esEvent.eText && state.esEvent.eStartingDate && state.esEvent.eStartingTime){
+					outputTxt = "Ok, scheduling reminder to $state.esEvent.eText on $newDate at $newTime, is that correct?"
+            }
+            else missingField = !state.esEvent.eText ? "What is the event?" : !state.esEvent.eStartingDate ? "Starting on what date?" : !state.esEvent.eStartingTime ? "Starting at what time?" : null 
+		}
+        if(state.esEvent.eType == "recurring") {
+			if (state.esEvent.eText && state.esEvent.eStartingDate && state.esEvent.eStartingTime && state.esEvent.eFrequency && state.esEvent.eDuration){	            
+				def repeatUnit = rFrequency == "hourly" ? "hours" : rFrequency == "daily" ? "days" : rFrequency == "weekly" ? "days" : rFrequency == "monthly" ? "months" : rFrequency == "yearly" ? "months" : null                    
+                outputTxt = "Ok, scheduling $state.esEvent.eFrequency reminder to $state.esEvent.eText every $state.esEvent.eDuration"+
+                    			" $repeatUnit, starting on $newDate at $newTime, is that correct?"            
+			}
+			else missingField = !state.esEvent.eText ? "What is the event?" : !state.esEvent.eStartingDate ? "Starting on what date?" : !state.esEvent.eStartingTime ? "Starting at what time?" : !state.esEvent.eDuration ? "For fow long?" : null
+    	}
+		if(missingField) {
+        	log.warn "missingField = $missingField"
+			outputTxt = missingField
+		}
+        pContCmdsR = "feedback" 
+		return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN] 
+    }
+    if(state.esEvent.eText && state.esEvent.eType == "quickReminder" && !state.esEvent.eDuration){
+//WHEN DURATION COMES IN
+        if(rDuration != null && rDuration != "undefined" && rFrequency != "undefined" && rFrequency != null){
+			state.esEvent.eDuration = rDuration
+			state.esEvent.eFrequency = rFrequency
+            outputTxt = "Ok, scheduling quick reminder to $state.esEvent.eText$state.esEvent.eDuration $state.esEvent.eFrequency is that correct?"
+			pContCmdsR = "feedback"            
+    	}
+        else {
+            outputTxt = "Sorry, I still didn't get the number, "
+            pTryAgain = true
+        }
+		return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN] 
+	}
+//WHEN MESSAGE COMES IN
+    if (rMessage != "undefined" &&  rMessage != null){
+    	def tts = rMessage
+        def quickMessage
+        int iLength
+        def test = tts.contains("this is a test") ? true : tts.contains("a test") ? true : false 
+        if (test){
+			outputTxt = "Congratulations! Your EchoSistant is now setup properly" 
+			return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]       
+   		}
+        def reminder = tts.startsWith("set a reminder to") ? "set a reminder to " : tts.startsWith("set reminder to") ? "set reminder to " : null
+        if (reminder == null) reminder = tts.startsWith("remind me to") ? "remind me to " : tts.startsWith("set the reminder to") ? "set the reminder to " : null 
+        if (reminder == null) reminder = tts.startsWith("i need to") ? "i need to " : tts.startsWith("need to") ? "need to " : tts.startsWith("I need to") ? "I need to " : null 
+		if (reminder == null) reminder = tts.startsWith("add a reminder to") ? "add a reminder to " : tts.startsWith("add reminder to") ? "add reminder to " : null         
+       	if (reminder == null) reminder = tts.startsWith("schedule reminder to") ? "schedule reminder to " : tts.startsWith("add the reminder to") ? "add the reminder to " : null 	
+        if (reminder == null) reminder = tts.startsWith("schedule a reminder to") ? "schedule a reminder to " : tts.startsWith("schedule the reminder to") ? "schedule the reminder to " : null
+        if (reminder == null) reminder = tts.startsWith("set a reminder") ? "set a reminder " : tts.startsWith("set reminder") ? "set reminder " : null
+        if (reminder == null) reminder = tts.startsWith("remind me") ? "remind me " : tts.startsWith("set the reminder") ? "set the reminder " : null 
+		if (reminder == null) reminder = tts.startsWith("add a reminder") ? "add a reminder " : tts.startsWith("add reminder") ? "add reminder " : null         
+       	if (reminder == null) reminder = tts.startsWith("schedule reminder") ? "schedule reminder " : tts.startsWith("add the reminder") ? "add the reminder " : null 	
+        if (reminder == null) reminder = tts.startsWith("schedule a reminder") ? "schedule a reminder " : tts.startsWith("schedule the reminder") ? "schedule the reminder " : null           
+		//QUICK REMINDERS
+        def quickReminder = tts.endsWith("minute") ? "minutes" : tts.endsWith("minutes") ? "minutes" : tts.endsWith("hours") ? "hours" : tts.endsWith("hour") ? "hours" : tts.endsWith("day") ? "days" : tts.endsWith("days") ? "days" : "undefined"
+        def quickReplace = tts.endsWith("minute") ? "minute" : tts.endsWith("minutes") ? "minutes" : tts.endsWith("hours") ? "hours" : tts.endsWith("hour") ? "hour" : tts.endsWith("day") ? "day" : tts.endsWith("days") ? "days" : "undefined"
+        tts = tts.replace("one", "1").replace("two", "2").replace("three", "3").replace("four", "4").replace("five", "5").replace("six", "6").replace("seven", "7").replace("eight", "8").replace("nine", "9")
+        def length = tts.findAll( /\d+/ )*.toInteger()
+			if(length[0] !=null && quickReminder !="undefined") {
+            	iLength = (int)length.get(0)                    
+                if(reminder){
+                	quickMessage = tts.replace("${reminder}", "").replace("in ${iLength}", "").replace("${quickReplace}", "")
+                }
+                else{
+               		quickMessage = tts ? tts.replace("in ${iLength}", "").replace("${quickReplace}", "") : null
+            	}
+                if(quickMessage) {
+                    state.esEvent.eText = quickMessage
+                    state.esEvent.eDuration = length[0]
+                    state.esEvent.eFrequency = quickReminder
+                    state.esEvent.eType = "quickReminder"
+                }
+                else {
+                    outputTxt = "sorry, I was unable to get the number,  "
+                    pTryAgain = true
+                    return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN] 
+                }
+            }
+            if(quickReminder !="undefined" && iLength != null){ 
+                outputTxt = "Ok, scheduling quick reminder to $state.esEvent.eText in $state.esEvent.eDuration $state.esEvent.eFrequency, is that correct?"
+				pContCmdsR = "feedback"            
+				return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN] 
+            }   
+		//recurring reminders - fields required: rStartingDate & rStartingTime & rFrequency & rMessage & rDuration 
+            /*
+            What is the reminder? (rMessage)
+            How often? - rFrequency
+            What is the number of X to repeat the reminder? rDuration + rFrequency
+            Starting on what day and time? (rStartingDate & rStartingTime) 
+            */
+        def recurring = tts.startsWith("set a recurring reminder to") ? "set a recurring reminder to " : tts.startsWith("set recurring reminder to") ? "set recurring reminder to " : null
+        if (recurring == null) recurring = tts.startsWith("set the recurring reminder to") ? "set the recurring reminder to " : null 
+		if (recurring == null) recurring = tts.startsWith("add a recurring reminder to") ? "add a recurring reminder to " : tts.startsWith("add recurring reminder to") ? "add recurring reminder to " : null         
+       	if (recurring == null) recurring = tts.startsWith("schedule recurring reminder to") ? "schedule recurring reminder to " : tts.startsWith("add the recurring reminder to") ? "add the recurring reminder to " : null 	
+        if (recurring == null) recurring = tts.startsWith("schedule a recurring reminder to") ? "schedule a recurring reminder to " : tts.startsWith("schedule the recurring reminder to") ? "schedule the recurring reminder to " : null
+        if (recurring == null) recurring = tts.startsWith("set a recurring reminder") ? "set a recurring reminder " : tts.startsWith("set recurring reminder") ? "set recurring reminder " : null
+        if (recurring == null) recurring = tts.startsWith("set the recurring reminder") ? "set the recurring reminder " : null 
+		if (recurring == null) recurring = tts.startsWith("add a recurring reminder") ? "add a recurring reminder " : tts.startsWith("add recurring reminder") ? "add recurring reminder " : null         
+       	if (recurring == null) recurring = tts.startsWith("schedule recurring reminder") ? "schedule recurring reminder " : tts.startsWith("add the recurring reminder") ? "add the recurring reminder " : null 	
+        if (recurring == null) recurring = tts.startsWith("schedule a recurring reminder") ? "schedule a recurring reminder " : tts.startsWith("schedule the recurring reminder") ? "schedule the recurring reminder " : null       
+		//event - fields required: rStartingDate & rStartingTime & rFrequency & rMessage & rDuration (rCalendarName) 
+            /*
+            What is the reminder? (rMessage)
+            Starting on what day and time? (rStartingDate & rStartingTime)
+            For how long? - rDuration + rFrequency
+            Which Calendar? (rStartingDate & rStartingTime) 
+            */        
+        def event = tts.startsWith("add an event to my calendar") ? "add an event to my calendar" : null
+        if (event == null) event = tts.startsWith("add event to my calendar") ? "add event to my calendar" : null
+        if (event == null) event = tts.startsWith("set an event to") ? "set an event to " : tts.startsWith("set event to") ? "set event to " : null
+        if (event == null) event = tts.startsWith("set the event to") ? "set the event to " : null 
+		if (event == null) event = tts.startsWith("add an event to") ? "add an event to " : tts.startsWith("add event to") ? "add event to " : null         
+       	if (event == null) event = tts.startsWith("schedule event to") ? "schedule event to " : tts.startsWith("add the event to") ? "add the event to " : null 	
+        if (event == null) event = tts.startsWith("schedule an event to") ? "schedule an event to " : tts.startsWith("schedule the event to") ? "schedule the event to " : null 
+        if (event == null) event = tts.startsWith("set an event ") ? "set an event" : tts.startsWith("set event ") ? "set event" : null
+        if (event == null) event = tts.startsWith("set the event") ? "set the event " : null 
+		if (event == null) event = tts.startsWith("add an event") ? "add an event " : tts.startsWith("add event") ? "add event " : null         
+       	if (event == null) event = tts.startsWith("schedule event") ? "schedule event " : tts.startsWith("add the event") ? "add the event " : null 	
+        if (event == null) event = tts.startsWith("schedule an event") ? "schedule an event " : tts.startsWith("schedule the event") ? "schedule the event " : null         
+        def message = reminder ? tts.replace("${reminder}", "") : recurring ? tts.replace("${recurring}", "") : event ? tts.replace("${event}", "") : null
+        messageType = messageType ?: reminder ? "reminder" : recurring ? "recurring" : event ? "event" : null
+		log.warn "message type from state: $messageType"
+        if(messageType == "event"){
+            childApps.each { child ->
+            	log.warn " label = $child.label"
+                if(child.label == "Reminders") {
+                def calendars = child.listGCalendars()
+                    multiCalendar = calendars.size() > 1 ? true : false
+                    if(multiCalendar == false){
+                    	state.esEvent.eCalendar = calendars
+                    } 
+                }
+            }
+        }
+        log.warn "multiCalendar = $multiCalendar"
+        log.warn "messageType = $messageType, rMessage = $rMessage, reminder = $reminder, recurring = $recurring,  event = $event, message = $message"
+		state.esEvent.eType = state.esEvent.eType ?: messageType
+		if (message == null) message = rMessage
+            if(!state.esEvent.eStartingDate && !state.esEvent.eStartingTime) {
+                state.esEvent.eText = message
+                outputTxt = "Starting on what day and time?"
+                pContCmdsR = "feedback"
+            }
+            else {
+                if(!state.esEvent.eStartingDate && state.esEvent.eStartingTime ) {
+                    state.esEvent.eText = message
+                    outputTxt = "Starting on what date?"
+                    pContCmdsR = "feedback" 
+                }
+                if (state.esEvent.eStartingDate && !state.esEvent.eStartingTime ) {
+                state.esEvent.eText = message
+                outputTxt = "At what time?"
+                pContCmdsR = "feedback" 
+                }
+                if(state.esEvent.eStartingDate && state.esEvent.eStartingTime && !state.esEvent.eDuration && messageType != "reminder") {
+                    state.esEvent.eText = message
+                    pContCmdsR = "feedback"
+                    if(messageType == "event"){
+                    	outputTxt = "For fow long?"
+                    }
+                    else if (messageType == "recurring"){
+                    	outputTxt = "How often?"
+                    }
+                }
+                if(state.esEvent.eStartingDate && state.esEvent.eStartingTime && state.esEvent.eDuration && !state.esEvent.eCalendar && multiCalendar && messageType == "event") {
+                    state.esEvent.eText = message
+                    outputTxt = "Which Calendar?"
+                    pContCmdsR = "feedback"
+                }
+                if(state.esEvent.eStartingDate && state.esEvent.eStartingTime && messageType == "reminder") {
+                    state.esEvent.eText = message
+                    def olddate = state.esEvent.eStartingDate + " " + state.esEvent.eStartingTime
+                    Date date = Date.parse("yyyy-MM-dd HH:mm",olddate)
+                    newTime = date.format( "h:mm aa" )
+                    newDate = date.format( 'MM/dd/yyyy' )
+            		outputTxt = "Ok, scheduling reminder to $state.esEvent.eText on $newDate at $newTime, is that correct?"
+                    pContCmdsR = "feedback"
+                }                
+                if(!state.esEvent.eType) {
+                    state.esEvent.eText = message
+                	outputTxt = "Sorry, I didn't catch the type of event, is this a reminder, a recurring reminder or, an event?"
+                	pContCmdsR = "feedback"
+                }                   
+                
+            }
+            return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN] 
+    }
+//WHEN STARTING DATE & STARTING TIME COMES IN
+	if (rStartingDate != "undefined" && rStartingTime != "undefined" && rStartingDate != null && rStartingTime != null){
+		state.esEvent.eStartingDate = rStartingDate
+        state.esEvent.eStartingTime = rStartingTime
+        if (messageType == "reminder" && state.esEvent.eStartingDate && state.esEvent.eStartingTime && state.esEvent.eText){
+			if(state.esEvent.eStartingDate && state.esEvent.eStartingTime){
+                def olddate = state.esEvent.eStartingDate + " " + state.esEvent.eStartingTime
+                Date date = Date.parse("yyyy-MM-dd HH:mm",olddate)
+                newTime = date.format( "h:mm aa" )
+                newDate = date.format( 'MM/dd/yyyy' )
+        	}
+            outputTxt = "Ok, scheduling reminder to $state.esEvent.eText on $newDate at $newTime, is that correct?"
+			pContCmdsR = "feedback"
+    	} 
+        if(!state.esEvent.eText) {
+        	outputTxt = "What is the event?"
+        	pContCmdsR = "feedback"
+		}
+        else {
+            if (!state.esEvent.eDuration && messageType != "reminder" && state.esEvent.eType){
+                    pContCmdsR = "feedback"
+                    if(messageType == "event"){
+                    	outputTxt = "For fow long?"
+                    }
+                    else if (messageType == "recurring"){
+                    	outputTxt = "How often?"
+                    }
+            }
+            else{
+            log.warn "eType = $eType"
+            	if(multiCalendar && !state.esEvent.eCalendar && messageType == "event"){
+                	outputTxt = "Which calendar?"
+        			pContCmdsR = "feedback"
+            	}
+                
+                else if (!state.esEvent.eType || state.esEvent.eType == null ){
+                	outputTxt = "Sorry, I didn't catch the type of event, is this a reminder, a recurring reminder or an event?"
+                	pContCmdsR = "feedback"
+               }                 
+           	}
+      	}
+    	return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]     
+ 	}
+    if(rFrequency != "undefined" && rFrequency != null && messageType == "recurring"){
+    	if(rFrequency == "hourly" || rFrequency == "daily" || rFrequency == "monthly" || rFrequency == "weekly"){
+            def repeatUnit = rFrequency == "hourly" ? "hours" : rFrequency == "daily" ? "days" : rFrequency == "weekly" ? "days" : rFrequency == "monthly" ? "months" : rFrequency == "yearly" ? "months" : null
+            log.warn "repeatUnit = $repeatUnit, rFrequency =  $rFrequency, state eDuration = state.esEvent.eDuration"
+            if(!state.esEvent.eDuration){
+                state.esEvent.eFrequency = rFrequency
+            	outputTxt = "What is the number of $repeatUnit to repeat the reminder"
+        		pContCmdsR = "feedback"	
+  				return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]     
+            }
+    	}
+  	}
+	if (rDuration != "undefined" && rDuration != null) {
+    	state.esEvent.eDuration = rDuration
+        	if(state.esEvent.eText && state.esEvent.eStartingDate && state.esEvent.eStartingTime && !state.esEvent.eCalendar && multiCalendar && messageType == "event"){
+                	outputTxt = "Which calendar?"
+        			pContCmdsR = "feedback"           
+            }
+            else {
+            	if(messageType == "recurring"){
+                	def frequency = state.esEvent.eFrequency
+                    def repeatUnit = frequency == "hourly" ? "hours" : frequency == "daily" ? "days" : frequency == "weekly" ? "days" : frequency == "monthly" ? "months" : frequency == "yearly" ? "months" : null
+                    if(state.esEvent.eStartingDate && state.esEvent.eStartingTime){
+                        def olddate = state.esEvent.eStartingDate + " " + state.esEvent.eStartingTime
+                        Date date = Date.parse("yyyy-MM-dd HH:mm",olddate)
+                        newTime = date.format( "h:mm aa" )
+                        newDate = date.format( 'MM/dd/yyyy' )
+                    }
+                    outputTxt = "Ok, scheduling $state.esEvent.eFrequency reminder to $state.esEvent.eText every $state.esEvent.eDuration"+
+                    			" $repeatUnit, starting on $newDate at $newTime, is that correct?"
+            		pContCmdsR = "feedback"
+                }
+                else {
+                	if(messageType == "event"){
+                        if (state.esEvent.eText && state.esEvent.eStartingDate && state.esEvent.eStartingTime && state.esEvent.eCalendar && messageType == "event"){
+                            if(state.esEvent.eStartingDate && state.esEvent.eStartingTime){
+                                def olddate = state.esEvent.eStartingDate + " " + state.esEvent.eStartingTime
+                                Date date = Date.parse("yyyy-MM-dd HH:mm", olddate)
+                                newTime = date.format( "h:mm aa" )
+                                newDate = date.format( 'MM/dd/yyyy' )
+                            }
+                            outputTxt = "Ok, scheduling event to $state.esEvent.eText on $newDate at $newTime, is that correct?"
+                            pContCmdsR = "feedback"                
+                        }
+                        else {
+							def missingField = !state.esEvent.eText ? "What is the event?" : !state.esEvent.eStartingDate ? "Starting on what date?" : !state.esEvent.eStartingTime ? "Starting at what time?" : !state.esEvent.eCalendar ? "Which calendar?" : !state.esEvent.eDuration ? "For fow long?" : null
+							log.warn "missingField = $missingField"
+            				outputTxt = missingField
+							pContCmdsR = "feedback" 			
+            			}
+            		}
+                }
+            }
+  	return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]     
+    }
+    if(rCalendarName != "undefined" && rCalendarName != null && messageType == "event"){
+    	state.esEvent.eCalendar = rCalendarName
+        	if(state.esEvent.eText && state.esEvent.eStartingDate && state.esEvent.eStartingTime && state.esEvent.eDuration){
+                if(state.esEvent.eStartingDate && state.esEvent.eStartingTime){
+                    def olddate = state.esEvent.eStartingDate + " " + state.esEvent.eStartingTime
+                    Date date = Date.parse("yyyy-MM-dd HH:mm",olddate)
+                    newTime = date.format( "h:mm aa" )
+                    newDate = date.format( 'MM/dd/yyyy' )
+                }
+            	outputTxt = "Ok, scheduling event to $state.esEvent.eText on $newDate at $newTime, is that correct?"
+            	pContCmdsR = "feedback"         
+            }
+            else {
+				def missingField = !state.esEvent.eText ? "What is the event?" : !state.esEvent.eStartingDate ? "Starting on what date?" : !state.esEvent.eStartingTime ? "Starting at what time?" : !state.esEvent.eCalendar ? "Which calendar?" : !state.esEvent.eDuration ? "For fow long?" : null
+				log.warn "missingField = $missingField"
+            	outputTxt = missingField
+				pContCmdsR = "feedback" 
+ 			}
+  	return ["outputTxt":outputTxt, "pContCmds":pContCmds, "pShort":state.pShort, "pContCmdsR":pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]     
+    }
+    if (rFrequency == "yes" || rFrequency == "yup" || rFrequency == "yeah" || rFrequency == "you got it" || rFrequency == "no" || rFrequency == "cancel" || rFrequency == "neh" || rFrequency == "nope"){
+		if (rFrequency == "yes" || rFrequency == "yup" || rFrequency == "yeah" || rFrequency == "you got it" ){
+        	def event = messageType == "recurring" ? "${state.esEvent.eFrequency} reminder" : messageType
+            log.warn "event = $event"
+			if(event){
+                if(state.esEvent.eStartingDate && state.esEvent.eStartingTime){
+                    def olddate = state.esEvent.eStartingDate + " " + state.esEvent.eStartingTime
+                    Date date = Date.parse("yyyy-MM-dd HH:mm",olddate)
+                    newTime = date.format( "h:mm aa" )
+                    newDate = date.format( 'MM/dd/yyyy' )
+                }
+                if(event == "event"){
+                	data = ["eCalendar": state.esEvent.eCalendar, "eStartingDate": state.esEvent.eStartingDate , "eStartingTime": state.esEvent.eStartingTime, "eDuration": state.esEvent.eDuration, "eText": state.esEvent.eText]
+                    sendLocationEvent(name: "echoSistant", value: "addEvent", data: data, displayed: true, isStateChange: true, descriptionText: "echoSistant add event request")
+                    outputTxt = "Great! I sent the event to G Cal to be added on your calendar"
+                }
+                else {
+					data = ["eStartingDate": state.esEvent.eStartingDate , "eStartingTime": state.esEvent.eStartingTime, "eDuration": state.esEvent.eDuration, "eFrequency": state.esEvent.eFrequency, "eText": state.esEvent.eText, "eType": state.esEvent.eType]
+            		def sendingTo
+                    childApps.each { child ->
+            			sendingTo = child.label
+                		if(child.label == "Reminders") {
+                			outputTxt = child.profileEvaluate(data)
+						}
+                     }
+					state.pendingConfirmation = true
+				}
+                pContCmds = state.pContCmds
+                state.esEvent = [:]
+                return ["outputTxt":outputTxt, "pContCmds":pContCmds, "pShort":state.pShort, "pContCmdsR":pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN] 
+            }
+            else {
+				def missingField = !state.esEvent.eText ? "What is the event?" : !state.esEvent.eStartingDate ? "Starting on what date?" : !state.esEvent.eStartingTime ? "Starting at what time?" : !state.esEvent.eCalendar ? "Which calendar?" : !state.esEvent.eDuration ? "For fow long?" : null
+				log.warn "missingField = $missingField"
+            	outputTxt = missingField
+				pContCmdsR = "feedback" 
+        	}
+        }
+		else {
+        	if(state.pendingConfirmation == true){
+            	outputTxt = "Ok, I am here when you need me"
+				state.pendingConfirmation = false
+            }
+            else outputTxt = "Ok, canceling"
+            	state.esEvent = [:]
+				pContCmds = false
+            	return ["outputTxt":outputTxt, "pContCmds":pContCmds, "pShort":state.pShort, "pContCmdsR":pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN] 
+    	}
+    } 
+    else {
+		if (messageType == "reminder" && state.esEvent.eStartingDate && state.esEvent.eStartingTime && state.esEvent.eText){
+			outputTxt = "Ok, scheduling reminder to $state.esEvent.eText on $state.esEvent.eStartingDate at $state.esEvent.eStartingTime, is that correct?"
+			pContCmdsR = "feedback"
+    	}
+        else {
+    		outputTxt = "Sorry, I didn't get that"
+    		pTryAgain = true 
+   		}
+    }
+	if(state.pendingConfirmation == true){
+    	if(rProfile != "undefined" && rProfile != null) {
+    		outputTxt = "Ok, forwarding reminder to $rProfile"
+		}
+    	else state.pendingConfirmation = false
+	}
+    return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN] 
+
+
+} 
+/*catch (Throwable t) {
+        log.error t
+        outputTxt = "Oh no, something went wrong. If this happens again, please reach out for help!"
+        state.pTryAgain = true
+        return ["outputTxt":outputTxt, "pContCmds":pContCmds, "pShort":state.pShort, "pContCmdsR":pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
+    } 
+}	*/
 /***********************************************************************************************************
 		SMART HOME MONITOR STATUS AND KEYPAD HANDLER
 ***********************************************************************************************************/
@@ -3274,7 +3773,7 @@ private deviceMatchHandler(fDevice) {
                 def timeText = getTimeVariable(stateTime, deviceType)
                 return ["deviceMatch" : deviceMatch, "deviceType": deviceType, "currState": currState, "tText": timeText.tText, "mainCap": "lock"]
         	}
-        }
+        }        
         if (cPresence){
         deviceMatch =cPresence?.find {d -> d.label.toLowerCase() == fDevice?.toLowerCase()}
             if(deviceMatch)	{
@@ -3421,7 +3920,7 @@ private getCapabilities(cap) {
     def batDetails = [] 
     def result = [:] 
     	state.pTryAgain = false	
-try {
+//try {
 //batteries
 	if (cap == "bat") {
         cMotion?.each 	{ d ->
@@ -3474,14 +3973,16 @@ try {
         result = [listSize: listSize, listBat: listBat]
         return result //dUniqueListString
 	}
-	} catch (Throwable t) {
+	 
+    /*catch (Throwable t) {
         log.error t
         result = "Oh no, something went wrong. If this happens again, please reach out for help!"
         state.pTryAgain = true
         return result
-	}       
+	}
+}	*/    
 //activity	
-try{
+//try{
     if (cap == "act") {    
         cMotion?.each 	{ d ->
         	def stateTime = d.currentState("motion").date.time
@@ -3601,7 +4102,8 @@ try{
         result = [listSize: listSize, listDev: listDev]
         return result //dUniqueListString
 	}
-		}catch(Exception ex) {
+		}
+        /*catch(Exception ex) {
          log.error "exception: $ex"
 		 result = "Looks like you might have an improper built device type that is missing a standard filed."
       	}
@@ -3611,8 +4113,7 @@ try{
         state.pTryAgain = true
         return result
 		}
-
-}
+}	*/
 /************************************************************************************************************
 	CONTROL SUPPORT - PIN HANDLER
 ************************************************************************************************************/ 
@@ -3759,7 +4260,7 @@ private getCommand(command, unit) {
             	command = "arrived"
                 deviceType = "cPresence" //"virtualPerson"
             }
-            if (command == "check out" || command == "checking out"|| command == "checked out" || command == "departed" || command == "departing" || command == "leaving" || command == "left"){
+            if (command == "check out" || command == "checking out"|| command == "checked out"){
             	command = "departed"
                 deviceType = "cPresence"
             }    
@@ -3797,7 +4298,19 @@ private getCommand(command, unit) {
                     deviceType = "color"
                 }
            }
-	//case "Temperature Commands":  
+	//case "Temperature Commands":
+    	if (command == "off") {
+        	if (unit =="heat" || unit =="AC" || unit =="cooling" || unit =="heating") {
+            command = "off"
+            deviceType = "temp"
+        	}
+        }
+        if (command == "on") {
+        	if (unit =="heat" || unit =="AC" || unit =="cooling" || unit =="heating") {
+            command = "on"
+            deviceType = "temp"
+        	}
+        }
         if (command == "colder" || command =="not cold enough" || command =="too hot" || command == "too warm") {
             command = "decrease"
             deviceType = "temp"
@@ -4028,7 +4541,7 @@ private getTimeVariable(date, type) {
     def yesterday = new Date(today -0.1).format("EEEE, MMMM d, yyyy", location.timeZone)
 	def time = new Date(now()).format("h:mm aa", location.timeZone)
     
-    currTime = new Date(date + location.timeZone.rawOffset).format("h:mm aa")                       
+    currTime = new Date(date + location.timeZone.rawOffset).format("hh:mm aa")                       
 	currDate = new Date(date + location.timeZone.rawOffset).format("EEEE, MMMM d, yyyy")
 	currDateShort = new Date(date + location.timeZone.rawOffset).format("EEEE, MMMM d")
     currDate = today == currDate ? "today" : yesterday == currDate ? "yesterday" : currDateShort
@@ -4328,7 +4841,7 @@ private getLastMessageMain() {
 def private mGetWeather(){
 	state.pTryAgain = false
     def result ="Today's weather is not available at the moment, please try again later"
-	try {
+//	try {
     	//daily forecast text
         def weather = getWeatherFeature("forecast", settings.wZipCode)
         def todayWeather = 	weather.forecast.txt_forecast.forecastday[0].fcttext 
@@ -4385,19 +4898,19 @@ def private mGetWeather(){
         log.info "returning Today's forecast result"
         return result
 	}
-    catch (Throwable t) {
+  /*  catch (Throwable t) {
 		log.error t
         state.pTryAgain = true
         return result
 	}
-}
+}*/
 /***********************************************************************************************************************
     WEATHER FORECAST (SHORT)
 ***********************************************************************************************************************/
 def private mGetWeatherShort(period){
 	state.pTryAgain = false
     def result ="The weather service is not available at the moment, please try again later"
-	try {
+//	try {
     	//daily forecast text
         def weather = getWeatherFeature("forecast", settings.wZipCode)
         def todayWeather = 	weather.forecast.txt_forecast.forecastday[0].fcttext 
@@ -4444,19 +4957,19 @@ def private mGetWeatherShort(period){
         log.info "returning Today's forecast result"
         return result
 	}
-    catch (Throwable t) {
+/*    catch (Throwable t) {
 		log.error t
         state.pTryAgain = true
         return result
 	}
-}
+}*/
 /***********************************************************************************************************************
     WEATHER ELEMENTS
 ***********************************************************************************************************************/
 def private mGetWeatherElements(element){
 	state.pTryAgain = false
     def result ="Current weather is not available at the moment, please try again later"
-   	try {
+//   	try {
         //hourly updates
         def cWeather = getWeatherFeature("hourly", settings.wZipCode)
         def cWeatherCondition = cWeather.hourly_forecast[0].condition
@@ -4489,19 +5002,19 @@ def private mGetWeatherElements(element){
 		}        
         return result
 	}
-	catch (Throwable t) {
+/*	catch (Throwable t) {
 		log.error t
         state.pTryAgain = true
         return result
 	} 
-}
+}*/
 /***********************************************************************************************************************
     WEATHER TEMPS
 ***********************************************************************************************************************/
 def private mGetWeatherTemps(){
 	state.pTryAgain = false
     def result ="Today's temperatures not available at the moment, please try again later"
-	try {
+//	try {
 		def weather = getWeatherFeature("forecast", settings.wZipCode)
         def sTodayWeather = weather.forecast.simpleforecast.forecastday[0]
         def tHigh = sTodayWeather.high.fahrenheit//.toInteger()
@@ -4516,18 +5029,18 @@ def private mGetWeatherTemps(){
         	}
             return result
 	}
-	catch (Throwable t) {
+/*	catch (Throwable t) {
         log.error t
         state.pTryAgain = true
         return result
     }
-}   
+}   */
 /***********************************************************************************************************************
     WEATHER ALERTS
 ***********************************************************************************************************************/
 def private mGetWeatherAlerts(){
 	def result = "There are no weather alerts for your area"
-	try {
+//	try {
 		def weather = getWeatherFeature("alerts", settings.wZipCode)
         def alert = weather.alerts.description[0]
         def expire = weather.alerts.expires[0]
@@ -4538,11 +5051,11 @@ def private mGetWeatherAlerts(){
             }
         return result
     }
-	catch (Throwable t) {
+/*	catch (Throwable t) {
 	log.error t
 	return result
 	}
-}
+}*/
 /***********************************************************************************************************************
     HOURLY FORECAST
 ***********************************************************************************************************************/
@@ -4550,7 +5063,7 @@ def mGetWeatherUpdates(){
     def weatherData = [:]
     def data = [:]
    	def result
-    try {
+    //try {
         //hourly updates
             def cWeather = getWeatherFeature("hourly", settings.wZipCode)
             def cWeatherCondition = cWeather.hourly_forecast[0].condition
@@ -4606,13 +5119,13 @@ def mGetWeatherUpdates(){
                         }
                 }
                 log.info "refreshed hourly weather forecast: past forecast = ${pastWeather}; new forecast = ${weatherData}"  
-    
+    /*
     }
 	catch (Throwable t) {
 	log.error t
 	return result
 	}
-    
+    */
 }
 /*^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 X 																											X

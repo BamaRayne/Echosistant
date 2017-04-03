@@ -1,6 +1,7 @@
 /* 
  * Notification - EchoSistant Add-on 
  *
+ *		3/29/2017		Version:5.0 R.0.0.1a		Expansion of Triggers (sunrise/sunset)
  *		3/24/2017		Version:4.0 R.0.3.5	    	bug fix: custom sound, minor fixes
  *		3/21/2017		Version:4.0 R.0.3.3	    	added: &current for current temperature, frequency restriction
  *		3/21/2017		Version:4.0 R.0.3.2	    	added: &set (sunset), &rise (sunrise)
@@ -43,6 +44,7 @@ preferences {
             page name: "pNotifyConfig"
             page name: "SMS"
             page name: "customSounds"
+            page name: "certainTimeX"
             page( name: "timeIntervalInput", title: "Only during a certain time")
 
 }
@@ -134,9 +136,11 @@ page name: "triggers"
             			options: ["Minutes", "Hourly", "Daily", "Weekly", "Monthly", "Yearly"]
                 	if(frequency == "Minutes"){
                         input "xMinutes", "number", title: "Every X minute(s) - maximum 60", range: "1..59", submitOnChange: true, required: false
-                	}
+// Removed by JH  		input "xMinutesOff", "number", title: "And again in X minute(s) - maximum 60", range: "1..59", submitOnChange: true, required: false
+                    }
                     if(frequency == "Hourly"){
                         input "xHours", "number", title: "Every X hour(s) - maximum 24", range: "1..23", submitOnChange: true, required: false
+// Removed by JH  		input "xHoursOff", "number", title: "And again in X hour(s) - maximum 24", range: "1..23", submitOnChange: true, required: false
                     }	
                     if(frequency == "Daily"){
                         input "xDays", "number", title: "Every X day(s) - maximum 31", range: "1..31", submitOnChange: true, required: false
@@ -166,7 +170,10 @@ page name: "triggers"
 						}
                 	}
                 }
-			}                
+			} 
+            section ("Sunrise, Sunset, and Specific Times"){
+                href "certainTimeX", title: "Choose Events...", description: pSunsetComplete(), state: pSunsetSettings()
+            }   
             if(actionType != "Default"){
                 section ("Location Event", hideWhenEmpty: true) {
                     input "myMode", "enum", title: "Choose Modes...", options: location.modes.name.sort(), multiple: true, required: false 
@@ -242,6 +249,27 @@ page name: "triggers"
             }        
 		}
 	}
+page name: "certainTimeX"
+    def certainTimeX() {
+        dynamicPage(name:"certainTimeX",title: "Trigger on these Events", uninstall: false) {
+            section("Trigger At this time...") {
+                input "startingY", "enum", title: "Choose an event", options: ["A specific time", "Sunrise", "Sunset"], required: false , submitOnChange: true
+                if(startingY in [null, "A specific time"]) input "startingXY", "time", title: "Trigger One", required: false, submitOnChange: true
+                else {
+                    if(startingY == "Sunrise") input "startSunriseOffsetY", "number", range: "*..*", title: "Offset in minutes (+/-)", defaultValue: 0, required: false, submitOnChange: true
+                    else if(startingY == "Sunset") input "startSunsetOffsetY", "number", range: "*..*", title: "Offset in minutes (+/-)", defaultValue: 0,required: false, submitOnChange: true
+                }
+            }
+            section("...and then again at this time") {
+                input "endingY", "enum", title: "Choose a Second Event", options: ["A specific time", "Sunrise", "Sunset"], required: false, submitOnChange: true
+                if(endingY in [null, "A specific time"]) input "endingXY", "time", title: "Trigger Two", required: false, submitOnChange: true
+                else {
+                    if(endingY == "Sunrise") input "endSunriseOffsetY", "number", range: "*..*", title: "Offset in minutes (+/-)", defaultValue: 0, required: false, submitOnChange: true
+                    else if(endingY == "Sunset") input "endSunsetOffsetY", "number", range: "*..*", title: "Offset in minutes (+/-)", defaultValue: 0, required: false, submitOnChange: true
+                }
+            }
+        }
+    }
 page name: "SMS"
     def SMS(){
         dynamicPage(name: "SMS", title: "Send SMS and/or Push Messages...", uninstall: false) {
@@ -303,6 +331,40 @@ page name: "certainTime"
         }
     }
 /************************************************************************************************************
+	SUNSET SUNRISE HANDLER		
+************************************************************************************************************/
+def sunsetTimeHandler(evt) {
+    scheduleTurnOn(evt.value)
+    }
+def sunriseTimeHandler(evt) {
+	scheduleTurnOff(evt.value)
+    }
+def scheduleTurnOn(sunsetString) {
+
+    if (startingY == "Sunrise" || startingY == "Sunset") {
+    def sunsetTime = Date.parse("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", sunsetString)
+    def timeBeforeSunset = new Date(sunsetTime.time - (startSunsetOffsetY * 60 * 1000))
+    log.info "Scheduling for: $timeBeforeSunset (sunset is $sunsetTime)"
+    runOnce(timeBeforeSunset, scheduledTimeHandlerOn)
+	}
+    else if (startingY != "Sunrise" && startingY != "Sunset") {
+    	runOnce(startingXY, scheduledTimeHandlerOn)
+    }    
+}
+def scheduleTurnOff(sunriseString) {
+//if(endingY != null) { 
+	if (endingY == "Sunrise" || endingY == "Sunset") {
+	def sunriseTime = Date.parse("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", sunriseString)
+    def timeBeforeSunrise = new Date(sunriseTime.time - (endSunriseOffsetY * 60 * 1000))
+    log.info "Scheduling for: $timeBeforeSunrise (sunrise is $sunriseTime)"
+    runOnce(timeBeforeSunrise, scheduledTimeHandlerOff)
+	}
+    else if(endingY != "Sunrise" && endingY != "Sunset") {
+    	runOnce(endingXY, scheduledTimeHandlerOff)
+    }
+}    
+//}
+/************************************************************************************************************
 		
 ************************************************************************************************************/
 def installed() {
@@ -326,6 +388,7 @@ def updated() {
     initialize()
 }
 def initialize() {
+unschedule()
 	state.lastTime
     state.lastWeatherCheck
     state.lastAlert
@@ -334,6 +397,13 @@ def initialize() {
     state.cycleOnA = false
     state.cycleOnB = false
     state.lastWeather
+    
+    if(startingY || endingY) {	
+    subscribe(location, "sunsetTime", sunsetTimeHandler)
+	subscribe(location, "sunriseTime", sunriseTimeHandler)
+	scheduleTurnOn(location.currentValue("sunsetTime")) 
+    scheduleTurnOff(location.currentValue("sunriseTime"))
+    }
     if (frequency) cronHandler(frequency)
     if (myWeatherAlert) {
 		runEvery5Minutes(mGetWeatherAlerts)
@@ -671,7 +741,21 @@ private getVar(var) {
 def scheduledTimeHandler() {
 	def data = [:]
 		if (getDayOk()==true && getModeOk()==true && getTimeOk()==true && getFrequencyOk()==true) {	
-			data = [value:"time", name:"time of day", device:"schedule"] 
+			data = [value:"time", name:"time of day on", device:"schedule"] 
+    		alertsHandler(data)
+    	}
+}
+def scheduledTimeHandlerOn() {
+	def data = [:]
+		if (getDayOk()==true && getModeOk()==true && getTimeOk()==true) {	
+			data = [value:"time", name:"time of day on", device:"schedule"] 
+    		alertsHandler(data)
+    	}
+}
+def scheduledTimeHandlerOff() {
+	def data = [:]
+		if (getDayOk()==true && getModeOk()==true && getTimeOk()==true) {	
+			data = [value:"time", name:"time of day off", device:"schedule"] 
     		alertsHandler(data)
     	}
 }
@@ -946,7 +1030,7 @@ def mGetWeatherTrigger(){
     def data = [:]
     def myTrigger
 	def process = false
-//	try{  
+	try{  
 		if (getDayOk()==true && getModeOk()==true && getTimeOk()==true && getFrequencyOk()==true) {
         	if(getMetric() == false){
             def cWeather = getWeatherFeature("conditions", settings.wZipCode)
@@ -1001,13 +1085,13 @@ def mGetWeatherTrigger(){
             	log.debug "refreshed weather triggers, but trigger is $process"
    			}
 		}
-/*    
+   
     }
 	catch (Throwable t) {
 	log.error t
 	return result
 	}  
-*/
+
 }
 /***********************************************************************************************************************
     WEATHER ALERTS
@@ -1256,12 +1340,22 @@ def cronHandler(var) {
 	def result
 		if(var == "Minutes") {
         //	0 0/3 * 1/1 * ? *
-        	if(xMinutes) result = "0 0/${xMinutes} * 1/1 * ? *"
+        	if(xMinutes) { result = "0 0/${xMinutes} * 1/1 * ? *"
+			    schedule(result, "scheduledTimeHandler")
+                }
+//            if(xMinutesOff) { result = "0 0/${xMinutesOff} * 1/1 * ? *"      // removed by JH 3/30/2017 (faulty logic)
+//                schedule(result, "scheduledTimeHandlerOff")
+//				}
             else log.error " unable to schedule your reminder due to missing required variables"
         }
 		if(var == "Hourly") {
         //	0 0 0/6 1/1 * ? *
-			if(xHours) result = "0 0 0/${xHours} 1/1 * ? *"
+			if(xHours) { result = "0 0 0/${xHours} 1/1 * ? *"
+            	schedule(result, "scheduledTimeHandler")
+                }
+//			if(xHoursOff) { result = "0 0 0/${xHoursOff} 1/1 * ? *"      // removed by JH 3/30/2017 (faulty logic)
+//            	schedule(result, "scheduledTimeHandlerOff")
+//                }
             else log.error " unable to schedule your reminder due to missing required variables"
 		}
 		if(var == "Daily") {
@@ -1271,8 +1365,9 @@ def cronHandler(var) {
             def mn = hrmn[3..4]
         	if(xDays) result = "0 $mn $hr 1/${xDays} * ? *"
             if(xDaysWeekDay && xDaysStarting) result = "0 $mn $hr 1/${xDays} * MON-FRI *"
-            else log.error " unable to schedule your reminder due to missing required variables"
-		}
+			else log.error " unable to schedule your reminder due to missing required variables"
+		    schedule(result, "scheduledTimeHandler")
+            }
         if(var == "Weekly") {
         // 	0 0 2 ? * TUE,SUN *
         	def hrmn = hhmm(xWeeksStarting, "HH:mm")
@@ -1283,7 +1378,8 @@ def cronHandler(var) {
             def weekDays = weekDaysList.join(",")
             if(xWeeks && xWeeksStarting) { result = "0 $mn $hr ? * ${weekDays} *" }
             else log.error " unable to schedule your reminder due to missing required variables"
-		}
+		    schedule(result, "scheduledTimeHandler")
+            }
 		if(var == "Monthly") { 
         // 0 30 5 6 1/2 ? *
         	def hrmn = hhmm(xMonthsStarting, "HH:mm")
@@ -1291,7 +1387,8 @@ def cronHandler(var) {
             def mn = hrmn[3..4]
         	if(xMonths && xMonthsDay) { result = "0 $mn $hr ${xMonthsDay} 1/${xMonths} ? *"}
             else log.error "unable to schedule your reminder due to missing required variables"
-		}
+		    schedule(result, "scheduledTimeHandler")
+            }
 		if(var == "Yearly") {
         //0 0 4 1 4 ? *
         	def hrmn = hhmm(xYearsStarting, "HH:mm")
@@ -1299,9 +1396,10 @@ def cronHandler(var) {
             def mn = hrmn[3..4]           
         	if(xYears) {result = "0 $mn $hr ${xYearsDay} ${xYears} ? *"}
             else log.error "unable to schedule your reminder due to missing required variables"
-		}
+		    schedule(result, "scheduledTimeHandler")
+            }
     log.info "scheduled $var recurring event" //time period with expression: $result"
-    schedule(result, "scheduledTimeHandler")
+//    schedule(result, "scheduledTimeHandler")
 }
 /***********************************************************************************************************************
     RESTRICTIONS HANDLER
@@ -1529,11 +1627,11 @@ def pSendComplete() {def text = "Tap here to configure settings"
     	else text = "Tap to Configure"
 		text}
 def triggersSettings() {def result = ""
-    if (myWeatherTriggers || myWeather || myWeatherAlert || myWater || mySmoke || myPresence || myMotion || myContact || mySwitch || myPower || myLocks || myTstat || myMode || myRoutine || frequency) {
+    if (startingY || endingY || myWeatherTriggers || myWeather || myWeatherAlert || myWater || mySmoke || myPresence || myMotion || myContact || mySwitch || myPower || myLocks || myTstat || myMode || myRoutine || frequency) {
     	result = "complete"}
    		result}
 def triggersComplete() {def text = "Tap here to configure settings" 
-    if (myWeatherTriggers || myWeather || myWeatherAlert || myWater || mySmoke || myPresence || myMotion || myContact || mySwitch || myPower || myLocks || myTstat || myMode || myRoutine || frequency) {
+    if (startingY || endingY || myWeatherTriggers || myWeather || myWeatherAlert || myWater || mySmoke || myPresence || myMotion || myContact || mySwitch || myPower || myLocks || myTstat || myMode || myRoutine || frequency) {
     	text = "Configured"}
     	else text = "Tap to Configure"
 		text} 
@@ -1556,3 +1654,12 @@ def pTimeComplete() {def text = "Tap here to configure settings"
     	text = "Configured"}
     	else text = "Tap to Configure"
 		text}
+def pSunsetSettings() {def result = ""
+    if (startingY || endingY) {
+    	result = "complete"}
+   		result}
+def pSunsetComplete() {def text = "Tap here to configure settings" 
+    if (startingY || endingY) {
+    	text = "Configured"}
+    	else text = "Tap to Configure"
+		text}        

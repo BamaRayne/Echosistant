@@ -6,6 +6,7 @@
  
  ************************************ FOR INTERNAL USE ONLY ******************************************************
  *
+ *		4/03/2017		Version:4.0 R.0.3.2		Fixed Alexa output when controlling groups and custom groups
  *		3/21/2017		Version:4.0 R.0.3.1 	added window covering group
  *		3/15/2017		Version:4.0 R.0.3.0 	minor bug fixes
  *		2/17/2017		Version:4.0 R.0.0.1		Public Release
@@ -1036,14 +1037,29 @@ def advCtrlHandler(data) {
 	def deviceCommand = data.command
 	def deviceType = data.deviceType
     def result
-	if (deviceType == "light" || deviceType == "light1" || deviceType == "light2" || deviceType == "light3" || deviceType == "light4" || deviceType == "light5"){
+    if (deviceType == "light" || deviceType == "light1" || deviceType == "light2" || deviceType == "light3" || deviceType == "light4" || deviceType == "light5"){
     deviceType = deviceType == "light" && gSwitches ? gSwitches : deviceType == "light1" && gCustom1 ? gCustom1 : deviceType == "light2" && gCustom2 ? gCustom2 : deviceType == "light3" && gCustom3 ? gCustom3 : deviceType == "light4" && gCustom4 ? gCustom4 : deviceType == "light5" && gCustom5 ? gCustom5 : null
 		if (deviceCommand == "increase" || deviceCommand == "decrease" || deviceCommand == "on" || deviceCommand == "off") {
                     deviceType.each {s ->
                    		if (deviceCommand == "on" || deviceCommand == "off") {
 							s?."${deviceCommand}"()
-							result = "Ok, turning lights " + deviceCommand
-                    	}
+                            result = "Ok, turning lights " + deviceCommand
+							if (deviceType == gCustom1) {
+                            	result = "Ok, turning " + gCustom1N + deviceCommand
+                            	}
+                            	if (deviceType == gCustom2) {
+                                	result = "Ok, turning " + gCustom2N + deviceCommand
+                                	}
+                                    if (deviceType == gCustom3) {
+                                		result = "Ok, turning " + gCustom3N + deviceCommand
+                                		}
+                                    	if (deviceType == gCustom4) {
+                                			result = "Ok, turning " + gCustom4N + deviceCommand
+                                			}
+                                    		if (deviceType == gCustom5) {
+                                				result = "Ok, turning " + gCustom5N + deviceCommand
+                                				}
+                            				}
                         else {
                             def	currLevel = s?.latestValue("level")
                             def currState = s?.latestValue("switch") 
