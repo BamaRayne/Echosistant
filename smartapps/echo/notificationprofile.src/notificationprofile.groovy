@@ -1,7 +1,8 @@
 /* 
  * Notification - EchoSistant Add-on 
  *
- *		3/29/2017		Version:5.0 R.0.0.1a		Expansion of Triggers (sunrise/sunset)
+ *		4/3/2017		Version:4.0 R.0.0.7 		Power reporting bug, Sonos delay improvements, weather fixes
+ *		3/29/2017		Version:4.0 R.0.3.6 		Expansion of Triggers (sunrise/sunset)
  *		3/24/2017		Version:4.0 R.0.3.5	    	bug fix: custom sound, minor fixes
  *		3/21/2017		Version:4.0 R.0.3.3	    	added: &current for current temperature, frequency restriction
  *		3/21/2017		Version:4.0 R.0.3.2	    	added: &set (sunset), &rise (sunrise)
@@ -32,7 +33,7 @@ definition(
 	iconX3Url		: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/app-Echosistant@2x.png")
 /**********************************************************************************************************************************************/
 private release() {
-	def text = "R.0.3.5"
+	def text = "R.0.0.7"
 }
 
 preferences {
@@ -768,7 +769,7 @@ def meterHandler(evt) {
         def eName = evt.name
         def eDev = evt.device
         def eDisplayN = evt.displayName
-        int delay = minutes 
+        int delay = minutes ?: 0
             delay = delay ?: 0 as int
         int meterValueRaw = evt.value as double
             int meterValue = meterValueRaw ?: 0 as int
@@ -778,7 +779,7 @@ def meterHandler(evt) {
         def cycleOnLow = state.cycleOnL
         if(myPowerS == "above threshold"){
             thresholdStopValue = thresholdStopValue == 0 ? 9999 :  thresholdStopValue as int
-            if (meterValue > thresholdValue && meterValue < thresholdStopValue ) {
+            if (meterValue >= thresholdValue && meterValue <= thresholdStopValue ) {
                 if (cycleOnHigh == false){
                     state.cycleOnH = true
                     log.debug "Power meter $meterValue is above threshold $thresholdValue with threshold stop $thresholdStopValue"
@@ -788,7 +789,7 @@ def meterHandler(evt) {
                     }
                     else {
                         log.debug "sending notification (above)" 
-                        data = [value:"above threshold", name:"power", displayName:eDisplayN] 
+                        data = [value:"above threshold", name:"power", device:"power meter"] 
                         alertsHandler(data)
                     }
                 }
@@ -796,11 +797,11 @@ def meterHandler(evt) {
             else {
                 state.cycleOnH = false
                 unschedule("bufferPendingH")
-                log.debug "Power exception (above) meterValue ${meterValue}, thresholdValue ${thresholdValue}, stop ${thresholdStopValue} "
+                //log.debug "Power exception (above) meterValue ${meterValue}, thresholdValue ${thresholdValue}, stop ${thresholdStopValue} "
             }
         }
         if(myPowerS == "below threshold"){
-            if (meterValue < thresholdValue && meterValue > thresholdStopValue) {
+            if (meterValue <= thresholdValue && meterValue >= thresholdStopValue) {
                 if (cycleOnLow == false){
                     state.cycleOnL = true
                     log.debug "Power meter $meterValue is below threshold $thresholdValue with threshold stop $thresholdStopValue"
@@ -810,7 +811,7 @@ def meterHandler(evt) {
                     }
                     else {
                         log.debug "sending notification (below)" 
-                        data = [value:"below threshold", name:"power", displayName:eDisplayN]
+                        data = [value:"below threshold", name:"power", device:"power meter"]
                         alertsHandler(data)
                     }
                 }
@@ -818,7 +819,7 @@ def meterHandler(evt) {
             else {
                 state.cycleOnL = false
                 unschedule("bufferPendingL")
-                log.debug "Power exception (below) meterValue ${meterValue}, thresholdValue ${thresholdValue}, stop ${thresholdStopValue}"
+                //log.debug "Power exception (below) meterValue ${meterValue}, thresholdValue ${thresholdValue}, stop ${thresholdStopValue}"
             }
         }
 	}
@@ -828,17 +829,17 @@ def bufferPendingH() {
     def thresholdValue = threshold == null ? 0 : threshold as int
     if (meterValue >= thresholdValue) {
 		log.debug "sending notification (above)" 
-        def data = [value:"above threshold", name:"power", displayName:eDisplayN] 
+        def data = [value:"above threshold", name:"power", device:"power meter"] 
     	alertsHandler(data)
    }
 }
-private bufferPendingL() {  
+def bufferPendingL() {  
     def meterValueRaw = myPower.currentValue("power") as double 
 		int meterValue = meterValueRaw ?: 0 as int    
     def thresholdValue = threshold == null ? 0 : threshold as int
     if (meterValue <= thresholdValue) {
 		log.debug "sending notification (below)" 
-       def data = [value:"below threshold", name:"power", displayName:eDisplayN] 
+       def data = [value:"below threshold", name:"power", device:"power meter"] 
     	alertsHandler(data)
   	}
 }
@@ -987,11 +988,11 @@ private takeAction(eTxt) {
                 def sCommand = resumePlaying == true ? "playTrackAndResume" : "playTrackAndRestore"
                     if(elapsed < 5000 ){
                         log.error "message is already playing, delaying new message by 3 seconds"
-						sonos?."${sCommand}"(sTxt.uri, Math.max((sTxt.duration as Integer),2), sVolume, [delay: 3000])
+						sonos?."${sCommand}"(sTxt.uri, Math.max((sTxt.duration as Integer),3), sVolume, [delay: 4000])
                         state.lastPlayed = now()
                 	}
                     else {                
-                		sonos?."${sCommand}"(sTxt.uri, Math.max((sTxt.duration as Integer),2), sVolume)
+                		sonos?."${sCommand}"(sTxt.uri, Math.max((sTxt.duration as Integer),3), sVolume)
                         state.lastPlayed = now()
                 	}
         }      
@@ -1043,6 +1044,7 @@ def mGetWeatherTrigger(){
             	int wind = cWindGustM as Integer
             def cPrecipIn = cWeather.current_observation.precip_1hr_in.toDouble()
             	int precip = cPrecipIn as Integer
+                precip = 1 + precip
 			myTrigger = myWeatherTriggers == "Chance of Precipitation (in/mm)" ? precip : myWeatherTriggers == "Wind Gust (MPH/kPH)" ? wind : myWeatherTriggers == "Humidity (%)" ? humid : myWeatherTriggers == "Temperature (F/C)" ? tempF : null
 			}
             else {
@@ -1069,9 +1071,9 @@ def mGetWeatherTrigger(){
        			}
             }
      		if (myWeatherTriggersS == "below" && state.cycleOnB == false){
-				def var = myTrigger < myWeatherThreshold
+				def var = myTrigger <= myWeatherThreshold
             	log.warn  " myTrigger = $myTrigger , myWeatherThreshold = $myWeatherThreshold myWeatherTriggersS = $myWeatherTriggersS, var = $var"
-        		if(myTrigger < myWeatherThreshold) {
+        		if(myTrigger <= myWeatherThreshold) {
                 	process = true
 					state.cycleOnA = false
                     state.cycleOnB = process
