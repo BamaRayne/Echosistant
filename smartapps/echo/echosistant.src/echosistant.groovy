@@ -5044,7 +5044,7 @@ def private mGetWeatherAlerts(){
 		def weather = getWeatherFeature("alerts", settings.wZipCode)
         def alert = weather.alerts.description[0]
         def expire = weather.alerts.expires[0]
-        	expire = expire.replaceAll(~/ EST /, " ").replaceAll(~/ CST /, " ").replaceAll(~/ MST /, " ").replaceAll(~/ PST /, " ")
+        	expire = expire?.replaceAll(~/ EST /, " ")?.replaceAll(~/ CST /, " ")?.replaceAll(~/ MST /, " ")?.replaceAll(~/ PST /, " ")
         	log.warn "alert = ${alert} , expire = ${expire}"   	
             if(alert != null) {
                 result = alert  + " is in effect for your area, that expires at " + expire            
