@@ -1,7 +1,7 @@
 /* 
  * Notification - EchoSistant Add-on 
  *
- *		4/3/2017		Version:4.0 R.0.0.7 		Power reporting bug, Sonos delay improvements, weather fixes
+ *		4/3/2017		Version:4.0 R.0.0.7a 		Power reporting bug, Sonos delay improvements, weather fixes
  *		3/29/2017		Version:4.0 R.0.3.6 		Expansion of Triggers (sunrise/sunset)
  *		3/24/2017		Version:4.0 R.0.3.5	    	bug fix: custom sound, minor fixes
  *		3/21/2017		Version:4.0 R.0.3.3	    	added: &current for current temperature, frequency restriction
@@ -88,7 +88,10 @@ page name: "mainProfilePage"
                     											"Translates to: 'Contact' sensor 'Bedroom' is 'Open' and the event happened at '1:00 PM'"
 				if(actionType == "Custom with Weather" || actionType == "Ad-Hoc Report" ){
                 	paragraph "WEATHER VARIABLES: &today, &tonight, &tomorrow, &high, &low, &wind, &uv, &precipitation, &humidity, "+
-                    			"&conditions, &set (for sunset), &rise (for sunrise), &current (for temperature) \n"                    
+                    			"&conditions, &set (for sunset), &rise (for sunrise), &current (for temperature) \n"+                   
+                				"\n Current Data for your Location: \n"+
+                                "&wind = ${mGetWeatherElements("wind")}, &precipitation =  ${mGetWeatherElements("precip")} , &conditions =  ${mGetWeatherElements("cond")}"+
+                                " &set =  ${mGetWeatherElements("set")} , &rise =  ${mGetWeatherElements("rise")}"
                 }
                 if(actionType == "Ad-Hoc Report"){
                 	paragraph "REPORTING VARIABLES: \n"+
@@ -955,9 +958,12 @@ def alertsHandler(evt) {
 private takeAction(eTxt) {
 	def sVolume
     def sTxt
+    int prevDuration
+    if(state.sound) prevDuration = state.sound.duration as Integer
     if(myProfile && actionType != "Triggered Report") runProfileActions()   
     if (actionType == "Custom" || actionType == "Custom with Weather" || actionType == "Triggered Report") {
         if (speechSynth || sonos) sTxt = textToSpeech(eTxt instanceof List ? eTxt[0] : eTxt)
+        state.sound = sTxt
     }
     else {
     	loadSound()
@@ -985,17 +991,31 @@ private takeAction(eTxt) {
                 sVolume = settings.sonosVolume ?: 20
                 sVolume = (sVolume == 20 && currVolLevel == 0) ? sVolume : sVolume !=20 ? sVolume: currVolLevel
                 def elapsed = now() - state.lastPlayed
+                def elapsedSec = elapsed/1000
+                log.warn "previous duration = $prevDuration, elapsedSec = $elapsedSec "
+                def timeCheck = prevDuration * 1000
                 def sCommand = resumePlaying == true ? "playTrackAndResume" : "playTrackAndRestore"
-                    if(elapsed < 5000 ){
-                        log.error "message is already playing, delaying new message by 3 seconds"
-						sonos?."${sCommand}"(sTxt.uri, Math.max((sTxt.duration as Integer),3), sVolume, [delay: 4000])
+                    if(elapsed < timeCheck){
+                    	elapsed = elapsed/1000
+                    	def delayNeeded = prevDuration - elapsedSec
+                        if(delayNeeded > 0 ) delayNeeded = delayNeeded + 2
+                        log.error "message is already playing, delaying new message by prevDuration - elapsed time = $delayNeeded"
+                        //sonos?."${sCommand}"(sTxt.uri, Math.max((sTxt.duration as Integer),2), sVolume, [delay: "${delayNeeded}"])
+                        state.sound.command = sCommand
+                        state.sound.volume = sVolume
                         state.lastPlayed = now()
+                        runIn(delayNeeded , delayedMessage)
                 	}
                     else {                
-                		sonos?."${sCommand}"(sTxt.uri, Math.max((sTxt.duration as Integer),3), sVolume)
+                		sonos?."${sCommand}"(sTxt.uri, Math.max((sTxt.duration as Integer),2), sVolume)
                         state.lastPlayed = now()
                 	}
         }      
+}
+def delayedMessage() {
+def sTxt = state.sound
+sonos?."${sTxt.command}"(sTxt.uri, Math.max((sTxt.duration as Integer),2), sTxt.sVolume)
+log.warn "delayed message is now playing"
 }
 /***********************************************************************************************************************
     CUSTOM WEATHER VARIABLES
