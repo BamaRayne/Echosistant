@@ -87,11 +87,16 @@ page name: "mainProfilePage"
                     											"\nFor Example: \n&event sensor &device is &action and the event happened at &time \n" +
                     											"Translates to: 'Contact' sensor 'Bedroom' is 'Open' and the event happened at '1:00 PM'"
 				if(actionType == "Custom with Weather" || actionType == "Ad-Hoc Report" ){
-                	paragraph "WEATHER VARIABLES: &today, &tonight, &tomorrow, &high, &low, &wind, &uv, &precipitation, &humidity, "+
-                    			"&conditions, &set (for sunset), &rise (for sunrise), &current (for temperature) \n"+                   
+                	paragraph "WEATHER: FORECAST: &today, &tonight, &tomorrow,\n"+
+                    			"TEMPERATURES: &current, &high, &low\n"+ 
+                                "SUN: &set, &rise\n"+ 
+                                "OTHER: &wind, &uv, &precipitation, &humidity"
+                                /*
                 				"\n Current Data for your Location: \n"+
-                                "&wind = ${mGetWeatherElements("wind")}, &precipitation =  ${mGetWeatherElements("precip")} , &conditions =  ${mGetWeatherElements("cond")}"+
-                                " &set =  ${mGetWeatherElements("set")} , &rise =  ${mGetWeatherElements("rise")}"
+                                "&wind = ${mGetWeatherElements("wind")},\n&precipitation =  ${mGetWeatherElements("precip")},\n&conditions =  ${mGetWeatherElements("cond")},\n"+
+                                "&set =  ${mGetWeatherElements("set")},\n&rise =  ${mGetWeatherElements("rise")},\n&current =  ${mGetWeatherElements("current")},\n&high =  ${mGetWeatherElements("high")},"+
+                                "\n&low =  ${mGetWeatherElements("low")}"
+                				*/
                 }
                 if(actionType == "Ad-Hoc Report"){
                 	paragraph "REPORTING VARIABLES: \n"+
@@ -387,6 +392,7 @@ def updated() {
 	state.NotificationRelease = "Notification: " + release()
     state.lastPlayed = now()
     state.sound
+    state.sound1
 	unschedule()
     unsubscribe()
     initialize()
@@ -1005,7 +1011,7 @@ private takeAction(eTxt) {
                         runIn(delayNeeded , delayedMessage)
                 	}
                     else {
-                    	log.info "playing message: $eTxt"
+                    	log.info "playing first message"
                 		sonos?."${sCommand}"(sTxt.uri, Math.max((sTxt.duration as Integer),2), sVolume)
                         state.lastPlayed = now()
 						state.sound.command = sCommand
@@ -1015,7 +1021,6 @@ private takeAction(eTxt) {
 }
 def delayedMessage() {
 def sTxt = state.sound
-log.warn "delayed sTxt = $sTxt"
 sonos?."${sTxt.command}"(sTxt.uri, Math.max((sTxt.duration as Integer),3), sTxt.volume)
 log.warn "delayed message is now playing"
 }
@@ -1287,28 +1292,51 @@ def private mGetWeatherElements(element){
         def condWeather = getWeatherFeature("conditions", settings.wZipCode)
         def condTodayUV = condWeather.current_observation.UV
   		def currentT = condWeather.current_observation.temp_f
-        //sunset and sunrise
-        def s = getSunriseAndSunset(zipCode: zipCode, sunriseOffset: startSunriseOffset, sunsetOffset: startSunsetOffset)
-		def sunrise = s.sunrise.time
-		def sunset = s.sunset.time
-            
+        	int currentNow = currentT
+        //forecast
+        def forecastT = getWeatherFeature("forecast", settings.wZipCode)
+		def fToday = forecastT.forecast.simpleforecast.forecastday[0]
+        def high = fToday.high.fahrenheit.toInteger()
+       		int highNow = high
+        def low = fToday.low.fahrenheit.toInteger()
+        	int lowNow = low
+        //sunset, sunrise, moon, tide
+        def s = getWeatherFeature("astronomy", settings.wZipCode)
+		def sunriseHour = s.moon_phase.sunrise.hour
+        def sunriseTime = s.moon_phase.sunrise.minute
+        def sunrise = sunriseHour + ":" + sunriseTime
+            Date date = Date.parse("HH:mm",sunrise)
+            def sunriseNow = date.format( "h:mm aa" )
+		def sunsetHour = s.moon_phase.sunset.hour
+        def sunsetTime = s.moon_phase.sunset.minute
+        def sunset = sunsetHour + ":" + sunsetTime
+            date = Date.parse("HH:mm", sunset)
+            def sunsetNow = date.format( "h:mm aa" ) 
             if(getMetric() == true){
                 def cWeatherWindC = cWeather.hourly_forecast[0].wspd.metric + " kilometers per hour"
                     cWeatherWind = cWeatherWindC
                 def currentTc = condWeather.current_observation.temp_c
-                    currentT = currentTc
+                    currentNow = currentTc
+                def highC = fToday.high.celsius
+                    highNow = currentTc            
+                def lowC = fToday.low.celsius
+                    lowNow = currentTc            
             }               
         if(debug) log.debug "cWeatherUpdate = ${cWeatherUpdate}, cWeatherCondition = ${cWeatherCondition}, " +
         					"cWeatherPrecipitation = ${cWeatherPrecipitation}, cWeatherWind = ${cWeatherWind},  cWeatherHum = ${cWeatherHum}, cWeatherHum = ${condTodayUV}  "    
 
-        	if		(element == "precip" ) {result = "The chance of precipitation is " + cWeatherPrecipitation }
-        	else if	(element == "wind") {result = "The wind intensity is " + cWeatherWind }
-        	else if	(element == "uv") {result = "The UV index is " + condTodayUV }
-			else if	(element == "hum") {result = "The relative humidity is " + cWeatherHum }        
-			else if	(element == "cond") {result = "The current weather condition is " + cWeatherCondition }        
-			else if	(element == "current") {result = "The current temperature is " + currentT } 
-	
-    return result
+        	if		(element == "precip" ) {result = cWeatherPrecipitation}
+        	else if	(element == "wind") {result = cWeatherWind}
+        	else if	(element == "uv") {result = condTodayUV}
+			else if	(element == "hum") {result = cWeatherHum}        
+			else if	(element == "cond") {result = cWeatherCondition}        
+			else if	(element == "current") {result = currentNow} 
+			else if	(element == "rise") {result = sunriseNow } 
+			else if	(element == "set") {result = sunsetNow}  
+ 			else if	(element == "high") {result = highNow } 
+			else if	(element == "low") {result = lowNow}             
+    
+    		return result
 	
     }catch (Throwable t) {
 		log.error t
@@ -1368,20 +1396,15 @@ def cronHandler(var) {
         //	0 0/3 * 1/1 * ? *
         	if(xMinutes) { result = "0 0/${xMinutes} * 1/1 * ? *"
 			    schedule(result, "scheduledTimeHandler")
-                }
-//            if(xMinutesOff) { result = "0 0/${xMinutesOff} * 1/1 * ? *"      // removed by JH 3/30/2017 (faulty logic)
-//                schedule(result, "scheduledTimeHandlerOff")
-//				}
+           	}
             else log.error " unable to schedule your reminder due to missing required variables"
         }
 		if(var == "Hourly") {
         //	0 0 0/6 1/1 * ? *
-			if(xHours) { result = "0 0 0/${xHours} 1/1 * ? *"
+			if(xHours) { 
+            	result = "0 0 0/${xHours} 1/1 * ? *"
             	schedule(result, "scheduledTimeHandler")
-                }
-//			if(xHoursOff) { result = "0 0 0/${xHoursOff} 1/1 * ? *"      // removed by JH 3/30/2017 (faulty logic)
-//            	schedule(result, "scheduledTimeHandlerOff")
-//                }
+            }
             else log.error " unable to schedule your reminder due to missing required variables"
 		}
 		if(var == "Daily") {
@@ -1389,10 +1412,15 @@ def cronHandler(var) {
             def hrmn = hhmm(xDaysStarting, "HH:mm")
             def hr = hrmn[0..1] 
             def mn = hrmn[3..4]
-        	if(xDays) result = "0 $mn $hr 1/${xDays} * ? *"
-            if(xDaysWeekDay && xDaysStarting) result = "0 $mn $hr 1/${xDays} * MON-FRI *"
-			else log.error " unable to schedule your reminder due to missing required variables"
-		    schedule(result, "scheduledTimeHandler")
+        	if(xDays && xDaysStarting) {
+            	result = "0 $mn $hr 1/${xDays} * ? *"
+                schedule(result, "scheduledTimeHandler")
+            }
+            else if(xDaysWeekDay && xDaysStarting) {
+            	result = "0 $mn $hr 1/${xDays} * MON-FRI *"
+                schedule(result, "scheduledTimeHandler")
+			}
+            else log.error " unable to schedule your reminder due to missing required variables"
             }
         if(var == "Weekly") {
         // 	0 0 2 ? * TUE,SUN *
