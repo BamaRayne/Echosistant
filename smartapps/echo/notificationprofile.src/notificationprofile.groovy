@@ -1,7 +1,7 @@
 /* 
  * Notification - EchoSistant Add-on 
  *
- *		4/3/2017		Version:4.0 R.0.0.7a 		Power reporting bug, Sonos delay improvements, weather fixes
+ *		4/3/2017		Version:4.0 R.0.0.7b 		Power reporting bug, Sonos delay improvements, weather fixes
  *		3/29/2017		Version:4.0 R.0.3.6 		Expansion of Triggers (sunrise/sunset)
  *		3/24/2017		Version:4.0 R.0.3.5	    	bug fix: custom sound, minor fixes
  *		3/21/2017		Version:4.0 R.0.3.3	    	added: &current for current temperature, frequency restriction
@@ -33,7 +33,7 @@ definition(
 	iconX3Url		: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/app-Echosistant@2x.png")
 /**********************************************************************************************************************************************/
 private release() {
-	def text = "R.0.0.7"
+	def text = "R.0.0.7b"
 }
 
 preferences {
@@ -238,7 +238,7 @@ page name: "triggers"
 						options: ["Chance of Precipitation (in/mm)", "Wind Gust (MPH/kPH)", "Humidity (%)", "Temperature (F/C)"]   
                         if (myWeatherTriggers) input "myWeatherTriggersS", "enum", title: "Notify when Weather Element changes...", 
                         	options: ["above", "below"], required: false, submitOnChange: true
-						if (myWeatherTriggersS) input "myWeatherThreshold", "number", title: "Weather Variable Threshold...", required: false, submitOnChange: true
+						if (myWeatherTriggersS) input "myWeatherThreshold", "decimal", title: "Weather Variable Threshold...", required: false, submitOnChange: true
 						if (myWeatherThreshold) input "myWeatherCheck", "enum", title: "How Often to Check for Weather Changes...", required: true, multiple: false, submitOnChange: true,
                 				options: [
                                     "runEvery1Minute": "Every Minute",
@@ -944,7 +944,6 @@ def alertsHandler(evt) {
                 }
                 else {
                     if (eDev == "weather"){eTxt = eName}
-                    log.info "sending message: $eTxt"
                     takeAction(eTxt)
                 }
             }
@@ -992,29 +991,32 @@ private takeAction(eTxt) {
                 sVolume = (sVolume == 20 && currVolLevel == 0) ? sVolume : sVolume !=20 ? sVolume: currVolLevel
                 def elapsed = now() - state.lastPlayed
                 def elapsedSec = elapsed/1000
-                log.warn "previous duration = $prevDuration, elapsedSec = $elapsedSec "
+                //log.warn "previous duration = $prevDuration, elapsedSec = $elapsedSec "
                 def timeCheck = prevDuration * 1000
+                //log.warn "elapsed= $elapsed, timeCheck = $timeCheck"
                 def sCommand = resumePlaying == true ? "playTrackAndResume" : "playTrackAndRestore"
                     if(elapsed < timeCheck){
-                    	elapsed = elapsed/1000
                     	def delayNeeded = prevDuration - elapsedSec
-                        if(delayNeeded > 0 ) delayNeeded = delayNeeded + 2
-                        log.error "message is already playing, delaying new message by prevDuration - elapsed time = $delayNeeded"
-                        //sonos?."${sCommand}"(sTxt.uri, Math.max((sTxt.duration as Integer),2), sVolume, [delay: "${delayNeeded}"])
+                        if(delayNeeded > 0 ) delayNeeded = delayNeeded + 3
+                        log.error "message is already playing, delaying new message by $delayNeeded seconds"
                         state.sound.command = sCommand
                         state.sound.volume = sVolume
                         state.lastPlayed = now()
                         runIn(delayNeeded , delayedMessage)
                 	}
-                    else {                
+                    else {
+                    	log.info "playing message: $eTxt"
                 		sonos?."${sCommand}"(sTxt.uri, Math.max((sTxt.duration as Integer),2), sVolume)
                         state.lastPlayed = now()
+						state.sound.command = sCommand
+                        state.sound.volume = sVolume
                 	}
         }      
 }
 def delayedMessage() {
 def sTxt = state.sound
-sonos?."${sTxt.command}"(sTxt.uri, Math.max((sTxt.duration as Integer),2), sTxt.sVolume)
+log.warn "delayed sTxt = $sTxt"
+sonos?."${sTxt.command}"(sTxt.uri, Math.max((sTxt.duration as Integer),3), sTxt.volume)
 log.warn "delayed message is now playing"
 }
 /***********************************************************************************************************************
@@ -1063,8 +1065,9 @@ def mGetWeatherTrigger(){
             def cWindGustM = cWeather.current_observation.wind_gust_mph.toDouble()
             	int wind = cWindGustM as Integer
             def cPrecipIn = cWeather.current_observation.precip_1hr_in.toDouble()
-            	int precip = cPrecipIn as Integer
-                precip = 1 + precip
+            	double precip = cPrecipIn + 1 //as double
+                //precip = 1 + precip precip
+                log.warn "precipitation = $precip"
 			myTrigger = myWeatherTriggers == "Chance of Precipitation (in/mm)" ? precip : myWeatherTriggers == "Wind Gust (MPH/kPH)" ? wind : myWeatherTriggers == "Humidity (%)" ? humid : myWeatherTriggers == "Temperature (F/C)" ? tempF : null
 			}
             else {
@@ -1077,7 +1080,8 @@ def mGetWeatherTrigger(){
             def cWindGustK = cWeather.current_observation.wind_gust_kph.toDouble()
             	int windC = cWindGustK as Integer
             def cPrecipM = cWeather.current_observation.precip_1hr_metric.toDouble()
-    			int precipC = cPrecipM as Integer
+    			double  precipC = cPrecipM as double
+                
             myTrigger = myWeatherTriggers == "Chance of Precipitation (in/mm)" ? precipC : myWeatherTriggers == "Wind Gust (MPH/kPH)" ? windC : myWeatherTriggers == "Humidity (%)" ? humid : myWeatherTriggers == "Temperature (F/C)" ? tempC : null
             }
             
