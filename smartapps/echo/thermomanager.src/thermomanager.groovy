@@ -1,7 +1,7 @@
 /**
  *  Zwave Thermostat Manager - EchoSistant Add-on
  *  
- *
+ *		3/18/2017		Version:4.0 R.0.0.2		Modified and Released as an EchoSistant Add-On Module
  *		3/18/2017		Version:4.0 R.0.0.1		Modified and Released as an EchoSistant Add-On Module
  *
  * 
@@ -22,7 +22,7 @@
  *  for the specific language governing permissions and limitations under the License.
  *
  */
- 
+/**********************************************************************************************************************************************/ 
 definition(
 	name: "ThermoManager",
 	namespace: "Echo",
@@ -34,7 +34,10 @@ definition(
 	iconX2Url		: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/app-Echosistant@2x.png",
 	iconX3Url		: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/app-Echosistant@2x.png"
 )
-
+/**********************************************************************************************************************************************/
+private release() {
+	def text = "R.0.0.2"
+}
 preferences {
     page name:"pageSetup"
     page name:"TemperatureSettings"
@@ -56,15 +59,16 @@ def pageSetup() {
     ]
 
 	return dynamicPage(pageProperties) {
+		section ("Name (rename) this Profile") {
+ 		   	label title:"Profile Name ", required:false, defaultValue: "Climate Control Profile"  
+		}
         section("General Settings") {
             href "TemperatureSettings", title: "Ambiance", description: TemperatureSettingsParams(), state:greyedOut()
             href "ThermostatandDoors", title: "Disabled Mode", description: ThermostatandDoorsParams(), state: greyedOutDoors()
             href "ThermostatAway", title: "Away Mode", description: ThermostatAwayParams(), state: greyedOutAway()
 			href "Settings", title: "Other Settings", description: SettingsParams(), state: greyedOutSettings()
          }
-        section([title:"Options", mobileOnly:true]) {
-            label title:"Assign a name", required:false       
-        }
+
     }
 }
 
@@ -368,15 +372,19 @@ def Settings() {
     ]
 
     return dynamicPage(pageProperties) {    
-        
-        section("Notifications") {
-            input("recipients", "contact", title: "Send notifications to", multiple: true, required: false) {
-            paragraph 	"You may enter multiple phone numbers separated by semicolon."+
-           				"E.G. 8045551122;8046663344"
-            input "sms", "phone", title: "To this phone", multiple: false, required: false
-            input "push", "bool", title: "Send Push Notification (optional)", required: false, defaultValue: false
-            }
- }       
+       	section ("With these output methods" , hideWhenEmpty: true) {    
+                input "sonos", "capability.musicPlayer", title: "On this Music Player", required: false, multiple: true, submitOnChange: true
+                    if (sonos) {
+                        input "sonosVolume", "number", title: "Temporarily change volume", description: "0-100%", required: false
+                    	input "resumePlaying", "bool", title: "Resume currently playing music after notification", required: false, defaultValue: false
+                        input "sonosDelay", "number", title: "(Optional) Delay second delivery of second message by...", description: "seconds", required: false
+                    }
+                input "speechSynth", "capability.speechSynthesis", title: "On this Speech Synthesis Device", required: false, multiple: true, submitOnChange: true
+                        if (speechSynth) {
+                            input "speechVolume", "number", title: "Temporarily change volume", description: "0-100%", required: false
+                    }
+                href "SMS", title: "Send SMS & Push Messages...", description: pSendComplete(), state: pSendSettings()
+            }      
         section(title: "Restrictions", hideable: true) {
 			href "timeIntervalInput", title: "Only during a certain time", description: getTimeLabel(starting, ending), state: greyedOutTime(starting, ending), refreshAfterSelection:true
 			input days
@@ -387,21 +395,45 @@ def Settings() {
         	input "info", "bool", title: "Enable info messages in IDE to display actions in Live Logging", required: false, defaultValue: false, refreshAfterSelection:true
         }    
     }
-    
 }
+page name: "SMS"
+    def SMS(){
+        dynamicPage(name: "SMS", title: "Send SMS and/or Push Messages...", uninstall: false) {
+        section ("Push Messages") {
+            input "push", "bool", title: "Send Push Notification...", required: false, defaultValue: false
+            input "timeStamp", "bool", title: "Add time stamp to Push Messages...", required: false, defaultValue: false  
+            }
+        section ("Text Messages" , hideWhenEmpty: true) {
+            input "sendContactText", "bool", title: "Enable Text Notifications to Contact Book (if available)", required: false, submitOnChange: true
+                if (sendContactText){
+                    input "recipients", "contact", title: "Send text notifications to...", multiple: true, required: false
+                }
+            input "sendText", "bool", title: "Enable Text Notifications to non-contact book phone(s)", required: false, submitOnChange: true      
+                if (sendText){      
+                    paragraph "You may enter multiple phone numbers separated by comma to deliver the Alexa message as a text and a push notification. E.g. 8045551122,8046663344"
+                    input name: "sms", title: "Send text notification to...", type: "phone", required: false
+                }
+            }    
+        }        
+    }
 def installed(){
-	if (debug) log.debug "Installed called with $settings"
+	log.debug "Installed with settings: ${settings}, current app version: ${release()}"
+    state.NotificationRelease = "Climate Control: " + release()
+    state.sound
+    state.lastPlayed
 	init()
 }
 
 def updated(){
-		if (debug) log.debug "Updated called with $settings"
+	log.debug "Updated with settings: ${settings}, current app version: ${release()}"
+	state.NotificationRelease = "Climate Control: " + release()
 	unsubscribe()
 	init()
 }
-
 def init(){
     state.lastStatus = null
+    state.sound
+    state.lastPlayed
     runIn(60, "temperatureHandler")
     	if (debug) log.debug "Temperature will be evaluated in one minute"
      	if(sensor) {
@@ -431,10 +463,9 @@ def init(){
 }
 
 def temperatureHandler(evt) {
-    
     def currentTemp
-    if(modeOk && daysOk && timeOk && modeNotAwayOk)  {
-    		
+    def eTxt
+    if(modeOk && daysOk && timeOk && modeNotAwayOk)  { 		
             if(sensor){            
                 def sensors = sensor.size()
             	def tempAVG = sensor ? getAverage(sensor, "temperature") : "undefined device"
@@ -450,7 +481,7 @@ def temperatureHandler(evt) {
                 def temp = setLow
                 	setLow = setHigh
                 	setHigh = temp
-                if(info) log.info "Detected ${setLow} >  ${setHigh}. Auto-adjusting setting to  ${temp}"
+                if(info) log.info "Detected ${setLow} >  ${setHigh}. Auto-adjusting setting to  ${temp}" 
             }         
             if (doorsOk) {
            		def currentMode = thermostat.latestValue("thermostatMode")
@@ -468,17 +499,25 @@ def temperatureHandler(evt) {
                            	thermostat?.setHeatingSetpoint(SetHeatingLow)
                            	if (SetCoolingLow) thermostat?.setCoolingSetpoint(SetCoolingLow)
                            	thermostat?.poll()
-                           	sendMessage(msg)
-                         		if (info) log.info msg
+                           	if(recipients?.size()>0 || sms?.size()>0 || push) sendtxt(msg) //sendMessage(msg)
+                         	if(speechSynth || sonos ) playMessage(msg)
+                            if (info) log.info msg
                         }
                      	else if  (currentHSP < SetHeatingLow) {
                             def msg = "Adjusting ${thermostat} setpoints because temperature is below ${setLow}"
                      		thermostat?.setHeatingSetpoint(SetHeatingLow)
                      		if (SetCoolingLow) thermostat?.setCoolingSetpoint(SetCoolingLow)
                             thermostat?.poll()
-                            sendMessage(msg)
+                           	if(recipients?.size()>0 || sms?.size()>0 || push) sendtxt(msg) //sendMessage(msg)
+                         	if(speechSynth || sonos ) playMessage(msg)
                         		if (info) log.info msg
                         }
+                     	else if  (currentHSP >= SetHeatingLow) {
+                            def msg = "Your room temperature ${thermostat} has reached $currentTemp, but your Heat is set to $currentHSP, you may consider turning up the heat to be more comfortable"
+                           	if(recipients?.size()>0 || sms?.size()>0 || push) sendtxt(msg) //sendMessage(msg)
+                         	if(speechSynth || sonos ) playMessage(msg)
+                        		if (info) log.info msg
+                        }                        
                     }
                 }                                     
                 if (currentTemp > setHigh) {
@@ -490,7 +529,8 @@ def temperatureHandler(evt) {
                         	if (SetHeatingHigh) thermostat?.setHeatingSetpoint(SetHeatingHigh)
                         	thermostat?.setCoolingSetpoint(SetCoolingHigh)
                         	thermostat?.poll()
-                        	sendMessage(msg)
+                           	if(recipients?.size()>0 || sms?.size()>0 || push) sendtxt(msg) //sendMessage(msg)
+                         	if(speechSynth || sonos ) playMessage(msg)
                             	if (info) log.info msg
                         }
                         else if (currentCSP > SetCoolingHigh) {
@@ -498,9 +538,16 @@ def temperatureHandler(evt) {
                     		thermostat?.setCoolingSetpoint(SetCoolingHigh)
                      		if (SetHeatingHigh) thermostat?.setHeatingSetpoint(SetHeatingHigh)
                             thermostat?.poll()
-                            sendMessage(msg)   
+                           	if(recipients?.size()>0 || sms?.size()>0 || push) sendtxt(msg) //sendMessage(msg)
+                         	if(speechSynth || sonos ) playMessage(msg)  
                             	if (info) log.info msg
                        	}
+                        else if (currentCSP <= SetCoolingHigh) {
+                            def msg = "Your room temperature ${thermostat} has reached $currentTemp, but your AC is set to $currentCSP, you may consider turning the AC to be more comfortable"
+                           	if(recipients?.size()>0 || sms?.size()>0 || push) sendtxt(msg) //sendMessage(msg)
+                         	if(speechSynth || sonos ) playMessage(msg)  
+                            	if (info) log.info msg
+                       	}                        
                    }     
                 }    
                 if (currentTemp > setLow && currentTemp < setHigh) {
@@ -510,7 +557,8 @@ def temperatureHandler(evt) {
                                 def msg = "Adjusting ${thermostat} mode to off because temperature is neutral"
                                     thermostat?.off()
                                     thermostat?.poll()
-									sendMessage(msg)
+                           	if(recipients?.size()>0 || sms?.size()>0 || push) sendtxt(msg) //sendMessage(msg)
+                         	if(speechSynth || sonos ) playMessage(msg)
                                     state.lastStatus = "three"
                                         if (info) log.info msg
                                         if (debug) log.debug "Data check neutral(neutral is:${neutral}, currTemp: ${currentTemp}, setLow: ${setLow}, setHigh: ${setHigh})"
@@ -538,7 +586,8 @@ def modeAwayChange(evt){
                     if(SetCoolingAway) thermostat.setCoolingSetpoint(SetCoolingAway)
                     if(fanAway) thermostat.setThermostatFanMode(fanAway)
                     def msg = "Adjusting ${thermostat} mode and setpoints because Location Mode is set to Away"   
-                    sendMessage(msg) 
+                           	if(recipients?.size()>0 || sms?.size()>0 || push) sendtxt(msg) //sendMessage(msg)
+                         	if(speechSynth || sonos ) playMessage(msg) 
                     if(info) log.info "Running AwayChange because mode is now ${away} and last staus is ${lastStatus}"
             }
             else  {
@@ -563,14 +612,16 @@ def modeAwayTempHandler(evt) {
 					if(Awaycold) thermostat?."${Awaycold}"()
                     thermostat?.poll()
                     def msg = "I changed your ${thermostat} mode to ${Awaycold} because temperature is below ${setAwayLow}"
-                    sendMessage(msg)
+                           	if(recipients?.size()>0 || sms?.size()>0 || push) sendtxt(msg) //sendMessage(msg)
+                         	if(speechSynth || sonos ) playMessage(msg)
                     	if (info) log.info msg
   				}
 				if (currentAwayTemp > setHigh) {
 					if(Awayhot) thermostat?."${Awayhot}"()
                     thermostat?.poll()
 					def msg = "I changed your ${thermostat} mode to ${Awayhot} because temperature is above ${setAwayHigh}"
-                    sendMessage(msg)
+                           	if(recipients?.size()>0 || sms?.size()>0 || push) sendtxt(msg) //sendMessage(msg)
+                         	if(speechSynth || sonos ) playMessage(msg)
                     	if (info) log.info msg
   				}
              }
@@ -593,7 +644,8 @@ def doorCheck(evt){
 		def msg = "I changed your ${thermostat} mode to off because some doors are open"
         if (state.lastStatus != "off"){
         	thermostat?.off()
-			sendMessage(msg)
+                           	if(recipients?.size()>0 || sms?.size()>0 || push) sendtxt(msg) //sendMessage(msg)
+                         	if(speechSynth || sonos ) playMessage(msg)
             	if (info) log.info msg
 		}
 		state.lastStatus = "off"
@@ -622,35 +674,101 @@ private getAverage(device,type){
     return Math.round(total/device.size())
 }
 
-private void sendText(number, message) {
-    if (sms) {
-        def phones = sms.split("\\;")
-        for (phone in phones) {
-            sendSms(phone, message)
-            
-        }
-    }
-}
+/***********************************************************************************************************************
+    TAKE ACTIONS HANDLER
+***********************************************************************************************************************/
+private playMessage(eTxt) {
+	def sVolume
+    def sTxt = textToSpeech(eTxt instanceof List ? eTxt[0] : eTxt)
+    int prevDuration
+    if(state.sound) prevDuration = state.sound.duration as Integer
+    if(sonosDelay)	prevDuration = prevDuration + sonosDelay 
+	state.sound = sTxt
+	state.lastPlayed = now()
 
-private void sendMessage(message) {
-    if(info) log.info "sending notification:  ${message}"
-    if (recipients) { 
+    //Playing Audio Message
+        if (speechSynth) {
+            def currVolLevel = speechSynth.latestValue("level")
+            def currMute = speechSynth.latestValue("mute")
+                log.debug "vol switch = ${currVolSwitch}, vol level = ${currVolLevel}, currMute = ${currMute} "
+                sVolume = settings.speechVolume ?: 30 
+                speechSynth?.playTextAndResume(eTxt, sVolume)
+                state.lastPlayed = now()
+                log.info "Playing message on the speech synthesizer'${speechSynth}' at volume '${sVolume}'"
+        }
+        if (sonos) { 
+            def currVolLevel = sonos.latestValue("level") //as Integer
+            currVolLevel = currVolLevel[0]
+            def currMuteOn = sonos.latestValue("mute").contains("muted")
+                if (currMuteOn) { 
+                    log.error "speaker is on mute, sending unmute command"
+                    sonos.unmute()
+                }
+                sVolume = settings.sonosVolume ?: 20
+                sVolume = (sVolume == 20 && currVolLevel == 0) ? sVolume : sVolume !=20 ? sVolume: currVolLevel
+                def elapsed = now() - state.lastPlayed
+                def elapsedSec = elapsed/1000
+                //log.warn "previous duration = $prevDuration, elapsedSec = $elapsedSec "
+                def timeCheck = prevDuration * 1000
+                //log.warn "elapsed= $elapsed, timeCheck = $timeCheck"
+                def sCommand = resumePlaying == true ? "playTrackAndResume" : "playTrackAndRestore"
+                    if(elapsed < timeCheck){
+                    	def delayNeeded = prevDuration - elapsedSec
+                        if(delayNeeded > 0 ) delayNeeded = delayNeeded + 2
+                        log.error "message is already playing, delaying new message by $delayNeeded seconds"
+                        state.sound.command = sCommand
+                        state.sound.volume = sVolume
+                        state.lastPlayed = now()
+                        runIn(delayNeeded , delayedMessage)
+                	}
+                    else {
+                    	log.info "playing first message"
+                		sonos?."${sCommand}"(sTxt.uri, Math.max((sTxt.duration as Integer),2), sVolume)
+                        state.lastPlayed = now()
+						state.sound.command = sCommand
+                        state.sound.volume = sVolume
+                	}
+        }      
+}
+def delayedMessage() {
+def sTxt = state.sound
+sonos?."${sTxt.command}"(sTxt.uri, Math.max((sTxt.duration as Integer),3), sTxt.volume)
+log.warn "delayed message is now playing"
+}
+/***********************************************************************************************************************
+    SMS HANDLER
+***********************************************************************************************************************/
+private void sendtxt(message) {
+	def stamp = state.lastTime = new Date(now()).format("h:mm aa", location.timeZone)
+    if (parent.debug) log.debug "Request to send sms received with message: '${message}'"
+    if (sendContactText) { 
         sendNotificationToContacts(message, recipients)
-    if(debug) log.debug "sending notification:  ${recipients}"    
-    }
-    if (push) {
-        sendPush message
-            if(info) log.info "sending push notification"
-    } else {
-            sendNotificationEvent(message)
-             if(info) log.info "sending notification"
+            if (parent.debug) log.debug "Sending sms to selected reipients"
+    } 
+    else {
+    	if (push) {
+        	message = timeStamp==true ? message + " at " + stamp : message
+    		sendPush message
+            	if (parent.debug) log.debug "Sending push message to selected reipients"
+        }
+    } 
+    if (notify) {
+        sendNotificationEvent(message)
+             	if (parent.debug) log.debug "Sending notification to mobile app"
     }
     if (sms) {
         sendText(sms, message)
-        if(debug) "Calling process to send text"
+	}
+}
+private void sendText(number, message) {
+    if (sms) {
+        def phones = sms.split("\\,")
+        for (phone in phones) {
+            sendSms(phone, message)
+            if (parent.debug) log.debug "Sending sms to selected phones"
+        }
     }
 }
-            
 
 private getAllOk() {
 	modeOk && daysOk && timeOk && doorsOk && modeNotAwayOk
@@ -746,6 +864,16 @@ def getAlexaReport() {
     return result
 }
 
+def getStatusReport() {
+    def result = ""
+    if (thermostat) {
+    def disable = doors ? "active" : "not active" 
+        text = "The ambiance mode for ${thermostat} is to adjust the thermostat if the temperature falls below ${setLow} or raises above ${setHigh}. "+
+        		"The disable mode is ${disable} and the away mode is set when thermostat to away mode when Location Mode changes to: ${away}."
+    }
+    return result
+}
+
 def greyedOut(){
     //state.var ? "complete": ""   
     def result = ""
@@ -790,7 +918,7 @@ def greyedOutAway(){
 def ThermostatAwayParams() {
     def text = "Tap here to configure settings"
     if (away) {
-        text = "Current settings: adjust thermostat to away mode when Location Mode is set to: ${away}. Tap here to change settings"
+        text = "Current settings: adjust thermostat to away mode when Location Mode is set to: ${modes2}. Tap here to change settings"
     }
     text
 }
@@ -798,7 +926,7 @@ def ThermostatAwayParams() {
 
 def greyedOutSettings(){
 	def result = ""
-    if (starting || ending || days || modes || push) {
+    if (starting || ending || days || modes || push || speechSynth || sonos) {
     	result = "complete"	
     }
     result
@@ -806,7 +934,7 @@ def greyedOutSettings(){
 
 def SettingsParams() {
     def text = "Tap here to configure settings"
-    if (starting || ending || days || modes || push) {
+    if (starting || ending || days || modes || push || speechSynth || sonos) {
         text = "Other Settings have been configured. Tap here to change settings"
     }
     text
@@ -838,4 +966,22 @@ page(name: "timeIntervalInput", title: "Only during a certain time", refreshAfte
 			input "starting", "time", title: "Starting (both are required)", required: false 
 			input "ending", "time", title: "Ending (both are required)", required: false 
 		}
+}
+
+def pSendSettings() {def result = ""
+    if (sendContactText || sendText || push) {
+    	result = "complete"}
+   		result}
+
+def pSendComplete() {def text = "Tap here to configure settings" 
+    if (sendContactText || sendText || push) {
+    	text = "Configured"}
+    	else text = "Tap to Configure"
+		text}
+        
+/******************************************************************************************************
+   PARENT STATUS CHECKS
+******************************************************************************************************/
+def checkRelease() {
+return state.NotificationRelease
 }
