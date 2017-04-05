@@ -1,7 +1,7 @@
 /* 
  * Notification - EchoSistant Add-on 
  *
- *		4/5/2017		Version:4.0 R.0.0.7c		Scheduling problem with triggers, sms not sending with weather alerts
+ *		4/5/2017		Version:4.0 R.0.0.8 		Sonos delay, weather sms bug fixes, scheduling enhancements
  *		4/3/2017		Version:4.0 R.0.0.7b 		Power reporting bug, Sonos delay improvements, weather fixes
  *		3/29/2017		Version:4.0 R.0.3.6 		Expansion of Triggers (sunrise/sunset)
  *		3/24/2017		Version:4.0 R.0.3.5	    	bug fix: custom sound, minor fixes
@@ -34,7 +34,7 @@ definition(
 	iconX3Url		: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/app-Echosistant@2x.png")
 /**********************************************************************************************************************************************/
 private release() {
-	def text = "R.0.0.7b"
+	def text = "R.0.0.8"
 }
 
 preferences {
@@ -118,6 +118,7 @@ page name: "mainProfilePage"
                     if (sonos) {
                         input "sonosVolume", "number", title: "Temporarily change volume", description: "0-100%", required: false
                     	input "resumePlaying", "bool", title: "Resume currently playing music after notification", required: false, defaultValue: false
+                        input "sonosDelay", "number", title: "(Optional) Delay second delivery of second message by...", description: "seconds", required: false
                     }
                 input "speechSynth", "capability.speechSynthesis", title: "On this Speech Synthesis Device", required: false, multiple: true, submitOnChange: true
                         if (speechSynth) {
@@ -189,7 +190,7 @@ page name: "triggers"
                     input "myMode", "enum", title: "Choose Modes...", options: location.modes.name.sort(), multiple: true, required: false 
                     if (actionType != "Ad-Hoc Report") input "myRoutine", "enum", title: "Choose Routines...", options: actions, multiple: true, required: false            
                 }
-			}            
+			}                       
             section ("Device State", , hideWhenEmpty: true) {
                 input "mySwitch", "capability.switch", title: "Choose Switch(es)...", required: false, multiple: true, submitOnChange: true
                     if (mySwitch && actionType != "Ad-Hoc Report") input "mySwitchS", "enum", title: "Notify when state changes to...", options: ["on", "off", "both"], required: false
@@ -372,7 +373,7 @@ def scheduleTurnOff(sunriseString) {
     	log.info "Scheduling for a specific time: '${endingXY}'"
     	runOnce(endingXY, scheduledTimeHandlerOff)
     }
-}    
+}
 /************************************************************************************************************
 		
 ************************************************************************************************************/
@@ -382,9 +383,11 @@ def installed() {
 	state.sound
 	if (myWeatherAlert) {
 		runEvery5Minutes(mGetWeatherAlerts)
+        mGetWeatherAlerts()
 	}
 	if (myWeather) {
 		runEvery1Hour(mGetCurrentWeather)
+        mGetCurrentWeather()
 	}    
 }
 def updated() {
@@ -418,12 +421,11 @@ unschedule()
     if (myWeatherAlert) {
 		runEvery5Minutes(mGetWeatherAlerts)
 		state.weatherAlert
+        mGetWeatherAlerts()
     }
     if (myWeatherTriggers) {
-
     	"${myWeatherCheck}"(mGetWeatherTrigger)
-        
-            mGetWeatherTrigger()
+         mGetWeatherTrigger()
     }     
 	if (myWeather) {
     	log.debug "refreshing hourly weather"
@@ -852,15 +854,24 @@ def bufferPendingL() {
    EVENTS HANDLER
 ************************************************************************************************************/
 def alertsHandler(evt) {
-    def event = evt.data
+    //def event = evt.data NOT IN USE 4/5/17 Bobby
     def eVal = evt.value
     def eName = evt.name
     def eDev = evt.device
     def eDisplayN = evt.displayName
     def eDisplayT = evt.descriptionText
 	if(eDisplayN == null) eDisplayN = eName
+    
     def eTxt = eDisplayN + " is " + eVal //evt.descriptionText 
     
+    log.warn "event received: event = $event, eVal = $eVal, eName = $eName, eDev = $eDev, eDisplayN = $eDisplayN, eDisplayT = $eDisplayT, eTxt = $eTxt"
+    /*
+    event received: event = {"microDeviceTile":{"type":"standard","icon":"st.motion.motion.active","backgroundColor":"#53a7c0"}}, 
+    eVal = active, eName = motion, eDev = Bathroom, eDisplayN = Bathroom, eDisplayT = {{ device.displayName }} detected motion, eTxt = Bathroom is active
+    
+    data(eVal = active, eName = motion, eDev = Bathroom)
+    
+    */
     if(actionType == "Default"){
 		if(speechSynth) {
        	speechSynth.playTextAndResume(eTxt)
@@ -879,17 +890,14 @@ def alertsHandler(evt) {
     else {
     if (actionType == "Triggered Report" && myProfile) {
     	eTxt = parent.runReport(myProfile)
-        log.warn "eTxt = $eTxt"
     }
     def eProfile = app.label
     def nRoutine = false
 	def stamp = state.lastTime = new Date(now()).format("h:mm aa", location.timeZone)     
 	def today = new Date(now()).format("EEEE, MMMM d, yyyy", location.timeZone)
-    
-    
     if (getDayOk()==true && getModeOk()==true && getTimeOk()==true && getFrequencyOk()==true) {	
-        if(eName == "time of day" && message || eName == "time of day on" && message || eName == "time of day off" && message){
-                eTxt = message ? "$message".replace("&device", "${eDisplayN}").replace("&event", "routine").replace("&action", "executed").replace("&date", "${today}").replace("&time", "${stamp}").replace("&profile", "${eProfile}") : null
+        if(eName == "time of day" && message){
+                eTxt = message ? "$message".replace("&device", "${eDisplayN}").replace("&event", "time").replace("&action", "executed").replace("&date", "${today}").replace("&time", "${stamp}").replace("&profile", "${eProfile}") : null
                     if(actionType == "Custom with Weather") eTxt = getWeatherVar(eTxt)
         }
         if(eName == "coolingSetpoint" || eName == "heatingSetpoint") {
@@ -902,10 +910,10 @@ def alertsHandler(evt) {
             	eTxt = message ? "$message".replace("&device", "${eDisplayN}").replace("&event", "routine").replace("&action", "executed").replace("&date", "${today}").replace("&time", "${stamp}").replace("&profile", "${eProfile}") : null
                     if(actionType == "Custom with Weather") eTxt = getWeatherVar(eTxt)
                     if (message){
-						if(recipients?.size()>0 || sms?.size()>0) {
+						if(recipients?.size()>0 || sms?.size()>0 || push) {
                     		sendtxt(eTxt)
                 		}
-                    takeAction(eTxt)
+                    	takeAction(eTxt)
                 	}
                     else {
                         eTxt = "routine was executed"
@@ -920,7 +928,7 @@ def alertsHandler(evt) {
                     eTxt = message ? "$message".replace("&device", "${eVal}").replace("&event", "${eName}").replace("&action", "changed").replace("&date", "${today}").replace("&time", "${stamp}").replace("&profile", "${eProfile}") : null
                     if(actionType == "Custom with Weather") eTxt = getWeatherVar(eTxt)
                     if (message){
-                        if(recipients?.size()>0 || sms?.size()>0) {
+                        if(recipients?.size()>0 || sms?.size()>0 || push) {
                             sendtxt(eTxt)
                         }
                         takeAction(eTxt)
@@ -938,14 +946,22 @@ def alertsHandler(evt) {
                     if(actionType == "Custom with Weather") eTxt = getWeatherVar(eTxt)
                     }
                     if(eTxt){
-                        if(recipients?.size()>0 || sms?.size()>0) {
+                        if(recipients?.size()>0 || sms?.size()>0 || push) {
                             sendtxt(eTxt)
                         }
                         takeAction(eTxt)
                     }
                 }
                 else {
-                    if (eDev == "weather"){eTxt = eName}
+               		if (eDev == "weather"){
+                    	if (eDisplayN == "weather alert"){
+                        	eTxt = eVal
+                        }
+                        else eTxt = eDisplayN + " is " + eVal
+					}
+                    if(recipients?.size()>0 || sms?.size()>0 || push) {
+                    	sendtxt(eTxt)
+                 	}
                     takeAction(eTxt)
                 }
             }
@@ -961,6 +977,7 @@ private takeAction(eTxt) {
     def sTxt
     int prevDuration
     if(state.sound) prevDuration = state.sound.duration as Integer
+    if(sonosDelay)	prevDuration = prevDuration + sonosDelay
     if(myProfile && actionType != "Triggered Report") runProfileActions()   
     if (actionType == "Custom" || actionType == "Custom with Weather" || actionType == "Triggered Report") {
         if (speechSynth || sonos) sTxt = textToSpeech(eTxt instanceof List ? eTxt[0] : eTxt)
@@ -999,7 +1016,7 @@ private takeAction(eTxt) {
                 def sCommand = resumePlaying == true ? "playTrackAndResume" : "playTrackAndRestore"
                     if(elapsed < timeCheck){
                     	def delayNeeded = prevDuration - elapsedSec
-                        if(delayNeeded > 0 ) delayNeeded = delayNeeded + 3
+                        if(delayNeeded > 0 ) delayNeeded = delayNeeded + 2
                         log.error "message is already playing, delaying new message by $delayNeeded seconds"
                         state.sound.command = sCommand
                         state.sound.volume = sVolume
@@ -1085,7 +1102,7 @@ def mGetWeatherTrigger(){
                 
             myTrigger = myWeatherTriggers == "Chance of Precipitation (in/mm)" ? precipC : myWeatherTriggers == "Wind Gust (MPH/kPH)" ? windC : myWeatherTriggers == "Humidity (%)" ? humid : myWeatherTriggers == "Temperature (F/C)" ? tempC : null
             }
-            
+            def myTriggerName = myWeatherTriggers == "Chance of Precipitation (in/mm)" ? "Precipitation" : myWeatherTriggers == "Wind Gust (MPH/kPH)" ? "Wind Gusts" : myWeatherTriggers == "Humidity (%)" ? "Humidity" : myWeatherTriggers == "Temperature (F/C)" ? "Temperature" : null
             if (myWeatherTriggersS == "above" && state.cycleOnA == false){
             	def var = myTrigger > myWeatherThreshold
             	log.warn  " myTrigger = $myTrigger , myWeatherThreshold = $myWeatherThreshold, myWeatherTriggersS = $myWeatherTriggersS, var = $var"
@@ -1105,14 +1122,11 @@ def mGetWeatherTrigger(){
        			}
             }
        		if(process == true){
-				data = [value:"${myTrigger}", name:"${myWeatherTriggers}", device:"${myWeatherTriggers}"] 
-    			alertsHandler(data)
+				//data = [value:"${myTrigger}", name:"${myWeatherTriggers}", device:"${myWeatherTriggers}"] 4/5/17 Bobby
+				data = [value:"${myTrigger}", name:"${myTriggerName}", device:"weather"] 
+				alertsHandler(data)
             }
-            else{
-            	log.debug "refreshed weather triggers, but trigger is $process"
-   			}
 		}
-   
     }
 	catch (Throwable t) {
 	log.error t
@@ -1124,8 +1138,16 @@ def mGetWeatherTrigger(){
     WEATHER ALERTS
 ***********************************************************************************************************************/
 def mGetWeatherAlerts(){
-	def result = "There are no weather alerts for your area"
-	def data = [:]
+	def result
+    def firstTime = false
+    if(state.weatherAlert == null){	
+   		result = "You are now subscribed to selected weather alerts for your area"
+        firstTime = true
+		state.weatherAlert = "There are no weather alerts for your area"
+		state.lastAlert = new Date(now()).format("h:mm aa", location.timeZone)
+    }
+    else result = "There are no weather alerts for your area"
+    def data = [:]
     try {
 		if (getDayOk()==true && getModeOk()==true && getTimeOk()==true && getFrequencyOk()==true) {
         	def weather = getWeatherFeature("alerts", settings.wZipCode)
@@ -1140,26 +1162,25 @@ def mGetWeatherAlerts(){
                     if(state.weatherAlert == null){
                         state.weatherAlert = result
                         state.lastAlert = new Date(now()).format("h:mm aa", location.timeZone)
-                        data = [value:"alert", name: result, device:"weather"] 
+                        data = [value: result, name: "weather alert", device:"weather"] 
                         alertsHandler(data)
-                        if (push || sms){
-							sendtxt(data)
-    						log.info "sent from the Weather Alerts handler"
-							}
-                    	}
+                        } 
                     else {
                         log.warn "new weather alert = ${alert} , expire = ${expire}"
                         def newAlert = result != state.weatherAlert ? true : false
                         if(newAlert == true){
                             state.weatherAlert = result
                             state.lastAlert = new Date(now()).format("h:mm aa", location.timeZone)
-                            data = [value:"alert", name: result, device:"weather"] 
+                            data = [value: result, name: "weather alert", device:"weather"] 
                             alertsHandler(data)
                         }
                     }
                 }
          	}
-            log.warn "weather alert not matched"
+			else if (firstTime == true) {
+				data = [value: result, name: "weather alert", device:"weather"] 
+                alertsHandler(data)
+         	}
     	}
     }
 	catch (Throwable t) {
@@ -1199,7 +1220,7 @@ def mGetCurrentWeather(){
                     state.lastWeather = weatherData
                     state.lastWeatherCheck = lastUpdated
                     result = "hourly weather forcast notification has been activated at " + lastUpdated + " You will now receive hourly weather updates, only if the forecast data changes" 
-                    data = [value:"precipitation", name: result, device:"weather"]
+                    data = [value: result, name: "weather alert", device: "weather"]
                     alertsHandler(data)
                 }
                 else {
@@ -1230,38 +1251,33 @@ def mGetCurrentWeather(){
                             	if(result) {result = result + " , the chance of rain to "  + cWeatherPrecipitation }
                             	else result = "The hourly weather forecast has been updated. The chance of rain has been changed to "  + cWeatherPrecipitation
                             }
-                            if (push){
-								sendtxt(result)
-    							log.info "sent from the hourly forcast handler"
-							}
-                            data = [value:"forecast", name: result, device:"weather"]  
+                            data = [value: result, name: "weather alert", device: "weather"]  
                             alertsHandler(data)
                         }
                         else {
                             if (myWeather == "Weather Condition Changes" && wUpdate ==  "current weather condition"){
                                 result = "The " + wUpdate + " has been updated to " + wChange
-                                data = [value:"condition", name: result, device:"weather"]  
+                                data = [value: result, name: "weather alert", device: "weather"]  
                                 alertsHandler(data)
                             }
                             else if (myWeather == "Chance of Precipitation Changes" && wUpdate ==  "chance of precipitation"){
                                 result = "The " + wUpdate + " has been updated to " + wChange
-                                data = [value:"precipitation", name: result, device:"weather"] 
+                                data = [value: result, name: "weather alert", device: "weather"] 
                                 alertsHandler(data)
                             }        
                             else if (myWeather == "Wind Speed Changes" && wUpdate == "wind intensity"){
                                 result = "The " + wUpdate + " has been updated to " + wChange
-                                data = [value:"wind", name: result, device:"weather"] 
+                                data = [value: result, name: "weather alert", device: "weather"] 
                                 alertsHandler(data)
                             }         
                             else if (myWeather == "Humidity Changes" && wUpdate == "humidity"){
                                 result = "The " + wUpdate + " has been updated to " + wChange
-                                data = [value:"humidity", name: result, device:"weather"] 
+                                data = [value: result, name: "weather alert", device: "weather"] 
                                 alertsHandler(data)
                             }
 						}
                     }       
                 }
-                log.info "refreshed hourly weather forecast: past forecast = ${pastWeather}; new forecast = ${weatherData}"  
             }
     	}
     }
@@ -1473,6 +1489,7 @@ def getFrequencyOk() {
 		else {
 			log.debug "Not taking action because the notification was already played once today"
 		}
+        log.debug "frequencyOk = $result"
         result
 }
 private onceDailyOk(Long lastPlayed) {
@@ -1581,7 +1598,6 @@ private void sendtxt(message) {
     }
     if (sms) {
         sendText(sms, message)
-        if (parent.debug) log.debug "Processing message for selected phones"
 	}
 }
 private void sendText(number, message) {
