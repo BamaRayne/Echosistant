@@ -6,6 +6,7 @@
  
  ************************************ FOR INTERNAL USE ONLY ******************************************************
  *
+ *		4/5/20017		Version:4.0 R.0.3.2a	Added "Cut on" and "Cut off" commands for lights and Automation Disable
  *		4/03/2017		Version:4.0 R.0.3.2		Fixed Alexa output when controlling groups and custom groups
  *		3/21/2017		Version:4.0 R.0.3.1 	added window covering group
  *		3/15/2017		Version:4.0 R.0.3.0 	minor bug fixes
@@ -872,16 +873,30 @@ def profileEvaluate(params) {
                     return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]                                  
                 }
 				//DISABLE SWITCHES
+                if (deviceType == "light" || deviceType == "light1" || deviceType == "light2" || deviceType == "light3" || deviceType == "light4" || deviceType == "light5"){
+                    dataSet =  ["command": command, "deviceType": deviceType]
+                    outputTxt = advCtrlHandler(dataSet)
+                    return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]                                  
+                }
+				//DISABLE SWITCHES
                 if (deviceType == "disable") {
-                    if (gDisable?.size()>0) {
+                	if (gDisable?.size()>0) {
                         if (command == "on" || command == "off") {
-                            if (reverseDisable == true) { command = command == "on" ? "off" : command == "off" ? "on" : command } // added 2/19/17 per Jason's request 
+                           if (reverseDisable == true) { command = command == "on" ? "off" : command == "off" ? "on" : command } // added 2/19/17 per Jason's request 
                             gDisable?."${command}"()
+                            if (command == "on") {
+                            	outputTxt = "Ok, turning " + childName + " automation off" 
+                                }
+                            if (command == "off") {
+                            	outputTxt = "Ok, turning " + childName + " automation on "
+                                }    
+                            else if (reverseDisable == false) { command = command == "on" ? "on" : command == "off" ? "off" : command  
                             outputTxt = "Ok, turning " + childName + " automation " + command
+                            }
                             return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pContCmdsR":pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]
                         }
                     }
-                }            
+                }           
                 //FANS CONTROL
                 if (deviceType == "fan"){
                     if (gFans?.size()>0) {
@@ -1039,7 +1054,7 @@ def advCtrlHandler(data) {
     def result
     if (deviceType == "light" || deviceType == "light1" || deviceType == "light2" || deviceType == "light3" || deviceType == "light4" || deviceType == "light5"){
     deviceType = deviceType == "light" && gSwitches ? gSwitches : deviceType == "light1" && gCustom1 ? gCustom1 : deviceType == "light2" && gCustom2 ? gCustom2 : deviceType == "light3" && gCustom3 ? gCustom3 : deviceType == "light4" && gCustom4 ? gCustom4 : deviceType == "light5" && gCustom5 ? gCustom5 : null
-		if (deviceCommand == "increase" || deviceCommand == "decrease" || deviceCommand == "on" || deviceCommand == "off") {
+		if (deviceCommand == "increase" || deviceCommand == "decrease" || deviceCommand == "on" || deviceCommand == "off") { 
                     deviceType.each {s ->
                    		if (deviceCommand == "on" || deviceCommand == "off") {
 							s?."${deviceCommand}"()
@@ -1601,11 +1616,11 @@ private getCommand(text){
 	}
 //Disable Switches
     //if (gDisable){
-        if (text.startsWith("disengage") || text.startsWith("disable automation") || text.startsWith("stop turning the") || text.startsWith("stop the motion sensor") || text.startsWith ("turn the motion sensor off") || text.startsWith("stop the sensor") || text.startsWith("kill the automation") || text.contains("kill the sensor") || text.contains("sensor off")){
+        if (text.startsWith("cut off") || text.startsWith("disengage") || text.startsWith("disable automation") || text.startsWith("stop turning the") || text.startsWith("stop the motion sensor") || text.startsWith ("turn the motion sensor off") || text.startsWith("stop the sensor") || text.startsWith("kill the automation") || text.contains("kill the sensor") || text.contains("sensor off")){
             	command = "off"
                 deviceType = "disable"
         }
-        else if (text.startsWith("engage") ||text.contains("enable automation") || text.startsWith("start turning the") || text.startsWith("start the motion sensor") || text.startsWith("turn the motion sensor on") || text.startsWith ("start the sensor")|| text.contains("sensor on")){
+        else if (text.startsWith("cut on") || text.startsWith("engage") ||text.contains("enable automation") || text.startsWith("start turning the") || text.startsWith("start the motion sensor") || text.startsWith("turn the motion sensor on") || text.startsWith ("start the sensor")|| text.contains("sensor on")){
             command = "on"
             deviceType = "disable"
         }

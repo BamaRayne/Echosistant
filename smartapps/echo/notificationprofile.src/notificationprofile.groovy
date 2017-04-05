@@ -1,6 +1,7 @@
 /* 
  * Notification - EchoSistant Add-on 
  *
+ *		4/5/2017		Version:4.0 R.0.0.7c		Scheduling problem with triggers, sms not sending with weather alerts
  *		4/3/2017		Version:4.0 R.0.0.7b 		Power reporting bug, Sonos delay improvements, weather fixes
  *		3/29/2017		Version:4.0 R.0.3.6 		Expansion of Triggers (sunrise/sunset)
  *		3/24/2017		Version:4.0 R.0.3.5	    	bug fix: custom sound, minor fixes
@@ -266,7 +267,7 @@ page name: "certainTimeX"
                 if(startingY in [null, "A specific time"]) input "startingXY", "time", title: "Trigger One", required: false, submitOnChange: true
                 else {
                     if(startingY == "Sunrise") input "startSunriseOffsetY", "number", range: "*..*", title: "Offset in minutes (+/-)", defaultValue: 0, required: false, submitOnChange: true
-                    else if(startingY == "Sunset") input "startSunsetOffsetY", "number", range: "*..*", title: "Offset in minutes (+/-)", defaultValue: 0,required: false, submitOnChange: true
+                    else if(startingY == "Sunset") input "startSunsetOffsetY", "number", range: "*..*", title: "Offset in minutes (+/-)", defaultValue: 0, required: false, submitOnChange: true
                 }
             }
             section("...and then again at this time") {
@@ -352,27 +353,26 @@ def scheduleTurnOn(sunsetString) {
 
     if (startingY == "Sunrise" || startingY == "Sunset") {
     def sunsetTime = Date.parse("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", sunsetString)
-    def timeBeforeSunset = new Date(sunsetTime.time - (startSunsetOffsetY * 60 * 1000))
+    def timeBeforeSunset = new Date(sunsetTime.time - startSunsetOffsetY) // * 60 * 1000))
     log.info "Scheduling for: $timeBeforeSunset (sunset is $sunsetTime)"
     runOnce(timeBeforeSunset, scheduledTimeHandlerOn)
 	}
-    else if (startingY != "Sunrise" && startingY != "Sunset") {
+    else if (startingY != "Sunrise" && startingY != "Sunset" || startingY == "A specific time") {
     	runOnce(startingXY, scheduledTimeHandlerOn)
     }    
 }
 def scheduleTurnOff(sunriseString) {
-//if(endingY != null) { 
 	if (endingY == "Sunrise" || endingY == "Sunset") {
 	def sunriseTime = Date.parse("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", sunriseString)
-    def timeBeforeSunrise = new Date(sunriseTime.time - (endSunriseOffsetY * 60 * 1000))
+    def timeBeforeSunrise = new Date(sunriseTime.time - endSunriseOffsetY)
     log.info "Scheduling for: $timeBeforeSunrise (sunrise is $sunriseTime)"
     runOnce(timeBeforeSunrise, scheduledTimeHandlerOff)
 	}
-    else if(endingY != "Sunrise" && endingY != "Sunset") {
+    else if(endingY != "Sunrise" && endingY != "Sunset" || endingY == "A specific time") {
+    	log.info "Scheduling for a specific time: '${endingXY}'"
     	runOnce(endingXY, scheduledTimeHandlerOff)
     }
 }    
-//}
 /************************************************************************************************************
 		
 ************************************************************************************************************/
@@ -751,24 +751,20 @@ private getVar(var) {
 def scheduledTimeHandler() {
 	def data = [:]
 		if (getDayOk()==true && getModeOk()==true && getTimeOk()==true && getFrequencyOk()==true) {	
-			data = [value:"time", name:"time of day on", device:"schedule"] 
+			data = [value:"time", name:"time of day", device:"schedule"] 
     		alertsHandler(data)
     	}
 }
 def scheduledTimeHandlerOn() {
 	def data = [:]
-		if (getDayOk()==true && getModeOk()==true && getTimeOk()==true) {	
-			data = [value:"time", name:"time of day on", device:"schedule"] 
+			data = [value:"timeOn", name:"time of day on", device:"schedule"] 
     		alertsHandler(data)
     	}
-}
 def scheduledTimeHandlerOff() {
 	def data = [:]
-		if (getDayOk()==true && getModeOk()==true && getTimeOk()==true) {	
-			data = [value:"time", name:"time of day off", device:"schedule"] 
+			data = [value:"timeOff", name:"time of day off", device:"schedule"] 
     		alertsHandler(data)
     	}
-}
 /***********************************************************************************************************************
     POWER HANDLER
 ***********************************************************************************************************************/
@@ -892,7 +888,7 @@ def alertsHandler(evt) {
     
     
     if (getDayOk()==true && getModeOk()==true && getTimeOk()==true && getFrequencyOk()==true) {	
-        if(eName == "time of day" && message){
+        if(eName == "time of day" && message || eName == "time of day on" && message || eName == "time of day off" && message){
                 eTxt = message ? "$message".replace("&device", "${eDisplayN}").replace("&event", "routine").replace("&action", "executed").replace("&date", "${today}").replace("&time", "${stamp}").replace("&profile", "${eProfile}") : null
                     if(actionType == "Custom with Weather") eTxt = getWeatherVar(eTxt)
         }
@@ -1146,7 +1142,7 @@ def mGetWeatherAlerts(){
                         state.lastAlert = new Date(now()).format("h:mm aa", location.timeZone)
                         data = [value:"alert", name: result, device:"weather"] 
                         alertsHandler(data)
-                        if (push){
+                        if (push || sms){
 							sendtxt(data)
     						log.info "sent from the Weather Alerts handler"
 							}

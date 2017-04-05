@@ -8,6 +8,7 @@
  
  ************************************ FOR INTERNAL USE ONLY ******************************************************
  *
+ *		4/05/2017		Version:4.0 R.0.3.3d	Minor UI changes & added "cut on/cut off" commands
  *		4/03/2017		Version:4.0 R.0.3.3c 	Bug Fixes and various other things
  *		3/29/2017		Version:4.0 R.0.3.3b	change to virtual person commands
  *		3/28/2017		Version:4.0 R.0.3.3		minor bug fixes
@@ -45,7 +46,7 @@ private def textVersion() {
 	def text = "4.0"
 }
 private release() {
-    def text = "R.0.3.3c"
+    def text = "R.0.3.3d"
 }
 /**********************************************************************************************************************************************/
 preferences {   
@@ -104,8 +105,8 @@ page name: "mIntent"
             section ("System and Device Control Defaults") {
                 href "mDefaults", title: "Change Defaults", description: mDefaultsD(), state: mDefaultsS()
 			}
-            section ("Manage Home Security") {
-            	href "mSecurity", title: "Home Security control options", description: mSecurityD(), state: mSecurityS()
+            section ("EchoSistant Security") {
+            	href "mSecurity", title: "Configure EchoSistant Security Options", description: mSecurityD(), state: mSecurityS()
             }   
 		}
 	}
@@ -293,12 +294,12 @@ page name: "mIntent"
                     }    
 				}
 				if (remindOn) {
-        			section ("Reminders & Events") {
+        			section ("Reminders & Events (${getChildSize("Reminders")})") {
   						app(name: "reminder", appName: "Reminders", namespace: "Echo", title: "Access Reminders & Events...", multiple: false,  uninstall: false)
 					}
                 }    
                 if (securityOn) {
-                	section ("Security Suite") {
+                	section ("Security Suite (${getChildSize("SecuritySuite")})") {
                     	href "mSecuritySuite", title: "View and Configure the Security Suite Profiles...", description: ""
                     }    
                 }                   
@@ -2025,16 +2026,19 @@ def controlDevices() {
                         //Switch Control
                         if (deviceMatch && dType == "s") {
                             device = deviceMatch
-                            if (command == "disable" || command == "deactivate"|| command == "stop") {command = "off"}
-                            if (command == "enable" || command == "activate"|| command == "start") {command = "on"}    
+                            if (command == "cut off" || command == "disable" || command == "deactivate"|| command == "stop") {command = "off"}
+                            if (command == "cut on" || command == "enable" || command == "activate"|| command == "start") {command = "on"}    
                             if (ctNum > 0 && ctUnit == "minutes") {
                                 device = device.label
                                 delay = true
                                 data = [type: "cSwitch", command: command, device: device, unit: ctUnit, num: ctNum, delay: delay]
                                 runIn(ctNum*60, controlHandler, [data: data])
-                                if (command == "on" || command == "off" ) {outputTxt = "Ok, turning " + ctDevice + " " + command + ", in " + numText}
+                                if (command == "on" && ctCommand != "cut on") {outputTxt = "Ok, turning " + ctDevice + " " + command + ", in " + numText}
+                                else if (command == "off" && ctCommand != "cut off") {outputTxt = "Ok, turning " + ctDevice + " " + command + ", in " + numText}
                                 else if (command == "decrease") {outputTxt = "Ok, decreasing the " + ctDevice + " level in " + numText}
                                 else if (command == "increase") {outputTxt = "Ok, increasing the " + ctDevice + " level in " + numText}
+                                else if (ctCommand == "cut on") {outputTxt = "Ok, cutting on the " + ctDevice + ", in " + numText}
+                                else if (ctCommand == "cut off") {outputTxt = "Ok, cutting off the " + ctDevice + ", in " + numText}
                                 return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
                             }
                             else {
@@ -2498,6 +2502,16 @@ def controlHandler(data) {
                     	return result 
                     }
 		}
+        if (deviceCommand == "cut off") {
+        	deviceD?."off"()
+            result = "Ok, cutting off the " + deviceD
+            return result
+            }
+        if (deviceCommand == "cut on") {
+        	deviceD?."auto"()
+            result = "Ok, setting the " + deviceD + " to auto mode"
+            return result
+            }
         if (deviceCommand == "off") {
         	deviceD?."off"()
             result = "Ok, turning off the " + deviceD
@@ -2821,7 +2835,7 @@ def controlSecurity(param) {
                     state.pTryAgain = false
                     return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
             }
-            if (command == "cancel" || command == "stop" || command == "disable" || command == "deactivate" || command == "off" || command == "disarm") {
+            if (command == "cut off" || command == "cancel" || command == "stop" || command == "disable" || command == "deactivate" || command == "off" || command == "disarm") {
             log.warn "command disarm"
                 secCommand = currentSHM == "off" ? null : "off"
                     if (secCommand == "off"){
@@ -4254,6 +4268,14 @@ private getCommand(command, unit) {
                 command = "setLevel"
                 deviceType = "general"
             }
+            if (command == "cut on"){
+            	command = "cut on"
+                deviceType = "general"
+            }
+            if (command == "cut off"){
+            	command = "cut off"
+                deviceType = "general"
+            }    
        }     
    //case "Virtual Person     
             if (command == "check in" || command == "checking in"|| command == "checked in" || command == "arrived" || command == "arriving"){
