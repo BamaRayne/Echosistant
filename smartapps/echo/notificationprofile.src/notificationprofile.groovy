@@ -861,17 +861,8 @@ def alertsHandler(evt) {
     def eDisplayN = evt.displayName
     def eDisplayT = evt.descriptionText
 	if(eDisplayN == null) eDisplayN = eName
-    
     def eTxt = eDisplayN + " is " + eVal //evt.descriptionText 
-    
-    log.warn "event received: event = $event, eVal = $eVal, eName = $eName, eDev = $eDev, eDisplayN = $eDisplayN, eDisplayT = $eDisplayT, eTxt = $eTxt"
-    /*
-    event received: event = {"microDeviceTile":{"type":"standard","icon":"st.motion.motion.active","backgroundColor":"#53a7c0"}}, 
-    eVal = active, eName = motion, eDev = Bathroom, eDisplayN = Bathroom, eDisplayT = {{ device.displayName }} detected motion, eTxt = Bathroom is active
-    
-    data(eVal = active, eName = motion, eDev = Bathroom)
-    
-    */
+    //FAST LANE AUDIO DELIVERY METHOD
     if(actionType == "Default"){
 		if(speechSynth) {
        	speechSynth.playTextAndResume(eTxt)
@@ -888,86 +879,86 @@ def alertsHandler(evt) {
         }
   	}
     else {
-    if (actionType == "Triggered Report" && myProfile) {
-    	eTxt = parent.runReport(myProfile)
-    }
-    def eProfile = app.label
-    def nRoutine = false
-	def stamp = state.lastTime = new Date(now()).format("h:mm aa", location.timeZone)     
-	def today = new Date(now()).format("EEEE, MMMM d, yyyy", location.timeZone)
-    if (getDayOk()==true && getModeOk()==true && getTimeOk()==true && getFrequencyOk()==true) {	
-        if(eName == "time of day" && message){
-                eTxt = message ? "$message".replace("&device", "${eDisplayN}").replace("&event", "time").replace("&action", "executed").replace("&date", "${today}").replace("&time", "${stamp}").replace("&profile", "${eProfile}") : null
-                    if(actionType == "Custom with Weather") eTxt = getWeatherVar(eTxt)
+        if (actionType == "Triggered Report" && myProfile) {
+            eTxt = parent.runReport(myProfile)
         }
-        if(eName == "coolingSetpoint" || eName == "heatingSetpoint") {
-            eVal = evt.value.toFloat()
-            eVal = Math.round(eVal)
-        }
-        if(eName == "routineExecuted" && myRoutine) {
-        	def deviceMatch = myRoutine?.find {r -> r == eDisplayN}  
-            if (deviceMatch){
-            	eTxt = message ? "$message".replace("&device", "${eDisplayN}").replace("&event", "routine").replace("&action", "executed").replace("&date", "${today}").replace("&time", "${stamp}").replace("&profile", "${eProfile}") : null
-                    if(actionType == "Custom with Weather") eTxt = getWeatherVar(eTxt)
-                    if (message){
-						if(recipients?.size()>0 || sms?.size()>0 || push) {
-                    		sendtxt(eTxt)
-                		}
-                    	takeAction(eTxt)
-                	}
-                    else {
-                        eTxt = "routine was executed"
-                        takeAction(eTxt) 
-                    }
-         	}
-        }
-        else {
-            if(eName == "mode" && myMode) {
-                def deviceMatch = myMode?.find {m -> m == eVal}  
+        def eProfile = app.label
+        def nRoutine = false
+        def stamp = state.lastTime = new Date(now()).format("h:mm aa", location.timeZone)     
+        def today = new Date(now()).format("EEEE, MMMM d, yyyy", location.timeZone)
+        if (getDayOk()==true && getModeOk()==true && getTimeOk()==true && getFrequencyOk()==true) {	
+            if(eName == "time of day" && message){
+                    eTxt = message ? "$message".replace("&device", "${eDisplayN}").replace("&event", "time").replace("&action", "executed").replace("&date", "${today}").replace("&time", "${stamp}").replace("&profile", "${eProfile}") : null
+                        if(actionType == "Custom with Weather") eTxt = getWeatherVar(eTxt)
+            }
+            if(eName == "coolingSetpoint" || eName == "heatingSetpoint") {
+                eVal = evt.value.toFloat()
+                eVal = Math.round(eVal)
+            }
+            if(eName == "routineExecuted" && myRoutine) {
+                def deviceMatch = myRoutine?.find {r -> r == eDisplayN}  
                 if (deviceMatch){
-                    eTxt = message ? "$message".replace("&device", "${eVal}").replace("&event", "${eName}").replace("&action", "changed").replace("&date", "${today}").replace("&time", "${stamp}").replace("&profile", "${eProfile}") : null
-                    if(actionType == "Custom with Weather") eTxt = getWeatherVar(eTxt)
-                    if (message){
-                        if(recipients?.size()>0 || sms?.size()>0 || push) {
-                            sendtxt(eTxt)
+                    eTxt = message ? "$message".replace("&device", "${eDisplayN}").replace("&event", "routine").replace("&action", "executed").replace("&date", "${today}").replace("&time", "${stamp}").replace("&profile", "${eProfile}") : null
+                        if(actionType == "Custom with Weather") eTxt = getWeatherVar(eTxt)
+                        if (message){
+                            if(recipients?.size()>0 || sms?.size()>0 || push) {
+                                sendtxt(eTxt)
+                            }
+                            takeAction(eTxt)
                         }
-                        takeAction(eTxt)
+                        else {
+                            eTxt = "routine was executed"
+                            takeAction(eTxt) 
+                        }
+                }
+            }
+            else {
+                if(eName == "mode" && myMode) {
+                    def deviceMatch = myMode?.find {m -> m == eVal}  
+                    if (deviceMatch){
+                        eTxt = message ? "$message".replace("&device", "${eVal}").replace("&event", "${eName}").replace("&action", "changed").replace("&date", "${today}").replace("&time", "${stamp}").replace("&profile", "${eProfile}") : null
+                        if(actionType == "Custom with Weather") eTxt = getWeatherVar(eTxt)
+                        if (message){
+                            if(recipients?.size()>0 || sms?.size()>0 || push) {
+                                sendtxt(eTxt)
+                            }
+                            takeAction(eTxt)
+                        }
+                        else {
+                            eTxt = "location mode has changed"
+                            takeAction(eTxt) 
+                        }
+                    }
+                }        
+                else {
+                    if (message || actionType == "Triggered Report"){      
+                        if(message){
+                        eTxt = message ? "$message".replace("&device", "${eDev}").replace("&event", "${eName}").replace("&action", "${eVal}").replace("&date", "${today}").replace("&time", "${stamp}").replace("&profile", "${eProfile}") : null
+                        if(actionType == "Custom with Weather") eTxt = getWeatherVar(eTxt)
+                        }
+                        if(eTxt){
+                            if(recipients?.size()>0 || sms?.size()>0 || push) {
+                                sendtxt(eTxt)
+                            }
+                            takeAction(eTxt)
+                        }
                     }
                     else {
-                        eTxt = "location mode has changed"
-                        takeAction(eTxt) 
-                    }
-                }
-            }        
-            else {
-                if (message || actionType == "Triggered Report"){      
-                    if(message){
-                    eTxt = message ? "$message".replace("&device", "${eDev}").replace("&event", "${eName}").replace("&action", "${eVal}").replace("&date", "${today}").replace("&time", "${stamp}").replace("&profile", "${eProfile}") : null
-                    if(actionType == "Custom with Weather") eTxt = getWeatherVar(eTxt)
-                    }
-                    if(eTxt){
+                        if (eDev == "weather"){
+                            if (eDisplayN == "weather alert"){
+                                eTxt = eVal
+                            }
+                            else eTxt = eDisplayN + " is " + eVal
+                        }
                         if(recipients?.size()>0 || sms?.size()>0 || push) {
                             sendtxt(eTxt)
                         }
                         takeAction(eTxt)
                     }
-                }
-                else {
-               		if (eDev == "weather"){
-                    	if (eDisplayN == "weather alert"){
-                        	eTxt = eVal
-                        }
-                        else eTxt = eDisplayN + " is " + eVal
-					}
-                    if(recipients?.size()>0 || sms?.size()>0 || push) {
-                    	sendtxt(eTxt)
-                 	}
-                    takeAction(eTxt)
                 }
             }
         }
-	}
-}
+    }
 }
 /***********************************************************************************************************************
     TAKE ACTIONS HANDLER
@@ -1034,8 +1025,8 @@ private takeAction(eTxt) {
 }
 def delayedMessage() {
 def sTxt = state.sound
-sonos?."${sTxt.command}"(sTxt.uri, Math.max((sTxt.duration as Integer),3), sTxt.volume)
-log.warn "delayed message is now playing"
+sonos?."${sTxt.command}"(sTxt.uri, Math.max((sTxt.duration as Integer),2), sTxt.volume)
+log.info "delayed message is now playing"
 }
 /***********************************************************************************************************************
     CUSTOM WEATHER VARIABLES
