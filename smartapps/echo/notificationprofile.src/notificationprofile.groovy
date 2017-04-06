@@ -1,7 +1,7 @@
 /* 
  * Notification - EchoSistant Add-on 
  *
- *		4/5/2017		Version:4.0 R.0.0.8 		Sonos delay, weather sms bug fixes, scheduling enhancements
+ *		4/5/2017		Version:4.0 R.0.0.8a 		Sonos delay, weather sms bug fixes, scheduling enhancements
  *		4/3/2017		Version:4.0 R.0.0.7b 		Power reporting bug, Sonos delay improvements, weather fixes
  *		3/29/2017		Version:4.0 R.0.3.6 		Expansion of Triggers (sunrise/sunset)
  *		3/24/2017		Version:4.0 R.0.3.5	    	bug fix: custom sound, minor fixes
@@ -34,7 +34,7 @@ definition(
 	iconX3Url		: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/app-Echosistant@2x.png")
 /**********************************************************************************************************************************************/
 private release() {
-	def text = "R.0.0.8"
+	def text = "R.0.0.8a"
 }
 
 preferences {
@@ -118,7 +118,7 @@ page name: "mainProfilePage"
                     if (sonos) {
                         input "sonosVolume", "number", title: "Temporarily change volume", description: "0-100%", required: false
                     	input "resumePlaying", "bool", title: "Resume currently playing music after notification", required: false, defaultValue: false
-                        input "sonosDelay", "number", title: "(Optional) Delay second delivery of second message by...", description: "seconds", required: false
+                        input "sonosDelay", "decimal", title: "(Optional) Delay delivery of second message by...", description: "seconds", required: false
                     }
                 input "speechSynth", "capability.speechSynthesis", title: "On this Speech Synthesis Device", required: false, multiple: true, submitOnChange: true
                         if (speechSynth) {
@@ -966,8 +966,9 @@ def alertsHandler(evt) {
 private takeAction(eTxt) {
 	def sVolume
     def sTxt
-    int prevDuration
-    if(state.sound) prevDuration = state.sound.duration as Integer
+    //int prevDuration
+    double prevDuration
+    if(state.sound) prevDuration = state.sound.duration as Double
     if(sonosDelay)	prevDuration = prevDuration + sonosDelay
     if(myProfile && actionType != "Triggered Report") runProfileActions()   
     if (actionType == "Custom" || actionType == "Custom with Weather" || actionType == "Triggered Report") {
@@ -1008,7 +1009,7 @@ private takeAction(eTxt) {
                     if(elapsed < timeCheck){
                     	def delayNeeded = prevDuration - elapsedSec
                         if(delayNeeded > 0 ) delayNeeded = delayNeeded + 2
-                        log.error "message is already playing, delaying new message by $delayNeeded seconds"
+                        log.error "message is already playing, delaying new message by $delayNeeded seconds (raw delay = $prevDuration, elapsed time = $elapsedSec)"
                         state.sound.command = sCommand
                         state.sound.volume = sVolume
                         state.lastPlayed = now()
@@ -1074,9 +1075,9 @@ def mGetWeatherTrigger(){
             def cWindGustM = cWeather.current_observation.wind_gust_mph.toDouble()
             	int wind = cWindGustM as Integer
             def cPrecipIn = cWeather.current_observation.precip_1hr_in.toDouble()
-            	double precip = cPrecipIn + 1 //as double
+            	double precip = cPrecipIn //as double
                 //precip = 1 + precip precip
-                log.warn "precipitation = $precip"
+                log.info "current triggers: precipitation = $precip, humidity = $humid, wind = $wind, temp = $tempF"
 			myTrigger = myWeatherTriggers == "Chance of Precipitation (in/mm)" ? precip : myWeatherTriggers == "Wind Gust (MPH/kPH)" ? wind : myWeatherTriggers == "Humidity (%)" ? humid : myWeatherTriggers == "Temperature (F/C)" ? tempF : null
 			}
             else {
