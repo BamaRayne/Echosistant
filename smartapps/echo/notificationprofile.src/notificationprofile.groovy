@@ -1,7 +1,7 @@
 /* 
  * Notification - EchoSistant Add-on 
  *
- *		4/5/2017		Version:4.0 R.0.0.8a 		Sonos delay, weather sms bug fixes, scheduling enhancements
+ *		4/6/2017		Version:4.0 R.0.0.8c 		Sonos delay, weather sms bug fixes, scheduling enhancements
  *		4/3/2017		Version:4.0 R.0.0.7b 		Power reporting bug, Sonos delay improvements, weather fixes
  *		3/29/2017		Version:4.0 R.0.3.6 		Expansion of Triggers (sunrise/sunset)
  *		3/24/2017		Version:4.0 R.0.3.5	    	bug fix: custom sound, minor fixes
@@ -34,7 +34,7 @@ definition(
 	iconX3Url		: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/app-Echosistant@2x.png")
 /**********************************************************************************************************************************************/
 private release() {
-	def text = "R.0.0.8a"
+	def text = "R.0.0.8c"
 }
 
 preferences {
@@ -80,31 +80,29 @@ page name: "mainProfilePage"
 		}
         if (actionType == "Custom" || actionType == "Custom with Weather" || actionType == "Ad-Hoc Report") {
             section ("Send this message text...") {
-                input "message", "text", title: "Play this message...", required:false, multiple: false, defaultValue: ""
+                input "message", "text", title: "Play this message (optional - leave blank for a default message)", required:false, multiple: false, defaultValue: ""
             }
             section ("Tap here to see available variables", hideable: true, hidden: true) {    
-                if (actionType != "Ad-Hoc Report") paragraph 	"You can use the following variables in your custom message: "+
-                												"&device, &action , &event, &time &date and &profile \n" +
-                    											"\nFor Example: \n&event sensor &device is &action and the event happened at &time \n" +
-                    											"Translates to: 'Contact' sensor 'Bedroom' is 'Open' and the event happened at '1:00 PM'"
-				if(actionType == "Custom with Weather" || actionType == "Ad-Hoc Report" ){
-                	paragraph "WEATHER: FORECAST: &today, &tonight, &tomorrow,\n"+
-                    			"TEMPERATURES: &current, &high, &low\n"+ 
-                                "SUN: &set, &rise\n"+ 
-                                "OTHER: &wind, &uv, &precipitation, &humidity"
-                                /*
-                				"\n Current Data for your Location: \n"+
-                                "&wind = ${mGetWeatherElements("wind")},\n&precipitation =  ${mGetWeatherElements("precip")},\n&conditions =  ${mGetWeatherElements("cond")},\n"+
-                                "&set =  ${mGetWeatherElements("set")},\n&rise =  ${mGetWeatherElements("rise")},\n&current =  ${mGetWeatherElements("current")},\n&high =  ${mGetWeatherElements("high")},"+
-                                "\n&low =  ${mGetWeatherElements("low")}"
-                				*/
+                if (actionType != "Ad-Hoc Report") {
+                	paragraph 	"CUSTOM MESSAGES: \n"+
+								"&device, &action, &event, &time &date and &profile \n"
+                  	if (actionType != "Custom with Weather") href "variables", title: "View sample data for your Location", description: ">> 		Click Here <<", state: "complete"                                             
+				}
+                if(actionType == "Custom with Weather" || actionType == "Ad-Hoc Report" ){
+                	paragraph 	"WEATHER: \n"+
+                    			"Forecast Variables: &today, &tonight, &tomorrow,\n"+
+                    			"Temperature Variables: &current, &high, &low\n"+ 
+                                "Sun State Variables: &set, &rise\n"+ 
+                                "Other Variables: &wind, &uv, &precipitation, &humidity"
+					if (actionType != "Ad-Hoc Report")  href "variables", title: "View sample data for your Location", description: ">> 		Click Here <<", state: "complete"                                             
                 }
                 if(actionType == "Ad-Hoc Report"){
-                	paragraph "REPORTING VARIABLES: \n"+
-                                                    "Location: &time, &date, &profile, &mode, &shm \n"+
-                                                    "Device Status: &power, &lights, &unlocked \n"+
-                                                    "Sensors: &doors, &windows, &open, &garage, &present \n"+
-                                                    "Thermostats: &temperature, &running, &thermostat, &cooling, &heating"
+                	paragraph 	"REPORTING VARIABLES: \n"+
+								"Location: &time, &date, &profile, &mode, &shm \n"+
+								"Device Status: &power, &lights, &unlocked \n"+
+                                "Sensors: &doors, &windows, &open, &garage, &present \n"+
+                                "Thermostats: &temperature, &running, &thermostat, &cooling, &heating"
+                    href "variables", title: "View sample data for your Location", description: ">> 		Click Here <<", state: "complete"                                             
                 }
             }
         } 
@@ -137,6 +135,65 @@ page name: "mainProfilePage"
         }
  	}
 }
+page name: "variables"
+    def variables() {
+        dynamicPage(name:"variables",title: "", uninstall: false) {
+			def stamp = state.lastTime = new Date(now()).format("h:mm aa", location.timeZone)     
+        	def today = new Date(now()).format("EEEE, MMMM d, yyyy", location.timeZone)
+        	def profile = app.label
+            if (actionType != "Ad-Hoc Report"){
+                section("Custom Message Variables") {
+                    paragraph 	"&device = 	<< Label of Device >>,\n"+
+                                "&action = 	<< Actual event: on/off, open/closed, locked/unlocked >>\n"+
+                                "&event = 	<< Capability Type: switch, contact, motion, lock, etc >>,\n"+
+                                "&time = $stamp,\n"+
+                                "&date = $today,\n"+
+                                "&profile = $profile"
+                }  
+             }
+              if(actionType == "Custom with Weather" || actionType == "Ad-Hoc Report" ){
+               	section("Weather Variables") {
+                    paragraph 	"&today = 			${mGetWeatherVar("today")},\n"+
+                                "\n&tonight = 		${mGetWeatherVar("tonight")},\n"+
+                                "\n&tomorrow = 		${mGetWeatherVar("tomorrow")},\n"+
+                                "\n&current = 		${mGetWeatherElements("current")},\n"+
+                                "&high = 			${mGetWeatherVar("high")},\n"+
+                                "&low = 			${mGetWeatherVar("low")},\n"+
+                                "&set = 			${mGetWeatherElements("set")},\n"+
+                                "&rise = 			${mGetWeatherElements("rise")},\n"+
+                                "&wind = 			${mGetWeatherElements("wind")},\n"+
+                                "&precipitation = 	${mGetWeatherElements("precip")},\n"+
+                                "&humidity = 		${mGetWeatherElements("hum")},\n"+
+                                "&uv = 				${mGetWeatherElements("uv")}"
+                }
+			}
+            //getVar(var)
+            if(actionType == "Ad-Hoc Report"){
+                section("Ad-Hoc Reporting Variables") {
+                    paragraph 	"&time = 		${getVar("time")},\n"+
+                                "&date = 		${getVar("date")},\n"+
+                                "&mode = 		${getVar("mode")},\n"+
+                                "&shm = 		${getVar("shm")},\n"+
+                                "&power = 		${getVar("power")} 			(**),\n"+
+                                "&lights = 		${getVar("lights")}, 		(**),\n"+
+                                "&unlocked = 	${getVar("unlocked")} 		(**),\n"+
+                                "&doors = 		${getVar("doors")} 			(++),\n"+
+                                "&windows = 	${getVar("windows")} 		(++),\n"+
+                                "&open = 		${getVar("open")} 			(**),\n"+
+                                "&garage = 		${getVar("garage")} 		(++),\n"+
+                                "&present = 	${getVar("present")} 		(**),\n"+
+                                "&temperature = ${getVar("temperature")} 	(**),\n"+
+                                "&running = 	${getVar("running")} 		(**),\n"+                            
+                                "&thermostat = 	${getVar("thermostat")} 	(**),\n"+
+                                "&cooling = 	${getVar("cooling")} 		(**),\n"+
+                                "&heating = 	${getVar("heating")} 		(**)\n"+
+                                "\n"+
+                                "(**) MUST select device(s) in the PROFILE \n"+
+                                "(**) MUST select device(s) in the MAIN App"
+                }
+        	}
+        }
+    }
 page name: "triggers"
 	def triggers(){
 		dynamicPage(name: "triggers", title: "", uninstall: false) {
@@ -181,9 +238,9 @@ page name: "triggers"
 						}
                 	}
                 }
-			} 
-            section ("Sunrise, Sunset, and Specific Times"){
-                href "certainTimeX", title: "Choose Events...", description: pSunsetComplete(), state: pSunsetSettings()
+            	section ("Sunrise, Sunset, and Specific Times"){
+                	href "certainTimeX", title: "Choose Events...", description: pSunsetComplete(), state: pSunsetSettings()			
+            	} 
             }   
             if(actionType != "Default"){
                 section ("Location Event", hideWhenEmpty: true) {
@@ -202,7 +259,8 @@ page name: "triggers"
                         if (threshold) input "thresholdStop", "number", title: "...but not above/below this value", required: false, description: "in watts"
                 }
                 input "myLocks", "capability.lock", title: "Choose Locks..", required: false, multiple: true, submitOnChange: true
-                    if (myLocks && actionType != "Ad-Hoc Report") input "myLocksS", "enum", title: "Notify when state changes to...", options: ["locked", "unlocked", "both"], required: false
+                    if (myLocks && actionType != "Ad-Hoc Report") input "myLocksS", "enum", title: "Notify when state changes to...", options: ["locked", "unlocked", "both"], required: false, submitOnChange: true
+                	if(myLocksS == "unlocked") input "myLocksSCode", "number", title: "With this user code...", required: false, description: "user code number (optional)"
                 if(actionType != "Default"){
                 input "myTstat", "capability.thermostat", title: "Choose Thermostats...", required: false, multiple: true, submitOnChange: true
                     if (myTstat && actionType != "Ad-Hoc Report") input "myTstatS", "enum", title: "Notify when set point changes for...", options: ["cooling", "heating", "both"], required: false
@@ -455,7 +513,12 @@ unschedule()
         }    
         if (myLocks) {
             if (myLocksS == "locked")			subscribe(myLocks, "lock.locked", alertsHandler)
-            if (myLocksS == "unlocked")			subscribe(myLocks, "lock.unlocked", alertsHandler)
+            if (myLocksS == "unlocked"){
+            	if (myLocksSCode){
+            									subscribe(myLocks, "lock", unlockedWithCodeHandler)
+                }
+                else 							ubscribe(myLocks, "lock.unlocked", alertsHandler)                                                                     
+            }
             if (myLocksS == "both")				subscribe(myLocks, "lock", alertsHandler)
         }
         if (myPresence) {
@@ -529,6 +592,7 @@ def runProfile(profile) {
 /************************************************************************************************************
    REPORT VARIABLES   
 ************************************************************************************************************/
+//getVar(var)
 private getVar(var) {
 	def devList = []
     def result
@@ -851,10 +915,34 @@ def bufferPendingL() {
   	}
 }
 /************************************************************************************************************
+   UNLOCKED WITH USER CODE
+************************************************************************************************************/
+def unlockedWithCodeHandler(evt) {
+	def event = evt.data
+    def eVal = evt.value
+    def eName = evt.name
+    def eDev = evt.device
+    def eDisplayN = evt.displayName
+    def eDisplayT = evt.descriptionText
+	def data = [:]
+    def eTxt = eDisplayN + " is " + eVal //evt.descriptionText 
+    log.info "unlocked event received: event = $event, eVal = $eVal, eName = $eName, eDev = $eDev, eDisplayN = $eDisplayN, eDisplayT = $eDisplayT, eTxt = $eTxt"
+			if(eVal == "unlocked" && myLocksSCode && event) {
+                def userCode = evt.data.replaceAll("\\D+","")
+                userCode = userCode.toInteger()
+       			int usedCode = userCode 
+            	if(myLocksSCode == usedCode){
+					eTxt = message ? "$message".replace("&device", "${eDisplayN}").replace("&event", "time").replace("&action", "executed").replace("&date", "${today}").replace("&time", "${stamp}").replace("&profile", "${eProfile}") : eDisplayT
+                    data = [value:eTxt, name:"unlocked with code", device:"lock"]
+					alertsHandler(data)
+				} 
+            }
+}
+/************************************************************************************************************
    EVENTS HANDLER
 ************************************************************************************************************/
 def alertsHandler(evt) {
-    //def event = evt.data NOT IN USE 4/5/17 Bobby
+	def event = evt.data
     def eVal = evt.value
     def eName = evt.name
     def eDev = evt.device
@@ -862,6 +950,7 @@ def alertsHandler(evt) {
     def eDisplayT = evt.descriptionText
 	if(eDisplayN == null) eDisplayN = eName
     def eTxt = eDisplayN + " is " + eVal //evt.descriptionText 
+    log.info "event received: event = $event, eVal = $eVal, eName = $eName, eDev = $eDev, eDisplayN = $eDisplayN, eDisplayT = $eDisplayT, eTxt = $eTxt"
     //FAST LANE AUDIO DELIVERY METHOD
     if(actionType == "Default"){
 		if(speechSynth) {
