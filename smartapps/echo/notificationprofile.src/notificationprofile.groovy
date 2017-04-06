@@ -1076,7 +1076,7 @@ def mGetWeatherTrigger(){
             	int wind = cWindGustM as Integer
             def cPrecipIn = cWeather.current_observation.precip_1hr_in.toDouble()
             	double precip = cPrecipIn //as double
-                //precip = 1 + precip precip
+                	precip = 1 + precip //precip
                 log.info "current triggers: precipitation = $precip, humidity = $humid, wind = $wind, temp = $tempF"
 			myTrigger = myWeatherTriggers == "Chance of Precipitation (in/mm)" ? precip : myWeatherTriggers == "Wind Gust (MPH/kPH)" ? wind : myWeatherTriggers == "Humidity (%)" ? humid : myWeatherTriggers == "Temperature (F/C)" ? tempF : null
 			}
