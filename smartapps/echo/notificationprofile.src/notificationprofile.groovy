@@ -1,6 +1,7 @@
 /* 
  * Notification - EchoSistant Add-on 
  *
+ *		4/10/2017		Version:4.0 R.0.0.9			Reconfigured sunrise/sunset triggers
  *		4/6/2017		Version:4.0 R.0.0.8c 		Sonos delay, weather sms bug fixes, scheduling enhancements
  *		4/3/2017		Version:4.0 R.0.0.7b 		Power reporting bug, Sonos delay improvements, weather fixes
  *		3/29/2017		Version:4.0 R.0.3.6 		Expansion of Triggers (sunrise/sunset)
@@ -34,7 +35,7 @@ definition(
 	iconX3Url		: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/app-Echosistant@2x.png")
 /**********************************************************************************************************************************************/
 private release() {
-	def text = "R.0.0.8c"
+	def text = "R.0.0.9"
 }
 
 preferences {
@@ -201,20 +202,26 @@ page name: "triggers"
             if(actionType != "Default" && actionType != "Ad-Hoc Report" ){
                 section("Time") {
                     input "frequency", "enum", title: "Choose a Frequency", submitOnChange: true, required: fale, 
-            			options: ["Minutes", "Hourly", "Daily", "Weekly", "Monthly", "Yearly"]
+            			options: ["Minutes", "Hourly", "Daily", "Sunrise", "Sunset", "Weekly", "Monthly", "Yearly"]
                 	if(frequency == "Minutes"){
                         input "xMinutes", "number", title: "Every X minute(s) - maximum 60", range: "1..59", submitOnChange: true, required: false
-// Removed by JH  		input "xMinutesOff", "number", title: "And again in X minute(s) - maximum 60", range: "1..59", submitOnChange: true, required: false
                     }
                     if(frequency == "Hourly"){
                         input "xHours", "number", title: "Every X hour(s) - maximum 24", range: "1..23", submitOnChange: true, required: false
-// Removed by JH  		input "xHoursOff", "number", title: "And again in X hour(s) - maximum 24", range: "1..23", submitOnChange: true, required: false
                     }	
                     if(frequency == "Daily"){
                         input "xDays", "number", title: "Every X day(s) - maximum 31", range: "1..31", submitOnChange: true, required: false
 						input "xDaysWeekDay", "bool", title: "OR Every Week Day (MON-FRI)", required: false, defaultValue: false
                         if(xDays || xDaysWeekDay){input "xDaysStarting", "time", title: "starting at time...", submitOnChange: true, required: true}
                     }
+                    if(frequency == "Sunrise"){
+                    	input "xSunrise", "number", title: "Every X day(s) sunrise - maximum 31", range: "1..31", submitOnChange: true, required: false
+                        if(xSunrise){input "xSunriseOffset", "number", range: "*..*", title: "this many minutes after sunrise...", submitOnChange: true, required: false}
+                    }    
+                    if(frequency == "Sunset"){
+                    	input "xSunset", "number", title: "Every X day(s) sunset - maximum 31", range: "1..31", submitOnChange: true, required: false
+                        if(xSunset){input "xSunsetOffset", "number", range: "*..*", title: "this many minutes before sunset...", submitOnChange: true, required: false}
+                    }    
                     if(frequency == "Weekly"){
 						input "xWeeks", "enum", title: "Every selected day(s) of the week", submitOnChange: true, required: false, multiple: true,
 							options: ["SUN": "Sunday", "MON": "Monday", "TUE": "Tuesday", "WED": "Wednesday", "THU": "Thursday", "FRI": "Friday", "SAT": "Saturday"]                        
@@ -238,9 +245,6 @@ page name: "triggers"
 						}
                 	}
                 }
-            	section ("Sunrise, Sunset, and Specific Times"){
-                	href "certainTimeX", title: "Choose Events...", description: pSunsetComplete(), state: pSunsetSettings()			
-            	} 
             }   
             if(actionType != "Default"){
                 section ("Location Event", hideWhenEmpty: true) {
@@ -318,27 +322,6 @@ page name: "triggers"
             }        
 		}
 	}
-page name: "certainTimeX"
-    def certainTimeX() {
-        dynamicPage(name:"certainTimeX",title: "Trigger on these Events", uninstall: false) {
-            section("Trigger At this time...") {
-                input "startingY", "enum", title: "Choose an event", options: ["A specific time", "Sunrise", "Sunset"], required: false , submitOnChange: true
-                if(startingY in [null, "A specific time"]) input "startingXY", "time", title: "Trigger One", required: false, submitOnChange: true
-                else {
-                    if(startingY == "Sunrise") input "startSunriseOffsetY", "number", range: "*..*", title: "Offset in minutes (+/-)", defaultValue: 0, required: false, submitOnChange: true
-                    else if(startingY == "Sunset") input "startSunsetOffsetY", "number", range: "*..*", title: "Offset in minutes (+/-)", defaultValue: 0, required: false, submitOnChange: true
-                }
-            }
-            section("...and then again at this time") {
-                input "endingY", "enum", title: "Choose a Second Event", options: ["A specific time", "Sunrise", "Sunset"], required: false, submitOnChange: true
-                if(endingY in [null, "A specific time"]) input "endingXY", "time", title: "Trigger Two", required: false, submitOnChange: true
-                else {
-                    if(endingY == "Sunrise") input "endSunriseOffsetY", "number", range: "*..*", title: "Offset in minutes (+/-)", defaultValue: 0, required: false, submitOnChange: true
-                    else if(endingY == "Sunset") input "endSunsetOffsetY", "number", range: "*..*", title: "Offset in minutes (+/-)", defaultValue: 0, required: false, submitOnChange: true
-                }
-            }
-        }
-    }
 page name: "SMS"
     def SMS(){
         dynamicPage(name: "SMS", title: "Send SMS and/or Push Messages...", uninstall: false) {
@@ -399,39 +382,7 @@ page name: "certainTime"
             }
         }
     }
-/************************************************************************************************************
-	SUNSET SUNRISE HANDLER		
-************************************************************************************************************/
-def sunsetTimeHandler(evt) {
-    scheduleTurnOn(evt.value)
-    }
-def sunriseTimeHandler(evt) {
-	scheduleTurnOff(evt.value)
-    }
-def scheduleTurnOn(sunsetString) {
 
-    if (startingY == "Sunrise" || startingY == "Sunset") {
-    def sunsetTime = Date.parse("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", sunsetString)
-    def timeBeforeSunset = new Date(sunsetTime.time - startSunsetOffsetY) // * 60 * 1000))
-    log.info "Scheduling for: $timeBeforeSunset (sunset is $sunsetTime)"
-    runOnce(timeBeforeSunset, scheduledTimeHandlerOn)
-	}
-    else if (startingY != "Sunrise" && startingY != "Sunset" || startingY == "A specific time") {
-    	runOnce(startingXY, scheduledTimeHandlerOn)
-    }    
-}
-def scheduleTurnOff(sunriseString) {
-	if (endingY == "Sunrise" || endingY == "Sunset") {
-	def sunriseTime = Date.parse("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", sunriseString)
-    def timeBeforeSunrise = new Date(sunriseTime.time - endSunriseOffsetY)
-    log.info "Scheduling for: $timeBeforeSunrise (sunrise is $sunriseTime)"
-    runOnce(timeBeforeSunrise, scheduledTimeHandlerOff)
-	}
-    else if(endingY != "Sunrise" && endingY != "Sunset" || endingY == "A specific time") {
-    	log.info "Scheduling for a specific time: '${endingXY}'"
-    	runOnce(endingXY, scheduledTimeHandlerOff)
-    }
-}
 /************************************************************************************************************
 		
 ************************************************************************************************************/
@@ -468,12 +419,13 @@ unschedule()
     state.cycleOnA = false
     state.cycleOnB = false
     state.lastWeather
-    
-    if(startingY || endingY) {	
+    if (frequency == "Sunset") {
     subscribe(location, "sunsetTime", sunsetTimeHandler)
+	scheduleTurnOn(location.currentValue("sunsetTime"))
+    }
+    if (frequency == "Sunrise") {
 	subscribe(location, "sunriseTime", sunriseTimeHandler)
-	scheduleTurnOn(location.currentValue("sunsetTime")) 
-    scheduleTurnOff(location.currentValue("sunriseTime"))
+	scheduleTurnOff(location.currentValue("sunriseTime"))
     }
     if (frequency) cronHandler(frequency)
     if (myWeatherAlert) {
@@ -1515,6 +1467,9 @@ def cronHandler(var) {
 			}
             else log.error " unable to schedule your reminder due to missing required variables"
             }
+        if(var == "Sunset") {
+			sunsetTimeHandler
+            }
         if(var == "Weekly") {
         // 	0 0 2 ? * TUE,SUN *
         	def hrmn = hhmm(xWeeksStarting, "HH:mm")
@@ -1547,6 +1502,24 @@ def cronHandler(var) {
             }
     log.info "scheduled $var recurring event" //time period with expression: $result"
 //    schedule(result, "scheduledTimeHandler")
+}
+def sunsetTimeHandler(evt) {
+    scheduleTurnOn(evt.value)
+}
+def sunriseTimeHandler(evt) {
+    scheduleTurnOff(evt.value)
+}
+def scheduleTurnOn(sunsetString) {
+    def sunsetTime = Date.parse("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", sunsetString)
+	def timeBeforeSunset = new Date(sunsetTime.time - (xSunsetOffset * 60 * 1000))
+	log.debug "Scheduling for: $timeBeforeSunset (sunset is $sunsetTime)"
+	runOnce(timeBeforeSunset, "scheduledTimeHandler")
+}
+def scheduleTurnOff(sunriseString) {
+    def sunriseTime = Date.parse("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", sunriseString)
+	def timeAfterSunrise = new Date(sunriseTime.time - (xSunriseOffset * 60 * 1000))
+	log.debug "Scheduling for: $timeAfterSunrise (sunrise is $sunriseTime)"
+	runOnce(timeAfterSunrise, "scheduledTimeHandler")
 }
 /***********************************************************************************************************************
     RESTRICTIONS HANDLER
