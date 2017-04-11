@@ -6,7 +6,8 @@
  
  ************************************ FOR INTERNAL USE ONLY ******************************************************
  *
- *		4/5/20017		Version:4.0 R.0.3.2a	Added "Cut on" and "Cut off" commands for lights and Automation Disable
+ *		4/10/2017		Version:4.0 R.0.3.2b	Added Virtual Person status change when profile runs option
+ *		4/5/2017		Version:4.0 R.0.3.2a	Added "Cut on" and "Cut off" commands for lights and Automation Disable
  *		4/03/2017		Version:4.0 R.0.3.2		Fixed Alexa output when controlling groups and custom groups
  *		3/21/2017		Version:4.0 R.0.3.1 	added window covering group
  *		3/15/2017		Version:4.0 R.0.3.0 	minor bug fixes
@@ -36,7 +37,7 @@ definition(
 	iconX3Url		: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/app-Echosistant@2x.png")
 /**********************************************************************************************************************************************/
 private release() {
-	def text = "R.0.3.1"
+	def text = "R.0.3.2b"
 }
 /**********************************************************************************************************************************************/
 preferences {
@@ -49,6 +50,7 @@ preferences {
         	page name: "pRestrict"
   			page name: "pDeviceControl"
             page name: "pPerson"
+            page name: "pVirPerAction"
 }
 
 //dynamic page methods
@@ -202,8 +204,9 @@ page name: "pActions"
                 if (pRoutine) {
                 input "pRoutine2", "enum", title: "Select a Second Routine to execute", required: false, options: actions, multiple: false
             		}
-            	}
-            }
+                }
+				input "pVirPer", "bool", title: "Toggle the Virtual Person State Automatically when this Profile Runs", default: false, submitOnChange: true, required: false
+			}
         }
     }
 page name: "pDeviceControl"
@@ -412,6 +415,23 @@ page name: "certainTime"
             }
         }
     }
+
+/************************************************************************************************************
+		Virtual Person Check In/Out Automatically Handler
+************************************************************************************************************/    
+// Check in VP when profile runs
+
+private pVirToggle() {
+	def vp = getChildDevice("${app.label}")
+     if(vp) {
+     if (vp?.currentValue('presence').contains('not')) {
+            vp.arrived()
+            }
+        else if (vp?.currentValue('presence').contains('present')) {
+            vp.departed()
+            }
+    	}
+	}
 /************************************************************************************************************
 		Base Process
 ************************************************************************************************************/    
@@ -1169,9 +1189,11 @@ def ttsHandler(tts) {
         }
     }
 	ttsActions(tts)
+
     if(parent.debug) log.debug "running actions, sending result to Parent = ${result}"
     return result
 }
+
 /******************************************************************************************************
    SPEECH AND TEXT ACTION
 ******************************************************************************************************/
@@ -1242,8 +1264,11 @@ def ttsActions(tts) {
 			if (parent.debug) log.debug "Only sending sms because disable voice message is ON"
             sendtxt(ttx)
 		}
-    }   
-   if (sHues) {               
+    }
+	if (pVirPer) {
+		pVirToggle()
+    }    
+   	if (sHues) {               
 		processColor()
 	}
 	if (sFlash) {
