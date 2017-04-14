@@ -477,17 +477,17 @@ def initialize() {
         if (mySwitch) {
             if (mySwitchS == "on")				subscribe(mySwitch, "switch.on", alertsHandler)
             if (mySwitchS == "off")				subscribe(mySwitch, "switch.off", alertsHandler)
-            if (mySwitchS == "both")			subscribe(mySwitch, "switch", alertsHandler)
+            if (mySwitchS == "both" || mySwitchS == null )			subscribe(mySwitch, "switch", alertsHandler)
         }    
         if (myContact) {
             if (myContactS == "open")			subscribe(myContact, "contact.open", alertsHandler)
             if (myContactS == "closed")			subscribe(myContact, "contact.closed", alertsHandler)
-            if (myContactS == "both")			subscribe(myContact, "contact", alertsHandler)
+            if (myContactS == "both" || myContactS == null)			subscribe(myContact, "contact", alertsHandler)
         }
         if (myMotion) {
             if (myMotionS == "active")			subscribe(myMotion, "motion.active", alertsHandler)
             if (myMotionS == "inactive")		subscribe(myMotion, "motion.inactive", alertsHandler)
-            if (myMotionS == "both")			subscribe(myMotion, "motion", alertsHandler)
+            if (myMotionS == "both" || myMotionS == null)			subscribe(myMotion, "motion", alertsHandler)
         }    
         if (myLocks) {
             if (myLocksS == "locked")			subscribe(myLocks, "lock.locked", alertsHandler)
@@ -497,17 +497,17 @@ def initialize() {
                 }
                 else 							ubscribe(myLocks, "lock.unlocked", alertsHandler)                                                                     
             }
-            if (myLocksS == "both")				subscribe(myLocks, "lock", alertsHandler)
+            if (myLocksS == "both" || myLocksS == null)				subscribe(myLocks, "lock", alertsHandler)
         }
         if (myPresence) {
             if (myPresenceS == "present")		subscribe(myPresence, "presence.present", alertsHandler)
             if (myPresenceS == "not present")	subscribe(myPresence, "presence.not present", alertsHandler)
-            if (myPresenceS == "both")			subscribe(myPresence, "presence", alertsHandler)
+            if (myPresenceS == "both" || myPresenceS == null )			subscribe(myPresence, "presence", alertsHandler)
         }
         if (myTstat) {    
             if (myTstatS == "cooling")			subscribe(myTstat, "coolingSetpoint", alertsHandler)
             if (myTstatS == "heating")			subscribe(myTstat, "heatingSetpoint", alertsHandler)
-            if (myTstatS == "both")				subscribe(myPresence, "thermostatSetpoint", alertsHandler)
+            if (myTstatS == "both" || myTstatS == "null")				subscribe(myPresence, "thermostatSetpoint", alertsHandler)
         
             if (myTstatM == "auto")				subscribe(myTstat, "thermostatMode.auto", alertsHandler)
             if (myTstatM == "cool")				subscribe(myTstat, "thermostatMode.auto.cool", alertsHandler)
@@ -524,12 +524,12 @@ def initialize() {
         if (mySmoke) {    
             if (mySmokeS == "detected")			subscribe(mySmoke, "smoke.detected", alertsHandler)
             if (mySmokeS == "clear")			subscribe(mySmoke, "smoke.clear", alertsHandler)
-            if (mySmokeS == "both")				subscribe(mySmoke, "smoke", alertsHandler)
+            if (mySmokeS == "both" || mySmokeS == null)				subscribe(mySmoke, "smoke", alertsHandler)
         }
         if (myWater) {    
             if (myWaterS == "wet")				subscribe(myWater, "water.wet", alertsHandler)
             if (myWaterS == "dry")				subscribe(myWater, "water.dry", alertsHandler)
-            if (myWaterS == "both")				subscribe(myWater, "water", alertsHandler)
+            if (myWaterS == "both" || myWaterS == null)				subscribe(myWater, "water", alertsHandler)
       	}
     }
 }
@@ -1118,7 +1118,7 @@ log.info "delayed message is now playing"
     RETRIGGER
 ***********************************************************************************************************************/
 def retriggerHandler () {
-	def message = state.message
+	def message = "In case you misssed it " +state.message
     state.occurrences =  state.occurrences + 1
 		if (getDayOk()==true && getModeOk()==true && getTimeOk()==true && getFrequencyOk()==true) {	
 			log.info "processing retrigger with message = $message"
