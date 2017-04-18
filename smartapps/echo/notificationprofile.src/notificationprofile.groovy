@@ -1,7 +1,7 @@
 /* 
  * Notification - EchoSistant Add-on 
  *
- *		4/18/2017		Version:4.0 R.0.3.1			Reconfigured sunrise/sunset triggers
+ *		4/18/2017		Version:4.0 R.0.3.1a			Reconfigured sunrise/sunset triggers
  *		3/16/2017		Version:4.0 R.0.3.0	    	Cron Scheduling and Reporting
  *
  *  Copyright 2016 Jason Headley & Bobby Dobrescu
@@ -28,7 +28,7 @@ definition(
 	iconX3Url		: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/app-Echosistant@2x.png")
 /**********************************************************************************************************************************************/
 private release() {
-	def text = "R.0.3.1"
+	def text = "R.0.3.1a"
 }
 
 preferences {
@@ -1610,7 +1610,7 @@ private getAllOk() {
 }
 
 def getConditionOk() {
-    def result = false
+    def result = true
     def devList
     if (rSwitch) {
 		rSwitch.each { deviceName ->
@@ -1620,7 +1620,7 @@ def getConditionOk() {
 			}
 		}
         log.warn "rSwitch list is ${devList} for state $rSwitchS"
-        if (devList?.size() > 0) result = true
+        if (devList?.size() > 0) result = false
     }   
     if (rMotion){
 		rMotion.each { deviceName ->
@@ -1630,7 +1630,7 @@ def getConditionOk() {
         	}
         }
         log.warn "rMotion list is ${devList} for state $rMotionS"
-        if (devList?.size() > 0) result = true
+        if (devList?.size() > 0) result = false
    	}	        
     if (rContact){
 		rContact.each { deviceName ->
@@ -1640,7 +1640,7 @@ def getConditionOk() {
         	}
         }
         log.warn "rContact list is ${devList} for state $rContactS"
-        if (devList?.size() > 0) result = true
+        if (devList?.size() > 0) result = false
    	}	        
     if (rPresence){                    
 		rPresence.each { deviceName ->
@@ -1650,7 +1650,7 @@ def getConditionOk() {
 			}
 		}
         log.warn "rPresence list is ${devList} for state $rPresenceS"
-        if (devList?.size() > 0) result = true
+        if (devList?.size() > 0) result = false
     }
 	log.debug "getConditionOk = $result"
     result
