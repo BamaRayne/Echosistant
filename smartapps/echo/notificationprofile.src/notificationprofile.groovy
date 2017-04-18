@@ -1611,46 +1611,50 @@ private getAllOk() {
 
 def getConditionOk() {
     def result = true
-    def devList
-    if (rSwitch) {
-		rSwitch.each { deviceName ->
-			if (deviceName.latestValue("switch") == "${rSwitchS}") {
-				String device  = (String) deviceName
-				devList += device
-			}
-		}
-        log.warn "rSwitch list is ${devList} for state $rSwitchS"
-        if (devList?.size() > 0) result = false
-    }   
-    if (rMotion){
-		rMotion.each { deviceName ->
-			if (deviceName.currentValue("motion")=="${rMotionS}") {
-                    	String device  = (String) deviceName
-                        devList += device
-        	}
+    def devList = []
+    
+	if(rSwitchS || rMotionS || rContactS || rPresenceS){
+    result = false
+        if (rSwitch) {
+            rSwitch.each { deviceName ->
+                if (deviceName.latestValue("switch") == "${rSwitchS}") {
+                    String device  = (String) deviceName
+                    devList += device
+                }
+            }
+            log.warn "rSwitch list is ${devList?.size()} for state $rSwitchS"
+            if (devList?.size() > 0) result = true
+        }   
+        if (rMotion){
+            rMotion.each { deviceName ->
+                if (deviceName.currentValue("motion")=="${rMotionS}") {
+                            String device  = (String) deviceName
+                            devList += device
+                }
+            }
+            log.warn "rMotion list is ${devList} for state $rMotionS"
+            if (devList?.size() > 0) result = true
+        }	        
+        if (rContact){
+            rContact.each { deviceName ->
+                if (deviceName.currentValue("contact")=="${rContactS}") {
+                            String device  = (String) deviceName
+                            devList += device
+                }
+            }
+            log.warn "rContact list is ${devList} for state $rContactS"
+            if (devList?.size() > 0) result = true
+        }	        
+        if (rPresence){                    
+            rPresence.each { deviceName ->
+                if (deviceName.currentValue("presence")=="${rPresenceS}") {
+                    String device  = (String) deviceName
+                    devList += device
+                }
+            }
+            log.warn "rPresence list is ${devList} for state $rPresenceS"
+            if (devList?.size() > 0) result = true
         }
-        log.warn "rMotion list is ${devList} for state $rMotionS"
-        if (devList?.size() > 0) result = false
-   	}	        
-    if (rContact){
-		rContact.each { deviceName ->
-			if (deviceName.currentValue("contact")=="${rContactS}") {
-                    	String device  = (String) deviceName
-                        devList += device
-        	}
-        }
-        log.warn "rContact list is ${devList} for state $rContactS"
-        if (devList?.size() > 0) result = false
-   	}	        
-    if (rPresence){                    
-		rPresence.each { deviceName ->
-			if (deviceName.currentValue("presence")=="${rPresenceS}") {
-				String device  = (String) deviceName
-				devList += device
-			}
-		}
-        log.warn "rPresence list is ${devList} for state $rPresenceS"
-        if (devList?.size() > 0) result = false
     }
 	log.debug "getConditionOk = $result"
     result
