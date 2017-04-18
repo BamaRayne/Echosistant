@@ -1,14 +1,7 @@
 /* 
  * Notification - EchoSistant Add-on 
  *
- *		4/10/2017		Version:4.0 R.0.0.9			Reconfigured sunrise/sunset triggers
- *		4/6/2017		Version:4.0 R.0.0.8c 		Sonos delay, weather sms bug fixes, scheduling enhancements
- *		4/3/2017		Version:4.0 R.0.0.7b 		Power reporting bug, Sonos delay improvements, weather fixes
- *		3/29/2017		Version:4.0 R.0.3.6 		Expansion of Triggers (sunrise/sunset)
- *		3/24/2017		Version:4.0 R.0.3.5	    	bug fix: custom sound, minor fixes
- *		3/21/2017		Version:4.0 R.0.3.3	    	added: &current for current temperature, frequency restriction
- *		3/21/2017		Version:4.0 R.0.3.2	    	added: &set (sunset), &rise (sunrise)
- *		3/18/2017		Version:4.0 R.0.3.1a	    added: &motion, &cooling, &heating
+ *		4/18/2017		Version:4.0 R.0.3.1			Reconfigured sunrise/sunset triggers
  *		3/16/2017		Version:4.0 R.0.3.0	    	Cron Scheduling and Reporting
  *
  *  Copyright 2016 Jason Headley & Bobby Dobrescu
@@ -35,7 +28,7 @@ definition(
 	iconX3Url		: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/app-Echosistant@2x.png")
 /**********************************************************************************************************************************************/
 private release() {
-	def text = "R.0.1.0"
+	def text = "R.0.3.1"
 }
 
 preferences {
@@ -59,7 +52,7 @@ page name: "mainProfilePage"
  		   	label title:"Profile Name ", required:false, defaultValue: "Notification Profile"  
 		}
 		section ("Create a Notification") {  
-                input "actionType", "enum", title: "Choose the message output...", required: false, defaultValue: "Default", submitOnChange: true, 
+                input "actionType", "enum", title: "Choose a Notification Type", required: false, defaultValue: "Default", submitOnChange: true, 
                 options: [
                 "Ad-Hoc Report",
                 "Triggered Report",
@@ -368,17 +361,27 @@ page name: "SMS"
 page name: "pRestrict"
     def pRestrict(){
         dynamicPage(name: "pRestrict", title: "", uninstall: false) {
-			section ("Mode Restrictions") {
+			section ("Location Mode") {
                 input "modes", "mode", title: "Only when mode is", multiple: true, required: false, submitOnChange: true
             }        
-            section ("Days - Audio only on these days"){	
+            section ("Certain Days"){	
                 input "days", title: "Only on certain days of the week", multiple: true, required: false, submitOnChange: true,
                     "enum", options: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
             }
-            section ("Time - Audio only during these times"){
+            section ("Certain Time"){
                 href "certainTime", title: "Only during a certain time", description: pTimeComplete(), state: pTimeSettings()
             }
-            section ("Frequency (audio only)"){
+            section ("Device Status", hideable: true, hidden: false){
+                input "rSwitch", "capability.switch", title: "Only when these Switch(es)", required: false, multiple: true, submitOnChange: true
+                    if (rSwitch) input "rSwitchS", "enum", title: "state is...", options: ["on", "off"], required: false				
+                input "rContact", "capability.contactSensor", title: "Only when these Contact Sensor(s)", required: false, multiple: true, submitOnChange: true
+                    if (rContact) input "rContactS", "enum", title: "state is...", options: ["open", "closed"], required: false
+                input "rMotion", "capability.motionSensor", title: "Only when these Motion Sensor(s)..", required: false, multiple: true, submitOnChange: true
+                    if (rMotion) input "rMotionS", "enum", title: "state is...", options: ["active", "inactive"], required: false
+                input "rPresence", "capability.presenceSensor", title: "Only when these Presence Sensor(s)...", required: false, multiple: true, submitOnChange: true
+                    if (rPresence) input "rPresenceS", "enum", title: "state is...", options: ["present", "not present"], required: false
+            }              
+            section ("Frequency (audio only)", hideable: true, hidden: false){
                 input "onceDaily", "bool", title: "Play notification only once daily", required: false, defaultValue: false
 				input "everyXmin", "number", title: "Minimum time between notifications", description: "Minutes", required: false
             }              
@@ -427,7 +430,6 @@ def updated() {
 	state.NotificationRelease = "Notification: " + release()
     state.lastPlayed = now()
     state.sound
-    state.sound1
 	unschedule()
     unsubscribe()
     initialize()
@@ -507,13 +509,15 @@ def initialize() {
         if (myTstat) {    
             if (myTstatS == "cooling")			subscribe(myTstat, "coolingSetpoint", alertsHandler)
             if (myTstatS == "heating")			subscribe(myTstat, "heatingSetpoint", alertsHandler)
-            if (myTstatS == "both" || myTstatS == "null")				subscribe(myPresence, "thermostatSetpoint", alertsHandler)
-        
+            if (myTstatS == "both" || myTstatS == "null"){
+            	subscribe(myTstat, "coolingSetpoint", alertsHandler)
+                subscribe(myTstat, "heatingSetpoint", alertsHandler)
+            }
             if (myTstatM == "auto")				subscribe(myTstat, "thermostatMode.auto", alertsHandler)
             if (myTstatM == "cool")				subscribe(myTstat, "thermostatMode.auto.cool", alertsHandler)
-            if (myTstatM == "heat")				subscribe(myPresence, "thermostatMode.heat", alertsHandler)        
+            if (myTstatM == "heat")				subscribe(myTstat, "thermostatMode.heat", alertsHandler)        
             if (myTstatM == "off")				subscribe(myTstat, "thermostatMode.off", alertsHandler)
-            if (myTstatM == "every mode")		subscribe(myPresence, "thermostatMode", alertsHandler)
+            if (myTstatM == "every mode")		subscribe(myTstat, "thermostatMode", alertsHandler)
             
             
             if (myTstatOS == "cooling")			subscribe(myTstat, "thermostatOperatingState.cooling", alertsHandler)
@@ -958,7 +962,9 @@ def alertsHandler(evt) {
             def nRoutine = false
             def stamp = state.lastTime = new Date(now()).format("h:mm aa", location.timeZone)     
             def today = new Date(now()).format("EEEE, MMMM d, yyyy", location.timeZone)
-            if (getDayOk()==true && getModeOk()==true && getTimeOk()==true && getFrequencyOk()==true) {	
+            
+            log.warn "getAllOk() = ${getAllOk()}"
+            if (getDayOk()==true && getModeOk()==true && getTimeOk()==true && getFrequencyOk()==true && getConditionOk()==true) {	
                 if(eName == "time of day" && message){
                         eTxt = message ? "$message".replace("&device", "${eDisplayN}").replace("&event", "time").replace("&action", "executed").replace("&date", "${today}").replace("&time", "${stamp}").replace("&profile", "${eProfile}") : null
                             if(actionType == "Custom with Weather") eTxt = getWeatherVar(eTxt)
@@ -1102,7 +1108,7 @@ private takeAction(eTxt) {
         		"${retrigger}"(retriggerHandler)
                 state.message = eTxt
         	}
-        	else if (howManyTimes == state.occurrences) {
+        	else if (state.occurrences >= howManyTimes) {
             	unschedule("retriggerHandler")
                 state.message = null
                 log.warn "canceling reminders"
@@ -1118,9 +1124,9 @@ log.info "delayed message is now playing"
     RETRIGGER
 ***********************************************************************************************************************/
 def retriggerHandler () {
-	def message = "In case you misssed it " +state.message
+	def message = "In case you misssed it " + state.message
     state.occurrences =  state.occurrences + 1
-		if (getDayOk()==true && getModeOk()==true && getTimeOk()==true && getFrequencyOk()==true) {	
+            if (getDayOk()==true && getModeOk()==true && getTimeOk()==true && getFrequencyOk()==true && getConditionOk()==true) {
 			log.info "processing retrigger with message = $message"
             if(recipients?.size()>0 || sms?.size()>0 || push) {
 				sendtxt(message)
@@ -1128,7 +1134,6 @@ def retriggerHandler () {
             takeAction(message)
     	}        
 }
-
 /***********************************************************************************************************************
     CUSTOM WEATHER VARIABLES
 ***********************************************************************************************************************/
@@ -1164,7 +1169,8 @@ def mGetWeatherTrigger(){
     def myTrigger
 	def process = false
 	try{  
-		if (getDayOk()==true && getModeOk()==true && getTimeOk()==true && getFrequencyOk()==true) {
+		//log.warn "getAllOk() = ${getAllOk()}"
+       	//if (getDayOk()==true && getModeOk()==true && getTimeOk()==true && getFrequencyOk()==true || getConditionOk()==true) { -- 4/18/2017 Bobby
         	if(getMetric() == false){
             def cWeather = getWeatherFeature("conditions", settings.wZipCode)
             def cTempF = cWeather.current_observation.temp_f.toDouble()
@@ -1218,7 +1224,7 @@ def mGetWeatherTrigger(){
 				data = [value:"${myTrigger}", name:"${myTriggerName}", device:"weather"] 
 				alertsHandler(data)
             }
-		}
+		//}
     }
 	catch (Throwable t) {
 	log.error t
@@ -1241,7 +1247,7 @@ def mGetWeatherAlerts(){
     else result = "There are no weather alerts for your area"
     def data = [:]
     try {
-		if (getDayOk()==true && getModeOk()==true && getTimeOk()==true && getFrequencyOk()==true) {
+       	//if (getDayOk()==true && getModeOk()==true && getTimeOk()==true && getFrequencyOk()==true || getConditionOk()==true) { -- bobby 4/18/2017
         	def weather = getWeatherFeature("alerts", settings.wZipCode)
         	def type = weather.alerts.type[0]
             def alert = weather.alerts.description[0]
@@ -1273,7 +1279,7 @@ def mGetWeatherAlerts(){
 				data = [value: result, name: "weather alert", device:"weather"] 
                 alertsHandler(data)
          	}
-    	}
+    	//}
     }
 	catch (Throwable t) {
 	log.error t
@@ -1288,7 +1294,7 @@ def mGetCurrentWeather(){
     def data = [:]
    	def result
     try {
-		if (getDayOk()==true && getModeOk()==true && getTimeOk()==true && getFrequencyOk()==true) {
+		//if (getDayOk()==true && getModeOk()==true && getTimeOk()==true && getFrequencyOk()==true) { 4/18/2017 Bobby
         //hourly updates
             def cWeather = getWeatherFeature("hourly", settings.wZipCode)
             def cWeatherCondition = cWeather.hourly_forecast[0].condition
@@ -1371,7 +1377,7 @@ def mGetCurrentWeather(){
                     }       
                 }
             }
-    	}
+    	//}
     }
 	catch (Throwable t) {
 	log.error t
@@ -1586,14 +1592,69 @@ def sunriseTimeHandler(evt) {
 
 def scheduledTimeHandler(state) {
 	def data = [:]
-		if (getDayOk()==true && getModeOk()==true && getTimeOk()==true && getFrequencyOk()==true) {	
+		//if (getDayOk()==true && getModeOk()==true && getTimeOk()==true && getFrequencyOk()==true) {	-- Bobby 4/18/2017
 			data = [value: state, name:"sunstate", device:"schedule"] 
             alertsHandler(data)
-    	}
+    	//}
 }
 /***********************************************************************************************************************
     RESTRICTIONS HANDLER
 ***********************************************************************************************************************/
+private getAllOk() {
+	def result = false
+	if(modeOk && daysOk && timeOk && getFrequencyOk() && getConditionOk()){
+    result = true
+	}
+    log.debug "getAllOk = $result"
+    result
+}
+
+def getConditionOk() {
+    def result = false
+    def devList
+    if (rSwitch) {
+		rSwitch.each { deviceName ->
+			if (deviceName.latestValue("switch") == "${rSwitchS}") {
+				String device  = (String) deviceName
+				devList += device
+			}
+		}
+        log.warn "rSwitch list is ${devList} for state $rSwitchS"
+        if (devList?.size() > 0) result = true
+    }   
+    if (rMotion){
+		rMotion.each { deviceName ->
+			if (deviceName.currentValue("motion")=="${rMotionS}") {
+                    	String device  = (String) deviceName
+                        devList += device
+        	}
+        }
+        log.warn "rMotion list is ${devList} for state $rMotionS"
+        if (devList?.size() > 0) result = true
+   	}	        
+    if (rContact){
+		rContact.each { deviceName ->
+			if (deviceName.currentValue("contact")=="${rContactS}") {
+                    	String device  = (String) deviceName
+                        devList += device
+        	}
+        }
+        log.warn "rContact list is ${devList} for state $rContactS"
+        if (devList?.size() > 0) result = true
+   	}	        
+    if (rPresence){                    
+		rPresence.each { deviceName ->
+			if (deviceName.currentValue("presence")=="${rPresenceS}") {
+				String device  = (String) deviceName
+				devList += device
+			}
+		}
+        log.warn "rPresence list is ${devList} for state $rPresenceS"
+        if (devList?.size() > 0) result = true
+    }
+	log.debug "getConditionOk = $result"
+    result
+}
 def getFrequencyOk() {
     def lastPlayed = state.lastPlayed
     def result = false
@@ -1630,9 +1691,6 @@ private getMetric(){
    	def result = location.temperatureScale == "C"
     log.debug "getMetric = $result"
     result
-}
-private getAllOk() {
-	modeOk && daysOk && timeOk
 }
 private getModeOk() {
     def result = !modes || modes?.contains(location.mode)
@@ -1818,21 +1876,22 @@ def pSendComplete() {def text = "Tap here to configure settings"
     	else text = "Tap to Configure"
 		text}
 def triggersSettings() {def result = ""
-    if (startingY || endingY || myWeatherTriggers || myWeather || myWeatherAlert || myWater || mySmoke || myPresence || myMotion || myContact || mySwitch || myPower || myLocks || myTstat || myMode || myRoutine || frequency) {
+    if (myWeatherTriggers || myWeather || myWeatherAlert || myWater || mySmoke || myPresence || myMotion || myContact || mySwitch || myPower || myLocks || myTstat || myMode || myRoutine || frequency) {
     	result = "complete"}
    		result}
 def triggersComplete() {def text = "Tap here to configure settings" 
-    if (startingY || endingY || myWeatherTriggers || myWeather || myWeatherAlert || myWater || mySmoke || myPresence || myMotion || myContact || mySwitch || myPower || myLocks || myTstat || myMode || myRoutine || frequency) {
-    	text = "Configured"}
-    	else text = "Tap to Configure"
+    if (myWeatherTriggers || myWeather || myWeatherAlert || myWater || mySmoke || myPresence || myMotion || myContact || mySwitch || myPower || myLocks || myTstat || myMode || myRoutine || frequency) {
+        text = "Configured"
+    }
+    else text = "Tap to Configure"
 		text} 
 
 def pRestSettings() {def result = ""
-    if (modes || days ||pTimeSettings() || onceDaily || everyXmin) {
+    if (modes || days ||pTimeSettings() || onceDaily || everyXmin || rSwitch || rContact || rMotion || rPresence) {
     	result = "complete"}
    		result}
 def pRestComplete() {def text = "Tap here to configure settings" 
-    if (modes || days || pTimeSettings() || everyXmin ) {
+    if (pRestSettings() == "complete" ) {
     	text = "Configured"}
     	else text = "Tap to Configure"
 		text}     
@@ -1845,12 +1904,3 @@ def pTimeComplete() {def text = "Tap here to configure settings"
     	text = "Configured"}
     	else text = "Tap to Configure"
 		text}
-def pSunsetSettings() {def result = ""
-    if (startingY || endingY) {
-    	result = "complete"}
-   		result}
-def pSunsetComplete() {def text = "Tap here to configure settings" 
-    if (startingY || endingY) {
-    	text = "Configured"}
-    	else text = "Tap to Configure"
-		text}        
