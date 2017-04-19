@@ -1,7 +1,7 @@
 /* 
  * Notification - EchoSistant Add-on 
  *
- *		4/18/2017		Version:4.0 R.0.3.1a			Reconfigured sunrise/sunset triggers
+ *		4/18/2017		Version:4.0 R.0.3.1c			Reconfigured sunrise/sunset triggers
  *		3/16/2017		Version:4.0 R.0.3.0	    	Cron Scheduling and Reporting
  *
  *  Copyright 2016 Jason Headley & Bobby Dobrescu
@@ -28,7 +28,7 @@ definition(
 	iconX3Url		: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/app-Echosistant@2x.png")
 /**********************************************************************************************************************************************/
 private release() {
-	def text = "R.0.3.1a"
+	def text = "R.0.3.1c"
 }
 
 preferences {
@@ -126,7 +126,10 @@ page name: "mainProfilePage"
                             "runEvery3Hours": "Every 3 Hours",
                 			//"runEvery1Day": "Every Day"
                             ]
-            	if (retrigger) input "howManyTimes", "number", title: "...how many times to retrigger", required: true, description: "number of reminders" 
+            	if (retrigger) {
+                	input "howManyTimes", "number", title: "...how many times to retrigger", required: true, description: "number of reminders"
+                    input "continueOnChange", "bool", title: "Continue to deliver reminders after condition changes", required: false, defaultValue: false
+            	}
             }         
             section ("With these output methods" , hideWhenEmpty: true) {    
                 input "sonos", "capability.musicPlayer", title: "On this Music Player", required: false, multiple: true, submitOnChange: true
@@ -1126,13 +1129,22 @@ log.info "delayed message is now playing"
 def retriggerHandler () {
 	def message = "In case you misssed it " + state.message
     state.occurrences =  state.occurrences + 1
-            if (getDayOk()==true && getModeOk()==true && getTimeOk()==true && getFrequencyOk()==true && getConditionOk()==true) {
+    if(continueOnChange == true) {
+		log.info "processing retrigger with message = $message"
+		if(recipients?.size()>0 || sms?.size()>0 || push) {
+			sendtxt(message)
+  		}			
+    	takeAction(message)
+   	}
+    else { 
+   		if (getDayOk()==true && getModeOk()==true && getTimeOk()==true && getFrequencyOk()==true && getConditionOk()==true) {
 			log.info "processing retrigger with message = $message"
             if(recipients?.size()>0 || sms?.size()>0 || push) {
 				sendtxt(message)
             }			
             takeAction(message)
-    	}        
+    	}
+   	}
 }
 /***********************************************************************************************************************
     CUSTOM WEATHER VARIABLES
