@@ -3,11 +3,11 @@
     {
       "intent": "assistant",
       "slots": [
-         {
-			"name": "ttstext",
-			"type": "LIST_OF_WORDS"
+        {
+          "name": "ttstext",
+          "type": "LITERAL"
         }
-        ]
+      ]
     }
-        ]
+  ]
 }
