@@ -1,0 +1,13 @@
+{
+  "intents": [
+    {
+      "slots": [
+        {
+          "name": "ttstext",
+          "type": "LIST_OF_WORDS"
+        }
+      ],
+      "intent": "ThorEnglish"
+    }
+  ]
+}
