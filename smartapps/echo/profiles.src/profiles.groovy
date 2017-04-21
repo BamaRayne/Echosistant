@@ -6,6 +6,7 @@
  
  ************************************ FOR INTERNAL USE ONLY ******************************************************
  *
+ *		4/20/2017		Version:4.0 R.0.3.2c	Added SHM state change when profile runs option
  *		4/10/2017		Version:4.0 R.0.3.2b	Added Virtual Person status change when profile runs option
  *		4/5/2017		Version:4.0 R.0.3.2a	Added "Cut on" and "Cut off" commands for lights and Automation Disable
  *		4/03/2017		Version:4.0 R.0.3.2		Fixed Alexa output when controlling groups and custom groups
@@ -37,7 +38,7 @@ definition(
 	iconX3Url		: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/app-Echosistant@2x.png")
 /**********************************************************************************************************************************************/
 private release() {
-	def text = "R.0.3.2b"
+	def text = "R.0.3.2c"
 }
 /**********************************************************************************************************************************************/
 preferences {
@@ -205,6 +206,8 @@ page name: "pActions"
                 input "pRoutine2", "enum", title: "Select a Second Routine to execute", required: false, options: actions, multiple: false
             		}
                 }
+                input "shmState", "enum", title: "Set Smart Home Monitor to...", options:["stay":"Armed Stay","away":"Armed Away","off":"Disarmed"], multiple: false, required: false, submitOnChange: true
+                
 				input "pVirPer", "bool", title: "Toggle the Virtual Person State Automatically when this Profile Runs", default: false, submitOnChange: true, required: false
 			}
         }
@@ -432,6 +435,53 @@ private pVirToggle() {
             }
     	}
 	}
+/************************************************************************************************************
+		Smart Home Monitor Status Change when Profile Executes
+************************************************************************************************************/    
+def shmStateChange() {
+	if (shmState == "stay") {
+    	sendArmStayCommand()
+        }
+    if (shmState == "away") {
+    	sendArmAwayCommand()
+        }
+    if (shmState == "off") {
+    	sendDisarmCommand()
+        }
+    }    
+
+def sendArmAwayCommand() {
+  log.debug "Sending Arm Command."
+  if (keypadstatus) {
+    keypad?.each() { it.acknowledgeArmRequest(3) }
+  }
+	sendSHMEvent("away")
+}
+def sendDisarmCommand() {
+  log.debug "Sending Disarm Command."
+  if (keypadstatus) {
+    keypad?.each() { it.acknowledgeArmRequest(0) }
+  }
+	sendSHMEvent("off")
+}
+def sendArmStayCommand() {
+  log.debug "Sending Stay Command."
+  if (keypadstatus) {
+    keypad?.each() { it.acknowledgeArmRequest(1) }
+  }
+  sendSHMEvent("stay")
+}
+
+private sendSHMEvent(String shmState) {
+  def event = [
+        name:"alarmSystemStatus",
+        value: shmState,
+        displayed: true,
+        description: "System Status is ${shmState}"
+      ]
+  log.debug "test ${event}"
+  sendLocationEvent(event)
+}
 /************************************************************************************************************
 		Base Process
 ************************************************************************************************************/    
@@ -1267,6 +1317,9 @@ def ttsActions(tts) {
     }
 	if (pVirPer) {
 		pVirToggle()
+    }
+    if (shmState) {
+    	shmStateChange()
     }    
    	if (sHues) {               
 		processColor()
