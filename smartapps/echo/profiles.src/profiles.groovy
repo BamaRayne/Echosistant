@@ -207,7 +207,9 @@ page name: "pActions"
             		}
                 }
                 input "shmState", "enum", title: "Set Smart Home Monitor to...", options:["stay":"Armed Stay","away":"Armed Away","off":"Disarmed"], multiple: false, required: false, submitOnChange: true
-                
+                	if (shmState) {
+                    	input "shmStateKeypads", "capability.lockCodes",  title: "Send status change to these keypads...", multiple: true, required: false, submitOnChange: true
+                        }
 				input "pVirPer", "bool", title: "Toggle the Virtual Person State Automatically when this Profile Runs", default: false, submitOnChange: true, required: false
 			}
         }
@@ -451,36 +453,34 @@ def shmStateChange() {
     }    
 
 def sendArmAwayCommand() {
-  log.debug "Sending Arm Command."
-  if (keypadstatus) {
-    keypad?.each() { it.acknowledgeArmRequest(3) }
-  }
-	sendSHMEvent("away")
-}
+	if (shmStateKeypads) {
+		shmStateKeypads?.each() { it.acknowledgeArmRequest(3) }
+		}
+		sendSHMEvent("away")
+	}
+    
 def sendDisarmCommand() {
-  log.debug "Sending Disarm Command."
-  if (keypadstatus) {
-    keypad?.each() { it.acknowledgeArmRequest(0) }
-  }
-	sendSHMEvent("off")
-}
+	if (shmStateKeypads) {
+		shmStateKeypads?.each() { it.acknowledgeArmRequest(0) }
+		}
+		sendSHMEvent("off")
+	}
+    
 def sendArmStayCommand() {
-  log.debug "Sending Stay Command."
-  if (keypadstatus) {
-    keypad?.each() { it.acknowledgeArmRequest(1) }
-  }
-  sendSHMEvent("stay")
-}
+	if (shmStateKeypads) {
+		shmStateKeypads?.each() { it.acknowledgeArmRequest(1) }
+		}
+		sendSHMEvent("stay")
+	}
 
 private sendSHMEvent(String shmState) {
-  def event = [
-        name:"alarmSystemStatus",
-        value: shmState,
-        displayed: true,
-        description: "System Status is ${shmState}"
-      ]
-  log.debug "test ${event}"
-  sendLocationEvent(event)
+	def event = [
+		name:"alarmSystemStatus",
+		value: shmState,
+		displayed: true,
+		description: "System Status is ${shmState}"
+		]
+	sendLocationEvent(event)
 }
 /************************************************************************************************************
 		Base Process
@@ -2023,17 +2023,7 @@ def fillColorSettings() {
 		[ name: "Yellow Green",				rgb: "#9ACD32",		h: 80,		s: 61,		l: 50,	],
 	]
 }
-/************************************************************************************************************
-	Virtual Presence Sensor Deletion Handler
-************************************************************************************************************/
 
-//private removeChildDevices(delete) {
-//log.debug "The Virtual Person Device '${app.label}' has been deleted from your SmartThings environment"
-//    delete.each {
-//        deleteChildDevice(it.deviceNetworkId)
-//   }
-//}               
- 
 /************************************************************************************************************
    Page status and descriptions 
 ************************************************************************************************************/       
@@ -2066,14 +2056,14 @@ def pDevicesComplete() {def text = "Tap here to Configure"
         text}
 def pActionsSettings(){def result = ""
 	def pDevicesProc = ""
-    if (sSwitches || sDimmers || sHues || sFlash) {
+    if (sSwitches || sDimmers || sHues || sFlash || shmState) {
     	result = "complete"
         pDevicesProc = "complete"}
     	result}
 def pActionsComplete() {def text = "Configured" 
 	def pDevicesComplete = pDevicesComplete()
-    if (pDevicesProc || pMode || pRoutine) {
-    	text = "Tap here to Configure"}
+    if (pDevicesProc || pMode || pRoutine || shmState) {
+    	text = "Configured"}
         else text = "Tap here to Configure"
         text}        
 def pRestrictSettings(){ def result = "" 
