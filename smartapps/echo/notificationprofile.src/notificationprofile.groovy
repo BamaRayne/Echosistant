@@ -1,7 +1,7 @@
 /* 
  * Notification - EchoSistant Add-on 
  *
- *		4/18/2017		Version:4.0 R.0.3.1c			Reconfigured sunrise/sunset triggers
+ *		4/25/2017		Version:4.0 R.0.3.2			Minor bug fixes
  *		3/16/2017		Version:4.0 R.0.3.0	    	Cron Scheduling and Reporting
  *
  *  Copyright 2016 Jason Headley & Bobby Dobrescu
@@ -28,7 +28,7 @@ definition(
 	iconX3Url		: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/app-Echosistant@2x.png")
 /**********************************************************************************************************************************************/
 private release() {
-	def text = "R.0.3.1c"
+	def text = "R.0.3.2"
 }
 
 preferences {
@@ -293,7 +293,7 @@ page name: "triggers"
             }
             section ("Sensor Status", hideWhenEmpty: true) {
                 input "myContact", "capability.contactSensor", title: "Choose Doors and Windows..", required: false, multiple: true, submitOnChange: true
-                    if (myContact && actionType != "Ad-Hoc Report") input "myContactS", "enum", title: "Notify when state changes to...", options: ["open", "close", "both"], required: false
+                    if (myContact && actionType != "Ad-Hoc Report") input "myContactS", "enum", title: "Notify when state changes to...", options: ["open", "closed", "both"], required: false
                 input "myMotion", "capability.motionSensor", title: "Choose Motion Sensors..", required: false, multiple: true, submitOnChange: true
                     if (myMotion && actionType != "Ad-Hoc Report") input "myMotionS", "enum", title: "Notify when state changes to...", options: ["active", "inactive", "both"], required: false
                 input "myPresence", "capability.presenceSensor", title: "Choose Presence Sensors...", required: false, multiple: true, submitOnChange: true
@@ -850,7 +850,8 @@ def meterHandler(evt) {
                     }
                     else {
                         log.debug "sending notification (above)" 
-                        data = [value:"above threshold", name:"power", device:"power meter"] 
+                        data = [value:"above threshold", name:"power", device:"power meter"]
+                        state.occurrences = 1
                         alertsHandler(data)
                     }
                 }
@@ -873,6 +874,7 @@ def meterHandler(evt) {
                     else {
                         log.debug "sending notification (below)" 
                         data = [value:"below threshold", name:"power", device:"power meter"]
+                        state.occurrences = 1
                         alertsHandler(data)
                     }
                 }
@@ -891,6 +893,7 @@ def bufferPendingH() {
     if (meterValue >= thresholdValue) {
 		log.debug "sending notification (above)" 
         def data = [value:"above threshold", name:"power", device:"power meter"] 
+        state.occurrences = 1
     	alertsHandler(data)
    }
 }
@@ -900,7 +903,8 @@ def bufferPendingL() {
     def thresholdValue = threshold == null ? 0 : threshold as int
     if (meterValue <= thresholdValue) {
 		log.debug "sending notification (below)" 
-       def data = [value:"below threshold", name:"power", device:"power meter"] 
+       	def data = [value:"below threshold", name:"power", device:"power meter"] 
+       	state.occurrences = 1
     	alertsHandler(data)
   	}
 }
@@ -965,8 +969,7 @@ def alertsHandler(evt) {
             def nRoutine = false
             def stamp = state.lastTime = new Date(now()).format("h:mm aa", location.timeZone)     
             def today = new Date(now()).format("EEEE, MMMM d, yyyy", location.timeZone)
-            
-            log.warn "getAllOk() = ${getAllOk()}"
+
             if (getDayOk()==true && getModeOk()==true && getTimeOk()==true && getFrequencyOk()==true && getConditionOk()==true) {	
                 if(eName == "time of day" && message){
                         eTxt = message ? "$message".replace("&device", "${eDisplayN}").replace("&event", "time").replace("&action", "executed").replace("&date", "${today}").replace("&time", "${stamp}").replace("&profile", "${eProfile}") : null
@@ -1031,10 +1034,14 @@ def alertsHandler(evt) {
                                 }
                                 else eTxt = eDisplayN + " is " + eVal
                             }
-                            if(recipients?.size()>0 || sms?.size()>0 || push) {
-                                sendtxt(eTxt)
+                            if(eTxt){
+                                if(recipients?.size()>0 || sms?.size()>0 || push) {
+                                    log.warn "sending sms"
+                                    sendtxt(eTxt)
+                                }
+                                log.warn "processing eTxt = $eTxt"
+                                takeAction(eTxt)
                             }
-                            takeAction(eTxt)
                         }
                     }
                 }
@@ -1045,6 +1052,9 @@ def alertsHandler(evt) {
     TAKE ACTIONS HANDLER
 ***********************************************************************************************************************/
 private takeAction(eTxt) {
+	def data = [args: eTxt ]
+	sendLocationEvent(name: "echoSistantProfile", value: app.label, data: data, displayed: true, isStateChange: true, descriptionText: "EchoSistant activated '${app.label}' profile.")
+	if (parent.debug) log.debug "sendNotificationEvent sent to CoRE was '${app.label}' from the TTS process section"
 	state.savedOffset = false
 	def sVolume
     def sTxt
@@ -1114,10 +1124,12 @@ private takeAction(eTxt) {
         	else if (state.occurrences >= howManyTimes) {
             	unschedule("retriggerHandler")
                 state.message = null
+                state.occurrences = 1
                 log.warn "canceling reminders"
         	}
         }
 }
+
 def delayedMessage() {
 def sTxt = state.sound
 sonos?."${sTxt.command}"(sTxt.uri, Math.max((sTxt.duration as Integer),2), sTxt.volume)
@@ -1181,8 +1193,6 @@ def mGetWeatherTrigger(){
     def myTrigger
 	def process = false
 	try{  
-		//log.warn "getAllOk() = ${getAllOk()}"
-       	//if (getDayOk()==true && getModeOk()==true && getTimeOk()==true && getFrequencyOk()==true || getConditionOk()==true) { -- 4/18/2017 Bobby
         	if(getMetric() == false){
             def cWeather = getWeatherFeature("conditions", settings.wZipCode)
             def cTempF = cWeather.current_observation.temp_f.toDouble()
@@ -1612,19 +1622,15 @@ def scheduledTimeHandler(state) {
 /***********************************************************************************************************************
     RESTRICTIONS HANDLER
 ***********************************************************************************************************************/
-private getAllOk() {
-	def result = false
-	if(modeOk && daysOk && timeOk && getFrequencyOk() && getConditionOk()){
-    result = true
-	}
-    log.debug "getAllOk = $result"
-    result
-}
-
 def getConditionOk() {
     def result = true
     def devList = []
-    
+	if (state.occurrences >= howManyTimes) {
+		unschedule("retriggerHandler")
+        state.message = null
+        state.occurrences = 1
+        log.warn "canceling reminders"
+    }
 	if(rSwitchS || rMotionS || rContactS || rPresenceS){
     result = false
         if (rSwitch) {
