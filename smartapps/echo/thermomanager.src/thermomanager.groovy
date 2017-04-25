@@ -1,7 +1,7 @@
 /**
  *  Zwave Thermostat Manager - EchoSistant Add-on
  *  
- *		3/18/2017		Version:4.0 R.0.0.2		Modified and Released as an EchoSistant Add-On Module
+ *		3/25/2017		Version:4.0 R.0.0.3		Added Reporting features
  *		3/18/2017		Version:4.0 R.0.0.1		Modified and Released as an EchoSistant Add-On Module
  *
  * 
@@ -36,13 +36,15 @@ definition(
 )
 /**********************************************************************************************************************************************/
 private release() {
-	def text = "R.0.0.2"
+	def text = "R.0.0.3"
 }
 preferences {
     page name:"pageSetup"
     page name:"TemperatureSettings"
     page name:"ThermostatandDoors"
     page name:"ThermostatAway"
+    page name:"reporting"
+    page name: "report"
     page name:"Settings"
 
 }
@@ -67,6 +69,7 @@ def pageSetup() {
             href "ThermostatandDoors", title: "Disabled Mode", description: ThermostatandDoorsParams(), state: greyedOutDoors()
             href "ThermostatAway", title: "Away Mode", description: ThermostatAwayParams(), state: greyedOutAway()
 			href "Settings", title: "Other Settings", description: SettingsParams(), state: greyedOutSettings()
+            href "reporting", title: "Available Reports", description: "", state: null
          }
 
     }
@@ -74,7 +77,6 @@ def pageSetup() {
 
 // Page - Temperature Settings	
 def TemperatureSettings() {
-
     def sensor = [
         name:       "sensor",
         type:       "capability.temperatureMeasurement",
@@ -164,8 +166,11 @@ def TemperatureSettings() {
 			input "remoteSensors", "bool", title: "Enable remote sensor(s)", required: false, defaultValue: false, submitOnChange: true
 			if (remoteSensors) {
             	input sensor 
-            	paragraph "If multiple sensors are selected, the average temperature is automatically calculated"	
-			}
+            	if (sensor) {
+                    def tempAVG = getAverageUI()
+                    paragraph "If multiple sensors are selected, the average temperature is automatically calculated. Current temperature ${tempAVG}"	
+				}
+            }
         }
 		section("When the temperature falls below this temperature (Low Temperature)..."){
 			input setLow
@@ -342,6 +347,63 @@ metadata:   [values:["auto", "heat", "cool", "off"]]
     	} 
 	 }
 }
+// Show "Reporting" page
+def reporting(){
+	def report
+	return dynamicPage(
+    	name		: "reporting"
+        ,title		: "Operating reports"
+        ,install	: false
+        ,uninstall	: false
+        ){
+    		section(){
+            	report = "General Settings"
+   				href( "report"
+					,title		: report
+					,description: ""
+					,state		: null
+					,params		: [rptName:report]
+				) 
+                report = "Current state"
+                href( "report"
+					,title		: report
+					,description: ""
+					,state		: null
+					,params		: [rptName:report]
+				)   
+                report = "Last results"
+                href( "report"
+					,title		: report
+					,description: ""
+					,state		: null
+					,params		: [rptName:report]
+				)
+                report = "Historical results"
+                href( "report"
+					,title		: report
+					,description: ""
+					,state		: null
+					,params		: [rptName:report]
+				)  
+                
+            }
+   }
+}
+def report(params){
+	def reportName = params.rptName
+    def reportDetails
+	return dynamicPage(
+    	name		: "report"
+        ,title		: reportName
+        ,install	: false
+        ,uninstall	: false
+        ){
+    		section(){
+   				paragraph(getReport(reportName)) //"Historical results", "Last results", "Current state", "General Settings"
+            }
+   }
+}
+
 
 // Show "Setup" page
 def Settings() {
@@ -419,8 +481,6 @@ page name: "SMS"
 def installed(){
 	log.debug "Installed with settings: ${settings}, current app version: ${release()}"
     state.NotificationRelease = "Climate Control: " + release()
-    state.sound
-    state.lastPlayed
 	init()
 }
 
@@ -434,6 +494,7 @@ def init(){
     state.lastStatus = null
     state.sound
     state.lastPlayed
+	state.firstCheck = true
     runIn(60, "temperatureHandler")
     	if (debug) log.debug "Temperature will be evaluated in one minute"
      	if(sensor) {
@@ -460,8 +521,84 @@ def init(){
     		state.disableHSP = null 
     		state.disableCSP = null
 	}
+    //Reporting Data
+    subscribe(thermostat, "thermostatMode", checkNotify)
+    subscribe(thermostat, "thermostatFanMode", checkNotify)
+    subscribe(thermostat, "thermostatOperatingState", checkNotify)
+    subscribe(thermostat, "heatingSetpoint", checkNotify)
+    subscribe(thermostat, "coolingSetpoint", checkNotify)
+    //tempSensors
+    subscribe(sensor, "temperature", checkNotify)
+	//init state vars
+	state.mainState = state.mainState ?: getNormalizedOS(thermostat.currentValue("thermostatOperatingState"))
+    state.mainMode = state.mainMode ?: getNormalizedOS(thermostat.currentValue("thermostatMode"))
+    state.mainCSP = state.mainCSP ?: thermostat.currentValue("coolingSetpoint").toFloat()
+    state.mainHSP = state.mainHSP ?: thermostat.currentValue("heatingSetpoint").toFloat()
+    if(sensor){
+    	def tempAVG = sensor ? getAverage(sensor, "temperature") : "undefined device"
+    	state.mainTemp = tempAVG
+    }
+    else state.mainTemp = state.mainTemp ?: thermostat.currentValue("temperature").toFloat()
+    state.startTime
+	state.endTime
+    checkNotify(null)    
 }
 
+def checkNotify(evt){
+	def tempStr = ''
+    def tempFloat = 0.0
+    def tempBool = false
+    //def mainTemp = sensor.currentValue("temperature").toFloat()
+    def tempAVG = sensor ? getAverage(sensor, "temperature") : "undefined device"
+    def mainTemp = tempAVG
+    //thermostat state
+	tempStr = getNormalizedOS(thermostat.currentValue("thermostatOperatingState"))
+	def mainState = state.mainState
+    def mainStateChange = mainState != tempStr
+    mainState = tempStr
+    
+    //thermostate mode
+    tempStr = getNormalizedOS(thermostat.currentValue("thermostatMode"))
+    def mainMode = state.mainMode
+    def mainModeChange = mainMode != tempStr
+    mainMode = tempStr
+
+	//cooling set point
+    def mainCSPChange = false
+    def mainCSP
+	tempFloat = thermostat.currentValue("coolingSetpoint").toFloat()
+    mainCSP = state.mainCSP
+    mainCSPChange = mainCSP != tempFloat
+    mainCSP = tempFloat
+
+	//heating set point
+	tempFloat = thermostat.currentValue("heatingSetpoint").toFloat()
+    def mainHSP = state.mainHSP
+    def mainHSPChange = mainHSP != tempFloat
+    mainHSP = tempFloat
+    def mainOn = mainState != "idle"
+    //always update state vars
+    state.mainState = mainState
+    state.mainMode = mainMode
+    state.mainCSP = mainCSP
+    state.mainHSP = mainHSP
+    state.mainTemp = mainTemp
+    
+    //update cycle data
+    if (mainStateChange && mainOn){
+    	//main start
+        state.startTime = now() + location.timeZone.rawOffset
+        state.startTemp = mainTemp
+    } else if (mainStateChange && !mainOn){
+    	//main end
+        state.endTime = now() + location.timeZone.rawOffset
+        state.endTemp = mainTemp
+    }
+    if (mainStateChange || mainModeChange || mainCSPChange || mainHSPChange){
+    	def dataSet = [msg:"stat",data:[initRequest:false,mainState:mainState,mainStateChange:mainStateChange,mainMode:mainMode,mainModeChange:mainModeChange,mainCSP:mainCSP,mainCSPChange:mainCSPChange,mainHSP:mainHSP,mainHSPChange:mainHSPChange,mainOn:mainOn]]
+        state.dataSet = dataSet
+	}
+}
 def temperatureHandler(evt) {
     def currentTemp
     def eTxt
@@ -502,6 +639,7 @@ def temperatureHandler(evt) {
                            	if(recipients?.size()>0 || sms?.size()>0 || push) sendtxt(msg) //sendMessage(msg)
                          	if(speechSynth || sonos ) playMessage(msg)
                             if (info) log.info msg
+							state.firstCheck = true
                         }
                      	else if  (currentHSP < SetHeatingLow) {
                             def msg = "Adjusting ${thermostat} setpoints because temperature is below ${setLow}"
@@ -511,12 +649,14 @@ def temperatureHandler(evt) {
                            	if(recipients?.size()>0 || sms?.size()>0 || push) sendtxt(msg) //sendMessage(msg)
                          	if(speechSynth || sonos ) playMessage(msg)
                         		if (info) log.info msg
+								state.firstCheck = true
                         }
-                     	else if  (currentHSP >= SetHeatingLow) {
+                     	else if  (currentHSP >= SetHeatingLow && state.firstCheck == true) {
                             def msg = "Your room temperature ${thermostat} has reached $currentTemp, but your Heat is set to $currentHSP, you may consider turning up the heat to be more comfortable"
                            	if(recipients?.size()>0 || sms?.size()>0 || push) sendtxt(msg) //sendMessage(msg)
                          	if(speechSynth || sonos ) playMessage(msg)
                         		if (info) log.info msg
+								state.firstCheck = false
                         }                        
                     }
                 }                                     
@@ -532,6 +672,7 @@ def temperatureHandler(evt) {
                            	if(recipients?.size()>0 || sms?.size()>0 || push) sendtxt(msg) //sendMessage(msg)
                          	if(speechSynth || sonos ) playMessage(msg)
                             	if (info) log.info msg
+								state.firstCheck = true
                         }
                         else if (currentCSP > SetCoolingHigh) {
                             def msg = "Adjusting ${thermostat} setpoints because temperature is above ${setHigh}"
@@ -541,12 +682,14 @@ def temperatureHandler(evt) {
                            	if(recipients?.size()>0 || sms?.size()>0 || push) sendtxt(msg) //sendMessage(msg)
                          	if(speechSynth || sonos ) playMessage(msg)  
                             	if (info) log.info msg
+								state.firstCheck = true
                        	}
-                        else if (currentCSP <= SetCoolingHigh) {
+                        else if (currentCSP <= SetCoolingHigh && state.firstCheck == true) {
                             def msg = "Your room temperature ${thermostat} has reached $currentTemp, but your AC is set to $currentCSP, you may consider turning the AC to be more comfortable"
                            	if(recipients?.size()>0 || sms?.size()>0 || push) sendtxt(msg) //sendMessage(msg)
                          	if(speechSynth || sonos ) playMessage(msg)  
                             	if (info) log.info msg
+                                state.firstCheck = false
                        	}                        
                    }     
                 }    
@@ -632,7 +775,21 @@ def modeAwayTempHandler(evt) {
         	}
 	}
 }
-
+def getNormalizedOS(os){
+	def normOS = ""
+    if (os == "heating" || os == "pending heat" || os == "heat" || os == "emergency heat"){
+    	normOS = "heat"
+    } else if (os == "cooling" || os == "pending cool" || os == "cool"){
+    	normOS = "cool"
+    } else if (os == "auto"){
+    	normOS = "auto"
+    } else if (os == "off"){
+    	normOS = "off"
+    } else {
+    	normOS = "idle"
+    }
+    return normOS
+}
 def doorCheck(evt){	
         state.disabledTemp = sensor.latestValue("temperature")
        	state.disabledMode = thermostat.latestValue("thermostatMode")
@@ -667,11 +824,21 @@ def doorCheck(evt){
 	}
 }
 
-private getAverage(device,type){
+private getAverage(device, type){
 	def total = 0
-		if(debug) log.debug "calculating average temperature"  
-    device.each {total += it.latestValue(type)}
+    device.each {total += it.latestValue("temperature")}
     return Math.round(total/device.size())
+}
+
+def getAverageUI(){
+	def total = 0
+    def currentTemp
+            if(sensor){            
+                def sensors = sensor.size()
+            	def tempAVG = sensor ? getAverage(sensor, "temperature") : "undefined device"
+            	currentTemp = tempAVG
+			}
+   return currentTemp
 }
 
 /***********************************************************************************************************************
@@ -791,8 +958,6 @@ private getDoorsOk() {
 		if(debug) log.debug "doorsOk = $result"
 	result
 }
-
-
 private getDaysOk() {
 	def result = true
 	if (days) {
@@ -853,7 +1018,73 @@ private hhmm(time, fmt = "h:mm a")
 	f.setTimeZone(location.timeZone ?: timeZone(time))
 	f.format(t)
 }
+/************************************************************************************************************
+	~ REPORTING ~
+************************************************************************************************************/       
+def getReport(rptName){
+    //def t = tempSensors.currentValue("temperature")
+    def reports = ""
+    def cspStr = ""
+    def tempAVG
+    log.warn "rptName = $rptName"
+    if (sensor) {
+		tempAVG = getAverageUI()
+	}
+	def temp1 = (thermostat?.currentValue("temperature"))
+	def setPC1 = (thermostat?.currentValue("coolingSetpoint"))
+	def setPH1 = (thermostat?.currentValue("heatingSetpoint"))
+	def mode1 = (thermostat?.currentValue("thermostatMode"))
+	def oper1 = (thermostat?.currentValue("thermostatOperatingState"))
+    
+    if (rptName == "Current state"){
+        def averageTemp = 0  
+		reports = "Main system:\n\tstate: ${oper1}\n\tmode: ${mode1}\n\tcurrent thermostat temp: ${temp1}\n\theating set point: ${setPH1}\n\tcooling set point: ${setPC1}\n\n"
+        reports = reports + "Average temperature across selected sensors : ${tempAVG}\n\n"
+    }
+    if (rptName == "General Settings"){
+        reports = "Main system:\n\tstate: ${state.mainState}\n\tmode: ${state.mainMode}\n\tcurrent thermostat temp: ${temp1}\n\theating set point: ${tempStr(state.mainHSP)}\n\tcooling set point: ${tempStr(state.mainCSP)}\n\n"
+        reports = reports + "Average temperature across selected sensors : ${tempAVG}\n\n"
+        reports = reports + "adjusting the thermostat if the temperature falls below ${setLow} or raises above ${setHigh}.\n\n"
+        reports = reports + "The disable mode is ${disable} and the away mode is set when thermostat to away mode when Location Mode changes to: ${away}.\n\n"
+        if (doors) reports = reports + "The thermostat turns off when ${doors} are open for more than ${turnOffDelay} minutes.\n\n"
+        if (away) reports = reports + "Current settings: adjust thermostat to away mode when Location Mode is set to: ${modes2}.\n\n"
+    }  
+    if (rptName == "Last results"){
+        def stime = "No data available yet"
+        def etime = "No data available yet"
+        def sTemp = tempStr(state.startTemp)
+        def eTemp  = tempStr(state.endTemp)
+        def rtm = "No data available yet"
+        if ((state.startTime && state.endTime) && (state.startTime < state.endTime)){
+        	stime = new Date(state.startTime).format("yyyy-MM-dd HH:mm")
+            etime =  new Date(state.endTime).format("yyyy-MM-dd HH:mm")
+            rtm = ((state.endTime - state.startTime) / 60000).toInteger()
+            rtm = "${rtm} minutes"
+        } 
+        reports = "Main system:\n\tstart: ${stime}\n\tend: ${etime}\n\tstart temp: ${sTemp}\n\tend temp: ${eTemp}\n\tduration: ${rtm}\n\n"
+    }
+    if (rptName == "Historical results"){
+        def stime = "No data available yet"
+        def etime = "No data available yet"
+        def sTemp = tempStr(state.startTemp)
+        def eTemp  = tempStr(state.endTemp)
+        def rtm = "No data available yet"
+        if ((state.startTime && state.endTime) && (state.startTime < state.endTime)){
+        	stime = new Date(state.startTime).format("yyyy-MM-dd HH:mm")
+            etime =  new Date(state.endTime).format("yyyy-MM-dd HH:mm")
+            rtm = ((state.endTime - state.startTime) / 60000).toInteger()
+            rtm = "${rtm} minutes"
+        } 
+        reports = "Main system:\n\tstart: ${stime}\n\tend: ${etime}\n\tstart temp: ${sTemp}\n\tend temp: ${eTemp}\n\tduration: ${rtm}\n\n"
+    }    
 
+		return reports
+}
+def tempStr(temp){
+    def tc = state.tempScale ?: location.temperatureScale
+    if (temp != 0 && temp != null) return "${temp.toString()}°${tc}"
+    else return "No data available yet."
+}
 def getAlexaReport() {
     def result = ""
     if (thermostat) {
@@ -916,6 +1147,13 @@ def greyedOutAway(){
     result
 }
 def ThermostatAwayParams() {
+    def text = "Tap here to configure settings"
+    if (away) {
+        text = "Current settings: adjust thermostat to away mode when Location Mode is set to: ${modes2}. Tap here to change settings"
+    }
+    text
+}
+def reportingParam() {
     def text = "Tap here to configure settings"
     if (away) {
         text = "Current settings: adjust thermostat to away mode when Location Mode is set to: ${modes2}. Tap here to change settings"
