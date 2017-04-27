@@ -432,7 +432,7 @@ def installed() {
 def updated() {
 	log.debug "Updated with settings: ${settings}, current app version: ${release()}"
 	state.NotificationRelease = "Notification: " + release()
-    state.lastPlayed = now()
+    state.lastPlayed = null
     state.sound
 	unschedule()
     unsubscribe()
@@ -450,7 +450,7 @@ def initialize() {
     state.savedOffset = false
     state.lastWeather
 	state.message = null
-    state.occurrences = 1
+    state.occurrences = 0
     if (mySunState == "Sunset") {
     subscribe(location, "sunsetTime", sunsetTimeHandler)
 	sunsetTimeHandler(location.currentValue("sunsetTime"))
@@ -852,7 +852,6 @@ def meterHandler(evt) {
                     else {
                         log.debug "sending notification (above)" 
                         data = [value:"above threshold", name:"power", device:"power meter"]
-                        state.occurrences = 1
                         alertsHandler(data)
                     }
                 }
@@ -875,7 +874,6 @@ def meterHandler(evt) {
                     else {
                         log.debug "sending notification (below)" 
                         data = [value:"below threshold", name:"power", device:"power meter"]
-                        state.occurrences = 1
                         alertsHandler(data)
                     }
                 }
@@ -894,7 +892,6 @@ def bufferPendingH() {
     if (meterValue >= thresholdValue) {
 		log.debug "sending notification (above)" 
         def data = [value:"above threshold", name:"power", device:"power meter"] 
-        state.occurrences = 1
     	alertsHandler(data)
    }
 }
@@ -905,7 +902,6 @@ def bufferPendingL() {
     if (meterValue <= thresholdValue) {
 		log.debug "sending notification (below)" 
        	def data = [value:"below threshold", name:"power", device:"power meter"] 
-       	state.occurrences = 1
     	alertsHandler(data)
   	}
 }
@@ -944,6 +940,7 @@ def alertsHandler(evt) {
     def eDisplayN = evt.displayName
     def eDisplayT = evt.descriptionText
 	if(eDisplayN == null) eDisplayN = eName
+    state.occurrences = 1
     def eTxt = eDisplayN + " is " + eVal //evt.descriptionText 
     log.info "event received: event = $event, eVal = $eVal, eName = $eName, eDev = $eDev, eDisplayN = $eDisplayN, eDisplayT = $eDisplayT, eTxt = $eTxt"
     log.warn "version number = ${release()}"
@@ -1094,12 +1091,18 @@ private takeAction(eTxt) {
                 }
                 sVolume = settings.sonosVolume ?: 20
                 sVolume = (sVolume == 20 && currVolLevel == 0) ? sVolume : sVolume !=20 ? sVolume: currVolLevel
-                def elapsed = now() - state.lastPlayed
-                def elapsedSec = elapsed/1000
-                //log.warn "previous duration = $prevDuration, elapsedSec = $elapsedSec "
-                def timeCheck = prevDuration * 1000
-                //log.warn "elapsed= $elapsed, timeCheck = $timeCheck"
                 def sCommand = resumePlaying == true ? "playTrackAndResume" : "playTrackAndRestore"
+                if (!state.lastPlayed) {
+					log.info "playing first message"
+					sonos?."${sCommand}"(sTxt.uri, Math.max((sTxt.duration as Integer),2), sVolume)
+					state.lastPlayed = now()
+					state.sound.command = sCommand
+					state.sound.volume = sVolume
+                }
+                else {
+                	def elapsed = now() - state.lastPlayed
+                	def elapsedSec = elapsed/1000
+                	def timeCheck = prevDuration * 1000
                     if(elapsed < timeCheck){
                     	def delayNeeded = prevDuration - elapsedSec
                         if(delayNeeded > 0 ) delayNeeded = delayNeeded + 2
@@ -1110,12 +1113,13 @@ private takeAction(eTxt) {
                         runIn(delayNeeded , delayedMessage)
                 	}
                     else {
-                    	log.info "playing first message"
+                    	log.info "playing message without delay"
                 		sonos?."${sCommand}"(sTxt.uri, Math.max((sTxt.duration as Integer),2), sVolume)
                         state.lastPlayed = now()
 						state.sound.command = sCommand
                         state.sound.volume = sVolume
                 	}
+              }
         }      
         if(retrigger){
         	if(state.occurrences == 1) {
@@ -1126,7 +1130,7 @@ private takeAction(eTxt) {
         	else if (state.occurrences >= howManyTimes) {
             	unschedule("retriggerHandler")
                 state.message = null
-                state.occurrences = 1
+                state.occurrences = 0
                 log.warn "canceling reminders"
         	}
         }
@@ -1630,7 +1634,7 @@ def getConditionOk() {
 	if (state.occurrences >= howManyTimes) {
 		unschedule("retriggerHandler")
         state.message = null
-        state.occurrences = 1
+        state.occurrences = 0
         log.warn "canceling reminders"
     }
 	if(rSwitchS || rMotionS || rContactS || rPresenceS){
@@ -1684,22 +1688,27 @@ def getFrequencyOk() {
     def result = false
 	if (onceDailyOk(lastPlayed)) {
 			if (everyXmin) {
-				if (lastPlayed == null || now() - lastPlayed >= everyXmin * 60000) {
-					result = true
+				if (state.lastPlayed == null) {
+                	result = true 
+                }
+                else {
+                	if (now() - state.lastPlayed >= everyXmin * 60000) {
+						result = true
+					}
+					else {
+						log.debug "Not taking action because $everyXmin minutes have not passed since last notification"
+					}
 				}
-				else {
-					log.debug "Not taking action because $everyXmin minutes have not passed since last notification"
-				}
-			}
+            }
 			else {
 				result = true
 			}
-		}
-		else {
-			log.debug "Not taking action because the notification was already played once today"
-		}
-        log.debug "frequencyOk = $result"
-        result
+	}
+	else {
+		log.debug "Not taking action because the notification was already played once today"
+	}
+	log.debug "frequencyOk = $result"
+	result
 }
 private onceDailyOk(Long lastPlayed) {
 	def result = true
