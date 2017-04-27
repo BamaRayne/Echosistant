@@ -1,6 +1,7 @@
 /* 
  * Notification - EchoSistant Add-on 
  *
+ *		4/27/2017		Version:4.0 R.0.3.3			Retrigger bug fixe
  *		4/25/2017		Version:4.0 R.0.3.2			Minor bug fixes
  *		3/16/2017		Version:4.0 R.0.3.0	    	Cron Scheduling and Reporting
  *
@@ -28,7 +29,7 @@ definition(
 	iconX3Url		: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/app-Echosistant@2x.png")
 /**********************************************************************************************************************************************/
 private release() {
-	def text = "R.0.3.2"
+	def text = "R.0.3.3"
 }
 
 preferences {
@@ -945,6 +946,7 @@ def alertsHandler(evt) {
 	if(eDisplayN == null) eDisplayN = eName
     def eTxt = eDisplayN + " is " + eVal //evt.descriptionText 
     log.info "event received: event = $event, eVal = $eVal, eName = $eName, eDev = $eDev, eDisplayN = $eDisplayN, eDisplayT = $eDisplayT, eTxt = $eTxt"
+    log.warn "version number = ${release()}"
     //FAST LANE AUDIO DELIVERY METHOD
     if(actionType == "Default"){
 		if(speechSynth) {

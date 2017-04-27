@@ -455,7 +455,15 @@ def Settings() {
 		section(title: "Debug") {     
         	input "debug", "bool", title: "Enable debug messages in IDE for troubleshooting purposes", required: false, defaultValue: false, refreshAfterSelection:true
         	input "info", "bool", title: "Enable info messages in IDE to display actions in Live Logging", required: false, defaultValue: false, refreshAfterSelection:true
-        }    
+        } 
+		section(title: "Reporting") {     
+        	input "useReports", "bool", title: "Enable utilization Reporting", required: false, defaultValue: false, refreshAfterSelection:true
+			input "power", "capability.powerMeter", title: "Choose Power Meter", required: false, multiple: false, submitOnChange: true        
+           	if(power) input "cost", "decimal", title: "Electricity Cost", description: "0.12", defaultValue: 0.12, required: false
+
+        
+        
+        }         
     }
 }
 page name: "SMS"
@@ -522,47 +530,62 @@ def init(){
     		state.disableCSP = null
 	}
     //Reporting Data
-    subscribe(thermostat, "thermostatMode", checkNotify)
-    subscribe(thermostat, "thermostatFanMode", checkNotify)
-    subscribe(thermostat, "thermostatOperatingState", checkNotify)
-    subscribe(thermostat, "heatingSetpoint", checkNotify)
-    subscribe(thermostat, "coolingSetpoint", checkNotify)
-    //tempSensors
-    subscribe(sensor, "temperature", checkNotify)
-	//init state vars
-	state.mainState = state.mainState ?: getNormalizedOS(thermostat.currentValue("thermostatOperatingState"))
-    state.mainMode = state.mainMode ?: getNormalizedOS(thermostat.currentValue("thermostatMode"))
-    state.mainCSP = state.mainCSP ?: thermostat.currentValue("coolingSetpoint").toFloat()
-    state.mainHSP = state.mainHSP ?: thermostat.currentValue("heatingSetpoint").toFloat()
-    if(sensor){
-    	def tempAVG = sensor ? getAverage(sensor, "temperature") : "undefined device"
-    	state.mainTemp = tempAVG
-    }
-    else state.mainTemp = state.mainTemp ?: thermostat.currentValue("temperature").toFloat()
-    state.startTime
-	state.endTime
-    checkNotify(null)    
+    if(useReports) {
+        subscribe(thermostat, "thermostatMode", checkNotify)
+        subscribe(thermostat, "thermostatFanMode", checkNotify)
+        subscribe(thermostat, "thermostatOperatingState", checkNotify)
+        subscribe(thermostat, "heatingSetpoint", checkNotify)
+        subscribe(thermostat, "coolingSetpoint", checkNotify)
+        //tempSensors
+        subscribe(sensor, "temperature", checkNotify)
+        //init state vars
+        state.mainState = state.mainState ?: getNormalizedOS(thermostat.currentValue("thermostatOperatingState"))
+        state.mainMode = state.mainMode ?: getNormalizedOS(thermostat.currentValue("thermostatMode"))
+        state.mainCSP = state.mainCSP ?: thermostat.currentValue("coolingSetpoint").toFloat()
+        state.mainHSP = state.mainHSP ?: thermostat.currentValue("heatingSetpoint").toFloat()
+        state.startTemp
+        state.endTemp
+		state.startWattage
+        state.endWattage
+        if(sensor){
+            def tempAVG = sensor ? getAverage(sensor, "temperature") : "undefined device"
+            state.mainTemp = tempAVG
+        }
+        else state.mainTemp = state.mainTemp ?: thermostat.currentValue("temperature").toFloat()
+        state.avgConsH
+        state.avgConsC
+        state.startTime
+        state.endTime
+        state.dailyUseH
+        state.monthlyUseH
+        state.dailyUseC
+        state.monthlyUseC
+        state.mainStatePrior
+        checkNotify(null)    
+	}
+
 }
 
 def checkNotify(evt){
 	def tempStr = ''
     def tempFloat = 0.0
-    def tempBool = false
-    //def mainTemp = sensor.currentValue("temperature").toFloat()
-    def tempAVG = sensor ? getAverage(sensor, "temperature") : "undefined device"
-    def mainTemp = tempAVG
+	def rtm
+	def currDate = new Date(state.endTime).format("EEEE, MMMM d, yyyy", location.timeZone)
+	def currMonth = new Date(state.endTime).format("MM", location.timeZone) as int
+    def today = new Date(now()).format("EEEE, MMMM d, yyyy", location.timeZone)
+    def thisMonth = new Date(now()).format("MM", location.timeZone) as int    
+    def tempAVG = sensor ? getAverage(sensor, "temperature") : null
+    def mainTemp = tempAVG.toFloat()
     //thermostat state
 	tempStr = getNormalizedOS(thermostat.currentValue("thermostatOperatingState"))
 	def mainState = state.mainState
     def mainStateChange = mainState != tempStr
     mainState = tempStr
-    
     //thermostate mode
     tempStr = getNormalizedOS(thermostat.currentValue("thermostatMode"))
     def mainMode = state.mainMode
     def mainModeChange = mainMode != tempStr
     mainMode = tempStr
-
 	//cooling set point
     def mainCSPChange = false
     def mainCSP
@@ -570,7 +593,6 @@ def checkNotify(evt){
     mainCSP = state.mainCSP
     mainCSPChange = mainCSP != tempFloat
     mainCSP = tempFloat
-
 	//heating set point
 	tempFloat = thermostat.currentValue("heatingSetpoint").toFloat()
     def mainHSP = state.mainHSP
@@ -589,10 +611,50 @@ def checkNotify(evt){
     	//main start
         state.startTime = now() + location.timeZone.rawOffset
         state.startTemp = mainTemp
+        state.mainStatePrior = mainState
+        def usageWatts = power?.currentValue("power") as double
+        state.startWattage = usageWatts
+        log.warn "start power = $state.startWattage"
+        def wattage = usageWatts - 600 //state.idleUse
+        if(state.mainStatePrior == "heat") state.avgConsH  = !state.avgConsH ?  wattage : state.avgConsH < wattage ? wattage : state.avgConsH
+        if(state.mainStatePrior == "cool") state.avgConsC  = !state.avgConsC ?  wattage : state.avgConsC < wattage ? wattage : state.avgConsC
     } else if (mainStateChange && !mainOn){
     	//main end
         state.endTime = now() + location.timeZone.rawOffset
         state.endTemp = mainTemp
+        state.idleUse = power?.currentValue("power") as double
+        state.stopWattage = power?.currentValue("power") as double
+        log.warn "stop power = $state.stopWattage"
+        //update historical data
+        if ((state.startTime && state.endTime) && (state.startTime < state.endTime)){
+                rtm = ((state.endTime - state.startTime) / 60000).toInteger()
+                if(currDate == today) {
+                	log.info "recording daily data"
+                    if(state.mainStatePrior == "heat"){
+                        state.dailyUseH = state.dailyUseH ? state.dailyUseH + rtm : rtm //state.mainTemp ?: thermostat.currentValue("temperature").toFloat()
+                    }
+                    else if (state.mainStatePrior == "cool")  state.dailyUseC = state.dailyUseC ? state.dailyUseC + rtm : rtm
+                }
+                else {
+                	//reset daily data
+                    log.info "resetting daily data"
+                    state.dailyUseH = 0
+                    state.dailyUseC = 0
+                }
+                if(currMonth == thisMonth) {
+                	log.info "recording monthly data"
+                    if(state.mainStatePrior == "heat"){
+                        state.monthlyUseH = state.monthlyUseH ? state.monthlyUseH + rtm : rtm
+                    }
+                    else if (state.mainStatePrior == "cool") state.monthlyUseC = state.monthlyUseC ? state.monthlyUseC + rtm : rtm 
+                }
+                else {
+                	//reset monthly data
+                    log.info "resetting monthly data"                
+                    state.monthlyUseH = 0
+                    state.monthlyUseC = 0
+                }
+        }
     }
     if (mainStateChange || mainModeChange || mainCSPChange || mainHSPChange){
     	def dataSet = [msg:"stat",data:[initRequest:false,mainState:mainState,mainStateChange:mainStateChange,mainMode:mainMode,mainModeChange:mainModeChange,mainCSP:mainCSP,mainCSPChange:mainCSPChange,mainHSP:mainHSP,mainHSPChange:mainHSPChange,mainOn:mainOn]]
@@ -1026,7 +1088,6 @@ def getReport(rptName){
     def reports = ""
     def cspStr = ""
     def tempAVG
-    log.warn "rptName = $rptName"
     if (sensor) {
 		tempAVG = getAverageUI()
 	}
@@ -1038,16 +1099,15 @@ def getReport(rptName){
     
     if (rptName == "Current state"){
         def averageTemp = 0  
-		reports = "Main system:\n\tstate: ${oper1}\n\tmode: ${mode1}\n\tcurrent thermostat temp: ${temp1}\n\theating set point: ${setPH1}\n\tcooling set point: ${setPC1}\n\n"
-        reports = reports + "Average temperature across selected sensors : ${tempAVG}\n\n"
+		reports =  "Main system:\n\tcurrent state: ${oper1}\n\tmode: ${mode1}\n\tcurrent thermostat temp: ${temp1}\n\theating set point: ${setPH1}\n\tcooling set point: ${setPC1}" + 
+        			"\n\tsensor temperature (average): ${tempAVG}"
     }
     if (rptName == "General Settings"){
-        reports = "Main system:\n\tstate: ${state.mainState}\n\tmode: ${state.mainMode}\n\tcurrent thermostat temp: ${temp1}\n\theating set point: ${tempStr(state.mainHSP)}\n\tcooling set point: ${tempStr(state.mainCSP)}\n\n"
-        reports = reports + "Average temperature across selected sensors : ${tempAVG}\n\n"
-        reports = reports + "adjusting the thermostat if the temperature falls below ${setLow} or raises above ${setHigh}.\n\n"
-        reports = reports + "The disable mode is ${disable} and the away mode is set when thermostat to away mode when Location Mode changes to: ${away}.\n\n"
-        if (doors) reports = reports + "The thermostat turns off when ${doors} are open for more than ${turnOffDelay} minutes.\n\n"
-        if (away) reports = reports + "Current settings: adjust thermostat to away mode when Location Mode is set to: ${modes2}.\n\n"
+        reports = "Main system (current data):\n\tstate: ${state.mainState}\n\tmode: ${state.mainMode}\n\tthermostat temp: ${temp1}" +
+        			"\n\theating set point: ${tempStr(state.mainHSP)}\n\tcooling set point: ${tempStr(state.mainCSP)}\n\tsensor temperature (average): ${tempAVG}"
+        reports = reports + "\n\nSettings:\n\tmin temperature: ${setLow}\n\tmax temperature: ${setHigh}"
+         if (away) reports = reports + "\n\taway mode: ${modes2[0]}.\n\n"
+        if (doors) reports = reports + "\n\tdisable mode sensor(s): ${doors}\n\tdelay: ${turnOffDelay} minutes.\n\n"
     }  
     if (rptName == "Last results"){
         def stime = "No data available yet"
@@ -1060,26 +1120,49 @@ def getReport(rptName){
             etime =  new Date(state.endTime).format("yyyy-MM-dd HH:mm")
             rtm = ((state.endTime - state.startTime) / 60000).toInteger()
             rtm = "${rtm} minutes"
-        } 
-        reports = "Main system:\n\tstart: ${stime}\n\tend: ${etime}\n\tstart temp: ${sTemp}\n\tend temp: ${eTemp}\n\tduration: ${rtm}\n\n"
+        }
+        reports = "Main system:\n\tstart: ${stime}\n\tend: ${etime}\n\tstart temp: ${sTemp}\n\tend temp: ${eTemp}\n\toperating state: ${state.mainStatePrior}\n\tduration: ${rtm}\n\n"
     }
     if (rptName == "Historical results"){
-        def stime = "No data available yet"
-        def etime = "No data available yet"
-        def sTemp = tempStr(state.startTemp)
-        def eTemp  = tempStr(state.endTemp)
-        def rtm = "No data available yet"
-        if ((state.startTime && state.endTime) && (state.startTime < state.endTime)){
-        	stime = new Date(state.startTime).format("yyyy-MM-dd HH:mm")
-            etime =  new Date(state.endTime).format("yyyy-MM-dd HH:mm")
-            rtm = ((state.endTime - state.startTime) / 60000).toInteger()
-            rtm = "${rtm} minutes"
-        } 
-        reports = "Main system:\n\tstart: ${stime}\n\tend: ${etime}\n\tstart temp: ${sTemp}\n\tend temp: ${eTemp}\n\tduration: ${rtm}\n\n"
+        def dailyH = "N/A"
+        def monthlyH = "N/A"
+        def dailyC = "N/A"
+        def monthlyC = "N/A"
+        def powerConsumpH = "N/A"
+        def powerConsumpC = "N/A"
+        def ccost = 0
+        def hcost = 0
+        if (state.dailyUseH > 0 && state.monthlyUseH > 0){
+			dailyH = state.dailyUseH < 60 ? state.dailyUseH + " minutes" : state.dailyUseH/60 + " hours"
+         	monthlyH = state.monthlyUseH < 60 ? state.monthlyUseH + " minutes" : state.monthlyUseH/60 + " hours"
+        	if(state.monthlyUseH) {
+            	powerConsumpH = state.avgConsH ? ((state.avgConsH/1000) * (state.monthlyUseH/60)) : "N/A"
+        		if(powerConsumpH != "N/A")  hcost = powerConsumpH * cost
+        		log.warn "heating data: avgConsH = state.avgConsH , monthlyUseH = state.monthlyUseH, powerConsumpH = $powerConsumpH,  hcost = $hcost"
+        	}
+        }
+        if (state.dailyUseC > 0 && state.monthlyUseC > 0){
+			dailyC = state.dailyUseC < 60 ? state.dailyUseC + " minutes" : state.dailyUseC/60 + " hours"
+         	monthlyC = state.monthlyUseC < 60 ? state.monthlyUseC + " minutes" : state.monthlyUseC/60 + " hours"
+            
+        	if(state.monthlyUseC) {
+            	powerConsumpC = state.avgConsC ? ((state.avgConsC/1000) * (state.monthlyUseC/60)) : "N/A"
+            	if(powerConsumpC != "N/A") ccost = powerConsumpC * cost
+        		log.warn "cooling data: avgConsC = $state.avgConsC , monthlyUseC = $state.monthlyUseC, powerConsumpC = $powerConsumpC,  ccost = $ccost"
+            }
+        }
+        if (state.dailyUseC > 0 && state.monthlyUseC > 0){
+			dailyC = state.dailyUseC < 60 ? state.dailyUseC + " minutes" : state.dailyUseC/60 + " hours"
+         	monthlyC = state.monthlyUseC < 60 ? state.monthlyUseC + " minutes" : state.monthlyUseC/60 + " hours"
+        }		
+        
+        reports = "Main system:\n\tCooling (operating time):\n\t\tToday: ${dailyC}\n\t\tThis month: ${monthlyC}\n\t\tkwh: ${powerConsumpC} \n\t\tCost this Month: ${ccost} \n\n"
+        reports = reports + "\tHeating (operating time):\n\t\tToday: ${dailyH}\n\t\tThis month: ${monthlyH}\n\t\tkwh: ${powerConsumpH} \n\t\tCost this Month: ${hcost}"
     }    
 
 		return reports
 }
+
 def tempStr(temp){
     def tc = state.tempScale ?: location.temperatureScale
     if (temp != 0 && temp != null) return "${temp.toString()}°${tc}"
