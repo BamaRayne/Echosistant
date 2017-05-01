@@ -1,6 +1,7 @@
 /**
  *  Zwave Thermostat Manager - EchoSistant Add-on
- *  
+ *
+ *		4/1/2017		Version:4.0 R.0.0.4		Added WebCoRE integration
  *		3/25/2017		Version:4.0 R.0.0.3		Added Reporting features
  *		3/18/2017		Version:4.0 R.0.0.1		Modified and Released as an EchoSistant Add-On Module
  *
@@ -36,7 +37,7 @@ definition(
 )
 /**********************************************************************************************************************************************/
 private release() {
-	def text = "R.0.0.3"
+	def text = "R.0.0.4"
 }
 preferences {
     page name:"pageSetup"
@@ -664,7 +665,13 @@ def checkNotify(evt){
 def temperatureHandler(evt) {
     def currentTemp
     def eTxt
-    if(modeOk && daysOk && timeOk && modeNotAwayOk)  { 		
+    def data = [:]
+    if(modeOk && daysOk && timeOk && modeNotAwayOk)  {
+        //Sending Data to WebCore
+        data = [args: "Climate Control Profile executed"]
+        sendLocationEvent(name: "echoSistantProfile", value: app.label, data: data, displayed: true, isStateChange: true, descriptionText: "EchoSistant activated '${app.label}' profile.")
+        if (parent.debug) log.debug "sendNotificationEvent sent to CoRE from ${app.label}"
+    
             if(sensor){            
                 def sensors = sensor.size()
             	def tempAVG = sensor ? getAverage(sensor, "temperature") : "undefined device"

@@ -6,6 +6,7 @@
  
  ************************************ FOR INTERNAL USE ONLY ******************************************************
  *
+ *		4/20/2017		Version:4.0 R.0.3.4 	WebCoRE integration
  *		4/20/2017		Version:4.0 R.0.3.2c	Added SHM state change when profile runs option
  *		4/10/2017		Version:4.0 R.0.3.2b	Added Virtual Person status change when profile runs option
  *		4/5/2017		Version:4.0 R.0.3.2a	Added "Cut on" and "Cut off" commands for lights and Automation Disable
@@ -38,7 +39,7 @@ definition(
 	iconX3Url		: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/app-Echosistant@2x.png")
 /**********************************************************************************************************************************************/
 private release() {
-	def text = "R.0.3.2c"
+	def text = "R.0.3.4"
 }
 /**********************************************************************************************************************************************/
 preferences {
@@ -579,8 +580,11 @@ def profileEvaluate(params) {
     def muteAlexa = tts.contains("disable Alexa") ? "mute" : tts.contains("silence Alexa") ? "mute" : tts.contains("mute Alexa") ? "mute" : null
     	muteAlexa = tts.contains("enable Alexa") ? "unmute" : tts.contains("start Alexa") ? "unmute" : tts.contains("unmute Alexa") ? "unmute" : muteAll
 	def test = tts.contains("this is a test") ? true : tts.contains("a test") ? true : false
-    
     if (parent.debug) log.debug "Message received from Parent with: (tts) = '${tts}', (intent) = '${intent}', (childName) = '${childName}', current app version: ${release()}"  
+	//Sending event to WebCoRE
+    sendLocationEvent(name: "echoSistantProfile", value: app.label, data: data, displayed: true, isStateChange: true, descriptionText: "EchoSistant activated '${app.label}' profile.")
+	
+    if (parent.debug) log.debug "sendNotificationEvent sent to CoRE from ${app.label}"
     
     if (pSendSettings() == "complete" || pGroupSettings() == "complete"){
         if (intent == childName){
@@ -1249,10 +1253,6 @@ def ttsHandler(tts) {
 ******************************************************************************************************/
 def ttsActions(tts) {
 	def String ttx = (String) null 	
-	//Seding Data to CoRE 
-	def data = [args: tts ]
-	sendLocationEvent(name: "echoSistantProfile", value: app.label, data: data, displayed: true, isStateChange: true, descriptionText: "EchoSistant activated '${app.label}' profile.")
-	if (parent.debug) log.debug "sendNotificationEvent sent to CoRE was '${app.label}' from the TTS process section"
     //define audio message
     if(pRunMsg){
     	tts = settings.pRunMsg

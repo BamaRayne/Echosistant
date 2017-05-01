@@ -1,6 +1,7 @@
 /* 
  * Notification - EchoSistant Add-on 
  *
+ *		5/01/2017		Version:4.0 R.0.3.4			Added WebCoRE integration
  *		4/27/2017		Version:4.0 R.0.3.3			Retrigger bug fixe
  *		4/25/2017		Version:4.0 R.0.3.2			Minor bug fixes
  *		3/16/2017		Version:4.0 R.0.3.0	    	Cron Scheduling and Reporting
@@ -29,7 +30,7 @@ definition(
 	iconX3Url		: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/app-Echosistant@2x.png")
 /**********************************************************************************************************************************************/
 private release() {
-	def text = "R.0.3.3"
+	def text = "R.0.3.4"
 }
 
 preferences {
@@ -1051,9 +1052,11 @@ def alertsHandler(evt) {
     TAKE ACTIONS HANDLER
 ***********************************************************************************************************************/
 private takeAction(eTxt) {
-	def data = [args: eTxt ]
+    //Sending Data to WebCore
+    def data = [args: eTxt ]
 	sendLocationEvent(name: "echoSistantProfile", value: app.label, data: data, displayed: true, isStateChange: true, descriptionText: "EchoSistant activated '${app.label}' profile.")
 	if (parent.debug) log.debug "sendNotificationEvent sent to CoRE was '${app.label}' from the TTS process section"
+
 	state.savedOffset = false
 	def sVolume
     def sTxt
