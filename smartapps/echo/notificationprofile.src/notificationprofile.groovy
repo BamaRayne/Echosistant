@@ -1,6 +1,7 @@
 /* 
  * Notification - EchoSistant Add-on 
  *
+ *		5/02/2017		Version:4.0 R.0.3.5			Added Pet Note variables to Ad-hoc reports
  *		5/01/2017		Version:4.0 R.0.3.4			Added WebCoRE integration
  *		4/27/2017		Version:4.0 R.0.3.3			Retrigger bug fixe
  *		4/25/2017		Version:4.0 R.0.3.2			Minor bug fixes
@@ -213,6 +214,18 @@ page name: "variables"
                                 "&thermostat = 	${getVar("thermostat")} 	(**),\n"+
                                 "&cooling = 	${getVar("cooling")} 		(**),\n"+
                                 "&heating = 	${getVar("heating")} 		(**)\n"+
+                                "\nPet Notes - Cats \n"+
+                                "&catshot = 	${getVar("catshot")}\n"+
+                                "&catfed = 		${getVar("catfed")}\n"+
+                                "&catmed = 		${getVar("catmed")}\n"+
+                                "&catwalk = 	${getVar("catwalk")}\n"+
+                                "&catbath = 	${getVar("catbath")}\n"+
+                                "\nPet Notes - Dogs \n"+
+                                "&dogshot = 	${getVar("dogshot")}\n"+
+                                "&dogfed = 		${getVar("dogfed")}\n"+
+                                "&dogmed = 		${getVar("dogmed")}\n"+
+                                "&dogwalk = 	${getVar("dogwalk")}\n"+
+                                "&dogbath = 	${getVar("dogbath")}\n"+
                                 "\n"+
                                 "(**) MUST select device(s) in the PROFILE \n"+
                                 "(**) MUST select device(s) in the MAIN App"
@@ -476,8 +489,8 @@ def initialize() {
         state.lastWeather = null
         state.lastWeatherCheck = null
        	mGetCurrentWeather()
-	}    
-    if (actionType && actionType != "Ad-Hoc Report") {
+	}
+	if (actionType && actionType != "Ad-Hoc Report") {
         if(myPower) 							subscribe(myPower, "power", meterHandler)
         if (myRoutine) 							subscribe(location, "routineExecuted",alertsHandler)
         if (myMode) 							subscribe(location, "mode", alertsHandler)
@@ -556,7 +569,9 @@ def runProfile(profile) {
 	def result 
 	if(message && actionType == "Ad-Hoc Report"){
     	// date, time and profile variables
-        result = message ? "$message".replace("&date", "${getVar("date")}").replace("&time", "${getVar("time")}").replace("&profile", "${getVar("profile")}") : null
+        result = message ? "$message".replace("&date", "${getVar("date")}").replace("&catshot", "${getVar("catshot")}").replace("&time", "${getVar("time")}").replace("&profile", "${getVar("profile")}") : null
+        result = result ? "$result".replace("&catfed", "${getVar("catfed")}").replace("&catmed", "${getVar("catmed")}").replace("&catbath", "${getVar("catbath")}").replace("&catwalk", "${getVar("catwalk")}") : null
+        result = result ? "$result".replace("&dogshot", "${getVar("dogshot")}").replace("&dogfed", "${getVar("dogfed")}").replace("&dogwalk", "${getVar("dogwalk")}").replace("&dogbath", "${getVar("dogbath")}").replace("&dogmed", "${getVar("dogmed")}") : null
         // power variables
         result = result ? "$result".replace("&power", "${getVar("power")}").replace("&lights", "${getVar("lights")}") : null
         // garage doors, locks and precence variables
@@ -615,7 +630,47 @@ private getVar(var) {
         result = new Date(now()).format("EEEE, MMMM d, yyyy", location.timeZone)
     	return result    
     }
-    if (var == "profile"){
+    if (var == "catshot"){
+    	result = parent.state.catShotNotify
+        return result
+    }    
+    if (var == "catfed"){
+    	result = parent.state.catFedNotify
+        return result
+    }    
+    if (var == "catmed"){
+    	result = parent.state.catMedNotify
+        return result
+    }    
+    if (var == "catwalk"){
+    	result = parent.state.catWalkNotify
+        return result
+    }    
+    if (var == "catbath"){
+    	result = parent.state.catBathNotify
+        return result
+    }    
+    if (var == "dogshot"){
+    	result = parent.state.dogShotNotify
+        return result
+    }    
+    if (var == "dogfed"){
+    	result = parent.state.dogFedNotify
+        return result
+    }    
+    if (var == "dogmed"){
+    	result = parent.state.dogMedNotify
+        return result
+    }    
+    if (var == "dogwalk"){
+    	result = parent.state.dogWalkNotify
+        return result
+    }    
+    if (var == "dogbath"){
+    	result = parent.state.dogBathNotify
+        return result
+    } 
+	if (var == "profile"){
         result = app.label
     	return result 	
     }
