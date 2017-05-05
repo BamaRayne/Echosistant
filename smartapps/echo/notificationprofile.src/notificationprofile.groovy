@@ -1,7 +1,7 @@
 /* 
  * Notification - EchoSistant Add-on 
  *
- *		5/04/2017		Version:4.0 R.0.3.6			Added temperature, CO and CO2 triggers
+ *		5/04/2017		Version:4.0 R.0.3.6a			Added temperature, CO and CO2 triggers
  *		5/02/2017		Version:4.0 R.0.3.5			Added Pet Note variables to Ad-hoc reports
  *		5/01/2017		Version:4.0 R.0.3.4			Added WebCoRE integration
  *		4/27/2017		Version:4.0 R.0.3.3			Retrigger bug fixe
@@ -32,7 +32,7 @@ definition(
 	iconX3Url		: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/app-Echosistant@2x.png")
 /**********************************************************************************************************************************************/
 private release() {
-	def text = "R.0.3.6"
+	def text = "R.0.3.6a"
 }
 
 preferences {
@@ -524,7 +524,7 @@ def initialize() {
             	if (myLocksSCode){
             									subscribe(myLocks, "lock", unlockedWithCodeHandler)
                 }
-                else 							ubscribe(myLocks, "lock.unlocked", alertsHandler)                                                                     
+                else 							subscribe(myLocks, "lock.unlocked", alertsHandler)                                                                     
             }
             if (myLocksS == "both" || myLocksS == null)				subscribe(myLocks, "lock", alertsHandler)
         }
