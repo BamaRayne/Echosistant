@@ -1,6 +1,7 @@
 /* 
  * Notification - EchoSistant Add-on 
  *
+ *		5/04/2017		Version:4.0 R.0.3.6			Added temperature, CO and CO2 triggers
  *		5/02/2017		Version:4.0 R.0.3.5			Added Pet Note variables to Ad-hoc reports
  *		5/01/2017		Version:4.0 R.0.3.4			Added WebCoRE integration
  *		4/27/2017		Version:4.0 R.0.3.3			Retrigger bug fixe
@@ -31,7 +32,7 @@ definition(
 	iconX3Url		: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/app-Echosistant@2x.png")
 /**********************************************************************************************************************************************/
 private release() {
-	def text = "R.0.3.4"
+	def text = "R.0.3.6"
 }
 
 preferences {
@@ -317,6 +318,14 @@ page name: "triggers"
                     if (mySmoke && actionType != "Ad-Hoc Report") input "mySmokeS", "enum", title: "Notify when state changes to...", options: ["detected", "clear", "both"], required: false
                 input "myWater", "capability.waterSensor", title: "Choose Water Sensors...", required: false, multiple: true, submitOnChange: true
                     if (myWater && actionType != "Ad-Hoc Report") input "myWaterS", "enum", title: "Notify when state changes to...", options: ["wet", "dry", "both"], required: false		
+                input "myTemperature", "capability.temperatureMeasurement", title: "Choose Temperature Sensors...", required: false, multiple: true, submitOnChange: true
+					if (myTemperature && actionType != "Ad-Hoc Report") input "myTemperatureS", "enum", title: "Notify when temperature is...", options: ["above", "below"], required: false, submitOnChange: true
+                        if (myTemperatureS) input "temperature", "number", title: "Temperature...", required: false, description: "degrees", submitOnChange: true
+                        if (temperature) input "temperatureStop", "number", title: "...but not ${myTemperatureS} this temperature", required: false, description: "degrees"
+                input "myCO2", "capability.carbonDioxideMeasurement", title: "Choose CO2 (Carbon Dioxide) Sensors...", required: false, multiple: true, submitOnChange: true
+                    if (myCO2 && actionType != "Ad-Hoc Report") input "myCO2S", "number", title: "Notify when level exeeds...", description: "number", required: true	            
+                input "myCO", "capability.carbonMonoxideDetector", title: "Choose CO (Carbon Monoxide) Sensors...", required: false, multiple: true, submitOnChange: true
+                    if (myCO && actionType != "Ad-Hoc Report") input "myCOS", "enum", title: "Notify when ...", options: ["detected", "tested", "both"], required: false	            
             }
             if(actionType != "Default" && actionType != "Ad-Hoc Report"){
                 section ("Weather Events") {
@@ -553,6 +562,14 @@ def initialize() {
             if (myWaterS == "dry")				subscribe(myWater, "water.dry", alertsHandler)
             if (myWaterS == "both" || myWaterS == null)				subscribe(myWater, "water", alertsHandler)
       	}
+			if (myTemperature) {    
+            if (myWaterS == "wet")				subscribe(myWater, "water.wet", alertsHandler)
+            if (myWaterS == "dry")				subscribe(myWater, "water.dry", alertsHandler)
+            if (myWaterS == "both" || myWaterS == null)				subscribe(myWater, "water", alertsHandler)
+      	}
+        
+        
+        
     }
 }
 /******************************************************************************************************
