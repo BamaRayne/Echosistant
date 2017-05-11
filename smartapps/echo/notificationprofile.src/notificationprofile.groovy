@@ -1,7 +1,7 @@
 /* 
  * Notification - EchoSistant Add-on 
  *
- *		5/11/2017		Version:4.0 R.0.3.8			Added acceleration triggers
+ *		5/11/2017		Version:4.0 R.0.3.8a			Added acceleration triggers
  *		5/04/2017		Version:4.0 R.0.3.7			Added temperature, CO, CO2 and humidity triggers
  *		5/02/2017		Version:4.0 R.0.3.5			Added Pet Note variables to Ad-hoc reports
  *		5/01/2017		Version:4.0 R.0.3.4			Added WebCoRE integration
@@ -33,7 +33,7 @@ definition(
 	iconX3Url		: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/app-Echosistant@2x.png")
 /**********************************************************************************************************************************************/
 private release() {
-	def text = "R.0.3.8"
+	def text = "R.0.3.8a"
 }
 
 preferences {
@@ -142,11 +142,6 @@ page name: "mainProfilePage"
                         input "sonosVolume", "number", title: "Temporarily change volume", description: "0-100%", required: false
                     	input "resumePlaying", "bool", title: "Resume currently playing music after notification", required: false, defaultValue: false
                         input "sonosDelay", "decimal", title: "(Optional) Delay delivery of second message by...", description: "seconds", required: false
-                    
-                    def theCommands = sonos.supportedCommands
-						theCommands.each {com ->
-    					log.debug "Supported Command: ${com.name}"
-                    	}
                     }
                 input "speechSynth", "capability.speechSynthesis", title: "On this Speech Synthesis Device", required: false, multiple: true, submitOnChange: true
                         if (speechSynth) {
@@ -597,7 +592,7 @@ def initialize() {
     			if (myCOS== "both")					subscribe(myCO, "carbonMonoxide", alertsHandler)
             }
             if (myHumidity)						subscribe(myHumidity, "humidity", humidityHandler)
-            if (mySound)						subscribe(mySound, "noise", soundHandler)
+            if (mySound)						subscribe(mySound, "soundPressureLevel", soundHandler)
             
             if (myAcceleration){
             	if (myAccelerationS == "active")	subscribe(myAcceleration, "acceleration.active", alertsHandler)
@@ -1050,15 +1045,14 @@ def tempHandler(evt) {
         def cycleThigh = state.cycleTh
         def cycleTlow = state.cycleTl        
         def currentTemp = tempAVG
-        int tempValueRaw = evt.value as double
-            int tempValue = tempValueRaw ?: 0 as int
-        int temperature = temperature == null ? 0 : temperature as int
-        log.warn "tempValue = $tempValue"
+        int temperatureStopVal = temperatureStop == null ? 0 : temperatureStop as int
+        log.warn "currentTemp = $currentTemp"
         if(myTemperatureS == "above"){
-            if (tempValue >= temperature && tempValue <= temperatureStop) {
+        	temperatureStopVal = temperatureStopVal == 0 ? 999 :  temperatureStopVal as int
+            if (currentTemp >= temperature && currentTemp <= temperatureStopVal) {
                 if (cycleThigh == false){
                     state.cycleTh = true
-                    log.debug "sending notification (above): as temperature $tempValue is above threshold $temperature" 
+                    log.debug "sending notification (above): as temperature $currentTemp is above threshold $temperature" 
                         data = [value:"above ${temperature} degrees", name:"temperature", device:"temperature sensor"]
                         alertsHandler(data)
                 }
@@ -1066,10 +1060,10 @@ def tempHandler(evt) {
             else state.cycleTh = false
         }
         if(myTemperatureS == "below"){
-            if (tempValue <= temperature && tempValue >= temperatureStop) {
+            if (currentTemp <= temperature && currentTemp >= temperatureStopVal) {
                 if (cycleTlow == false){
                     state.cycleTl = true
-					log.debug "sending notification (below): as temperature $tempValue is below threshold $temperature"
+					log.debug "sending notification (below): as temperature $currentTemp is below threshold $temperature"
                         data = [value:"below ${temperature} degrees", name:"temperature", device:"temperature sensor"]
                         alertsHandler(data)
                 }
@@ -1101,7 +1095,6 @@ def humidityHandler(evt){
             if (eVal >= humidity) {
                 if (state.cycleHh == false){
                     state.cycleHh = true            
-            
                     log.debug "sending notification (above): as humidity $eVal is above threshold $humidity" 
                         data = [value:"above ${humidity}", name:"humidity", device:"humidity sensor"]
                         alertsHandler(data)
@@ -1139,22 +1132,20 @@ def soundHandler(evt){
             if (eVal >= noise) {
                 if (state.cycleSh == false){
                     state.cycleSh = true             
-                    log.debug "sending notification (above): as sound $eVal is above threshold $noise" 
-                        //data = [value:"above temperature", name:"temperature", device:"temperature sensor"]
-                        data = [value:"above ${eVal}", name:"noise", device:"sound sensor"]
+                    log.debug "sending notification (above): as noise $eVal is above threshold $noise" 
+                        data = [value:"above ${noise}", name:"noise", device:"sound sensor"]
                         alertsHandler(data)
             	}
         	}
             else state.cycleSh = false
         }
         else {
-            if(myPowerS == "below"){
+            if(mySoundS == "below"){
                 if (eVal <= noise) {
                     if (state.cycleSl == false){
                         state.cycleSl = true                
-                            log.debug "sending notification (below): as sound $eVal is below threshold $noise"
-                                //data = [value:"below temperature", name:"temperature", device:"temperature sensor"]
-                                data = [value:"below ${eVal}", name:"noise", device:"sound sensor"]
+                            log.debug "sending notification (below): as noise $eVal is below threshold $noise"
+                                data = [value:"below ${noise}", name:"noise", device:"sound sensor"]
                                 alertsHandler(data)
                     }
             	}
@@ -1177,8 +1168,7 @@ def CO2Handler(evt){
             if (eVal >= CO2) {
                 if (state.cycleCO2h == false){
                     state.cycleCO2h = true              
-                    log.debug "sending notification (above): as humidity $eVal is above threshold $humidity" 
-                        //data = [value:"above temperature", name:"temperature", device:"temperature sensor"]
+                    log.debug "sending notification (above): as CO2 $eVal is above threshold $CO2" 
                         data = [value:"${eVal}", name:"CO2", device:"CO2 sensor"]
                         alertsHandler(data)
             	}
@@ -1186,12 +1176,11 @@ def CO2Handler(evt){
         	else state.cycleCO2h = false
         }
         else {
-            if(myPowerS == "below"){
+            if(myCO2S == "below"){
                 if (eVal <= CO2) {
                     if (state.cycleCO2l == false){
                         state.cycleCO2l = true                 
-                            log.debug "sending notification (below): as temperature $tempValue is below threshold $temperature"
-                                //data = [value:"below temperature", name:"temperature", device:"temperature sensor"]
+                            log.debug "sending notification (below): as CO2 $eVal is below threshold $CO2" 
                                 data = [value:"${eVal}", name:"CO2", device:"CO2 sensor"]
                                 alertsHandler(data)
                     }
@@ -2182,7 +2171,7 @@ def pSendComplete() {def text = "Tap here to configure settings"
     	else text = "Tap to Configure"
 		text}
 def triggersSettings() {def result = ""
-    if (myWeatherTriggers || myWeather || myTemperature || myCO2 || myCO || myHumidity || mySound || myWeatherAlert || myWater || mySmoke || myPresence || myMotion || myContact || mySwitch || myPower || myLocks || myTstat || myMode || myRoutine || frequency) {
+    if (myWeatherTriggers || myWeather || myTemperature || myCO2 || myCO ||  myAcceleration || myHumidity || mySound || myWeatherAlert || myWater || mySmoke || myPresence || myMotion || myContact || mySwitch || myPower || myLocks || myTstat || myMode || myRoutine || frequency) {
     	result = "complete"}
    		result}
 def triggersComplete() {def text = "Tap here to configure settings" 
