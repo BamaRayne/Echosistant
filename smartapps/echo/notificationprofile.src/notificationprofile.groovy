@@ -1,7 +1,8 @@
 /* 
  * Notification - EchoSistant Add-on 
  *
- *		5/04/2017		Version:4.0 R.0.3.7		Added temperature, CO, CO2 and humidity triggers
+ *		5/11/2017		Version:4.0 R.0.3.8			Added acceleration triggers
+ *		5/04/2017		Version:4.0 R.0.3.7			Added temperature, CO, CO2 and humidity triggers
  *		5/02/2017		Version:4.0 R.0.3.5			Added Pet Note variables to Ad-hoc reports
  *		5/01/2017		Version:4.0 R.0.3.4			Added WebCoRE integration
  *		4/27/2017		Version:4.0 R.0.3.3			Retrigger bug fixe
@@ -32,7 +33,7 @@ definition(
 	iconX3Url		: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/app-Echosistant@2x.png")
 /**********************************************************************************************************************************************/
 private release() {
-	def text = "R.0.3.7"
+	def text = "R.0.3.8"
 }
 
 preferences {
@@ -315,6 +316,8 @@ page name: "triggers"
             section ("Sensor Status", hideWhenEmpty: true) {
                 input "myContact", "capability.contactSensor", title: "Choose Doors and Windows..", required: false, multiple: true, submitOnChange: true
                     if (myContact && actionType != "Ad-Hoc Report") input "myContactS", "enum", title: "Notify when state changes to...", options: ["open", "closed", "both"], required: false
+                input "myAcceleration", "capability.accelerationSensor", title: "Choose Acceleration Sensors..", required: false, multiple: true, submitOnChange: true
+                    if (myAcceleration && actionType != "Ad-Hoc Report") input "myAccelerationS", "enum", title: "Notify when state changes to...", options: ["active", "inactive", "both"], required: false                   
                 input "myMotion", "capability.motionSensor", title: "Choose Motion Sensors..", required: false, multiple: true, submitOnChange: true
                     if (myMotion && actionType != "Ad-Hoc Report") input "myMotionS", "enum", title: "Notify when state changes to...", options: ["active", "inactive", "both"], required: false
                 input "myPresence", "capability.presenceSensor", title: "Choose Presence Sensors...", required: false, multiple: true, submitOnChange: true
@@ -589,12 +592,18 @@ def initialize() {
 			if (myTemperature) 					subscribe(myTemperature, "temperature", tempHandler)    
             if (myCO2)							subscribe(myCO2, "carbonDioxide", CO2Handler)
             if (myCO){
-            	if (myCO== "detected")            	subscribe(myCO, "carbonMonoxide.detected", alertsHandler)
-				if (myCO== "tested")				subscribe(myCO, "carbonMonoxide.tested", alertsHandler)
-    			if (myCO== "both")					subscribe(myCO, "carbonMonoxide", alertsHandler)
+            	if (myCOS== "detected")            	subscribe(myCO, "carbonMonoxide.detected", alertsHandler)
+				if (myCOS== "tested")				subscribe(myCO, "carbonMonoxide.tested", alertsHandler)
+    			if (myCOS== "both")					subscribe(myCO, "carbonMonoxide", alertsHandler)
             }
-            if (myHumidity)						subscribe(myHumidity, "relativeHumidityMeasurement", humidityHandler)
-            if (mySound)						subscribe(mySound, "soundPressureLevel", soundHandler)
+            if (myHumidity)						subscribe(myHumidity, "humidity", humidityHandler)
+            if (mySound)						subscribe(mySound, "noise", soundHandler)
+            
+            if (myAcceleration){
+            	if (myAccelerationS == "active")	subscribe(myAcceleration, "acceleration.active", alertsHandler)
+                if (myAccelerationS == "inactive")	subscribe(myAcceleration, "acceleration.inactive", alertsHandler)
+                if (myAccelerationS == "both")		subscribe(myAcceleration, "acceleration", alertsHandler)
+    		}
     }
 }
 /******************************************************************************************************
