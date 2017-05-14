@@ -1,6 +1,7 @@
 /* 
  * Notification - EchoSistant Add-on 
  *
+ *		5/13/2017		Version:4.0 R.0.3.8b			Added more Ad-Hoc Report Variables
  *		5/11/2017		Version:4.0 R.0.3.8a			Added acceleration triggers
  *		5/04/2017		Version:4.0 R.0.3.7			Added temperature, CO, CO2 and humidity triggers
  *		5/02/2017		Version:4.0 R.0.3.5			Added Pet Note variables to Ad-hoc reports
@@ -222,12 +223,22 @@ page name: "variables"
                                 "&catmed = 		${getVar("catmed")}\n"+
                                 "&catwalk = 	${getVar("catwalk")}\n"+
                                 "&catbath = 	${getVar("catbath")}\n"+
+                                "&catshot1 = 	${getVar("catshot1")}\n"+
+                                "&catfed1 = 	${getVar("catfed1")}\n"+
+                                "&catmed1 = 	${getVar("catmed1")}\n"+
+                                "&catwalk1 = 	${getVar("catwalk1")}\n"+
+                                "&catbath1 = 	${getVar("catbath1")}\n"+
                                 "\nPet Notes - Dogs \n"+
                                 "&dogshot = 	${getVar("dogshot")}\n"+
                                 "&dogfed = 		${getVar("dogfed")}\n"+
                                 "&dogmed = 		${getVar("dogmed")}\n"+
                                 "&dogwalk = 	${getVar("dogwalk")}\n"+
                                 "&dogbath = 	${getVar("dogbath")}\n"+
+                                "&dogshot1 = 	${getVar("dogshot1")}\n"+
+                                "&dogfed1 = 	${getVar("dogfed1")}\n"+
+                                "&dogmed1 = 	${getVar("dogmed1")}\n"+
+                                "&dogwalk1 = 	${getVar("dogwalk1")}\n"+
+                                "&dogbath1 = 	${getVar("dogbath1")}\n"+
                                 "\n"+
                                 "(**) MUST select device(s) in the PROFILE \n"+
                                 "(**) MUST select device(s) in the MAIN App"
@@ -615,9 +626,12 @@ def runProfile(profile) {
 	def result 
 	if(message && actionType == "Ad-Hoc Report"){
     	// date, time and profile variables
-        result = message ? "$message".replace("&date", "${getVar("date")}").replace("&catshot", "${getVar("catshot")}").replace("&time", "${getVar("time")}").replace("&profile", "${getVar("profile")}") : null
-        result = result ? "$result".replace("&catfed", "${getVar("catfed")}").replace("&catmed", "${getVar("catmed")}").replace("&catbath", "${getVar("catbath")}").replace("&catwalk", "${getVar("catwalk")}") : null
-        result = result ? "$result".replace("&dogshot", "${getVar("dogshot")}").replace("&dogfed", "${getVar("dogfed")}").replace("&dogwalk", "${getVar("dogwalk")}").replace("&dogbath", "${getVar("dogbath")}").replace("&dogmed", "${getVar("dogmed")}") : null
+        result = message ? "$message".replace("&date", "${getVar("date")}").replace("&time", "${getVar("time")}").replace("&profile", "${getVar("profile")}") : null
+        result = result ? "$result".replace("&catfed", "${getVar("catfed")}").replace("&catshot", "${getVar("catshot")}").replace("&catmed", "${getVar("catmed")}").replace("&catbath", "${getVar("catbath")}").replace("&catwalk", "${getVar("catwalk")}").replace("&catbrush", "${getVar("catbrush")}") : null
+        result = result ? "$result".replace("&dogshot", "${getVar("dogshot")}").replace("&dogfed", "${getVar("dogfed")}").replace("&dogwalk", "${getVar("dogwalk")}").replace("&dogbath", "${getVar("dogbath")}").replace("&dogmed", "${getVar("dogmed")}").replace("&dogbrush", "${getVar("dogbrush")}") : null
+        result = result ? "$result".replace("&catfed1", "${getVar("catfed1")}").replace("&catshot1", "${getVar("catshot1")}").replace("&catmed1", "${getVar("catmed1")}").replace("&catbath1", "${getVar("catbath1")}").replace("&catwalk1", "${getVar("catwalk1")}").replace("&catbrush1", "${getVar("catbrush1")}") : null
+        result = result ? "$result".replace("&dogshot1", "${getVar("dogshot1")}").replace("&dogfed1", "${getVar("dogfed1")}").replace("&dogwalk1", "${getVar("dogwalk1")}").replace("&dogbath1", "${getVar("dogbath1")}").replace("&dogmed1", "${getVar("dogmed1")}").replace("&dogbrush1", "${getVar("dogbrush1")}") : null
+        result = result ? "$result".replace("&litterclean", "${getVar("litterclean")}").replace("&litterscoop", "${getVar("litterscoop")}") : null
         // power variables
         result = result ? "$result".replace("&power", "${getVar("power")}").replace("&lights", "${getVar("lights")}") : null
         // garage doors, locks and precence variables
@@ -667,6 +681,8 @@ def runProfile(profile) {
 //getVar(var)
 private getVar(var) {
 	def devList = []
+private getVar(var) {
+	def devList = []
     def result
     if (var == "time"){
         result = new Date(now()).format("h:mm aa", location.timeZone) 
@@ -695,7 +711,35 @@ private getVar(var) {
     if (var == "catbath"){
     	result = parent.state.catBathNotify
         return result
+	}
+    if (var == "catbrush"){
+    	result = parent.state.catBrushNotify
+        return result
+	}    
+    if (var == "catshot1"){
+    	result = parent.state.catShot1Notify
+        return result
     }    
+    if (var == "catfed1"){
+    	result = parent.state.catFed1Notify
+        return result
+    }    
+    if (var == "catmed1"){
+    	result = parent.state.catMed1Notify
+        return result
+    }    
+    if (var == "catwalk1"){
+    	result = parent.state.catWalk1Notify
+        return result
+    }    
+    if (var == "catbath1"){
+    	result = parent.state.catBath1Notify
+        return result
+	}
+    if (var == "catbrush1"){
+    	result = parent.state.catBrush1Notify
+        return result
+	}    
     if (var == "dogshot"){
     	result = parent.state.dogShotNotify
         return result
@@ -715,11 +759,43 @@ private getVar(var) {
     if (var == "dogbath"){
     	result = parent.state.dogBathNotify
         return result
-    } 
-	if (var == "profile"){
-        result = app.label
-    	return result 	
     }
+    if (var == "dogbrush"){
+    	result = parent.state.dogBrushNotify
+        return result
+    }    
+    if (var == "dogshot1"){
+    	result = parent.state.dogShot1Notify
+        return result
+    }    
+    if (var == "dogfed1"){
+    	result = parent.state.dogFed1Notify
+        return result
+    }    
+    if (var == "dogmed1"){
+    	result = parent.state.dogMed1Notify
+        return result
+    }    
+    if (var == "dogwalk1"){
+    	result = parent.state.dogWalk1Notify
+        return result
+    }    
+    if (var == "dogbath1"){
+    	result = parent.state.dogBath1Notify
+        return result
+    }
+    if (var == "dogbrush1"){
+    	result = parent.state.dogBrush1Notify
+        return result
+    }
+    if (var == "litterclean"){
+    	result = parent.state.litterboxClean
+        return result
+    }
+    if (var == "litterscoop"){
+    	result = parent.state.litterboxScoop
+        return result
+    }    
     if (var == "mode"){
         result = location?.currentMode
     	return result 	    
