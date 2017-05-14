@@ -681,8 +681,6 @@ def runProfile(profile) {
 //getVar(var)
 private getVar(var) {
 	def devList = []
-private getVar(var) {
-	def devList = []
     def result
     if (var == "time"){
         result = new Date(now()).format("h:mm aa", location.timeZone) 
@@ -2275,3 +2273,4 @@ def pTimeComplete() {def text = "Tap here to configure settings"
     	text = "Configured"}
     	else text = "Tap to Configure"
 		text}
+        
