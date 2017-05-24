@@ -1,1 +1,1 @@
-# The home of EchiSistant apps and add-ons
+# The home of EchoSistant apps and add-ons
