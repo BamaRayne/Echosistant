@@ -1,1 +1,1 @@
-# smartapps-bamarayne-alexa-speaks
+# The home of EchiSistant apps and add-ons
