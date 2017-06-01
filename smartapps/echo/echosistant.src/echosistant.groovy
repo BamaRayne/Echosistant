@@ -705,19 +705,19 @@ def initialize() {
         runEvery1Hour(mGetWeatherUpdates)
         state.lastWeatherCheck
         state.lastWeatherUpdate
-        //CoRE
+        //CoRE and other 3rd party apps
         sendLocationEvent(name: "echoSistant", value: "refresh", data: [profiles: getProfileList()] , isStateChange: true, descriptionText: "echoSistant Profile list refresh")
         def children = getChildApps()
-    	if (debug) log.debug "Refreshing Profiles for CoRE, ${getChildApps()*.label}"
+    	if (debug) log.debug "Refreshing Profiles for 3rd party apps, ${getChildApps()*.label}"
         if (!state.accessToken) {
         	if (debug) log.error "Access token not defined. Attempting to refresh. Ensure OAuth is enabled in the SmartThings IDE."
                 OAuthToken()
 			}
         //SHM status change and keypad initialize
     		subscribe(location, locationHandler)
-            subscribe(location, "alarmSystemStatus",alarmStatusHandler)//used for ES speaker feedback
-			//def event = [name:"alarmSystemStatus", value: location.currentState("alarmSystemStatus").value, //removed as event no longer used // ...2/18/17 Bobby 
-			//			displayed: true, description: "System Status is ${evt.value}"]
+            subscribe(location, "alarmSystemStatus",alarmStatusHandler) //used for ES speaker feedback
+        	subscribe(location, "remindR", runReport) //used for running ES Profiles from RemindR app
+        	state.esProfiles = state.esProfiles ? state.esProfiles : []
         //State Variables            
 //            state.lastMessage = null
 //            state.lastIntent  = null
@@ -754,6 +754,11 @@ def initialize() {
 /************************************************************************************************************
 		CoRE Integration
 ************************************************************************************************************/
+def listEchoSistantProfiles() {
+log.warn "child requesting esProfiles"
+	return state.esProfiles = state.esProfiles ? state.esProfiles : []
+}
+
 def getProfileList(){
 		return getChildApps()*.label
 		if (debug) log.debug "Refreshing Profiles for CoRE, ${getChildApps()*.label}"
@@ -774,6 +779,15 @@ def getChildSize(child) {
       	}
  	}
     return childList.size()
+}
+def remindrHandler(evt) {
+	if (!evt) return
+    log.warn "received event from RemindR with data: $evt.data"
+	switch (evt.value) {
+		case "refresh":
+		state.esProfiles = evt.jsonData && evt.jsonData?.profiles ? evt.jsonData.profiles : []
+			break
+	}
 }
 /************************************************************************************************************
 		Begining Process - Lambda via page b
