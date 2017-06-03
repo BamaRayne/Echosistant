@@ -21,22 +21,11 @@
  *  for the specific language governing permissions and limitations under the License.
  *
 /**********************************************************************************************************************************************/
+//MERGE FROM REMIND_R 
+//**********************************************************************************************************************************************/
 private release() {
-	def text = "R.0.0.5"
+	def text = "R.0.0.6b"
 }
-
-
-// Automatically generated. Make future change here.
-definition(
-    name: "NotificationProfile",
-    namespace: "Echo",
-    parent: "Echo:EchoSistant",
-    author: "JH/BD",
-    description: "EchoSistant Add-on",
-    category: "My Apps",
-    iconUrl: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/app-Echosistant.png",
-    iconX2Url: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/app-Echosistant@2x.png",
-    iconX3Url: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/app-Echosistant@2x.png")
 
 preferences {
 
@@ -213,7 +202,7 @@ page name: "mainProfilePage"
                     else {
                     	input "myAdHocReport", "enum", title: "Choose Ad-Hoc Report...", options: getAdHocReports() , multiple: false, required: false 
                 	}
-                }  
+                }    
                 section ("Using these Restrictions") {
                     href "pRestrict", title: "Use these restrictions...", description: pRestComplete(), state: pRestSettings()
                 }
@@ -609,6 +598,7 @@ def initialize() {
     state.cycleCO2l = false    
 	state.message = null
     state.occurrences = 0
+    
     if (mySunState == "Sunset") {
     subscribe(location, "sunsetTime", sunsetTimeHandler)
 	sunsetTimeHandler(location.currentValue("sunsetTime"))
@@ -857,7 +847,7 @@ private getVar(var) {
     	}	
     }
     if (var == "doors"){
-    	if (myContact){
+    	if (myDoor){
             if (myDoor?.latestValue("contact")?.contains("open")) {
                 myDoor?.each { deviceName ->
                     if (deviceName.latestValue("contact")=="open") {
@@ -1422,7 +1412,18 @@ def alertsHandler(evt) {
         }
         else {
                 if (actionType == "Triggered Report" && myAdHocReport) {
-                    eTxt = parent.runReport(myAdHocReport)
+                	eTxt = null
+					if (eName == "routineExecuted" || eName == "mode"){
+                        if(eName == "routineExecuted" && myRoutine) {
+                            def deviceMatch = myRoutine?.find {r -> r == eDisplayN} 
+                            if (deviceMatch != null) {eTxt = parent.runReport(myAdHocReport)}
+                        }
+                        if (eName == "mode" && myMode) {
+                            def deviceMatch = myMode?.find {m -> m == eVal}  
+                            if (deviceMatch) eTxt = parent.runReport(myAdHocReport)
+                        }
+                    }
+                    else eTxt = parent.runReport(myAdHocReport)
                 }
                 def eProfile = app.label
                 def nRoutine = false
@@ -1430,7 +1431,7 @@ def alertsHandler(evt) {
                 def today = new Date(now()).format("EEEE, MMMM d, yyyy", location.timeZone)
                 def last = state.lastEvent
                 if (getDayOk()==true && getModeOk()==true && getTimeOk()==true && getFrequencyOk()==true && getConditionOk()==true) {	
-                    if(eName == "time of day" && message){
+                    if(eName == "time of day" && message && actionType != "Triggered Report"){
                             eTxt = message ? "$message".replace("&device", "${eDisplayN}").replace("&event", "time").replace("&action", "executed").replace("&date", "${today}").replace("&time", "${stamp}").replace("&profile", "${eProfile}") : null
                                 if(actionType == "Custom Text with Weather") eTxt = getWeatherVar(eTxt)
                     }
@@ -1438,7 +1439,7 @@ def alertsHandler(evt) {
                         eVal = evt.value.toFloat()
                         eVal = Math.round(eVal)
                     }
-                    if(eName == "routineExecuted" && myRoutine) {
+                    if(eName == "routineExecuted" && myRoutine && actionType != "Triggered Report") {
                         def deviceMatch = myRoutine?.find {r -> r == eDisplayN}  
                         if (deviceMatch){
                             eTxt = message ? "$message".replace("&device", "${eDisplayN}").replace("&event", "routine").replace("&action", "executed").replace("&date", "${today}").replace("&time", "${stamp}").replace("&profile", "${eProfile}") : null
@@ -1457,7 +1458,7 @@ def alertsHandler(evt) {
                         }
                     }
                     else {
-                        if(eName == "mode" && myMode) {
+                        if(eName == "mode" && myMode && actionType != "Triggered Report") {
                             def deviceMatch = myMode?.find {m -> m == eVal}  
                             if (deviceMatch){
                                 eTxt = message ? "$message".replace("&device", "${eVal}").replace("&event", "${eName}").replace("&action", "changed").replace("&date", "${today}").replace("&time", "${stamp}").replace("&profile", "${eProfile}") : null
