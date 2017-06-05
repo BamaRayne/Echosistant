@@ -1,7 +1,8 @@
 /* 
  * Notification - EchoSistant Add-on 
  *
- *		5/11/2017		Version:4.0 R.0.3.8a		Added acceleration triggers
+ *		5/13/2017		Version:4.0 R.0.3.8b			Added more Ad-Hoc Report Variables
+ *		5/11/2017		Version:4.0 R.0.3.8a			Added acceleration triggers
  *		5/04/2017		Version:4.0 R.0.3.7			Added temperature, CO, CO2 and humidity triggers
  *		5/02/2017		Version:4.0 R.0.3.5			Added Pet Note variables to Ad-hoc reports
  *		5/01/2017		Version:4.0 R.0.3.4			Added WebCoRE integration
@@ -21,10 +22,19 @@
  *  for the specific language governing permissions and limitations under the License.
  *
 /**********************************************************************************************************************************************/
-//MERGE FROM REMIND_R 
-//**********************************************************************************************************************************************/
+definition(
+	name			: "NotificationProfile",
+    namespace		: "Echo",
+    author			: "JH/BD",
+	description		: "EchoSistant Add-on",
+	category		: "My Apps",
+    parent			: "Echo:EchoSistant", 
+	iconUrl			: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/app-Echosistant.png",
+	iconX2Url		: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/app-Echosistant@2x.png",
+	iconX3Url		: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/app-Echosistant@2x.png")
+/**********************************************************************************************************************************************/
 private release() {
-	def text = "R.0.0.6b"
+	def text = "R.0.3.8a"
 }
 
 preferences {
@@ -44,30 +54,18 @@ preferences {
 page name: "mainProfilePage"
     def mainProfilePage() {
  	dynamicPage (name: "mainProfilePage", install: true, uninstall: true) {
-		section ("Name (rename) this Reminder") {
- 		   	label title:"Reminder Name ", required:true, defaultValue: ""  
+		section ("Name (rename) this Profile") {
+ 		   	label title:"Profile Name ", required:false, defaultValue: "Notification Profile"  
 		}
 		section ("Create a Notification") {  
                 input "actionType", "enum", title: "Choose a Notification Type", required: false, defaultValue: "Default", submitOnChange: true, 
                 options: [
-                "Default",
                 "Ad-Hoc Report",
-                "Custom Sound",
-                "Custom Text",
-                "Custom Text with Weather",
-                "Triggered Report"
-				]
-		}        
-        if (actionType == "Custom Sound") {        
-            section ("Play this sound...") {
-                input "custSound", "enum", title: "Choose a Sound", required: false, defaultValue: "Bell 1", submitOnChange: true, 
-           		options: [
-                "Custom URI",
-        		"Alexa: Bada Bing Bada Boom",
-                "Alexa: Beep Beep",
-                "Alexa: Boing",
-                "Alexa: Open Sesame",
-                "Bell 1",
+                "Triggered Report",
+                "Custom",
+                "Custom with Weather",
+                "Default",
+				"Bell 1",
 				"Bell 2",
 				"Dogs Barking",
 				"Fire Alarm",
@@ -78,33 +76,27 @@ page name: "mainProfilePage"
 				"Smartthings detected smoke",
 				"Someone is arriving",
 				"Piano",
-				"Lightsaber"
-                ]
-            	if(custSound == "Custom URI") {
-					input "cSound", "text", title: "Use this URI", required:false, multiple: false, defaultValue: "", submitOnChange: true
-                	if(cSound) input "cDuration", "text", title: "Track Duration", required:true, multiple: false, defaultValue: "10", submitOnChange: true
-        		}
-			}            
-       	}
-        if (actionType == "Custom Text" || actionType == "Custom Text with Weather" || actionType == "Ad-Hoc Report") {
-            section ("Play this message text...") {
-                input "message", "text", title: "Message Text (tip: include &variables here)", required:false, multiple: false, defaultValue: "", submitOnChange: true
+				"Lightsaber"]
+		}
+        if (actionType == "Custom" || actionType == "Custom with Weather" || actionType == "Ad-Hoc Report") {
+            section ("Send this message text...") {
+                input "message", "text", title: "Play this message (optional - leave blank for a default message)", required:false, multiple: false, defaultValue: "", submitOnChange: true
             }
             if(message) {
 				def report
                	section ("Preview Report with Current Data", hideable: true, hidden: true) {
                 	paragraph report = runProfile("test") 
-                     href "variables", title: "View other &variables", description: ">> 		Click Here <<", state: "complete" 
+                     href "variables", title: "View other variables", description: ">> 		Click Here <<", state: "complete" 
 				}
             }
 			else {
-                section ("Tap here to see available &variables", hideable: true, hidden: true) {    
+                section ("Tap here to see available variables", hideable: true, hidden: true) {    
                     if (actionType != "Ad-Hoc Report") {
                         paragraph 	"CUSTOM MESSAGES: \n"+
-                                    "&device, &action, &event, &time, &date, &last and &profile \n"
-                        if (actionType != "Custom Text with Weather") href "variables", title: "View sample data for your Location", description: ">> 		Click Here <<", state: "complete"                                             
+                                    "&device, &action, &event, &time &date and &profile \n"
+                        if (actionType != "Custom with Weather") href "variables", title: "View sample data for your Location", description: ">> 		Click Here <<", state: "complete"                                             
                     }
-                    if(actionType == "Custom Text with Weather" || actionType == "Ad-Hoc Report" ){
+                    if(actionType == "Custom with Weather" || actionType == "Ad-Hoc Report" ){
                         paragraph 	"WEATHER: \n"+
                                     "Forecast Variables: &today, &tonight, &tomorrow,\n"+
                                     "Temperature Variables: &current, &high, &low\n"+ 
@@ -114,12 +106,10 @@ page name: "mainProfilePage"
                     }
                     if(actionType == "Ad-Hoc Report"){
                         paragraph 	"REPORTING VARIABLES: \n"+
-                                    "LOCATION: &time, &date, &profile, &mode, &shm \n"+
-                                    "DEVICES: &power, &lights, &unlocked, &garage, &shades, &valves \n"+
-                                    "SENSORS: &open, &doors, &windows, &present, &smoke, &water, &CO2, &indoorhum, &noise   \n"+
-                                    "CLIMATE: &temperature, &running, &thermostat, &cooling, &heating"
-                        
-                        
+                                    "Location: &time, &date, &profile, &mode, &shm \n"+
+                                    "Device Status: &power, &lights, &unlocked \n"+
+                                    "Sensors: &doors, &windows, &open, &garage, &present \n"+
+                                    "Thermostats: &temperature, &running, &thermostat, &cooling, &heating"
                         href "variables", title: "View sample data for your Location", description: ">> 		Click Here <<", state: "complete"                                             
                     }
                 }
@@ -129,27 +119,8 @@ page name: "mainProfilePage"
         section ("Using These ${sTitle}") {
 			href "triggers", title: "Select ${sTitle}", description: triggersComplete(), state: triggersSettings()
         }    
-        /******************************** TO DO ***** FUTURE ENHANCEMENT ********************************************
-        if (tSchedule != null){
-			section ("Pre-trigger" ) {    
-            	input "pretrigger", "enum", title: "Remind me Before Due Date...", multiple: true, required: false, submitOnChange: true,
-						options:["15":"15 minutes","30":"30 minutes","60":"One hour", "540":"One day"]	
-            	if (pretrigger) {
-               		input "pretriggerMessage", "text", title: "Use this predetermined message (optional)...", required: false
-                    input "pretriggerSound", "enum", title: "OR use this custom sound...", required: false, submitOnChange: true, 
-                        options: [
-                        "Bell 1",
-                        "Bell 2",
-                        "Dogs Barking",
-                        "Fire Alarm",
-                        "Piano",
-                        "Lightsaber"]
-             	}            
-        	}
-       	}
-        *********************************************************************************/
         if (actionType != "Ad-Hoc Report"){
-			section ("Retrigger" ) {    
+			section ("Retrigger " ) {    
                     input "retrigger", "enum", title: "Retrigger event", multiple: false, required: false, submitOnChange: true,
 						options: [
 							"runEvery1Minute": "Every Minute",
@@ -166,43 +137,23 @@ page name: "mainProfilePage"
                     input "continueOnChange", "bool", title: "Continue to deliver reminders after condition changes", required: false, defaultValue: false
             	}
             }         
-            section ("Output Methods" , hideWhenEmpty: true) {    
-                input "sonos", "capability.musicPlayer", title: "Play on this Music Player", required: false, multiple: true, submitOnChange: true
+            section ("With these output methods" , hideWhenEmpty: true) {    
+                input "sonos", "capability.musicPlayer", title: "On this Music Player", required: false, multiple: true, submitOnChange: true
                     if (sonos) {
                         input "sonosVolume", "number", title: "Temporarily change volume", description: "0-100%", required: false
                     	input "resumePlaying", "bool", title: "Resume currently playing music after notification", required: false, defaultValue: false
-                        input "sonosDelayFirst", "decimal", title: "(Optional) Delay delivery of first message by...", description: "seconds", required: false
                         input "sonosDelay", "decimal", title: "(Optional) Delay delivery of second message by...", description: "seconds", required: false
                     }
-                input "speechSynth", "capability.speechSynthesis", title: "Play on this Speech Synthesis Device", required: false, multiple: true, submitOnChange: true
+                input "speechSynth", "capability.speechSynthesis", title: "On this Speech Synthesis Device", required: false, multiple: true, submitOnChange: true
                         if (speechSynth) {
                             input "speechVolume", "number", title: "Temporarily change volume", description: "0-100%", required: false
-                            input "delayFirst", "decimal", title: "(Optional) Delay delivery of first message by...", description: "seconds", required: false
                     }
-                input "tv", "capability.notification", title: "Display on this Notification Capable Device(s)", required: false, multiple: true, submitOnChange: true
                 href "SMS", title: "Send SMS & Push Messages...", description: pSendComplete(), state: pSendSettings()
-				input "alexa", "bool", title: "Send to Echo Mailbox", default: false, submitOnChange: true
             }
             if(actionType != "Default" && actionType != null){
-				def sProfile = actionType != "Triggered Report" ? "EchoSistant Profile" : "Ad-Hoc Report"
-        		section ("Run actions for this ${sProfile}") {
-					if(actionType != "Triggered Report") {
-                        if(parent.app.label == "EchoSistant"){
-                    		input "myProfile", "enum", title: "Choose Profile...", options: getProfileList(), multiple: false, required: false 
-                        }
-                        else{
-                            if(!parent.listEchoSistantProfiles()) {
-                                paragraph "NOTE: Looks like your EchoSistant Profiles are not available. \n \nIf you have any EchoSistant Profiles, please open the EchoSistant app and then click 'Done' to refresh the list"
-                            }
-                            else {
-                                input "myProfile", "enum", title: "Choose Profile...", options: parent.listEchoSistantProfiles() , multiple: false, required: false 
-                            }
-                    	}
-                    }
-                    else {
-                    	input "myAdHocReport", "enum", title: "Choose Ad-Hoc Report...", options: getAdHocReports() , multiple: false, required: false 
-                	}
-                }    
+                section ("Run actions for this Profile" ) {    
+                    input "myProfile", "enum", title: "Choose Profile...", options: getProfileList(), multiple: false, required: false 
+                }  
                 section ("Using these Restrictions") {
                     href "pRestrict", title: "Use these restrictions...", description: pRestComplete(), state: pRestSettings()
                 }
@@ -223,11 +174,10 @@ page name: "variables"
                                 "&event = 	<< Capability Type: switch, contact, motion, lock, etc >>,\n"+
                                 "&time = $stamp,\n"+
                                 "&date = $today,\n"+
-                                "&last = $state.lastEvent, \n"+
                                 "&profile = $profile"
                 }  
              }
-              if(actionType == "Custom Text with Weather" || actionType == "Ad-Hoc Report" ){
+              if(actionType == "Custom with Weather" || actionType == "Ad-Hoc Report" ){
                	section("Weather Variables") {
                     paragraph 	"Forecast \n"+
                     			"&today = 			${mGetWeatherVar("today")},\n"+
@@ -254,27 +204,45 @@ page name: "variables"
                                 "&date = 		${getVar("date")},\n"+
                                 "&mode = 		${getVar("mode")},\n"+
                                 "&shm = 		${getVar("shm")},\n"+
-                                "&power = 		${getVar("power")},\n"+
-                                "&lights = 		${getVar("lights")},\n"+
-                                "&unlocked = 	${getVar("unlocked")},\n"+
-                                "&open = 		${getVar("open")},\n"+
-                                "&doors = 		${getVar("doors")},\n"+
-                                "&windows = 	${getVar("windows")},\n"+
-								"&garage = 		${getVar("garage")},\n"+
-                                "&valves = 		${getVar("valves")},\n"+
-                                "&present = 	${getVar("present")},\n"+
-                                "&shades = 		${getVar("shades")},\n"+
-                                "&smoke = 		${getVar("smoke")},\n"+
-                                "&water = 		${getVar("water")},\n"+
-                                "&CO2 = 		${getVar("CO2")},\n"+
-                                "&indoorhum = 	${getVar("indoorhum")},\n"+
-                                "&noise = 		${getVar("noise")},\n"+
-                                "&temperature = ${getVar("temperature")},\n"+
-                                "&running = 	${getVar("running")},\n"+                            
-                                "&thermostat = 	${getVar("thermostat")},\n"+
-                                "&cooling = 	${getVar("cooling")},\n"+
-                                "&heating = 	${getVar("heating")}\n"              
-                                }
+                                "&power = 		${getVar("power")} 			(**),\n"+
+                                "&lights = 		${getVar("lights")}, 		(**),\n"+
+                                "&unlocked = 	${getVar("unlocked")} 		(**),\n"+
+                                "&doors = 		${getVar("doors")} 			(++),\n"+
+                                "&windows = 	${getVar("windows")} 		(++),\n"+
+                                "&open = 		${getVar("open")} 			(**),\n"+
+                                "&garage = 		${getVar("garage")} 		(++),\n"+
+                                "&present = 	${getVar("present")} 		(**),\n"+
+                                "&temperature = ${getVar("temperature")} 	(**),\n"+
+                                "&running = 	${getVar("running")} 		(**),\n"+                            
+                                "&thermostat = 	${getVar("thermostat")} 	(**),\n"+
+                                "&cooling = 	${getVar("cooling")} 		(**),\n"+
+                                "&heating = 	${getVar("heating")} 		(**)\n"+
+                                "\nPet Notes - Cats \n"+
+                                "&catshot = 	${getVar("catshot")}\n"+
+                                "&catfed = 		${getVar("catfed")}\n"+
+                                "&catmed = 		${getVar("catmed")}\n"+
+                                "&catwalk = 	${getVar("catwalk")}\n"+
+                                "&catbath = 	${getVar("catbath")}\n"+
+                                "&catshot1 = 	${getVar("catshot1")}\n"+
+                                "&catfed1 = 	${getVar("catfed1")}\n"+
+                                "&catmed1 = 	${getVar("catmed1")}\n"+
+                                "&catwalk1 = 	${getVar("catwalk1")}\n"+
+                                "&catbath1 = 	${getVar("catbath1")}\n"+
+                                "\nPet Notes - Dogs \n"+
+                                "&dogshot = 	${getVar("dogshot")}\n"+
+                                "&dogfed = 		${getVar("dogfed")}\n"+
+                                "&dogmed = 		${getVar("dogmed")}\n"+
+                                "&dogwalk = 	${getVar("dogwalk")}\n"+
+                                "&dogbath = 	${getVar("dogbath")}\n"+
+                                "&dogshot1 = 	${getVar("dogshot1")}\n"+
+                                "&dogfed1 = 	${getVar("dogfed1")}\n"+
+                                "&dogmed1 = 	${getVar("dogmed1")}\n"+
+                                "&dogwalk1 = 	${getVar("dogwalk1")}\n"+
+                                "&dogbath1 = 	${getVar("dogbath1")}\n"+
+                                "\n"+
+                                "(**) MUST select device(s) in the PROFILE \n"+
+                                "(**) MUST select device(s) in the MAIN App"
+                }
         	}
         }
     }
@@ -283,167 +251,106 @@ page name: "triggers"
 		dynamicPage(name: "triggers", title: "", uninstall: false) {
             def actions = location.helloHome?.getPhrases()*.label.sort()
             if(actionType != "Default" && actionType != "Ad-Hoc Report" ){
-                section("Date & Time") {
-                    input "tSchedule", "enum", title: "How Often?", submitOnChange: true, required: fale, 
-            			options: ["One Time", "Recurring"]                    
-         	}         
-           	if(tSchedule == "One Time"){
-            	section("Time") {        
-                        	input "xFutureTime", "time", title: "At this time...",  required: true, submitOnChange: true
-                }            
-                section("Date (optional)") {            
-							def todayYear = new Date(now()).format("yyyy")
-    						def todayMonth = new Date(now()).format("MMMM")
-    						def todayDay = new Date(now()).format("dd")
-                            input "xFutureDay", "number", title: "On this Day - maximum 31", range: "1..31", submitOnChange: true, description: "Example: ${todayDay}", required: false
-                            if(xFutureDay) input "xFutureMonth", "enum", title: "Of this Month", submitOnChange: true, required: false, multiple: false, description: "Example: ${todayMonth}",
-                            options: ["1": "January", "2":"February", "3":"March", "4":"April", "5":"May", "6":"June", "7":"July", "8":"August", "9":"September", "10":"October", "11":"November", "12":"December"]
-                            if(xFutureMonth) input "xFutureYear", "number", title: "Of this Year", range: "2017..2020", submitOnChange: true, description: "Example: ${todayYear}", required: false
-               }
-            }
-          	if(tSchedule == "Recurring"){
-            	section("Recurring") {                 
-                            input "frequency", "enum", title: "Choose frequency", submitOnChange: true, required: fale, 
-                                options: ["Minutes", "Hourly", "Daily", "Weekly", "Monthly", "Yearly"]
-                                if(frequency == "Minutes"){
-                                    input "xMinutes", "number", title: "Every X minute(s) - maximum 60", range: "1..59", submitOnChange: true, required: false
-                                }
-                                if(frequency == "Hourly"){
-                                    input "xHours", "number", title: "Every X hour(s) - maximum 24", range: "1..23", submitOnChange: true, required: false
-                                }	
-                                if(frequency == "Daily"){
-                                    input "xDays", "number", title: "Every X day(s) - maximum 31", range: "1..31", submitOnChange: true, required: false
-                                    input "xDaysWeekDay", "bool", title: "OR Every Week Day (MON-FRI)", required: false, defaultValue: false
-                                    if(xDays || xDaysWeekDay){input "xDaysStarting", "time", title: "starting at time...", submitOnChange: true, required: true}
-                                }   
-                                if(frequency == "Weekly"){
-                                    input "xWeeks", "enum", title: "Every selected day(s) of the week", submitOnChange: true, required: false, multiple: true,
-                                        options: ["SUN": "Sunday", "MON": "Monday", "TUE": "Tuesday", "WED": "Wednesday", "THU": "Thursday", "FRI": "Friday", "SAT": "Saturday"]                        
-                                    if(xWeeks){input "xWeeksStarting", "time", title: "starting at time...", submitOnChange: true, required: true}
-                                }
-                                if(frequency == "Monthly"){
-                                    //TO DO add every (First-Fourth), (Mon-Fri) of every (X) month
-                                    input "xMonths", "number", title: "Every X month(s) - maximum 12", range: "1..12", submitOnChange: true, required: false
-                                    if(xMonths){
-                                        input "xMonthsDay", "number", title: "...on this day of the month", range: "1..31", submitOnChange: true, required: true
-                                        input "xMonthsStarting", "time", title: "starting at time...", submitOnChange: true, required: true
-                                    }
-                                }
-                                if(frequency == "Yearly"){
-                                    //TO DO add the (First-Fourth), (Mon-Fri) of (Jan-Dec)
-                                    input "xYears", "enum", title: "Every selected month of the year", submitOnChange: true, required: false, multiple: false,
-                                        options: ["1": "January", "2":"February", "3":"March", "4":"April", "5":"May", "6":"June", "7":"July", "8":"August", "9":"September", "10":"October", "11":"November", "12":"December"]
-                                    if(xYears){
-                                        input "xYearsDay", "number", title: "...on this day of the month", range: "1..31", submitOnChange: true, required: true
-                                        input "xYearsStarting", "time", title: "starting at time...", submitOnChange: true, required: true                     
-                                    }
-                                }
-                       	
+                section("Time") {
+                    input "frequency", "enum", title: "Choose a Frequency", submitOnChange: true, required: fale, 
+            			options: ["Minutes", "Hourly", "Daily", "Weekly", "Monthly", "Yearly"]
+                	if(frequency == "Minutes"){
+                        input "xMinutes", "number", title: "Every X minute(s) - maximum 60", range: "1..59", submitOnChange: true, required: false
+                    }
+                    if(frequency == "Hourly"){
+                        input "xHours", "number", title: "Every X hour(s) - maximum 24", range: "1..23", submitOnChange: true, required: false
+                    }	
+                    if(frequency == "Daily"){
+                        input "xDays", "number", title: "Every X day(s) - maximum 31", range: "1..31", submitOnChange: true, required: false
+						input "xDaysWeekDay", "bool", title: "OR Every Week Day (MON-FRI)", required: false, defaultValue: false
+                        if(xDays || xDaysWeekDay){input "xDaysStarting", "time", title: "starting at time...", submitOnChange: true, required: true}
+                    }   
+                    if(frequency == "Weekly"){
+						input "xWeeks", "enum", title: "Every selected day(s) of the week", submitOnChange: true, required: false, multiple: true,
+							options: ["SUN": "Sunday", "MON": "Monday", "TUE": "Tuesday", "WED": "Wednesday", "THU": "Thursday", "FRI": "Friday", "SAT": "Saturday"]                        
+                        if(xWeeks){input "xWeeksStarting", "time", title: "starting at time...", submitOnChange: true, required: true}
+                    }
+                    if(frequency == "Monthly"){
+                    	//TO DO add every (First-Fourth), (Mon-Fri) of every (X) month
+                        input "xMonths", "number", title: "Every X month(s) - maximum 12", range: "1..12", submitOnChange: true, required: false
+                        if(xMonths){
+                            input "xMonthsDay", "number", title: "...on this day of the month", range: "1..31", submitOnChange: true, required: true
+                            input "xMonthsStarting", "time", title: "starting at time...", submitOnChange: true, required: true
                         }
+                    }
+                    if(frequency == "Yearly"){
+                    	//TO DO add the (First-Fourth), (Mon-Fri) of (Jan-Dec)
+                        input "xYears", "enum", title: "Every selected month of the year", submitOnChange: true, required: false, multiple: false,
+                        	options: ["1": "January", "2":"February", "3":"March", "4":"April", "5":"May", "6":"June", "7":"July", "8":"August", "9":"September", "10":"October", "11":"November", "12":"December"]
+                        if(xYears){
+                            input "xYearsDay", "number", title: "...on this day of the month", range: "1..31", submitOnChange: true, required: true
+                            input "xYearsStarting", "time", title: "starting at time...", submitOnChange: true, required: true                     
+						}
+                	}
                 }
             }   
             if(actionType != "Default"){
-                section ("Choose Location Event", hideWhenEmpty: true) {
-                    input "myMode", "enum", title: "Modes", options: location.modes.name.sort(), multiple: true, required: false 
+                section ("Location Event", hideWhenEmpty: true) {
+                    input "myMode", "enum", title: "Choose Modes...", options: location.modes.name.sort(), multiple: true, required: false 
                     if (actionType != "Ad-Hoc Report") {
-                    	input "myRoutine", "enum", title: "Routines", options: actions, multiple: true, required: false            
-                    	input "mySunState", "enum", title: "Sunrise or Sunset...", options: ["Sunrise", "Sunset"], multiple: false, required: false, submitOnChange: true
+                    	input "myRoutine", "enum", title: "Choose Routines...", options: actions, multiple: true, required: false            
+                    	input "mySunState", "enum", title: "Choose Sunrise or Sunset...", options: ["Sunrise", "Sunset"], multiple: false, required: false, submitOnChange: true
                         	if(mySunState) input "offset", "number", range: "*..*", title: "Offset trigger this number of minutes (+/-)", required: false
                 	}
                 }
 			}                       
-            section ("Choose Device State", , hideWhenEmpty: true) {
-                input "mySwitch", "capability.switch", title: "Switches", required: false, multiple: true, submitOnChange: true
-                    if (mySwitch && actionType != "Ad-Hoc Report") {
-                    	input "mySwitchS", "enum", title: "Notify when state changes to...", options: ["on", "off", "both"], required: false, submitOnChange: true
-                        if (mySwitchS != "both") input "minutes", "number", title: "... and continues to be ${mySwitchS} for (minutes) - OPTIONAL", required: false, description: "minutes"
-                	}
+            section ("Device State", , hideWhenEmpty: true) {
+                input "mySwitch", "capability.switch", title: "Choose Switch(es)...", required: false, multiple: true, submitOnChange: true
+                    if (mySwitch && actionType != "Ad-Hoc Report") input "mySwitchS", "enum", title: "Notify when state changes to...", options: ["on", "off", "both"], required: false
                 if(actionType != "Default") {
-                input "myPower", "capability.powerMeter", title: "Power Meters", required: false, multiple: false, submitOnChange: true
+                input "myPower", "capability.powerMeter", title: "Choose Power Meters...", required: false, multiple: false, submitOnChange: true
                     if (myPower && actionType != "Ad-Hoc Report") input "myPowerS", "enum", title: "Notify when power is...", options: ["above threshold", "below threshold"], required: false, submitOnChange: true
                         if (myPowerS) input "threshold", "number", title: "Wattage Threshold...", required: false, description: "in watts", submitOnChange: true
                         if (threshold) input "minutes", "number", title: "Threshold Delay", required: false, description: "in minutes (optional)"
-                        if (threshold) input "thresholdStop", "number", title: "...but not ${myPowerS} this value", required: false, description: "in watts"
+                        if (threshold) input "thresholdStop", "number", title: "...but not above/below this value", required: false, description: "in watts"
                 }
-                input "myLocks", "capability.lock", title: "Locks", required: false, multiple: true, submitOnChange: true
-                    if (myLocks && actionType != "Ad-Hoc Report") {
-                    	input "myLocksS", "enum", title: "Notify when state changes to...", options: ["locked", "unlocked", "both"], required: false, submitOnChange: true
-                        if (myLocksS != "both") input "minutes", "number", title: "... and continues to be ${myLocksS} for (minutes) - OPTIONAL", required: false, description: "minutes"
-                    }
-                    if(myLocksS == "unlocked") input "myLocksSCode", "number", title: "With this user code...", required: false, description: "user code number (optional)"
+                input "myLocks", "capability.lock", title: "Choose Locks..", required: false, multiple: true, submitOnChange: true
+                    if (myLocks && actionType != "Ad-Hoc Report") input "myLocksS", "enum", title: "Notify when state changes to...", options: ["locked", "unlocked", "both"], required: false, submitOnChange: true
+                	if(myLocksS == "unlocked") input "myLocksSCode", "number", title: "With this user code...", required: false, description: "user code number (optional)"
                 if(actionType != "Default"){
-                input "myTstat", "capability.thermostat", title: "Thermostats", required: false, multiple: true, submitOnChange: true
+                input "myTstat", "capability.thermostat", title: "Choose Thermostats...", required: false, multiple: true, submitOnChange: true
                     if (myTstat && actionType != "Ad-Hoc Report") input "myTstatS", "enum", title: "Notify when set point changes for...", options: ["cooling", "heating", "both"], required: false
                     if (myTstat && actionType != "Ad-Hoc Report") input "myTstatM", "enum", title: "Notify when mode changes to...", options: ["auto", "cool", " heat", "emergency heat", "off", "every mode"], required: false
                     if (myTstat && actionType != "Ad-Hoc Report") input "myTstatOS", "enum", title: "Notify when Operating State changes to...", options: ["cooling", "heating", " idle", "every state"], required: false
             	}
-                input "myShades", "capability.windowShade", title: "Window Covering Devices", multiple: true, required: false, submitOnChange: true              
-					if (myShades && actionType != "Ad-Hoc Report") input "myShadesS", "enum", title: "Notify when state changes to...", options: ["open", "closed", "both"], required: false
-                input "myGarage", "capability.garageDoorControl", title: "Garage Doors", multiple: false, required: false, submitOnChange: true
-					if (myGarage && actionType != "Ad-Hoc Report") {
-                    	input "myGarageS", "enum", title: "Notify when state changes to...", options: ["open", "closed", "both"], required: false, submitOnChange: true
-                        if (myGarageS != "both") input "minutes", "number", title: "... and continues to be ${myGarageS} for (minutes) - OPTIONAL", required: false, description: "minutes"
-                	}
-                input "myRelay", "capability.switch", title: "Relays used as Garage Doors", multiple: false, required: false, submitOnChange: true
-                    if (myRelay) input "myRelayContact", "capability.contactSensor", title: "Select a Contact Sensor that monitors the relay", multiple: false, required: false
-            		if (myRelayContact && actionType != "Ad-Hoc Report") {
-                    	input "myRelayContactS", "enum", title: "Notify when state changes to...", options: ["open", "closed", "both"], required: false, submitOnChange: true
-                        if (myRelayContactS != "both") input "minutes", "number", title: "... and continues to be ${myRelayContactS} for (minutes) - OPTIONAL", required: false, description: "minutes"
-            		}
-                input "myValve", "capability.valve", title: "Water Valves", required: false, multiple: true, submitOnChange: true
-                    if (myValve && actionType != "Ad-Hoc Report") {
-                    	input "myValveS", "enum", title: "Notify when state changes to...", options: ["open", "closed", "both"], required: false, submitOnChange: true
-                        if (myValveS != "both") input "minutes", "number", title: "... and continues to be ${myValveS} for (minutes) - OPTIONAL", required: false, description: "minutes"
-					}
             }
-            section ("Choose Sensor Status", hideWhenEmpty: true) {
-                input "myContact", "capability.contactSensor", title: "Contact", required: false, multiple: true, submitOnChange: true
-                    if (myContact && actionType != "Ad-Hoc Report") {
-                    	input "myContactS", "enum", title: "Notify when state changes to...", options: ["open", "closed", "both"], required: false, submitOnChange: true
-                        if (myContactS != "both") input "minutes", "number", title: "... and continues to be ${myContactS} for (minutes) - OPTIONAL", required: false, description: "minutes"
-					}
-				if (actionType == "Ad-Hoc Report") {
-                	input "myDoor", "capability.contactSensor", title: "Contact Sensors used on doors", required: false, multiple: true, submitOnChange: true
-                    	if (myDoor && actionType != "Ad-Hoc Report") {
-                    		input "myDoorS", "enum", title: "Notify when state changes to...", options: ["open", "closed", "both"], required: false, submitOnChange: true
-						}
-					input "myWindow", "capability.contactSensor", title: "Contact Sensors used on windows", required: false, multiple: true, submitOnChange: true
-                    	if (myWindow && actionType != "Ad-Hoc Report") {
-                    		input "myWindowS", "enum", title: "Notify when state changes to...", options: ["open", "closed", "both"], required: false, submitOnChange: true
-						}
-                }
-                input "myAcceleration", "capability.accelerationSensor", title: "Acceleration", required: false, multiple: true, submitOnChange: true
+            section ("Sensor Status", hideWhenEmpty: true) {
+                input "myContact", "capability.contactSensor", title: "Choose Doors and Windows..", required: false, multiple: true, submitOnChange: true
+                    if (myContact && actionType != "Ad-Hoc Report") input "myContactS", "enum", title: "Notify when state changes to...", options: ["open", "closed", "both"], required: false
+                input "myAcceleration", "capability.accelerationSensor", title: "Choose Acceleration Sensors..", required: false, multiple: true, submitOnChange: true
                     if (myAcceleration && actionType != "Ad-Hoc Report") input "myAccelerationS", "enum", title: "Notify when state changes to...", options: ["active", "inactive", "both"], required: false                   
-                input "myMotion", "capability.motionSensor", title: "Motion" , required: false, multiple: true, submitOnChange: true
-                    if (myMotion && actionType != "Ad-Hoc Report") {
-                    	input "myMotionS", "enum", title: "Notify when state changes to...", options: ["active", "inactive", "both"], required: false
-                        if (myMotionS != "both") input "minutes", "number", title: "... and continues to be ${myMotionS} for (minutes) - OPTIONAL", required: false, description: "minutes"
-                	}
-                input "myPresence", "capability.presenceSensor", title: "Presence", required: false, multiple: true, submitOnChange: true
+                input "myMotion", "capability.motionSensor", title: "Choose Motion Sensors..", required: false, multiple: true, submitOnChange: true
+                    if (myMotion && actionType != "Ad-Hoc Report") input "myMotionS", "enum", title: "Notify when state changes to...", options: ["active", "inactive", "both"], required: false
+                input "myPresence", "capability.presenceSensor", title: "Choose Presence Sensors...", required: false, multiple: true, submitOnChange: true
                     if (myPresence && actionType != "Ad-Hoc Report") input "myPresenceS", "enum", title: "Notify when state changes to...", options: ["present", "not present", "both"], required: false
-                input "mySmoke", "capability.smokeDetector", title: "Smoke", required: false, multiple: true, submitOnChange: true
+                input "mySmoke", "capability.smokeDetector", title: "Choose Smoke Detectors...", required: false, multiple: true, submitOnChange: true
                     if (mySmoke && actionType != "Ad-Hoc Report") input "mySmokeS", "enum", title: "Notify when state changes to...", options: ["detected", "clear", "both"], required: false
-                input "myWater", "capability.waterSensor", title: "Water", required: false, multiple: true, submitOnChange: true
+                input "myWater", "capability.waterSensor", title: "Choose Water Sensors...", required: false, multiple: true, submitOnChange: true
                     if (myWater && actionType != "Ad-Hoc Report") input "myWaterS", "enum", title: "Notify when state changes to...", options: ["wet", "dry", "both"], required: false		
-                input "myTemperature", "capability.temperatureMeasurement", title: "Temperature", required: false, multiple: true, submitOnChange: true
+                input "myTemperature", "capability.temperatureMeasurement", title: "Choose Temperature Sensors...", required: false, multiple: true, submitOnChange: true
 					if (myTemperature && actionType != "Ad-Hoc Report") input "myTemperatureS", "enum", title: "Notify when temperature is...", options: ["above", "below"], required: false, submitOnChange: true
                         if (myTemperatureS) input "temperature", "number", title: "Temperature...", required: true, description: "degrees", submitOnChange: true
                         if (temperature) input "temperatureStop", "number", title: "...but not ${myTemperatureS} this temperature", required: false, description: "degrees"
-                input "myCO2", "capability.carbonDioxideMeasurement", title: "Carbon Dioxide (CO2)", required: false, submitOnChange: true
+                input "myCO2", "capability.carbonDioxideMeasurement", title: "Choose CO2 (Carbon Dioxide) Sensor...", required: false, submitOnChange: true
                     if (myCO2 && actionType != "Ad-Hoc Report") input "myCO2S", "enum", title: "Notify when CO2 is...", options: ["above", "below"], required: false, submitOnChange: true            
                     if (myCO2S) input "CO2", "number", title: "Carbon Dioxide Level...", required: true, description: "number", submitOnChange: true              
-                input "myCO", "capability.carbonMonoxideDetector", title: "Carbon Monoxide (CO)", required: false, submitOnChange: true
+                input "myCO", "capability.carbonMonoxideDetector", title: "Choose CO (Carbon Monoxide) Sensor...", required: false, submitOnChange: true
                     if (myCO && actionType != "Ad-Hoc Report") input "myCOS", "enum", title: "Notify when ...", options: ["detected", "tested", "both"], required: false	            
-                input "myHumidity", "capability.relativeHumidityMeasurement", title: "Relative Humidity", required: false, submitOnChange: true
+                input "myHumidity", "capability.relativeHumidityMeasurement", title: "Choose Relative Humidity Sensor...", required: false, submitOnChange: true
                     if (myHumidity && actionType != "Ad-Hoc Report") input "myHumidityS", "enum", title: "Notify when Relative Humidity is...", options: ["above", "below"], required: false, submitOnChange: true            
-                    if (myHumidityS) input "humidity", "number", title: "Relative Humidity Level...", required: true, description: "percent", submitOnChange: true            
-                input "mySound", "capability.soundPressureLevel", title: "Sound Pressure (noise level)", required: false, submitOnChange: true
+                    if (myHumidityS) input "humidity", "number", title: "Relative Humidity...", required: true, description: "percent", submitOnChange: true            
+                input "mySound", "capability.soundPressureLevel", title: "Choose Noise Sensor...", required: false, submitOnChange: true
                     if (mySound && actionType != "Ad-Hoc Report") input "mySoundS", "enum", title: "Notify when Noise is...", options: ["above", "below"], required: false, submitOnChange: true            
                     if (mySoundS) input "noise", "number", title: "Noise Level...", required: true, description: "number", submitOnChange: true              
             }
             if(actionType != "Default" && actionType != "Ad-Hoc Report"){
-                section ("Choose Weather Events") {
-                    input "myWeatherAlert", "enum", title: "Weather Alerts", required: false, multiple: true, submitOnChange: true,
+                section ("Weather Events") {
+                    input "myWeatherAlert", "enum", title: "Choose Weather Alerts...", required: false, multiple: true, submitOnChange: true,
                             options: [
                             "TOR":	"Tornado Warning",
                             "TOW":	"Tornado Watch",
@@ -458,9 +365,9 @@ page name: "triggers"
                             "VOL":	"Volcanic Activity Statement",
                             "HWW":	"Hurricane Wind Warning"
                             ]          
-                    input "myWeather", "enum", title: "Hourly Weather Forecast Updates", required: false, multiple: false, submitOnChange: true,
+                    input "myWeather", "enum", title: "Choose Hourly Weather Forecast Updates...", required: false, multiple: false, submitOnChange: true,
                             options: ["Weather Condition Changes", "Chance of Precipitation Changes", "Wind Speed Changes", "Humidity Changes", "Any Weather Updates"]   
-					input "myWeatherTriggers", "enum", title: "Weather Elements", required: false, multiple: false, submitOnChange: true,
+					input "myWeatherTriggers", "enum", title: "Choose Weather Element as Trigger...", required: false, multiple: false, submitOnChange: true,
 						options: ["Chance of Precipitation (in/mm)", "Wind Gust (MPH/kPH)", "Humidity (%)", "Temperature (F/C)"]   
                         if (myWeatherTriggers) input "myWeatherTriggersS", "enum", title: "Notify when Weather Element changes...", 
                         	options: ["above", "below"], required: false, submitOnChange: true
@@ -570,19 +477,16 @@ def updated() {
 	log.debug "Updated with settings: ${settings}, current app version: ${release()}"
 	state.NotificationRelease = "Notification: " + release()
     state.lastPlayed = null
-    state.lastEvent
     state.sound
-    state.speechSound
-	state.lastTime
-    state.lastWeather
-    state.lastWeatherCheck
-    state.lastAlert
 	unschedule()
     unsubscribe()
     initialize()
 }
 def initialize() {
 	unschedule()
+	state.lastTime
+    state.lastWeatherCheck
+    state.lastAlert
     state.cycleOnH = false
     state.cycleOnL = false
     state.cycleOnA = false
@@ -590,15 +494,19 @@ def initialize() {
     state.savedOffset = false
     state.cycleTh = false
     state.cycleTl = false
-   	state.cycleSh = false
+   
+   state.cycleSh = false
     state.cycleSl = false    
+    
     state.cycleHh = false
     state.cycleHl = false    
+    
     state.cycleCO2h = false
     state.cycleCO2l = false    
+    
+    state.lastWeather
 	state.message = null
     state.occurrences = 0
-    
     if (mySunState == "Sunset") {
     subscribe(location, "sunsetTime", sunsetTimeHandler)
 	sunsetTimeHandler(location.currentValue("sunsetTime"))
@@ -608,7 +516,6 @@ def initialize() {
 	sunriseTimeHandler(location.currentValue("sunriseTime"))
     }
     if (frequency) cronHandler(frequency)
-    if (xFutureTime) oneTimeHandler()
     if (myWeatherAlert) {
 		runEvery5Minutes(mGetWeatherAlerts)
 		state.weatherAlert
@@ -619,14 +526,14 @@ def initialize() {
          mGetWeatherTrigger()
     }     
 	if (myWeather) {
-    	if(parent) log.debug "refreshing hourly weather"
+    	log.debug "refreshing hourly weather"
 		runEvery1Hour(mGetCurrentWeather)
         state.lastWeather = null
         state.lastWeatherCheck = null
        	mGetCurrentWeather()
 	}
 	if (actionType && actionType != "Ad-Hoc Report") {
-        if (myPower) 							subscribe(myPower, "power", meterHandler)
+        if(myPower) 							subscribe(myPower, "power", meterHandler)
         if (myRoutine) 							subscribe(location, "routineExecuted",alertsHandler)
         if (myMode) 							subscribe(location, "mode", alertsHandler)
         if (mySwitch) {
@@ -639,38 +546,6 @@ def initialize() {
             if (myContactS == "closed")			subscribe(myContact, "contact.closed", alertsHandler)
             if (myContactS == "both" || myContactS == null)			subscribe(myContact, "contact", alertsHandler)
         }
-		if (myGarage) {
-            if (myGarageS == "open")			subscribe(myGarage, "contact.open", alertsHandler)
-            if (myGarageS == "closed")			subscribe(myGarage, "contact.closed", alertsHandler)
-            if (myGarageS == "both" || myGarageS == null)			subscribe(myGarage, "contact", alertsHandler)
-        }
-		if (myRelayContact) {
-            if (myRelayContactS == "open")			subscribe(myRelayContact, "contact.open", alertsHandler)
-            if (myRelayContactS == "closed")			subscribe(myRelayContact, "contact.closed", alertsHandler)
-            if (myRelayContactS == "both" || myRelayContactS == null)			subscribe(myRelayContact, "contact", alertsHandler)
-        } 
-		if (myDoor) {
-            if (myDoorS == "open")			subscribe(myDoor, "contact.open", alertsHandler)
-            if (myDoorS == "closed")			subscribe(myDoor, "contact.closed", alertsHandler)
-            if (myDoorS == "both" || myDoorS == null)			subscribe(myDoor, "contact", alertsHandler)
-        }        
-		if (myWindow) {
-            if (myWindowS == "open")			subscribe(myWindow, "contact.open", alertsHandler)
-            if (myWindowS == "closed")			subscribe(myWindow, "contact.closed", alertsHandler)
-            if (myWindowS == "both" || myWindowS == null)			subscribe(myWindow, "contact", alertsHandler)
-        }        
-		if (myValve) {
-            if (myValveS == "open")			subscribe(myValve, "valve.open", alertsHandler)
-            if (myValveS == "closed")			subscribe(myValve, "valve.closed", alertsHandler)
-            if (myValveS == "both" || myValveS == null)			subscribe(myValve, "valve", alertsHandler)
-        }        
-
-        
-		if (myShades) {
-            if (myShadesS == "open")			subscribe(myShades, "contact.open", alertsHandler)
-            if (myShadesS == "closed")			subscribe(myShades, "contact.closed", alertsHandler)
-            if (myShadesS == "both" || myShadesS == null)			subscribe(myShades, "contact", alertsHandler)
-        }          
         if (myMotion) {
             if (myMotionS == "active")			subscribe(myMotion, "motion.active", alertsHandler)
             if (myMotionS == "inactive")		subscribe(myMotion, "motion.inactive", alertsHandler)
@@ -737,47 +612,54 @@ def initialize() {
     		}
     }
 }
+/******************************************************************************************************
+   PARENT STATUS CHECKS
+******************************************************************************************************/
+def checkRelease() {
+return state.NotificationRelease
+}
 /************************************************************************************************************
-   RUNNING ADD-HOC REPORT
+   RUNNING REPORT FROM PARENT
 ************************************************************************************************************/
 def runProfile(profile) {
+	log.warn "received command from the Parent for $profile"
 	def result 
 	if(message && actionType == "Ad-Hoc Report"){
     	// date, time and profile variables
         result = message ? "$message".replace("&date", "${getVar("date")}").replace("&time", "${getVar("time")}").replace("&profile", "${getVar("profile")}") : null
+        result = result ? "$result".replace("&catfed", "${getVar("catfed")}").replace("&catshot", "${getVar("catshot")}").replace("&catmed", "${getVar("catmed")}").replace("&catbath", "${getVar("catbath")}").replace("&catwalk", "${getVar("catwalk")}").replace("&catbrush", "${getVar("catbrush")}") : null
+        result = result ? "$result".replace("&dogshot", "${getVar("dogshot")}").replace("&dogfed", "${getVar("dogfed")}").replace("&dogwalk", "${getVar("dogwalk")}").replace("&dogbath", "${getVar("dogbath")}").replace("&dogmed", "${getVar("dogmed")}").replace("&dogbrush", "${getVar("dogbrush")}") : null
+        result = result ? "$result".replace("&catfed1", "${getVar("catfed1")}").replace("&catshot1", "${getVar("catshot1")}").replace("&catmed1", "${getVar("catmed1")}").replace("&catbath1", "${getVar("catbath1")}").replace("&catwalk1", "${getVar("catwalk1")}").replace("&catbrush1", "${getVar("catbrush1")}") : null
+        result = result ? "$result".replace("&dogshot1", "${getVar("dogshot1")}").replace("&dogfed1", "${getVar("dogfed1")}").replace("&dogwalk1", "${getVar("dogwalk1")}").replace("&dogbath1", "${getVar("dogbath1")}").replace("&dogmed1", "${getVar("dogmed1")}").replace("&dogbrush1", "${getVar("dogbrush1")}") : null
+        result = result ? "$result".replace("&litterclean", "${getVar("litterclean")}").replace("&litterscoop", "${getVar("litterscoop")}") : null
         // power variables
         result = result ? "$result".replace("&power", "${getVar("power")}").replace("&lights", "${getVar("lights")}") : null
         // garage doors, locks and precence variables
         result = result ? "$result".replace("&garage", "${getVar("garage")}").replace("&unlocked", "${getVar("unlocked")}").replace("&present", "${getVar("present")}") : null
-		// shades, valves, contacts, motion variables
-        result = result ? "$result".replace("&shades", "${getVar("shades")}").replace("&open", "${getVar("open")}").replace("&motion", "${getVar("motion")}") : null
-        result = result ? "$result".replace("&valves", "${getVar("valves")}").replace("&windows", "${getVar("windows")}").replace("&doors", "${getVar("doors")}") : null
-        // location variables
+		// doors and windows variables
+        result = result ? "$result".replace("&doors", "${getVar("doors")}").replace("&windows", "${getVar("windows")}").replace("&open", "${getVar("open")}") : null
+		// location variables
         result = result ? "$result".replace("&mode", "${getVar("mode")}").replace("&shm", "${getVar("shm")}") : null
-		//climate variables
-        result = result ? "$result".replace("&temperature", "${getVar("temperature")}").replace("&indoorhum", "${getVar("indoorhum")}")  : null
-		//thermostat
-        result = result ? "$result".replace("&heating", "${getVar("heating")}").replace("&cooling", "${getVar("cooling")}").replace("&thermostat", "${getVar("thermostat")}").replace("&running", "${getVar("running")}") : null
-		// water, smoke, COs and noise and contacts variables
-        result = result ? "$result".replace("&smoke", "${getVar("smoke")}").replace("&CO2", "${getVar("CO2")}").replace("&water", "${getVar("water")}") : null
+		//thermostat variables
+        result = result ? "$result".replace("&thermostat", "${getVar("thermostat")}").replace("&running", "${getVar("running")}").replace("&temperature", "${getVar("temperature")}")  : null
+		//thermostat setPoints
+        result = result ? "$result".replace("&heating", "${getVar("heating")}").replace("&cooling", "${getVar("cooling")}").replace("&motion", "${getVar("motion")}")  : null
         //weather variables
         result = getWeatherVar(result) 
     }
-	if(message && actionType == "Custom Text"){
+	if(message && actionType == "Custom"){
 		def device = "<< Device Label >>"
         def action = " << Action (on/off, open/closed, locked/unlocked) >>"
         def event =  " << Capability (switch, contact, motion, lock, etc) >>"
-		def last =  " << Time of last event (only available when used with pending actions) >>"
-        result = message ? "$message".replace("&date", "${getVar("date")}").replace("&time", "${getVar("time")}").replace("&profile", "${getVar("profile")}") : null  
-    	result = result ? "$result".replace("&device", "${device}").replace("&action", "${action}").replace("&event", "${event}").replace("&last", "${last}") : null 
+		result = message ? "$message".replace("&date", "${getVar("date")}").replace("&time", "${getVar("time")}").replace("&profile", "${getVar("profile")}") : null  
+    	result = result ? "$result".replace("&device", "${device}").replace("&action", "${action}").replace("&event", "${event}") : null 
     }
-    if(message && actionType == "Custom Text with Weather"){
+    if(message && actionType == "Custom with Weather"){
 		def device = "<< Device Label >>"
         def action = " << Action (on/off, open/closed, locked/unlocked) >>"
         def event =  " << Capability (switch, contact, motion, lock, etc) >>"
-		def last =  " << Time of last event (only available when used with pending actions) >>"
-        result = message ? "$message".replace("&date", "${getVar("date")}").replace("&time", "${getVar("time")}").replace("&profile", "${getVar("profile")}") : null  
-    	result = result ? "$result".replace("&device", "${device}").replace("&action", "${action}").replace("&event", "${event}").replace("&last", "${last}")  : null
+		result = message ? "$message".replace("&date", "${getVar("date")}").replace("&time", "${getVar("time")}").replace("&profile", "${getVar("profile")}") : null  
+    	result = result ? "$result".replace("&device", "${device}").replace("&action", "${action}").replace("&event", "${event}") : null
        	result = getWeatherVar(result) 
     }
     if(message && profile == "test") {
@@ -808,10 +690,110 @@ private getVar(var) {
         result = new Date(now()).format("EEEE, MMMM d, yyyy", location.timeZone)
     	return result    
     }
-	if (var == "profile"){
-        result = app.label
-    	return result 	
+    if (var == "catshot"){
+    	result = parent.state.catShotNotify
+        return result
+    }    
+    if (var == "catfed"){
+    	result = parent.state.catFedNotify
+        return result
+    }    
+    if (var == "catmed"){
+    	result = parent.state.catMedNotify
+        return result
+    }    
+    if (var == "catwalk"){
+    	result = parent.state.catWalkNotify
+        return result
+    }    
+    if (var == "catbath"){
+    	result = parent.state.catBathNotify
+        return result
+	}
+    if (var == "catbrush"){
+    	result = parent.state.catBrushNotify
+        return result
+	}    
+    if (var == "catshot1"){
+    	result = parent.state.catShot1Notify
+        return result
+    }    
+    if (var == "catfed1"){
+    	result = parent.state.catFed1Notify
+        return result
+    }    
+    if (var == "catmed1"){
+    	result = parent.state.catMed1Notify
+        return result
+    }    
+    if (var == "catwalk1"){
+    	result = parent.state.catWalk1Notify
+        return result
+    }    
+    if (var == "catbath1"){
+    	result = parent.state.catBath1Notify
+        return result
+	}
+    if (var == "catbrush1"){
+    	result = parent.state.catBrush1Notify
+        return result
+	}    
+    if (var == "dogshot"){
+    	result = parent.state.dogShotNotify
+        return result
+    }    
+    if (var == "dogfed"){
+    	result = parent.state.dogFedNotify
+        return result
+    }    
+    if (var == "dogmed"){
+    	result = parent.state.dogMedNotify
+        return result
+    }    
+    if (var == "dogwalk"){
+    	result = parent.state.dogWalkNotify
+        return result
+    }    
+    if (var == "dogbath"){
+    	result = parent.state.dogBathNotify
+        return result
     }
+    if (var == "dogbrush"){
+    	result = parent.state.dogBrushNotify
+        return result
+    }    
+    if (var == "dogshot1"){
+    	result = parent.state.dogShot1Notify
+        return result
+    }    
+    if (var == "dogfed1"){
+    	result = parent.state.dogFed1Notify
+        return result
+    }    
+    if (var == "dogmed1"){
+    	result = parent.state.dogMed1Notify
+        return result
+    }    
+    if (var == "dogwalk1"){
+    	result = parent.state.dogWalk1Notify
+        return result
+    }    
+    if (var == "dogbath1"){
+    	result = parent.state.dogBath1Notify
+        return result
+    }
+    if (var == "dogbrush1"){
+    	result = parent.state.dogBrush1Notify
+        return result
+    }
+    if (var == "litterclean"){
+    	result = parent.state.litterboxClean
+        return result
+    }
+    if (var == "litterscoop"){
+    	result = parent.state.litterboxScoop
+        return result
+    }    
     if (var == "mode"){
         result = location?.currentMode
     	return result 	    
@@ -847,11 +829,11 @@ private getVar(var) {
     	}	
     }
     if (var == "doors"){
-    	if (myDoor){
-            if (myDoor?.latestValue("contact")?.contains("open")) {
-                myDoor?.each { deviceName ->
-                    if (deviceName.latestValue("contact")=="open") {
-                        String device  = (String) deviceName
+		if(parent.cDoor1){
+			if (parent.cDoor1?.currentValue("contact").contains("open")) {
+            	parent.cDoor1?.each { deviceName ->
+                	if (deviceName.currentValue("contact")=="${"open"}") {
+                    	String device  = (String) deviceName
                         devList += device
                     }
                 }
@@ -862,12 +844,12 @@ private getVar(var) {
             return result
     	}	
     }
-    if (var == "windows"){
-    	if (myWindow){
-            if (myWindow?.latestValue("contact")?.contains("open")) {
-                myWindow?.each { deviceName ->
-                    if (deviceName.latestValue("contact")=="open") {
-                        String device  = (String) deviceName
+    if (var == "windows"){                    
+		if(parent.cWindow) {
+			if (parent.cWindow?.currentValue("contact").contains("open")) {
+            	parent.cWindow?.each { deviceName ->
+                	if (deviceName.currentValue("contact")=="${"open"}") {
+                    	String device  = (String) deviceName
                         devList += device
                     }
                 }
@@ -878,23 +860,6 @@ private getVar(var) {
             return result
     	}	
     }
-    if (var == "valves"){
-    	if (myValve){
-            if (myValve?.latestValue("valve")?.contains("open")) {
-                myValve?.each { deviceName ->
-                    if (deviceName.latestValue("valve")=="open") {
-                        String device  = (String) deviceName
-                        devList += device
-                    }
-                }
-            }
-            if (devList?.size() == 1)  result = devList?.size() + " valve"
-            else if (devList?.size() > 0) result = devList?.size() + " valves"
-            else if (!devList) result = "no valves"
-            return result
-    	}	
-    }
-
     if (var == "unlocked"){                    
 		if(myLocks) {
 			if (myLocks.currentValue("lock").contains("unlocked")) {
@@ -989,7 +954,7 @@ private getVar(var) {
                         devList += currentOS
                	}
                 def tSize = devList?.size()
-                 if(parent) log.warn "size = $tSize, $currentOS, $devList "
+                log.warn "size = $tSize, $currentOS, $devList "
                 if (devList && !devList.contains("idle")) result = "running"
                 else if (devList && (devList.contains("cooling") || devList.contains("heating")))  result = "running"
                 else if (devList && devList.contains("idle") && !devList.contains("cooling") && !devList.contains("heating")) result = "not running"
@@ -999,56 +964,18 @@ private getVar(var) {
    		}
    	}    
     if (var == "temperature"){    
-    	if(myTemperature){
+    	if(myTstat){
            	def total = 0
-    		myTemperature.each {total += it.currentValue("temperature")}
+    		myTstat?.each {total += it.currentValue("temperature")}
            int avgT = total as Integer
-        result = Math.round(total/myTemperature?.size())
+        result = Math.round(total/myTstat?.size())
         return result
 		}
     }
-    if (var == "indoorhum"){    
-        if(myHumidity){
-        	result = myHumidity.latestValue("humidity")             	
-            /* multiple sensors are disables
-            def total = 0
-    		myHumidity.each {total += it.currentValue("humidity")}
-           int avgT = total as Integer
-            result = Math.round(total/myHumidity?.size())
-            return result
-			*/
-        return result
-        }
-    }
-    if (var == "CO2"){    
-    	if(myCO2){
-            result = myCO2.latestValue("carbonDioxide")             	
-         	/* multiple sensors are disables
-           	def total = 0
-    		myCO2.each {total += it.currentValue("carbonDioxide")}
-           	int avgT = total as Integer 
-            result = Math.round(total/myCO2?.size())
-            return result
-			*/
-        return result
-        }
-    }
-    if (var == "noise"){    
-    	if(mySound){
-            result = mySound.latestValue("soundPressureLevel")             	
-         	/* multiple sensors are disables
-           	def total = 0
-    		myCO2.each {total += it.currentValue("carbonDioxide")}
-           	int avgT = total as Integer 
-            result = Math.round(total/myCO2?.size())
-			*/
-        return result
-        }
-    }    
     if (var == "motion"){
-		if(myMotion){
-			if (myMotion.currentValue("motion").contains("active")) {
-            	myMotion.each { deviceName ->
+		if(parent.cMotion){
+			if (parent.cMotion?.currentValue("motion").contains("active")) {
+            	parent.cMotion?.each { deviceName ->
                 	if (deviceName.currentValue("motion")=="${"active"}") {
                     	String device  = (String) deviceName
                         devList += device
@@ -1062,47 +989,13 @@ private getVar(var) {
     	}	
     }
     if (var == "garage"){    
-    	if(myGarage){
-            result = myGarage.latestValue("contact").contains("open") ? "open" : "closed"  
+    	if(parent.cDoor){
+            result = parent.cDoor.latestValue("contact").contains("open") ? "open" : "closed"  
     	}
-        else if (myRelayContact)
-        	result = myRelayContact.latestValue("contact").contains("open") ? "open" : "closed"  
+        else if (parent.cRelay && parent.cContactRelay)
+        	result = parent.cContactRelay.latestValue("contact").contains("open") ? "open" : "closed"  
         return result
 	}
-    if (var == "shades"){    	
-        if (myShades){
-            if (myShades?.latestValue("contact")?.contains("open")) {
-                myShades?.each { deviceName ->
-                    if (deviceName.latestValue("contact")=="open") {
-                        String device  = (String) deviceName
-                        devList += device
-                    }
-                }
-            }
-            def closedShades = myShades.size() - devList?.size()
-            if (devList?.size() == 1)  result = devList?.size() + " of the shades is open and " + closedShades + " closed"
-            else if (devList?.size() > 0) result = devList?.size() + " of the shades are open and " + closedShades + " closed"
-            else if (!devList) result = "no shades are open"
-            return result
-    	}
-    }     
-    if (var == "smoke"){
-            if(mySmoke){
-                if (mySmoke.latestValue("smoke")?.contains("detected")) {
-                    mySmoke.each { deviceName ->
-                        if (deviceName.currentValue("smoke")=="${"detected"}") {
-                            String device  = (String) deviceName
-                            devList += device
-                        }
-                    }
-                }
-                if (devList?.size() == 1)  result = devList?.size() + " sensor detected smoke"
-                else if (devList?.size() > 0) result = devList?.size() + " sensors detected smoke"
-                else if (!devList) result = "no sensors detected smoke"
-                return result
-         }
-   }
-   
 }
 /***********************************************************************************************************************
     POWER HANDLER
@@ -1121,18 +1014,19 @@ def meterHandler(evt) {
         int thresholdStopValue = thresholdStop == null ? 0 : thresholdStop as int
         def cycleOnHigh = state.cycleOnH
         def cycleOnLow = state.cycleOnL
+        //log.warn "meterValue = $meterValue , cycleOnLow = $cycleOnLow"
         if(myPowerS == "above threshold"){
             thresholdStopValue = thresholdStopValue == 0 ? 9999 :  thresholdStopValue as int
             if (meterValue >= thresholdValue && meterValue <= thresholdStopValue ) {
                 if (cycleOnHigh == false){
                     state.cycleOnH = true
-                    if(parent.debug) log.debug "Power meter $meterValue is above threshold $thresholdValue with threshold stop $thresholdStopValue"
+                    log.debug "Power meter $meterValue is above threshold $thresholdValue with threshold stop $thresholdStopValue"
                     if (delay) {
                         log.warn "scheduling delay ${delay}, ${60*delay}"
                         runIn(60*delay , bufferPendingH)
                     }
                     else {
-                         if(parent.debug) log.debug "sending notification (above)" 
+                        log.debug "sending notification (above)" 
                         data = [value:"above threshold", name:"power", device:"power meter"]
                         alertsHandler(data)
                     }
@@ -1148,13 +1042,13 @@ def meterHandler(evt) {
             if (meterValue <= thresholdValue && meterValue >= thresholdStopValue) {
                 if (cycleOnLow == false){
                     state.cycleOnL = true
-                     if(parent) log.debug "Power meter $meterValue is below threshold $thresholdValue with threshold stop $thresholdStopValue"
+                    log.debug "Power meter $meterValue is below threshold $thresholdValue with threshold stop $thresholdStopValue"
                     if (delay) {
-                         if(parent) log.warn "scheduling delay ${delay}, ${60*delay}"
+                        log.warn "scheduling delay ${delay}, ${60*delay}"
                         runIn(60*delay, bufferPendingL)
                     }
                     else {
-                         if(parent) log.debug "sending notification (below)" 
+                        log.debug "sending notification (below)" 
                         data = [value:"below threshold", name:"power", device:"power meter"]
                         alertsHandler(data)
                     }
@@ -1172,7 +1066,7 @@ def bufferPendingH() {
     	int meterValue = meterValueRaw ?: 0 as int
     def thresholdValue = threshold == null ? 0 : threshold as int
     if (meterValue >= thresholdValue) {
-		 if(parent) log.debug "sending notification (above)" 
+		log.debug "sending notification (above)" 
         def data = [value:"above threshold", name:"power", device:"power meter"] 
     	alertsHandler(data)
    }
@@ -1182,7 +1076,7 @@ def bufferPendingL() {
 		int meterValue = meterValueRaw ?: 0 as int    
     def thresholdValue = threshold == null ? 0 : threshold as int
     if (meterValue <= thresholdValue) {
-		 if(parent) log.debug "sending notification (below)" 
+		log.debug "sending notification (below)" 
        	def data = [value:"below threshold", name:"power", device:"power meter"] 
     	alertsHandler(data)
   	}
@@ -1199,7 +1093,7 @@ def unlockedWithCodeHandler(evt) {
     def eDisplayT = evt.descriptionText
 	def data = [:]
     def eTxt = eDisplayN + " is " + eVal //evt.descriptionText 
-     if(parent) log.info "unlocked event received: event = $event, eVal = $eVal, eName = $eName, eDev = $eDev, eDisplayN = $eDisplayN, eDisplayT = $eDisplayT, eTxt = $eTxt"
+    log.info "unlocked event received: event = $event, eVal = $eVal, eName = $eName, eDev = $eDev, eDisplayN = $eDisplayN, eDisplayT = $eDisplayT, eTxt = $eTxt"
 			if(eVal == "unlocked" && myLocksSCode && event) {
                 def userCode = evt.data.replaceAll("\\D+","")
                 userCode = userCode.toInteger()
@@ -1220,19 +1114,19 @@ def tempHandler(evt) {
         def eName = evt.name
         def eDev = evt.device
         def eDisplayN = evt.displayName
-		 if(parent) log.info "event received: event = $event, eVal = $eVal, eName = $eName, eDev = $eDev, eDisplayN = $eDisplayN"
+		log.info "event received: event = $event, eVal = $eVal, eName = $eName, eDev = $eDev, eDisplayN = $eDisplayN"
         def tempAVG = myTemperature ? getAverage(myTemperature, "temperature") : "undefined device"          
         def cycleThigh = state.cycleTh
         def cycleTlow = state.cycleTl        
         def currentTemp = tempAVG
         int temperatureStopVal = temperatureStop == null ? 0 : temperatureStop as int
-         if(parent) log.warn "currentTemp = $currentTemp"
+        log.warn "currentTemp = $currentTemp"
         if(myTemperatureS == "above"){
         	temperatureStopVal = temperatureStopVal == 0 ? 999 :  temperatureStopVal as int
             if (currentTemp >= temperature && currentTemp <= temperatureStopVal) {
                 if (cycleThigh == false){
                     state.cycleTh = true
-                     if(parent) log.debug "sending notification (above): as temperature $currentTemp is above threshold $temperature" 
+                    log.debug "sending notification (above): as temperature $currentTemp is above threshold $temperature" 
                         data = [value:"above ${temperature} degrees", name:"temperature", device:"temperature sensor"]
                         alertsHandler(data)
                 }
@@ -1243,7 +1137,7 @@ def tempHandler(evt) {
             if (currentTemp <= temperature && currentTemp >= temperatureStopVal) {
                 if (cycleTlow == false){
                     state.cycleTl = true
-					 if(parent) log.debug "sending notification (below): as temperature $currentTemp is below threshold $temperature"
+					log.debug "sending notification (below): as temperature $currentTemp is below threshold $temperature"
                         data = [value:"below ${temperature} degrees", name:"temperature", device:"temperature sensor"]
                         alertsHandler(data)
                 }
@@ -1256,7 +1150,7 @@ def tempHandler(evt) {
 ******************************************************************************/
 def getAverage(device,type){
 	def total = 0
-		if(parent.debug) log.debug "calculating average temperature"  
+		if(debug) log.debug "calculating average temperature"  
     device.each {total += it.latestValue(type)}
     return Math.round(total/device?.size())
 }
@@ -1270,12 +1164,12 @@ def humidityHandler(evt){
         def eName = evt.name
         def eDev = evt.device
         def eDisplayN = evt.displayName
-		if(parent.debug) log.info "event received: event = $event, eVal = $eVal, eName = $eName, eDev = $eDev, eDisplayN = $eDisplayN"
+		log.info "event received: event = $event, eVal = $eVal, eName = $eName, eDev = $eDev, eDisplayN = $eDisplayN"
         if(myHumidityS == "above"){
             if (eVal >= humidity) {
                 if (state.cycleHh == false){
                     state.cycleHh = true            
-                    if(parent.debug) log.debug "sending notification (above): as humidity $eVal is above threshold $humidity" 
+                    log.debug "sending notification (above): as humidity $eVal is above threshold $humidity" 
                         data = [value:"above ${humidity}", name:"humidity", device:"humidity sensor"]
                         alertsHandler(data)
             	}
@@ -1287,7 +1181,7 @@ def humidityHandler(evt){
                 if (eVal <= humidity) {
                     if (state.cycleHl == false){
                         state.cycleHl = true                
-                            if(parent.debug) log.debug "sending notification (below): as humidity $eVal is below threshold $humidity"
+                            log.debug "sending notification (below): as humidity $eVal is below threshold $humidity"
                                 //data = [value:"below temperature", name:"temperature", device:"temperature sensor"]
                                 data = [value:"below ${humidity}", name:"humidity", device:"humidity sensor"]
                                 alertsHandler(data)
@@ -1307,12 +1201,12 @@ def soundHandler(evt){
         def eName = evt.name
         def eDev = evt.device
         def eDisplayN = evt.displayName
-		if(parent.debug) log.info "event received: event = $event, eVal = $eVal, eName = $eName, eDev = $eDev, eDisplayN = $eDisplayN"
+		log.info "event received: event = $event, eVal = $eVal, eName = $eName, eDev = $eDev, eDisplayN = $eDisplayN"
         if(mySoundS == "above"){
             if (eVal >= noise) {
                 if (state.cycleSh == false){
                     state.cycleSh = true             
-                    if(parent.debug) log.debug "sending notification (above): as noise $eVal is above threshold $noise" 
+                    log.debug "sending notification (above): as noise $eVal is above threshold $noise" 
                         data = [value:"above ${noise}", name:"noise", device:"sound sensor"]
                         alertsHandler(data)
             	}
@@ -1324,7 +1218,7 @@ def soundHandler(evt){
                 if (eVal <= noise) {
                     if (state.cycleSl == false){
                         state.cycleSl = true                
-                            if(parent.debug) log.debug "sending notification (below): as noise $eVal is below threshold $noise"
+                            log.debug "sending notification (below): as noise $eVal is below threshold $noise"
                                 data = [value:"below ${noise}", name:"noise", device:"sound sensor"]
                                 alertsHandler(data)
                     }
@@ -1343,12 +1237,12 @@ def CO2Handler(evt){
         def eName = evt.name
         def eDev = evt.device
         def eDisplayN = evt.displayName
-		if(parent.debug) log.info "event received: event = $event, eVal = $eVal, eName = $eName, eDev = $eDev, eDisplayN = $eDisplayN"
+		log.info "event received: event = $event, eVal = $eVal, eName = $eName, eDev = $eDev, eDisplayN = $eDisplayN"
         if(myCO2S == "above"){
             if (eVal >= CO2) {
                 if (state.cycleCO2h == false){
                     state.cycleCO2h = true              
-                    if(parent.debug) log.debug "sending notification (above): as CO2 $eVal is above threshold $CO2" 
+                    log.debug "sending notification (above): as CO2 $eVal is above threshold $CO2" 
                         data = [value:"${eVal}", name:"CO2", device:"CO2 sensor"]
                         alertsHandler(data)
             	}
@@ -1360,7 +1254,7 @@ def CO2Handler(evt){
                 if (eVal <= CO2) {
                     if (state.cycleCO2l == false){
                         state.cycleCO2l = true                 
-                            if(parent.debug) log.debug "sending notification (below): as CO2 $eVal is below threshold $CO2" 
+                            log.debug "sending notification (below): as CO2 $eVal is below threshold $CO2" 
                                 data = [value:"${eVal}", name:"CO2", device:"CO2 sensor"]
                                 alertsHandler(data)
                     }
@@ -1379,201 +1273,132 @@ def alertsHandler(evt) {
     def eDev = evt.device
     def eDisplayN = evt.displayName
     def eDisplayT = evt.descriptionText
-    if(eDisplayN == null) eDisplayN = eDev // 5/28/2017 eName
+	if(eDisplayN == null) eDisplayN = eName
     state.occurrences = 1
     def eTxt = eDisplayN + " is " + eVal //evt.descriptionText 
-    if(parent.debug) log.info "event received: event = $event, eVal = $eVal, eName = $eName, eDev = $eDev, eDisplayN = $eDisplayN, eDisplayT = $eDisplayT, eTxt = $eTxt"
-    if(parent.debug) log.warn "version number = ${release()}"
-    def dCapability = eName == "switch" ? "mySwitch" : eName == "motion" ? "myMotion" : eName == "contact" ? "myContact" : eName == "valve" ? "myValve" :  eName == "lock" ? "myLocks" : eName == "garageDoorControl" ? "myGarage" : null
-    if(dCapability && minutes && eName != "delay"){
-    	def data =[deviceName: eDev.label,attributeName: eVal, capabilityName:"${eName}", type: dCapability ]
-        log.warn "scheduling delay with data: $data"
-       	state.lastEvent = new Date(now()).format("h:mm aa", location.timeZone)     
-        runIn(minutes*60, checkEvent, [data: data])
-	}
-    else {
-        //FAST LANE AUDIO DELIVERY METHOD
-        if(actionType == "Default"){
-            if(speechSynth) {
-            speechSynth.playTextAndResume(eTxt)
-            sendtxt(eTxt)
-            if(tv) tv.deviceNotification(message)
+    log.info "event received: event = $event, eVal = $eVal, eName = $eName, eDev = $eDev, eDisplayN = $eDisplayN, eDisplayT = $eDisplayT, eTxt = $eTxt"
+    log.warn "version number = ${release()}"
+    //FAST LANE AUDIO DELIVERY METHOD
+    if(actionType == "Default"){
+		if(speechSynth) {
+       	speechSynth.playTextAndResume(eTxt)
+        sendtxt(eTxt)
+        }
+        else{
+            if(sonos) {
+                def sCommand = resumePlaying == true ? "playTrackAndResume" : "playTrackAndRestore"
+                def sTxt = textToSpeech(eTxt instanceof List ? eTxt[0] : eTxt)
+                def sVolume = settings.sonosVolume ?: 20
+                sonos."${sCommand}"(sTxt.uri, sTxt.duration, sVolume)
+                sendtxt(eTxt)
             }
-            else{
-                if(sonos) {
-                    def sCommand = resumePlaying == true ? "playTrackAndResume" : "playTrackAndRestore"
-                    def sTxt = textToSpeech(eTxt instanceof List ? eTxt[0] : eTxt)
-                    def sVolume = settings.sonosVolume ?: 20
-                    sonos."${sCommand}"(sTxt.uri, sTxt.duration, sVolume)
-                    sendtxt(eTxt)
-                    if(tv) tv.deviceNotification(message)
+        }
+  	}
+    else {
+            if (actionType == "Triggered Report" && myProfile) {
+                eTxt = parent.runReport(myProfile)
+            }
+            def eProfile = app.label
+            def nRoutine = false
+            def stamp = state.lastTime = new Date(now()).format("h:mm aa", location.timeZone)     
+            def today = new Date(now()).format("EEEE, MMMM d, yyyy", location.timeZone)
+
+            if (getDayOk()==true && getModeOk()==true && getTimeOk()==true && getFrequencyOk()==true && getConditionOk()==true) {	
+                if(eName == "time of day" && message){
+                        eTxt = message ? "$message".replace("&device", "${eDisplayN}").replace("&event", "time").replace("&action", "executed").replace("&date", "${today}").replace("&time", "${stamp}").replace("&profile", "${eProfile}") : null
+                            if(actionType == "Custom with Weather") eTxt = getWeatherVar(eTxt)
+                }
+                if(eName == "coolingSetpoint" || eName == "heatingSetpoint") {
+                    eVal = evt.value.toFloat()
+                    eVal = Math.round(eVal)
+                }
+                if(eName == "routineExecuted" && myRoutine) {
+                    def deviceMatch = myRoutine?.find {r -> r == eDisplayN}  
+                    if (deviceMatch){
+                        eTxt = message ? "$message".replace("&device", "${eDisplayN}").replace("&event", "routine").replace("&action", "executed").replace("&date", "${today}").replace("&time", "${stamp}").replace("&profile", "${eProfile}") : null
+                            if(actionType == "Custom with Weather") eTxt = getWeatherVar(eTxt)
+                            if (message){
+                                if(recipients?.size()>0 || sms?.size()>0 || push) {
+                                    sendtxt(eTxt)
+                                }
+                                takeAction(eTxt)
+                            }
+                            else {
+                                eTxt = "routine was executed"
+                                takeAction(eTxt) 
+                            }
+                    }
+                }
+                else {
+                    if(eName == "mode" && myMode) {
+                        def deviceMatch = myMode?.find {m -> m == eVal}  
+                        if (deviceMatch){
+                            eTxt = message ? "$message".replace("&device", "${eVal}").replace("&event", "${eName}").replace("&action", "changed").replace("&date", "${today}").replace("&time", "${stamp}").replace("&profile", "${eProfile}") : null
+                            if(actionType == "Custom with Weather") eTxt = getWeatherVar(eTxt)
+                            if (message){
+                                if(recipients?.size()>0 || sms?.size()>0 || push) {
+                                    sendtxt(eTxt)
+                                }
+                                takeAction(eTxt)
+                            }
+                            else {
+                                eTxt = "location mode has changed"
+                                takeAction(eTxt) 
+                            }
+                        }
+                    }        
+                    else {
+                        if (message || actionType == "Triggered Report"){      
+                            if(message){
+                            eTxt = message ? "$message".replace("&device", "${eDev}").replace("&event", "${eName}").replace("&action", "${eVal}").replace("&date", "${today}").replace("&time", "${stamp}").replace("&profile", "${eProfile}") : null
+                            if(actionType == "Custom with Weather") eTxt = getWeatherVar(eTxt)
+                            }
+                            if(eTxt){
+                                if(recipients?.size()>0 || sms?.size()>0 || push) {
+                                    sendtxt(eTxt)
+                                }
+                                takeAction(eTxt)
+                            }
+                        }
+                        else {
+                            if (eDev == "weather"){
+                                if (eDisplayN == "weather alert"){
+                                    eTxt = eVal
+                                }
+                                else eTxt = eDisplayN + " is " + eVal
+                            }
+                            if(eTxt){
+                                if(recipients?.size()>0 || sms?.size()>0 || push) {
+                                    log.warn "sending sms"
+                                    sendtxt(eTxt)
+                                }
+                                log.warn "processing eTxt = $eTxt"
+                                takeAction(eTxt)
+                            }
+                        }
+                    }
                 }
             }
         }
-        else {
-                if (actionType == "Triggered Report" && myAdHocReport) {
-                	eTxt = null
-					if (eName == "routineExecuted" || eName == "mode"){
-                        if(eName == "routineExecuted" && myRoutine) {
-                            def deviceMatch = myRoutine?.find {r -> r == eDisplayN} 
-                            if (deviceMatch != null) {eTxt = parent.runReport(myAdHocReport)}
-                        }
-                        if (eName == "mode" && myMode) {
-                            def deviceMatch = myMode?.find {m -> m == eVal}  
-                            if (deviceMatch) eTxt = parent.runReport(myAdHocReport)
-                        }
-                    }
-                    else eTxt = parent.runReport(myAdHocReport)
-                }
-                def eProfile = app.label
-                def nRoutine = false
-                def stamp = state.lastTime = new Date(now()).format("h:mm aa", location.timeZone)     
-                def today = new Date(now()).format("EEEE, MMMM d, yyyy", location.timeZone)
-                def last = state.lastEvent
-                if (getDayOk()==true && getModeOk()==true && getTimeOk()==true && getFrequencyOk()==true && getConditionOk()==true) {	
-                    if(eName == "time of day" && message && actionType != "Triggered Report"){
-                            eTxt = message ? "$message".replace("&device", "${eDisplayN}").replace("&event", "time").replace("&action", "executed").replace("&date", "${today}").replace("&time", "${stamp}").replace("&profile", "${eProfile}") : null
-                                if(actionType == "Custom Text with Weather") eTxt = getWeatherVar(eTxt)
-                    }
-                    if(eName == "coolingSetpoint" || eName == "heatingSetpoint") {
-                        eVal = evt.value.toFloat()
-                        eVal = Math.round(eVal)
-                    }
-                    if(eName == "routineExecuted" && myRoutine && actionType != "Triggered Report") {
-                        def deviceMatch = myRoutine?.find {r -> r == eDisplayN}  
-                        if (deviceMatch){
-                            eTxt = message ? "$message".replace("&device", "${eDisplayN}").replace("&event", "routine").replace("&action", "executed").replace("&date", "${today}").replace("&time", "${stamp}").replace("&profile", "${eProfile}") : null
-                                if(actionType == "Custom Text with Weather") eTxt = getWeatherVar(eTxt)
-                                if (message){
-                                    if(recipients?.size()>0 || sms?.size()>0 || push) {
-                                        sendtxt(eTxt)
-                                    }
-                                    if(tv) tv.deviceNotification(message)
-                                    takeAction(eTxt)
-                                }
-                                else {
-                                    eTxt = "routine was executed"
-                                    takeAction(eTxt) 
-                                }
-                        }
-                    }
-                    else {
-                        if(eName == "mode" && myMode && actionType != "Triggered Report") {
-                            def deviceMatch = myMode?.find {m -> m == eVal}  
-                            if (deviceMatch){
-                                eTxt = message ? "$message".replace("&device", "${eVal}").replace("&event", "${eName}").replace("&action", "changed").replace("&date", "${today}").replace("&time", "${stamp}").replace("&profile", "${eProfile}") : null
-                                if(actionType == "Custom Text with Weather") eTxt = getWeatherVar(eTxt)
-                                if (message){
-                                    if(recipients?.size()>0 || sms?.size()>0 || push) {
-                                        sendtxt(eTxt)
-                                    }
-                                    if(tv) tv.deviceNotification(message)
-                                    takeAction(eTxt)
-                                }
-                                else {
-                                    eTxt = "location mode has changed"
-                                    takeAction(eTxt) 
-                                }
-                            }
-                        }        
-                        else {
-                            if (message || actionType == "Triggered Report"){      
-                                if(message){
-                                eTxt = message ? "$message".replace("&device", "${eDev}").replace("&event", "${eName}").replace("&action", "${eVal}").replace("&date", "${today}").replace("&time", "${stamp}").replace("&profile", "${eProfile}").replace("&last", "${last}") : null
-                                if(actionType == "Custom Text with Weather") eTxt = getWeatherVar(eTxt)
-                                }
-                                if(eTxt){
-                                    if(recipients?.size()>0 || sms?.size()>0 || push) {
-                                        sendtxt(eTxt)
-                                    }
-                                    if(tv) tv.deviceNotification(message)
-                                    takeAction(eTxt)
-                                }
-                            }
-                            else {
-                                if (eDev == "weather"){
-                                    if (eDisplayN == "weather alert"){
-                                        eTxt = eVal
-                                    }
-                                    else eTxt = eDisplayN + " is " + eVal
-                                }
-                                if(eTxt){
-                                    if(recipients?.size()>0 || sms?.size()>0 || push) {
-                                        if(parent.debug) log.info "sending sms"
-                                        sendtxt(eTxt)
-                                    }
-                                    if(tv) tv.deviceNotification(message)
-                                    if(parent.debug) log.info "processing eTxt = $eTxt"
-                                    takeAction(eTxt)
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-	}
 }
-
-def checkEvent(data) {
-    def deviceName = data.deviceName
-    def deviceAttribute = data.attributeName
-    def deviceCapability = data.capabilityName
-	def deviceType = data.type
-    def deviceD
-    def r 
-    log.warn "received runIn data: device = $deviceName, attribute = $deviceAttribute, capability = $deviceCapability, type = $deviceType"
-            switch(deviceType) {
-			case "mySwitch":
-                deviceD = mySwitch.find {d -> d.label == deviceName}
-				r = deviceD?.currentValue(deviceCapability).contains("${deviceAttribute}")
-				break
-			case "myMotion":
-				deviceD = myMotion.find {d -> d.label == deviceName}
-                r = deviceD?.currentValue(deviceCapability).contains("${deviceAttribute}")
-				break
-			case "myContact":
-				deviceD = myContact.find {d -> d.label == deviceName}
-                if(deviceD == null) deviceD = myRelayContactS.find {d -> d.label == deviceName}
-                r = deviceD?.currentValue(deviceCapability).contains("${deviceAttribute}")
-				break
-			case "myValve":
-				deviceD = myValve.find {d -> d.label == deviceName}
-                r = deviceD?.currentValue(deviceCapability).contains("${deviceAttribute}")
-				break
-			case "myGarage":
-				deviceD = myValve.find {d -> d.label == deviceName}
-                r = deviceD?.currentValue(deviceCapability).contains("${deviceAttribute}")
-				break
-			case "myLocks":
-				deviceD = myLocks.find {d -> d.label == deviceName}
-                r = deviceD?.currentValue(deviceCapability).contains("${deviceAttribute}")
-				break
-            }
-    log.warn "r = $r"
-    if (r) {
-		 if(parent) log.debug "pushing notification after delay" 
-        def dataSet = [value: deviceAttribute, name:"delay", device:deviceName] 
-        alertsHandler(dataSet)
-   }
-}
-
 /***********************************************************************************************************************
     TAKE ACTIONS HANDLER
 ***********************************************************************************************************************/
 private takeAction(eTxt) {
-    //Sending Data to 3rd parties
+    //Sending Data to WebCore
     def data = [args: eTxt ]
-	sendLocationEvent(name: "remindR", value: app.label, data: data, displayed: true, isStateChange: true, descriptionText: "RemindR ${app.label} Profile was active")
-	if (parent.debug) log.debug "sendNotificationEvent sent to 3rd party as ${app.label} was active"
+	sendLocationEvent(name: "echoSistantProfile", value: app.label, data: data, displayed: true, isStateChange: true, descriptionText: "EchoSistant activated '${app.label}' profile.")
+	if (parent.debug) log.debug "sendNotificationEvent sent to CoRE was '${app.label}' from the TTS process section"
+
 	state.savedOffset = false
 	def sVolume
     def sTxt
     //int prevDuration
     double prevDuration
     if(state.sound) prevDuration = state.sound.duration as Double
-    if(sonosDelay && prevDuration)	prevDuration = prevDuration + sonosDelay
-    if(myProfile && actionType != "Triggered Report") sendEvent(eTxt)   
-    if (actionType == "Custom Text" || actionType == "Custom Text with Weather" || actionType == "Triggered Report") {
+    if(sonosDelay)	prevDuration = prevDuration + sonosDelay
+    if(myProfile && actionType != "Triggered Report") runProfileActions()   
+    if (actionType == "Custom" || actionType == "Custom with Weather" || actionType == "Triggered Report") {
         if (speechSynth || sonos) sTxt = textToSpeech(eTxt instanceof List ? eTxt[0] : eTxt)
         state.sound = sTxt
     }
@@ -1586,18 +1411,11 @@ private takeAction(eTxt) {
         if (speechSynth) {
             def currVolLevel = speechSynth.latestValue("level")
             def currMute = speechSynth.latestValue("mute")
-      		if(parent.debug) log.debug "vol switch = ${currVolSwitch}, vol level = ${currVolLevel}, currMute = ${currMute} "
-            sVolume = settings.speechVolume ?: 30         
-        	if(!delayFirst) {
+                log.debug "vol switch = ${currVolSwitch}, vol level = ${currVolLevel}, currMute = ${currMute} "
+                sVolume = settings.speechVolume ?: 30 
                 speechSynth?.playTextAndResume(eTxt, sVolume)
                 state.lastPlayed = now()
-                if(parent.debug) log.info "Playing message on the speech synthesizer'${speechSynth}' at volume '${sVolume}'"
-        	}
-            else {
-            	state.speechSound = eTxt
-                state.speechVolume = sVolume
-            	runIn(delayFirst , delayedFirstMessage)
-            }
+                log.info "Playing message on the speech synthesizer'${speechSynth}' at volume '${sVolume}'"
         }
         if (sonos) { 
             def currVolLevel = sonos.latestValue("level") //as Integer
@@ -1611,20 +1429,11 @@ private takeAction(eTxt) {
                 sVolume = (sVolume == 20 && currVolLevel == 0) ? sVolume : sVolume !=20 ? sVolume: currVolLevel
                 def sCommand = resumePlaying == true ? "playTrackAndResume" : "playTrackAndRestore"
                 if (!state.lastPlayed) {
-                	if(!sonosDelayFirst){
-                        if(parent.debug) log.info "playing first message"
-                        sonos?."${sCommand}"(sTxt.uri, Math.max((sTxt.duration as Integer),2), sVolume)
-                        state.lastPlayed = now()
-                        state.sound.command = sCommand
-                        state.sound.volume = sVolume
-                	}
-                    else {
-                    	if(parent.debug) log.info "playing first message with delay $sonosDelayFirst"
-                        state.sound.command = sCommand
-                        state.sound.volume = sVolume
-                        state.lastPlayed = now()
-                        runIn(sonosDelayFirst , sonosFirstDelayedMessage)                
-                	}
+					log.info "playing first message"
+					sonos?."${sCommand}"(sTxt.uri, Math.max((sTxt.duration as Integer),2), sVolume)
+					state.lastPlayed = now()
+					state.sound.command = sCommand
+					state.sound.volume = sVolume
                 }
                 else {
                 	def elapsed = now() - state.lastPlayed
@@ -1640,7 +1449,7 @@ private takeAction(eTxt) {
                         runIn(delayNeeded , delayedMessage)
                 	}
                     else {
-                    	if(parent.debug) log.info "playing message without delay"
+                    	log.info "playing message without delay"
                 		sonos?."${sCommand}"(sTxt.uri, Math.max((sTxt.duration as Integer),2), sVolume)
                         state.lastPlayed = now()
 						state.sound.command = sCommand
@@ -1649,87 +1458,47 @@ private takeAction(eTxt) {
               }
         }      
         if(retrigger){
-        	def endSchedule = state.occurrences + 1 
         	if(state.occurrences == 1) {
-            	if(parent.debug) log.warn "scheduling reminders"
+            	log.warn "scheduling reminders"
         		"${retrigger}"(retriggerHandler)
                 state.message = eTxt
-                parent.childInitialized(eTxt)
         	}
-        	else if (state.occurrences >= endSchedule) { //howManyTimes 5/30/17
+        	else if (state.occurrences >= howManyTimes) {
             	unschedule("retriggerHandler")
                 state.message = null
                 state.occurrences = 0
-                def pMessage = null
-                parent.childInitialized(pMessage)
-                if(parent.debug) log.warn "canceling reminders"
+                log.warn "canceling reminders"
         	}
         }
 }
 
 def delayedMessage() {
-	def sTxt = state.sound
-	sonos?."${sTxt.command}"(sTxt.uri, Math.max((sTxt.duration as Integer),2), sTxt.volume)
-	if(parent.debug) log.info "delayed message is now playing"
-}
-def delayedFirstMessage() {
-	eTxt = state.speechSound
-    sVolume= state.speechVolume 
-	speechSynth?.playTextAndResume(eTxt, sVolume)
-	state.lastPlayed = now()
-	if(parent.debug) log.info "Playing first message delayed"
-}
-def sonosFirstDelayedMessage() {
-	def sTxt = state.sound
-	sonos?."${sTxt.command}"(sTxt.uri, Math.max((sTxt.duration as Integer),2), sTxt.volume)
-	if(parent.debug) log.info "Playing first message delayed"
+def sTxt = state.sound
+sonos?."${sTxt.command}"(sTxt.uri, Math.max((sTxt.duration as Integer),2), sTxt.volume)
+log.info "delayed message is now playing"
 }
 /***********************************************************************************************************************
     RETRIGGER
 ***********************************************************************************************************************/
-def retriggerHandler() {
+def retriggerHandler () {
 	def message = "In case you misssed it " + state.message
     state.occurrences =  state.occurrences + 1
-    def occurrenceTrig = state.occurrences
     if(continueOnChange == true) {
-		if(parent.debug) log.info "processing retrigger with message = $message"
+		log.info "processing retrigger with message = $message"
 		if(recipients?.size()>0 || sms?.size()>0 || push) {
 			sendtxt(message)
-  		}
-        if(tv) tv.deviceNotification(message)
+  		}			
     	takeAction(message)
    	}
     else { 
-        if(occurrenceTrig == 2){
-        	log.info "skipping the randomly generated message by ST scheduler"
-        }
-        else {
-            if (getDayOk()==true && getModeOk()==true && getTimeOk()==true && getFrequencyOk()==true && getConditionOk()==true) {
-                if(parent.debug) log.info "processing retrigger with message = $message"
-                if(recipients?.size()>0 || sms?.size()>0 || push) {
-                    sendtxt(message)
-                }
-                if(tv) tv.deviceNotification(message)
-                takeAction(message)
-            }
-   		}
-    }
-}
-/***********************************************************************************************************************
-    CANCEL RETRIGGER
-***********************************************************************************************************************/
-def retriveMessage(){
-    state.message
-}
-def cancelRetrigger() {
-def result = "successful"
-            	unschedule("retriggerHandler")
-                state.message = null
-                state.occurrences = 0
-                def pMessage = null
-                parent.childInitialized(pMessage)
-                if(parent.debug) log.warn "canceling retrigger as requested by other app"
-	return result
+   		if (getDayOk()==true && getModeOk()==true && getTimeOk()==true && getFrequencyOk()==true && getConditionOk()==true) {
+			log.info "processing retrigger with message = $message"
+            if(recipients?.size()>0 || sms?.size()>0 || push) {
+				sendtxt(message)
+            }			
+            takeAction(message)
+    	}
+   	}
 }
 /***********************************************************************************************************************
     CUSTOM WEATHER VARIABLES
@@ -1767,7 +1536,7 @@ def mGetWeatherTrigger(){
 	def process = false
 	try{  
         	if(getMetric() == false){
-            def cWeather = getWeatherFeature("conditions", parent.wZipCode)
+            def cWeather = getWeatherFeature("conditions", settings.wZipCode)
             def cTempF = cWeather.current_observation.temp_f.toDouble()
             	int tempF = cTempF as Integer
             def cRelativeHum = cWeather.current_observation.relative_humidity 
@@ -1778,11 +1547,11 @@ def mGetWeatherTrigger(){
             def cPrecipIn = cWeather.current_observation.precip_1hr_in.toDouble()
             	double precip = cPrecipIn //as double
                 	precip = 1 + precip //precip
-                if(parent.debug) log.debug "current triggers: precipitation = $precip, humidity = $humid, wind = $wind, temp = $tempF"
+                log.info "current triggers: precipitation = $precip, humidity = $humid, wind = $wind, temp = $tempF"
 			myTrigger = myWeatherTriggers == "Chance of Precipitation (in/mm)" ? precip : myWeatherTriggers == "Wind Gust (MPH/kPH)" ? wind : myWeatherTriggers == "Humidity (%)" ? humid : myWeatherTriggers == "Temperature (F/C)" ? tempF : null
 			}
             else {
-			def cWeather = getWeatherFeature("conditions", parent.wZipCode)   
+			def cWeather = getWeatherFeature("conditions", settings.wZipCode)   
             def cTempC = cWeather.current_observation.temp_c.toDouble()
             	int tempC = cTempC as Integer
             def cRelativeHum = cWeather.current_observation.relative_humidity 
@@ -1798,7 +1567,7 @@ def mGetWeatherTrigger(){
             def myTriggerName = myWeatherTriggers == "Chance of Precipitation (in/mm)" ? "Precipitation" : myWeatherTriggers == "Wind Gust (MPH/kPH)" ? "Wind Gusts" : myWeatherTriggers == "Humidity (%)" ? "Humidity" : myWeatherTriggers == "Temperature (F/C)" ? "Temperature" : null
             if (myWeatherTriggersS == "above" && state.cycleOnA == false){
             	def var = myTrigger > myWeatherThreshold
-            	if(parent.debug) log.debug  " myTrigger = $myTrigger , myWeatherThreshold = $myWeatherThreshold, myWeatherTriggersS = $myWeatherTriggersS, var = $var"
+            	log.warn  " myTrigger = $myTrigger , myWeatherThreshold = $myWeatherThreshold, myWeatherTriggersS = $myWeatherTriggersS, var = $var"
                 if(myTrigger > myWeatherThreshold) {
                 	process = true
                     state.cycleOnA = process
@@ -1807,7 +1576,7 @@ def mGetWeatherTrigger(){
             }
      		if (myWeatherTriggersS == "below" && state.cycleOnB == false){
 				def var = myTrigger <= myWeatherThreshold
-            	if(parent.debug) log.debug  " myTrigger = $myTrigger , myWeatherThreshold = $myWeatherThreshold myWeatherTriggersS = $myWeatherTriggersS, var = $var"
+            	log.warn  " myTrigger = $myTrigger , myWeatherThreshold = $myWeatherThreshold myWeatherTriggersS = $myWeatherTriggersS, var = $var"
         		if(myTrigger <= myWeatherThreshold) {
                 	process = true
 					state.cycleOnA = false
@@ -1816,7 +1585,7 @@ def mGetWeatherTrigger(){
             }
        		if(process == true){
 				//data = [value:"${myTrigger}", name:"${myWeatherTriggers}", device:"${myWeatherTriggers}"] 4/5/17 Bobby
-				data = [value:"${myTrigger}", name:"weather", device:"${myTriggerName}"] 
+				data = [value:"${myTrigger}", name:"${myTriggerName}", device:"weather"] 
 				alertsHandler(data)
             }
 		//}
@@ -1843,7 +1612,7 @@ def mGetWeatherAlerts(){
     def data = [:]
     try {
        	//if (getDayOk()==true && getModeOk()==true && getTimeOk()==true && getFrequencyOk()==true || getConditionOk()==true) { -- bobby 4/18/2017
-        	def weather = getWeatherFeature("alerts", parent.wZipCode)
+        	def weather = getWeatherFeature("alerts", settings.wZipCode)
         	def type = weather.alerts.type[0]
             def alert = weather.alerts.description[0]
             def expire = weather.alerts.expires[0]
@@ -1859,7 +1628,7 @@ def mGetWeatherAlerts(){
                         alertsHandler(data)
                         } 
                     else {
-                        if(parent.debug) log.debug "new weather alert = ${alert} , expire = ${expire}"
+                        log.warn "new weather alert = ${alert} , expire = ${expire}"
                         def newAlert = result != state.weatherAlert ? true : false
                         if(newAlert == true){
                             state.weatherAlert = result
@@ -1891,7 +1660,7 @@ def mGetCurrentWeather(){
     try {
 		//if (getDayOk()==true && getModeOk()==true && getTimeOk()==true && getFrequencyOk()==true) { 4/18/2017 Bobby
         //hourly updates
-            def cWeather = getWeatherFeature("hourly", parent.wZipCode)
+            def cWeather = getWeatherFeature("hourly", settings.wZipCode)
             def cWeatherCondition = cWeather.hourly_forecast[0].condition
             def cWeatherPrecipitation = cWeather.hourly_forecast[0].pop + " percent"
             def cWeatherWind = cWeather.hourly_forecast[0].wspd.english + " miles per hour"
@@ -1987,26 +1756,26 @@ def private mGetWeatherElements(element){
     def result ="Current weather is not available at the moment, please try again later"
    	try {
         //hourly updates
-        def cWeather = getWeatherFeature("hourly", parent.wZipCode)
+        def cWeather = getWeatherFeature("hourly", settings.wZipCode)
         def cWeatherCondition = cWeather.hourly_forecast[0].condition
         def cWeatherPrecipitation = cWeather.hourly_forecast[0].pop + " percent"
         def cWeatherWind = cWeather.hourly_forecast[0].wspd.english + " miles per hour"
         def cWeatherHum = cWeather.hourly_forecast[0].humidity + " percent"
         def cWeatherUpdate = cWeather.hourly_forecast[0].FCTTIME.civil //forecast last updated time E.G "11:00 AM",
         //current conditions
-        def condWeather = getWeatherFeature("conditions", parent.wZipCode)
+        def condWeather = getWeatherFeature("conditions", settings.wZipCode)
         def condTodayUV = condWeather.current_observation.UV
   		def currentT = condWeather.current_observation.temp_f
         	int currentNow = currentT
         //forecast
-        def forecastT = getWeatherFeature("forecast", parent.wZipCode)
+        def forecastT = getWeatherFeature("forecast", settings.wZipCode)
 		def fToday = forecastT.forecast.simpleforecast.forecastday[0]
         def high = fToday.high.fahrenheit.toInteger()
        		int highNow = high
         def low = fToday.low.fahrenheit.toInteger()
         	int lowNow = low
         //sunset, sunrise, moon, tide
-        def s = getWeatherFeature("astronomy", parent.wZipCode)
+        def s = getWeatherFeature("astronomy", settings.wZipCode)
 		def sunriseHour = s.moon_phase.sunrise.hour
         def sunriseTime = s.moon_phase.sunrise.minute
         def sunrise = sunriseHour + ":" + sunriseTime
@@ -2027,7 +1796,7 @@ def private mGetWeatherElements(element){
                 def lowC = fToday.low.celsius
                     lowNow = currentTc            
             }               
-        if(parent.debug) log.debug "cWeatherUpdate = ${cWeatherUpdate}, cWeatherCondition = ${cWeatherCondition}, " +
+        if(debug) log.debug "cWeatherUpdate = ${cWeatherUpdate}, cWeatherCondition = ${cWeatherCondition}, " +
         					"cWeatherPrecipitation = ${cWeatherPrecipitation}, cWeatherWind = ${cWeatherWind},  cWeatherHum = ${cWeatherHum}, cWeatherHum = ${condTodayUV}  "    
 
         	if		(element == "precip" ) {result = cWeatherPrecipitation}
@@ -2056,7 +1825,7 @@ def private mGetWeatherVar(var){
 	state.pTryAgain = false
     def result
 	try {
-		def weather = getWeatherFeature("forecast", parent.wZipCode)
+		def weather = getWeatherFeature("forecast", settings.wZipCode)
         def sTodayWeather = weather.forecast.simpleforecast.forecastday[0]
         if(var =="high") result = sTodayWeather.high.fahrenheit//.toInteger()
         if(var == "low") result = sTodayWeather.low.fahrenheit//.toInteger()
@@ -2096,7 +1865,6 @@ def private mGetWeatherVar(var){
     CRON HANDLER
 ***********************************************************************************************************************/
 def cronHandler(var) {
-	if(parent.debug) log.debug " con var is $var"
 	def result
 		if(var == "Minutes") {
         //	0 0/3 * 1/1 * ? *
@@ -2162,38 +1930,6 @@ def cronHandler(var) {
 //    schedule(result, "scheduledTimeHandler")
 }
 /***********************************************************************************************************************
-    ONE TIME SCHEDULING HANDLER
-***********************************************************************************************************************/
-def oneTimeHandler(var) {
-	def result
-    def todayYear = new Date(now()).format("yyyy")
-    def todayMonth = new Date(now()).format("MM")
-    def todayDay = new Date(now()).format("dd")
-    def yyyy = xFutureYear ?: todayYear
-    def MM = xFutureMonth ?: todayMonth
-    def dd = xFutureDay ?: todayDay
-    
-    if(!xFutureDay) {
-     	runOnce(xFutureTime, scheduledTimeHandler)
-        //if(pretrigger) runOnce(xFutureTime-15, scheduledpretrigger)
-		//options:["15":"15 minutes","30":"30 minutes","60":"One hour", "540":"One day"]
-    }
-    else{
-    	def timeSchedule = hhmmssZ(xFutureTime)
-        result = "${yyyy}-${MM}-${dd}T${timeSchedule}" 
-        //result = "${xFutureYear}-${MM}-${dd}T${timeSchedule}" 
-       	Date date = Date.parse("yyyy-MM-dd'T'HH:mm:ss.SSSZ", result)
-        runOnce(date, scheduledTimeHandler)
-        //if(pretrigger) runOnce(xFutureTime-30, scheduledpretrigger)
-	}
-}
-private hhmmssZ(time, fmt = "HH:mm:ss.SSSZ") {
-	def t = timeToday(time, location.timeZone)
-	def f = new java.text.SimpleDateFormat(fmt)
-	f.setTimeZone(location.timeZone ?: timeZone(time))
-	f.format(t)
-}
-/***********************************************************************************************************************
     SUN STATE HANDLER
 ***********************************************************************************************************************/
 def sunsetTimeHandler(evt) {
@@ -2220,8 +1956,10 @@ def sunriseTimeHandler(evt) {
 
 def scheduledTimeHandler(state) {
 	def data = [:]
-			data = [value: "executed", name:"timer", device:"schedule"] 
+		//if (getDayOk()==true && getModeOk()==true && getTimeOk()==true && getFrequencyOk()==true) {	-- Bobby 4/18/2017
+			data = [value: state, name:"sunstate", device:"schedule"] 
             alertsHandler(data)
+    	//}
 }
 /***********************************************************************************************************************
     RESTRICTIONS HANDLER
@@ -2233,8 +1971,6 @@ def getConditionOk() {
 		unschedule("retriggerHandler")
         state.message = null
         state.occurrences = 0
-        def pMessage = null
-        parent.childInitialized(pMessage)
         log.warn "canceling reminders"
     }
 	if(rSwitchS || rMotionS || rContactS || rPresenceS){
@@ -2425,11 +2161,30 @@ private void sendText(number, message) {
         }
     }
 }
+def runProfileActions() {
+              	def String pintentName = (String) null
+                def String pContCmdsR = (String) null
+                def String ptts = (String) null
+        		def pContCmds = false
+        		def pTryAgain = false
+        		def dataSet = [:]
+           		parent.childApps.each {child ->
+                        def ch = child.label
+                		if (ch == settings.myProfile) { 
+                    		if (debug) log.debug "Matched the profile"
+                            pintentName = child.label
+                    		ptts = "Running Profile actions from the Notification Add-on"
+                            dataSet = [ptts:ptts, pintentName:pintentName]
+                            child.profileEvaluate(dataSet)
+						}
+            	}
+                
+}
 /***********************************************************************************************************************
     CUSTOM SOUNDS HANDLER
 ***********************************************************************************************************************/
 private loadSound() {
-	switch (custSound) {
+	switch (actionType) {
 		case "Bell 1":
 			state.sound = [uri: "http://s3.amazonaws.com/smartapp-media/sonos/bell1.mp3", duration: "10"]
 			break;
@@ -2466,24 +2221,7 @@ private loadSound() {
 		case "Lightsaber":
 			state.sound = [uri: "http://s3.amazonaws.com/smartapp-media/sonos/lightsaber.mp3", duration: "10"]
 			break;
-		case "Alexa: Beep Beep":
-			state.sound = [uri: "https://images-na.ssl-images-amazon.com/images/G/01/mobile-apps/dex/ask-customskills/audio/speechcons/beep_beep._TTH_.mp3", duration: "10"]
-			break;
-		case "Alexa: Bada Bing Bada Boom":
-			state.sound = [uri: "https://images-na.ssl-images-amazon.com/images/G/01/mobile-apps/dex/ask-customskills/audio/speechcons/bada_bing_bada_boom._TTH_.mp3", duration: "10"]
-			break;
-		case "Alexa: Boing":
-			state.sound = [uri: "https://images-na.ssl-images-amazon.com/images/G/01/mobile-apps/dex/ask-customskills/audio/speechcons/boing._TTH_.mp3", duration: "10"]
-			break;        
-		case "Alexa: Open Sesame":
-			state.sound = [uri: "https://images-na.ssl-images-amazon.com/images/G/01/mobile-apps/dex/ask-customskills/audio/speechcons/open_sesame._TTH_.mp3", duration: "10"]
-			break;         
-        case "Custom Sound":
-        	if(!cDuration) def fDuration = cDuration ?: "10"
-            log.info "Duration = f $fDuration, c $cDuration "
-			state.sound = [uri: "${cSound}", duration: "${fDuration}"]
-			break;        
-        default:
+		default:
 			state?.sound = [uri: "http://s3.amazonaws.com/smartapp-media/sonos/bell1.mp3", duration: "10"]
 			break;
 	}
@@ -2507,7 +2245,7 @@ def pSendComplete() {def text = "Tap here to configure settings"
     	else text = "Tap to Configure"
 		text}
 def triggersSettings() {def result = ""
-    if (myWeatherTriggers || myWeather || myTemperature || myShades || myGarage || myCO2 || myCO ||  myAcceleration || myHumidity || myWindow || myDoor || myValve || mySound || myWeatherAlert || myWater || mySmoke || myPresence || myMotion || myContact || mySwitch || myPower || myLocks || myTstat || myMode || myRoutine || frequency || xFutureTime ) {
+    if (myWeatherTriggers || myWeather || myTemperature || myCO2 || myCO ||  myAcceleration || myHumidity || mySound || myWeatherAlert || myWater || mySmoke || myPresence || myMotion || myContact || mySwitch || myPower || myLocks || myTstat || myMode || myRoutine || frequency) {
     	result = "complete"}
    		result}
 def triggersComplete() {def text = "Tap here to configure settings" 
@@ -2535,72 +2273,4 @@ def pTimeComplete() {def text = "Tap here to configure settings"
     	text = "Configured"}
     	else text = "Tap to Configure"
 		text}
-
-/******************************************************************************************************
-
-
-			ONLY ADD-ON FUNCTIONS 
-
-
-******************************************************************************************************/
-/******************************************************************************************************
-   Run Profile Actions
-******************************************************************************************************/
-def runProfileActions() {
-              	def String pintentName = (String) null
-                def String pContCmdsR = (String) null
-                def String ptts = (String) null
-        		def pContCmds = false
-        		def pTryAgain = false
-        		def dataSet = [:]
-           		parent.childApps.each {child ->
-                        def ch = child.label
-                		if (ch == settings.myProfile) { 
-                    		if (debug) log.debug "Matched the profile"
-                            pintentName = child.label
-                    		ptts = "Running Profile actions from the Notification Add-on"
-                            dataSet = [ptts:ptts, pintentName:pintentName]
-                            child.profileEvaluate(dataSet)
-						}
-            	}
-                
-}
-/******************************************************************************************************
-
-
-			ONLY REMINDr FUNCTIONS 
-
-
-******************************************************************************************************/
-/***********************************************************************************************************************
-    RUNNING Ad-Hoc Reports
-***********************************************************************************************************************/
-def getAdHocReports() {
-log.warn "looking for as-hoc reports"
-	def childList = []
-           		parent.childApps.each {child ->
-                        def ch = child.label
-                        log.warn "child $ch has actionType = $actionType"
-                		if (child.actionType == "Ad-Hoc Report") { 
-        					String children  = (String) ch
-            				childList += children
-						}
-            	}
-	log.warn "finished looking and found: $childList"
-    return childList
-}
-/******************************************************************************************************
-   PARENT STATUS CHECKS
-******************************************************************************************************/
-def checkRelease() {
-	return state.NotificationRelease
-}
-/******************************************************************************************************
-   SEND TO ECHOSISTANT MAILBOX
-******************************************************************************************************/
-def sendEvent(message) {
-    def profile = myProfile
-    def data = [:]
-	data = [profile:profile, message:message]
-	sendLocationEvent(name: "EchoMailbox", value: "execute", data: data, displayed: true, isStateChange: true, descriptionText: "RemindR is asking to execute '${myProfile}' Profile")
-}
+        
