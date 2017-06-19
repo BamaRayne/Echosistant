@@ -7,7 +7,7 @@
  								DON'T FORGET TO UPDATE RELEASE NUMBER!!!!!
  
  ************************************ FOR INTERNAL USE ONLY ******************************************************
- *
+ *		6/19/2017		
  *		4/05/2017		Version:4.0 R.0.3.3d	Minor UI changes & added "cut on/cut off" commands
  *		4/03/2017		Version:4.0 R.0.3.3c 	Bug Fixes and various other things
  *		3/29/2017		Version:4.0 R.0.3.3b	change to virtual person commands
@@ -46,7 +46,7 @@ private def textVersion() {
 	def text = "4.0"
 }
 private release() {
-    def text = "R.0.3.3d"
+    def text = "R.0.3.4"
 }
 /**********************************************************************************************************************************************/
 preferences {   
@@ -701,6 +701,7 @@ def updated() {
     initialize()
 }
 def initialize() {
+        webCoRE_init()
         //WEATHER UPDATES
         runEvery1Hour(mGetWeatherUpdates)
         state.lastWeatherCheck
@@ -789,6 +790,15 @@ def remindrHandler(evt) {
 			break
 	}
 }
+
+//NEW webCoRE Integration
+private webCoRE_handle(){return'webCoRE'}
+private webCoRE_init(pistonExecutedCbk){state.webCoRE=(state.webCoRE instanceof Map?state.webCoRE:[:])+(pistonExecutedCbk?[cbk:pistonExecutedCbk]:[:]);subscribe(location,"${webCoRE_handle()}.pistonList",webCoRE_handler);if(pistonExecutedCbk)subscribe(location,"${webCoRE_handle()}.pistonExecuted",webCoRE_handler);webCoRE_poll();}
+private webCoRE_poll(){sendLocationEvent([name: webCoRE_handle(),value:'poll',isStateChange:true,displayed:false])}
+public  webCoRE_execute(pistonIdOrName,Map data=[:]){def i=(state.webCoRE?.pistons?:[]).find{(it.name==pistonIdOrName)||(it.id==pistonIdOrName)}?.id;if(i){sendLocationEvent([name:i,value:app.label,isStateChange:true,displayed:false,data:data])}}
+public  webCoRE_list(mode){def p=state.webCoRE?.pistons;if(p)p.collect{mode=='id'?it.id:(mode=='name'?it.name:[id:it.id,name:it.name])}}
+public  webCoRE_handler(evt){switch(evt.value){case 'pistonList':List p=state.webCoRE?.pistons?:[];Map d=evt.jsonData?:[:];if(d.id&&d.pistons&&(d.pistons instanceof List)){p.removeAll{it.iid==d.id};p+=d.pistons.collect{[iid:d.id]+it}.sort{it.name};state.webCoRE = [updated:now(),pistons:p];};break;case 'pistonExecuted':def cbk=state.webCoRE?.cbk;if(cbk&&evt.jsonData)"$cbk"(evt.jsonData);break;}}
+
 /************************************************************************************************************
 		Begining Process - Lambda via page b
 ************************************************************************************************************/
