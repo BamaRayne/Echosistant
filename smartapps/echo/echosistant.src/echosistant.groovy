@@ -7,7 +7,9 @@
  								DON'T FORGET TO UPDATE RELEASE NUMBER!!!!!
  
  ************************************ FOR INTERNAL USE ONLY ******************************************************
- *		6/19/2017		
+ *		6/21/2017		Version:4.0 R.0.3.5c	Optimized commands for motion and added "Check for motion" commands	
+ *		5/16/2017		Version:4.0 R.0.3.5b	Added "Check" command for lights, windows, doors, locks, & batteries. As well has "House Status"
+ *		5/08/2017		Version:4.0 R.0.3.5		Toggle to disable presence devices (cell phones) from low battery query
  *		4/05/2017		Version:4.0 R.0.3.3d	Minor UI changes & added "cut on/cut off" commands
  *		4/03/2017		Version:4.0 R.0.3.3c 	Bug Fixes and various other things
  *		3/29/2017		Version:4.0 R.0.3.3b	change to virtual person commands
@@ -168,6 +170,8 @@ page name: "mIntent"
                     }
                     section ("Activity Defaults") {            
                         input "cLowBattery", "number", title: "Alexa Provides Low Battery Feedback when the Bettery Level falls below... (default is 25%)", defaultValue: 25, required: false
+                        paragraph "If your presence sensor devices are cell phones, activate this toggle. This prevents them from being erroneously detected for low battery queries"
+                        input "phones", "bool", title: "Activate if presence sensors are cell phones", defaultValue: false, required: false, submitOnChange: true
                         input "cInactiveDev", "number", title: "Alexa Provides Inactive Device Feedback when No Activity was detected for... (default is 24 hours) ", defaultValue: 24, required: false
                     }
 					section ("Alexa Voice Settings") {            
@@ -1020,6 +1024,12 @@ def feedbackHandler() {
                             deviceMatch = cDoor1?.find {d -> d.label.toLowerCase() == fDevice?.toLowerCase()}
                              if(deviceMatch) outputTxt =  deviceMatch.latestValue("contact").contains(fOperand) ? "yes, the ${deviceMatch} is ${fOperand}" : "no, the ${deviceMatch} is not ${fOperand}"
                         }
+                        if (cDoor != null) {
+                        if (deviceMatch == null && fDoor) {// changed by Jason 2/24/2017
+                            deviceMatch = cDoor.find {d -> d.label?.toLowerCase() == fDevice.toLowerCase()}
+                             if(deviceMatch) outputTxt =  deviceMatch.latestValue("contact").contains(fOperand) ? "yes, the ${deviceMatch} is ${fOperand}" : "no, the ${deviceMatch} is not ${fOperand}"
+                        	}
+                        }
                         if (deviceMatch == null && cContact) {// changed by Jason 2/24/2017
                             deviceMatch = cContact?.find {d -> d.label.toLowerCase() == fDevice?.toLowerCase()}
                             if(deviceMatch) outputTxt =  deviceMatch.latestValue("contact").contains(fOperand) ? "yes, the ${deviceMatch} is ${fOperand}" : "no, the ${deviceMatch} is not ${fOperand}"
@@ -1036,12 +1046,14 @@ def feedbackHandler() {
                             deviceMatch = cSwitch?.find {d -> d.label.toLowerCase() == fDevice?.toLowerCase()} 
                             if(deviceMatch) outputTxt = deviceMatch.latestValue("switch").contains(fOperand) ? "yes, the ${deviceMatch} is ${fOperand}" : "no, the ${deviceMatch} is not ${fOperand}"
                         }
+                        if (cMotion != null) {
                         if (deviceMatch == null && cMotion) {// changed by Jason 2/24/2017
-                            deviceMatch = cMotion?.find {d -> d.label.toLowerCase() == fDevice?.toLowerCase()}
+                            deviceMatch = cMotion.find {d -> d.label?.toLowerCase() == fDevice.toLowerCase()}
                             if(deviceMatch) {
                                 currState = deviceMatch.currentValue("motion")
-                                currState = currState == "active" ? "yes, the ${deviceMatch} is ${fOperand}" : "no, the ${deviceMatch} is not ${fOperand}"
+                                currState = currState == "active" ? "yes, there is motion in the ${deviceMatch}" : "no, there is no motion in the ${deviceMatch}"
                                 outputTxt =  currState
+                            	}
                             }
                         }
 						if (deviceMatch == null && cPresence) {  // changed by Jason 2/24/2017
@@ -1296,14 +1308,6 @@ def feedbackHandler() {
 						}
             	}
                 return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]	
-            }
-//>>> Security >>>>
-            //TO DO: restrict security based on command
-            if (fOperand == "smart home monitor" || fOperand == "alarm system" ){
-                    def sSHM = location.currentState("alarmSystemStatus")?.value       
-                    sSHM = sSHM == "off" ? "disabled" : sSHM == "away" ? "Armed Away" : sSHM == "stay" ? "Armed Home" : "unknown"
-                    outputTxt = "Your Smart Home Monitor Status is " +  sSHM
-                    return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]				
             }
 //>>> Lights >>>>            
             if(fOperand.contains("lights") || fOperand.contains("anything") || fOperand.contains("on") || fOperand.contains("off") || fCommand.contains("on")) { 
@@ -1617,54 +1621,25 @@ def feedbackHandler() {
                 outputTxt = pMute + " and the conversational module is " + pCmds + ". The pin number is active for: " +  activePin + " and inactive for: " + inactivePin
                 return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
             }
-//>>> Presence >>>>                                    
-            if (fQuery == "who" ) {
-                if(cPresence){
-                        def devListP = []
-                        def devListNP = []
-                        if (cPresence?.latestValue("presence").contains("present")) {
-                            cPresence?.each { deviceName ->
-                                        if (deviceName.latestValue("presence")=="present") {
-                                            String device  = (String) deviceName
-                                            devListP += device
-                                        }
-                            }
-                        }
-                        if (cPresence?.latestValue("presence").contains("not present")) {
-                            cPresence?.each { deviceName ->
-                                        if (deviceName.latestValue("presence")=="not present") {
-                                            String device  = (String) deviceName
-                                            devListNP += device
-                                        }
-                            }
-                        }
-                    if (fOperand == "here" || fOperand == "at home" || fOperand == "present" || fOperand == "home" ) {
-                            if (devListP?.size() > 0) {
-                                if (devListP?.size() == 1) {
-                                    outputTxt = "Only" + devListP + "is at home"                         			
-                                }
-                                else {
-                                    outputTxt = "The following " + devListP?.size() + " people are at home: " + devListP
-                                }
 
-                            }
-                            else outputTxt = "No one is home"
-                            return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
-                    }
-                    else if (fOperand.contains("not")) {
-                        if (devListNP?.size() > 0) {
-                            if (devListNP?.size() == 1) {
-                                    outputTxt = "Only" + devListNP + "is not home"                         			
-                            }
-                            else {
-                                    outputTxt = "The following " + devListNP?.size() + " people are not at home: " + devListNP
-                            }
-                        }
-                        else outputTxt = "Everyone is at home"
-                        return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
-                    }
-                }
+//>>> Security >>>>
+            //TO DO: restrict security based on command
+            if (fOperand == "smart home monitor" || fOperand == "alarm system" || fOperand == "alarm"){
+                    def sSHM = location.currentState("alarmSystemStatus")?.value       
+                    sSHM = sSHM == "off" ? "disarmed" : sSHM == "away" ? "Armed Away" : sSHM == "stay" ? "Armed Home" : "unknown"
+                    outputTxt = "Your Smart Home Monitor Status is " +  sSHM
+                    return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]				
             }
+//>>> Presence Feedback >>>>                                    
+            if (fQuery == "who" || fOperand == "here" || fOperand == "at home" || fOperand == "present" || fOperand == "home") {
+                outputTxt = presenceFeedback()
+                }
+
+//>>> Check Devices Feedback>>>>
+			if (fQuery == "check" || fQuery == "check on" || fCommand == "check" || fCommand == "check on") { 
+            	outputTxt = checkDevicesFeedback()
+                }
+		
 //>>> Events >>>>                                    
             if (fQuery.contains ("when")) {
             	fCommand = fCommand == "changed" ? "change" : fCommand
@@ -1698,6 +1673,312 @@ def feedbackHandler() {
         return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
 	}
 }	*/
+/************************************************************************************************************
+  CHECK ON DEVICES FEEDBACK HANDLER
+************************************************************************************************************/
+def checkDevicesFeedback() {    //LAMBDA
+    def fDevice = params.fDevice
+   	def fQuery = params.fQuery
+    def fOperand = params.fOperand 
+    def fCommand = params.fCommand 
+  	def String outputTxt = (String) null
+	fDevice = fDevice.replaceAll("[^a-zA-Z0-9 ]", "") 
+/// check the doors
+			if(fOperand.contains("door") && cDoor1 == null) {
+                	outputTxt = "There are no doors selected for this query"
+                    return outputTxt
+                    }
+                if(fOperand.contains("door") && cDoor1 != null) {  
+                    def devListDoor = []
+                    if (cDoor1.latestValue("contact").contains("open")) {
+                        cDoor1.each { deviceName ->
+                                    if (deviceName.latestValue("contact")=="open") {
+                                        String device  = (String) deviceName
+                                        devListDoor += device
+                                    }
+                        		}
+							}
+                    log.info "devListDoor = ${devListDoor}"                            
+                        if (devListDoor.size() > 0) {
+                            if (devListDoor.size() == 1) {
+                                outputTxt = "There is one door open "                           			
+                            	}
+                            else {
+                                outputTxt = "There are " + devListDoor.size() + " doors open. "
+                            	return outputTxt
+                                }
+                        }
+                        else {outputTxt = "There are no doors open"}
+                        return outputTxt
+                        }
+/// check the windows
+				if(fOperand.contains("window") && cWindow == null) {
+                	outputTxt = "There are no windows selected for this query"
+                    return outputTxt
+                    }
+                if(fOperand.contains("window") && cWindow != null) {  
+                    def devListWindow = []
+                    if (cWindow.latestValue("contact").contains("open")) {
+                        cWindow.each { deviceName ->
+                                    if (deviceName.latestValue("contact")=="open") {
+                                        String device  = (String) deviceName
+                                        devListWindow += device
+                                    }
+                        		}
+							}
+                        if (devListWindow.size() > 0) {
+                            if (devListWindow.size() == 1) {
+                                outputTxt = "There is one window open. "                           			
+                            	}
+                            else {
+                                outputTxt = "There are " + devListWindow.size() + " windows open. "
+                            	return outputTxt
+                                }
+                        }
+                        else {outputTxt = "There are no windows open,"}
+                        return outputTxt
+                        }
+/// check for humidity
+				if(fOperand.contains("humidity") && cHumidity == null) {
+                	outputTxt = "There are no humidity sensors selected for this query"
+                    return outputTxt
+                    }
+                if(fOperand.contains("humidity") && cHumidity != null) {
+                	def devListHumidity = []
+              //      if (cHumidity.latestValue("humidity").contains("active")) {
+                    	cHumidity.each { deviceName ->
+                        			if (deviceName.latestValue("humidity")) {
+                                    	String device = (String) deviceName
+                                        devListHumidity += device
+                                        }
+                                    outputTxt = "The humidity in the " + fDevice + " is "      
+                                    }//}
+                        //        else {
+                        //        outputTxt = "There are no humidity sensors selected for this query   
+                        //        }
+                                
+                        return outputTxt
+                        }
+/// check for motion
+				if(fOperand.contains("motion") && cMotion == null) {
+                	outputTxt = "There are no motion sensors selected for this query"
+                    return outputTxt
+                    }
+                if(fOperand.contains("motion") && cMotion != null) {
+                	def devListMotion = []
+                    if (cMotion.latestValue("motion").contains("active")) {
+                    	cMotion.each { deviceName ->
+                        			if (deviceName.latestValue("motion")=="active") {
+                                    	String device = (String) deviceName
+                                        devListMotion += device
+                                        }
+                                    outputTxt = "There is motion in the " + fDevice     
+                                    }}
+                                else {
+                                outputTxt = "There is no motion in the " + fDevice    
+                                }
+                                
+                        return outputTxt
+                        }
+                                
+/// check the lights
+				if(fOperand.contains("light") && cSwitch == null) {
+                	outputTxt = "There are no lights selected for this query"
+                    return outputTxt
+                    }
+                if(fOperand.contains("light") && cDoor1 != null) {  
+                    def devListLight = []
+                    if (cSwitch.latestValue("switch").contains("on")) {
+                        cSwitch.each { deviceName ->
+                                    if (deviceName.latestValue("switch")=="on") {
+                                        String device  = (String) deviceName
+                                        devListLight += device
+                                    }
+                        		}
+							}
+                        if (devListLight.size() > 0) {
+                            if (devListLight.size() == 1) {
+                                outputTxt = "There is one light on. "                           			
+                            	}
+                            else {
+                                outputTxt = "There are " + devListLight.size() + " lights on. "
+                            	return outputTxt
+                                }
+                        }
+                        else {outputTxt = "There are no lights on"}
+                        return outputTxt
+                        }
+/// check the locks
+				if(fOperand.contains("locks") && cLock == null) {
+                	outputTxt = "There are no locks selected for this query"
+                    return outputTxt
+                    }
+                if(fOperand.contains("locks") && cLock != null) {  
+                    def devListLock = []
+                    if (cLock.latestValue("lock").contains("unlocked")) {
+                        cLock.each { deviceName ->
+                                    if (deviceName.latestValue("lock")=="unlocked") {
+                                        String device  = (String) deviceName
+                                        devListLock += device
+                                    }
+                        		}
+							}
+                        if (devListLock.size() > 0) {
+                            if (devListLock.size() == 1) {
+                                outputTxt = "There is one lock open "                           			
+                            	}
+                            else {
+                                outputTxt = "There are " + devListLock.size() + " locks open. "
+                            	return outputTxt
+                                }
+                        }
+                        else {outputTxt = "There are no locks open"}
+                        return outputTxt
+                        }
+/// check the batteries
+            if(fOperand == "batteries" || fOperand == "battery levels" || fOperand == "battery" ) {
+            	log.info "Check the battery levels"
+                def cap = "bat"
+                def devList = getCapabilities(cap)
+					if(devList instanceof String){
+                	outputTxt = devList
+                    log.info "devListBatteries is ${devList}"
+                	log.error " devList = ${devList}"
+					return outputTxt
+                    }
+                	else {
+                            if (devList.listSize > 0) {
+                                if (devList.listSize == 1) {
+                                    outputTxt = "There is one device with low battery level , "                           			
+                                }
+                                else {
+                                    outputTxt = "There are " + devList.listSize + " devices with low battery levels , "
+                                }
+                            }
+                            else {outputTxt = "There are no devices with low battery levels"}
+                            return outputTxt
+                            }
+			            }
+/// check the house                        
+			if (fOperand == "home" || fOperand == "house" || fOperand == "my home" || fOperand == "my house") {
+            	log.info "this is the house status"
+            		def devListDoor = []
+                    if (cDoor1 != null) {
+                    if (cDoor1.latestValue("contact").contains("open")) {
+                        cDoor1.each { deviceName ->
+                                    if (deviceName.latestValue("contact")=="open") {
+                                        String device  = (String) deviceName
+                                        devListDoor += device
+                                    	}
+                                    }                
+                    			}
+                    		}
+                    def devListWindow = []
+                    if (cWindow != null) {
+                    if (cWindow.latestValue("contact").contains("open")) {
+                        cWindow.each { deviceName ->
+                                    if (deviceName.latestValue("contact")=="open") {
+                                        String device  = (String) deviceName
+                                        devListWindow += device
+                                    	}
+                        			}
+                    			}
+                    		}
+                    def devListLight = []
+                    if (cSwitch != null) {
+                    if (cSwitch.latestValue("switch").contains("on")) {
+                        cSwitch.each { deviceName ->
+                                    if (deviceName.latestValue("switch")=="on") {
+                                        String device  = (String) deviceName
+                                        devListLight += device
+                                    	}
+                                    }
+                        		}
+                    		}
+                    def devListLock = []
+                    if (cLock != null) {
+                    if (cLock.latestValue("lock").contains("unlocked")) {
+                        cLock.each { deviceName ->
+                                    if (deviceName.latestValue("lock")=="unlocked") {
+                                        String device  = (String) deviceName
+                                        devListLock += device
+                                    	}
+                                    }
+                        		}
+                            }    
+                if (devListDoor.size() > 0 || devListWindow.size() > 0 || devListLock.size() > 0 || devListLight.size > 0) {
+                	outputTxt = "Your homes status is, " + devListDoor.size() + " doors open, " + devListWindow.size() + " windows open, " + devListLight.size + " lights on, " + devListLock.size + " locks unlocked, "
+                    return outputTxt + " and your Smart Home Monitor Status is: ${location.currentState("alarmSystemStatus")?.value}"
+					}
+               else {
+                outputTxt = "The house status is all secure, " +
+                    " and your Smart Home Monitor Status is: ${location.currentState("alarmSystemStatus")?.value}"
+                    return outputTxt
+                    }
+                }    
+            }
+/************************************************************************************************************
+  PRESENCE FEEDBACK HANDLER
+************************************************************************************************************/
+def presenceFeedback() {
+    //LAMBDA
+    def fDevice = params.fDevice
+   	def fQuery = params.fQuery
+    def fOperand = params.fOperand 
+    def fCommand = params.fCommand 
+  	def String outputTxt = (String) null
+	fDevice = fDevice.replaceAll("[^a-zA-Z0-9 ]", "") 
+	state.pTryAgain = false
+    		if(cPresence == null) {
+            	outputTxt = "I'm sorry, it seems that you have not selected any presence sensors for this query. Please check the configuration of your EchoSistant App"
+				return outputTxt}
+                if(cPresence){
+                        def devListP = []
+                        def devListNP = []
+                        if (cPresence.latestValue("presence").contains("present")) {
+                            cPresence.each { deviceName ->
+                                        if (deviceName.latestValue("presence")=="present") {
+                                            String device  = (String) deviceName
+                                            devListP += device
+                                        }
+                            }
+                        }
+                        if (cPresence.latestValue("presence").contains("not present")) {
+                            cPresence.each { deviceName ->
+                                        if (deviceName.latestValue("presence")=="not present") {
+                                            String device  = (String) deviceName
+                                            devListNP += device
+                                        }
+                            }
+                        }
+                    if (fOperand == "here" || fOperand == "at home" || fOperand == "present" || fOperand == "home" ) {
+                            if (devListP.size() > 0) {
+                                if (devListP.size() == 1) {
+                                    outputTxt = "Only" + devListP + "is at home"                         			
+                                return outputTxt
+                                }
+                                else {
+                                    outputTxt = "The following " + devListP?.size() + " people are at home: " + devListP
+                                return outputTxt
+                                }
+							}
+                            else outputTxt = "No one is home"
+                            return outputTxt
+                            }
+                    else if (fOperand.contains("not")) {
+                        if (devListNP.size() > 0) {
+                            if (devListNP.size() == 1) {
+                                    outputTxt = "Only" + devListNP + "is not home"                         			
+                            }
+                            else {
+                                   outputTxt = "The following " + devListNP.size() + " people are not at home: " + devListNP
+                            return outputTxt
+                            }
+                        }
+                        else outputTxt = "Everyone is at home"
+                        return outputTxt                    }
+                }
+            }
 /************************************************************************************************************
    DEVICE CONTROL - from Lambda via page c
 ************************************************************************************************************/
@@ -3973,11 +4254,12 @@ private getCapabilities(cap) {
         		batDetails << d.displayName         
              }
          }
-         
+         if (!phones) {
         cPresence?.each 	{ d ->
         def attrValue = d.latestValue("battery") 
         	if (attrValue < cLowBattery) {
         		batDetails << d.displayName         
+             	}
              }
          }
         cWater?.each 	{ d ->
