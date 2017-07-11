@@ -8,7 +8,7 @@
  
  ************************************ FOR INTERNAL USE ONLY ******************************************************
  *		6/19/2017		
- *		4/05/2017		Version:4.0 R.0.3.3d	Minor UI changes & added "cut on/cut off" commands
+ *		4/05/2017		Version:4.0 R.0.3.3e	Minor UI changes & added "cut on/cut off" commands
  *		4/03/2017		Version:4.0 R.0.3.3c 	Bug Fixes and various other things
  *		3/29/2017		Version:4.0 R.0.3.3b	change to virtual person commands
  *		3/28/2017		Version:4.0 R.0.3.3		minor bug fixes
@@ -46,7 +46,7 @@ private def textVersion() {
 	def text = "4.0"
 }
 private release() {
-    def text = "R.0.3.4"
+    def text = "R.0.3.3e"
 }
 /**********************************************************************************************************************************************/
 preferences {   
@@ -1737,7 +1737,7 @@ def controlDevices() {
 			return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]       
     	}
         ctPIN = ctPIN == "?" ? "undefined" : ctPIN
-        if (ctNum == "undefined" || ctNum =="?") {ctNum = 0 } 
+        if (ctNum == "undefined" || ctNum =="?"  || ctNum == null) {ctNum = 0 } 
         if (ctCommand =="?") {ctCommand = "undefined"} 
         ctNum = ctNum as int
     	if (ctCommand == "undefined" || ctNum == "undefined" || ctPIN == "undefined" || ctDevice == "undefined" || ctUnit == "undefined" || ctGroup == "undefined") {        
