@@ -7,7 +7,7 @@
  								DON'T FORGET TO UPDATE RELEASE NUMBER!!!!!
  
  ************************************ FOR INTERNAL USE ONLY ******************************************************
- *		6/19/2017		
+ *		7/13/2017		Version:4.0 R.0.3.3f	Bug fix		
  *		4/05/2017		Version:4.0 R.0.3.3e	Minor UI changes & added "cut on/cut off" commands
  *		4/03/2017		Version:4.0 R.0.3.3c 	Bug Fixes and various other things
  *		3/29/2017		Version:4.0 R.0.3.3b	change to virtual person commands
@@ -46,7 +46,7 @@ private def textVersion() {
 	def text = "4.0"
 }
 private release() {
-    def text = "R.0.3.3e"
+    def text = "R.0.3.3f"
 }
 /**********************************************************************************************************************************************/
 preferences {   
@@ -953,7 +953,8 @@ def processBegin(){
 ************************************************************************************************************/
 def feedbackHandler() {
     //LAMBDA
-    def fDevice = params.fDevice
+    def variable = variable == null ? "undefined" : variable
+	def fDevice = params.fDevice
    	def fQuery = params.fQuery
     def fOperand = params.fOperand 
     def fCommand = params.fCommand 
@@ -1711,7 +1712,8 @@ def controlDevices() {
         def ctGroup = params.cGroup       
 		def ctIntentName = params.intentName
         //OTHER VARIABLES
-        def String outputTxt = (String) null 
+        def variable = variable == null ? "undefined" : variable
+	def String outputTxt = (String) null 
 		def pPIN = false
         def String deviceType = (String) null
         def String command = (String) null
@@ -2373,6 +2375,7 @@ def controlHandler(data) {
     def delayD = data.delay
 	def result = " "
     def actionData
+	def variable = variable == null ? "undefined" : variable
     if (debug) log.debug 	"Received device control handler data: " +
         					" (deviceType)= ${deviceType}',(deviceCommand) = '${deviceCommand}', (deviceD) = '${deviceD}', " +
                             "(unitU) = '${unitU}', (numN) = '${numN}', (delayD) = '${delayD}'"  
@@ -2814,7 +2817,8 @@ def controlSecurity(param) {
         def type = params.sType
         def control = params.sControl       
 		def pintentName = params.intentName
-        //FROM CONTROL MODULE       
+        //FROM CONTROL MODULE 
+	def variable = variable == null ? "undefined" : variable
         def cCommand = param?.command
         def cNum = param?.num      
 		def cPintentName = param?.pintentName        
@@ -3146,6 +3150,7 @@ def remindersHandler() {
 	def rDuration = params.rDuration // number
 	def rMessage = params.rMessage  
         //OTHER VARIABLES
+	def variable = variable == null ? "undefined" : variable
         def String outputTxt = (String) null 
  		def String pContCmdsR = (String) null
         def pContCmds = false
