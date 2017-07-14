@@ -7,7 +7,7 @@
  								DON'T FORGET TO UPDATE RELEASE NUMBER!!!!!
  
  ************************************ FOR INTERNAL USE ONLY ******************************************************
- *		7/13/2017		Version:4.0 R.0.3.3e	Bug fix		
+ *		7/14/2017		Version:4.0 R.0.3.4 	Bug fix for UK		
  *		4/05/2017		Version:4.0 R.0.3.3e	Minor UI changes & added "cut on/cut off" commands
  *		4/03/2017		Version:4.0 R.0.3.3c 	Bug Fixes and various other things
  *		3/29/2017		Version:4.0 R.0.3.3b	change to virtual person commands
@@ -46,7 +46,7 @@ private def textVersion() {
 	def text = "4.0"
 }
 private release() {
-    def text = "R.0.3.3e"
+    def text = "R.0.3.4"
 }
 /**********************************************************************************************************************************************/
 preferences {   
@@ -969,7 +969,10 @@ def feedbackHandler() {
     def stateTime
 	def data = [:]
     	
+        
         fDevice = fDevice == "null" ? "undefined" : fDevice
+        def nDevice = fDevice == "null" ? "undefined" : fDevice
+        log.warn "nDevice is $nDevice"
         fDevice = fDevice.replaceAll("[^a-zA-Z0-9 ]", "") 
 		fQuery = fQuery == "null" ? "undefined" : fQuery
         fOperand = fOperand == "null" ? "undefined" : fOperand
@@ -1751,7 +1754,7 @@ def controlDevices() {
 			return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]       
     	}
         ctPIN = ctPIN == "?" ? "undefined" : ctPIN
-        if (ctNum == "undefined" || ctNum =="?"  || ctNum == null) {ctNum = 0 } 
+        if (ctNum == "undefined" || ctNum =="?"  || ctNum == "null") {ctNum = 0 } 
         if (ctCommand =="?") {ctCommand = "undefined"} 
         ctNum = ctNum as int
     	if (ctCommand == "undefined" || ctNum == "undefined" || ctPIN == "undefined" || ctDevice == "undefined" || ctUnit == "undefined" || ctGroup == "undefined") {        
