@@ -7,7 +7,7 @@
  								DON'T FORGET TO UPDATE RELEASE NUMBER!!!!!
  
  ************************************ FOR INTERNAL USE ONLY ******************************************************
- *		7/13/2017		Version:4.0 R.0.3.3f	Bug fix		
+ *		7/13/2017		Version:4.0 R.0.3.3e	Bug fix		
  *		4/05/2017		Version:4.0 R.0.3.3e	Minor UI changes & added "cut on/cut off" commands
  *		4/03/2017		Version:4.0 R.0.3.3c 	Bug Fixes and various other things
  *		3/29/2017		Version:4.0 R.0.3.3b	change to virtual person commands
@@ -46,7 +46,7 @@ private def textVersion() {
 	def text = "4.0"
 }
 private release() {
-    def text = "R.0.3.3f"
+    def text = "R.0.3.3e"
 }
 /**********************************************************************************************************************************************/
 preferences {   
@@ -953,7 +953,6 @@ def processBegin(){
 ************************************************************************************************************/
 def feedbackHandler() {
     //LAMBDA
-    def variable = variable == null ? "undefined" : variable
 	def fDevice = params.fDevice
    	def fQuery = params.fQuery
     def fOperand = params.fOperand 
@@ -969,9 +968,15 @@ def feedbackHandler() {
     def stateDate
     def stateTime
 	def data = [:]
-    	fDevice = fDevice.replaceAll("[^a-zA-Z0-9 ]", "") 
+    	
+        fDevice = fDevice == "null" ? "undefined" : fDevice
+        fDevice = fDevice.replaceAll("[^a-zA-Z0-9 ]", "") 
+		fQuery = fQuery == "null" ? "undefined" : fQuery
+        fOperand = fOperand == "null" ? "undefined" : fOperand
+        fCommand = fCommand == "null" ? "undefined" : fCommand
+    
     if (debug){
-    	log.debug 	"Feedback data: (fDevice) = '${fDevice}', "+
+        log.debug 	"Feedback data: (fDevice) = '${fDevice}', "+
     				"(fQuery) = '${fQuery}', (fOperand) = '${fOperand}', (fCommand) = '${fCommand}', (fIntentName) = '${fIntentName}'"}
 	def fProcess = true
     state.pTryAgain = false
@@ -1712,8 +1717,7 @@ def controlDevices() {
         def ctGroup = params.cGroup       
 		def ctIntentName = params.intentName
         //OTHER VARIABLES
-        def variable = variable == null ? "undefined" : variable
-	def String outputTxt = (String) null 
+		def String outputTxt = (String) null 
 		def pPIN = false
         def String deviceType = (String) null
         def String command = (String) null
@@ -1724,6 +1728,14 @@ def controlDevices() {
         def data
         def device
      
+        ctCommand = ctCommand == "null" ? "undefined" : ctCommand
+		ctNum = ctNum == "null" ? "undefined" : ctNum
+        ctPIN = ctPIN == "null" ? "undefined" : ctPIN
+        ctDevice = ctDevice == "null" ? "undefined" : ctDevice
+        ctUnit = ctUnit == "null" ? "undefined" : ctUnit
+		ctGroup = ctGroup == "null" ? "undefined" : ctGroup
+        ctPIN = ctPIN == "null" ? "undefined" : ctPIN  
+        
         ctDevice = ctDevice.replaceAll("[^a-zA-Z0-9 ]", "")
 
         if (debug) log.debug "Control Data: (ctCommand)= ${ctCommand}',(ctNum) = '${ctNum}', (ctPIN) = '${ctPIN}', "+
@@ -2375,7 +2387,14 @@ def controlHandler(data) {
     def delayD = data.delay
 	def result = " "
     def actionData
-	def variable = variable == null ? "undefined" : variable
+    
+        deviceType = deviceType == "null" ? "undefined" : deviceType
+        deviceCommand = deviceCommand == "null" ? "undefined" : deviceCommand
+        deviceD = deviceD == "null" ? "undefined" : deviceD
+		unitU = unitU == "null" ? "undefined" : unitU
+        numN = numN == "null" ? "undefined" : numN
+        delayD = delayD == "null" ? "undefined" : delayD      
+
     if (debug) log.debug 	"Received device control handler data: " +
         					" (deviceType)= ${deviceType}',(deviceCommand) = '${deviceCommand}', (deviceD) = '${deviceD}', " +
                             "(unitU) = '${unitU}', (numN) = '${numN}', (delayD) = '${delayD}'"  
@@ -2818,11 +2837,17 @@ def controlSecurity(param) {
         def control = params.sControl       
 		def pintentName = params.intentName
         //FROM CONTROL MODULE 
-	def variable = variable == null ? "undefined" : variable
         def cCommand = param?.command
         def cNum = param?.num      
 		def cPintentName = param?.pintentName        
         log.warn "cCommand = ${cCommand},cNum = ${cNum}, cPintentName = ${cPintentName}"
+        
+		command = command == "null" ? "undefined" : command      
+        num = num == "null" ? "undefined" : num      
+        sPIN = sPIN == "null" ? "undefined" : sPIN      
+        type = type == "null" ? "undefined" : type      
+        control = control == "null" ? "undefined" : control   
+
         if(cCommand){
         	command = cCommand
             num = cNum
