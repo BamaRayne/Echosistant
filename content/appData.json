@@ -1,0 +1,15 @@
+{
+    "updater": {
+        "versions": {
+            "app": {
+                "ver": "5.0.0"
+            },
+            "profile": {
+                "ver": "5.0.0"
+            },
+            "storage": {
+                "ver": "5.0.0"
+            }
+        }
+    }
+}
