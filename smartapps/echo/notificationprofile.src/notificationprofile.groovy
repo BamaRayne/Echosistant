@@ -1,6 +1,7 @@
 /* 
  * Notification - EchoSistant Add-on 
  *
+ *		8/04/2017		Version:4.0 R.0.3.8c		Changed switch restrictions to ANY switch instead of ALL switches
  *		5/13/2017		Version:4.0 R.0.3.8b			Added more Ad-Hoc Report Variables
  *		5/11/2017		Version:4.0 R.0.3.8a			Added acceleration triggers
  *		5/04/2017		Version:4.0 R.0.3.7			Added temperature, CO, CO2 and humidity triggers
@@ -34,7 +35,7 @@ definition(
 	iconX3Url		: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/app-Echosistant@2x.png")
 /**********************************************************************************************************************************************/
 private release() {
-	def text = "R.0.3.8a"
+	def text = "R.0.3.8c"
 }
 
 preferences {
@@ -1983,7 +1984,7 @@ def getConditionOk() {
                 }
             }
             log.warn "rSwitch list is ${devList?.size()} for state $rSwitchS"
-            if (devList?.size() > 0) result = true
+            if (devList?.size() > 1) result = true
         }   
         if (rMotion){
             rMotion.each { deviceName ->
