@@ -1233,13 +1233,16 @@ def ttsHandler(tts) {
     if(parent.debug) log.debug " ttshandler settings: pAlexaCustResp=${pAlexaCustResp},pAlexaRepeat=${pAlexaRepeat},tts=${tts}"
     if (pAlexaCustResp) {
 			result = settings.pAlexaCustResp
+	    return result
 	}
 	else {
     	if (pAlexaRepeat) {
         	result = "I have delivered the following message to " + cm + " , " + tts
+		return result
         }
         else {
        	    result = "Message sent to " + cm + " , " 
+		return result
         }
     }
 	ttsActions(tts)
