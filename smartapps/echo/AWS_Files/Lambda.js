@@ -25,16 +25,17 @@
 exports.handler = function( event, context ) {
     var https = require( 'https' );
     // Paste app code here between the breaks------------------------------------------------
-    var STappID = 'XXXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX';
-    var STtoken = 'XXXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX';
-    var url='https://graph.api.smartthings.com:443/api/smartapps/installations/' + STappID + '/' ;
-        //---------------------------------------------------------------------------------------
+var STappID = 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx' 
+var STtoken = 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
+var url= 'https://graph.api.smartthings.com:443/api/smartapps/installations/' + STappID + '/' ;
+
+//---------------------------------------------------------------------------------------
         var cardName ="";
         var areWeDone = true;
 //-------- Validation process and begining interaction with SmartThings app-------------------- 
-        var versionTxt = '4.0';
+        var versionTxt = '4.0.0';
         var versionDate= '2/17/2017';
-        var releaseTxt = "4.0.00";
+        var releaseTxt = "R.0.4.0";
         var intentResp = "noAction";
         if (event.request.type == "IntentRequest"){
             intentResp = event.request.intent.name;
@@ -71,35 +72,35 @@ exports.handler = function( event, context ) {
                 }
                 else if (intentName == "AMAZON.YesIntent" && pPendingAns == "door") {
                     areWeDone=true;
-                    return output(text, context, cardName, areWeDone);
+                    return output(text, context, "More Information Request", cardName, areWeDone);
                 }
                 else if (intentName == "AMAZON.YesIntent" && pPendingAns == "caps" && short !== true) {
                     areWeDone=false;
-                    text = text + ", would you like anything else?";
-                    return output(text, context, cardName, areWeDone);
+                    text = text + " , would you like anything else?";
+                    return output(text, context, "More Information Request", cardName, areWeDone);
                 }
                 else if (intentName == "AMAZON.YesIntent" && pPendingAns == "caps" && short === true ) {
                     areWeDone=false;
-                    text = text + ", anything else?";
-                    return output(text, context, cardName, areWeDone);
+                    text = text + " , anything else?";
+                    return output(text, context, "More Information Request", cardName, areWeDone);
                 }
                 else if (intentName == "AMAZON.YesIntent" && pPendingAns == "pin") {
                     areWeDone=false;
-                    return output(text, context, cardName, areWeDone);
+                    return output(text, context, "More Information Request", cardName, areWeDone);
                 }
                 else if (intentName == "AMAZON.YesIntent" && pPendingAns == "feedback") {
                     areWeDone=true;
-                    return output(text, context, cardName, areWeDone);
+                    return output(text, context, "More Information Request", cardName, areWeDone);
                 }
                 else if (intentName == "AMAZON.NoIntent" && pPendingAns == "level") {
                     areWeDone=false;
                     text = text + ', is it better?';
-                    return output(text, context, cardName, areWeDone);
+                    return output(text, context, "More Information Request", cardName, areWeDone);
                 }
                 else if (intentName.startsWith("AMAZON") && intentName.endsWith("Intent")) { 
-                    alexaResp (intentName, context, "Amazon Intent", areWeDone, short); 
+                    alexaResp (intentName, context, "More Information Request", "Amazon Intent", areWeDone, short); 
                 }
-//-------- Devicce Control Type Request------------------------------------------------------------------
+//-------- Device Control Type Request------------------------------------------------------------------
                 else if (intentName == "main"){           
                     var cCommand = event.request.intent.slots.cCommand.value;
                     var cNum = event.request.intent.slots.cNum.value;
@@ -109,7 +110,7 @@ exports.handler = function( event, context ) {
                     var cGroup = event.request.intent.slots.cGroup.value;
                     url += 'c?cDevice=' + cDevice + '&cGroup=' + cGroup + '&cCommand=' + cCommand + '&cNum=' + cNum + '&cPIN=' + cPIN + '&cUnit=' + cUnit + '&intentName=' + intentName;    
                     process = true;
-                    cardName = "EchoSistant Control";
+                cardName = "Control";
                 }
 //-------- Security Control Type Request------------------------------------------------------------------
                 else if (intentName == "security"){           
@@ -120,7 +121,7 @@ exports.handler = function( event, context ) {
                     var sControl = event.request.intent.slots.sControl.value;
                     url += 's?sControl=' + sControl + '&sCommand=' + sCommand + '&sType=' + sType + '&sNum=' + sNum + '&sPIN=' + sPIN + '&intentName=' + intentName;    
                     process = true;
-                    cardName = "EchoSistant Security";
+                    cardName = "Security";
                 }
 //-------- Feedback Type Request------------------------------------------------------------------
                 else if (intentName == "feedback"){           
@@ -131,14 +132,14 @@ exports.handler = function( event, context ) {
 
                     url += 'f?fDevice=' + fDevice + '&fCommand=' + fCommand + '&fQuery=' + fQuery + '&fOperand=' + fOperand + '&intentName=' + intentName;
                     process = true;
-                    cardName = "EchoSistant Feedback";
+                    cardName = "Feedback";
                 }
 //-------- TTS Type Request------------------------------------------------------------------
                 else if (intentName != "main" || intentName != "security" || intentName != "feedback") {
                     var ttstext = event.request.intent.slots.ttstext.value;
                     url += 't?ttstext=' + ttstext + '&intentName=' + intentName;
                     process = true;
-                    cardName = "EchoSistant Free Text";
+                    cardName = "Free Speech";
                 }
 //-------- General Response------------------------------------------------------------------
                 if (!process) {
@@ -165,12 +166,12 @@ exports.handler = function( event, context ) {
                         }    
                         else if (pContCmds === true && pContCmdsR == "profile" ) { 
                             areWeDone=false;
-                            speechText = speechText + ', send another message to ' + intentName;
+                            speechText = speechText + ' , send another message to ' + intentName;
                             return output(speechText, context, cardName, areWeDone);
                         }
                         else if (pContCmds === true && pContCmdsR == "level" ) { 
                             areWeDone=false;
-                            speechText = speechText + ', is it better?';
+                            speechText = speechText + ' , is it better?';
                             return output(speechText, context, cardName, areWeDone);
                         }
                         else if (pContCmds === true && pContCmdsR == "door" ) { 
@@ -223,42 +224,43 @@ exports.handler = function( event, context ) {
         } );
     } );
 };
+
 function alexaResp(type, context, cardName, areWeDone, short){
     if (type == "AMAZON.YesIntent") { 
         areWeDone=false;
-        output("Please continue, ", context, "EchoSistant Continue", areWeDone);
+        output("Please continue, ", context, "Conversation Mode", areWeDone);
     }
     else if (type == "AMAZON.NoIntent" && short === false) { 
         areWeDone=true;
-        output(" It has been my pleasure.  Goodbye ", context, "EchoSistant Stop", areWeDone);
+        output(" It has been my pleasure.  Goodbye. ", context, "Ending Command", areWeDone);
     }
     else if (type == "AMAZON.NoIntent" && short === true) { 
         areWeDone=true;
-        output(" Ok ", context, "EchoSistant Stop", areWeDone);
+        output(" Ok ", context, "Stop Command", areWeDone);
     }    
     else if (type == "AMAZON.StopIntent" || type == "AMAZON.CancelIntent") { 
         areWeDone=true;
-        output(" Cancelling", context, "EchoSistant Stop", areWeDone);
+        output(" Cancelling", context, "Stop Command", areWeDone);
     }
     else if (type == "Pending Yes Level" && short !== true){
         areWeDone=true;
-        output(" Great, I am here if you need me.", context, "EchoSistant Stop", areWeDone);
+        output(" Great, I am here if you need me.", context, "Stop Command", areWeDone);
     }
     else if (type == "Pending Yes Level" && short === true){
         areWeDone=true;
-        output(" Ok", context, "EchoSistant Stop", areWeDone);
+        output(" Ok", context, "Stop Command", areWeDone);
     }    
     else if (type == "Pending Yes Door"){
         areWeDone=true;
-        output(" Ok,", context, "EchoSistant Continue", areWeDone);
+        output(" Ok,", context, "Conversation Mode", areWeDone);
     }
     else if (type == "LaunchRequest" && short !== true){
         areWeDone=false;
-        output(" how may I help you? ", context, "EchoSistant Continue", areWeDone);
+        output(" how may I help you? ", context, "Conversation Mode", areWeDone);
     } 
     else if (type == "LaunchRequest" && short === true){
         areWeDone=false;
-        output(" What's up? ", context, "EchoSistant Continue", areWeDone);
+        output(" What's up? ", context, "Conversation Mode", areWeDone);
     }     
 }
 function alexaContResp(type, text , context, areWeDone, short){
@@ -266,46 +268,49 @@ function alexaContResp(type, text , context, areWeDone, short){
     if (type == "Try Again" && short !== true ) { 
         speechText = speechText + ',  would you like to try again? '; 
         areWeDone=false;
-        output(speechText, context, "EchoSistant Try Again", areWeDone);
+        output(speechText, context, "Conversation Mode", areWeDone);
     }
     if (type == "Try Again" && short === true) { 
         speechText = speechText + ',  try again? '; 
         areWeDone=false;
-        output(speechText, context, "EchoSistant Try Again", areWeDone);
+        output(speechText, context, "Conversation Mode", areWeDone);
     }    
     else if (type == "PIN" && short !== true) { 
         areWeDone=false;
-        speechText = "Pin number, please";
-        output(speechText, context, "EchoSistant Pin Request", areWeDone);
+        speechText = "Pin number, please...";
+        output(speechText, context, "Security PIN Request", areWeDone);
     }
     else if (type == "PIN" && short === true) { 
         areWeDone=false;
         speechText = "Pin number?";
-        output(speechText, context, "EchoSistant Pin Request", areWeDone);
+        output(speechText, context, "Security PIN Request", areWeDone);
     }    
     else if (type == "Response" && short !== true) { 
         areWeDone=false;
-        speechText =speechText + " , would you like anything else";
-        output(speechText, context, "EchoSistant Continue", areWeDone);
+        speechText =speechText + " ,  would you like anything else?";
+        output(speechText, context, "Conversation Mode", areWeDone);
     }
     else if (type == "Response" && short === true) { 
         areWeDone=false;
-        speechText =speechText + " , anything else?";
-        output(speechText, context, "EchoSistant Continue", areWeDone);
+        speechText =speechText + "  anything else?";
+        output(speechText, context, "Conversation Mode", areWeDone);
     }
 }
 function output( text, context, cardName, areWeDone) {
+        var smallImageURL = "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/app-Echosistant.png"; 
+        var largeImageURL = "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/app-Echosistant@2x.png" ;
         var response = {
              outputSpeech: {
              type: "PlainText",
              text: text
                  },
                  card: {
-                 type: "Simple",
-                 title: cardName,
-                 content: text
+                 type: "Standard",
+                 "image": {"largeImageUrl": largeImageURL},
+                 title:  "EchoSistant : " + cardName + " Process",
+                 text: text
                     },
-        shouldEndSession: areWeDone
+        shouldEndSession: areWeDone 
         };
         context.succeed( { response: response } );
   }
