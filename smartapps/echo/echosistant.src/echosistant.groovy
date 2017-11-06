@@ -43,10 +43,10 @@ definition(
 	UPDATE LINE 38 TO MATCH RECENT RELEASE
 **********************************************************************************************************************************************/
 private def textVersion() {
-	def text = "4.0"
+	def text = "4.0.0"
 }
 private release() {
-    def text = "R.0.3.4"
+    def text = "R.0.4.5"
 }
 /**********************************************************************************************************************************************/
 preferences {   
@@ -55,10 +55,8 @@ preferences {
             	page name: "mDevices"
                 page name: "mDefaults" 
             	page name: "mSHMSec"
-                	page name: "mSecuritySuite" // links Parent to Security Add-ON
-    				page name: "mNotifyProfile" // links Parent to Notification Add-ON
-                    page name: "mThermoManager" // links Parent to Thermostat Manager Add-ON
-            		page name: "mProfiles" // links Parent to Profiles Add-ON 
+                	page name: "mNotifyProfile" // links Parent to Notification Add-ON
+                    page name: "mProfiles" // links Parent to Profiles Add-ON 
             page name: "mSupport"
             page name: "mSettings"
            		page name: "mSkill"
@@ -81,7 +79,7 @@ page name: "mainParentPage"
        		section ("") {
                 href "mIntent", title: "Main Home Control", description: mIntentD(), state: mIntentS(),
                 	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Routines.png"    
-				href "mProfiles", title: "Configure Profiles", description: mRoomsD(), state: mRoomsS(),
+				href "mProfiles", title: "Configure Profiles and Shortcuts", description: mRoomsD(), state: mRoomsS(),
                 	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_msg.png"
 				href "mSettings", title: "General Settings", description: mSettingsD(), state: mSettingsS(),
                 	image: "https://raw.githubusercontent.com/BamaRayne/Echosistant/master/smartapps/bamarayne/echosistant.src/Echosistant_Config.png"
@@ -225,10 +223,6 @@ page name: "mIntent"
                             	if(uPIN_L == true)  {paragraph "You can also say: Alexa enable/disable the pin number for Locks"}                             
                     }
                 }
-// Moved to                   section ("Access Security Suite") {
-// location of                       href "mSecuritySuite", title: "Tap to configure your Home Security Suite module", description: ""
-// other profiles                   } 
-                        	
                 section ("Smart Home Monitor Status Change Feedback", hideWhenEmpty: true, hideable: true, hidden: true){
                     input "fSecFeed", "bool", title: "Activate SHM status change announcements.", default: false, submitOnChange: true
                     if (fSecFeed) {    
@@ -260,22 +254,15 @@ page name: "mIntent"
                         }
                     }
                 }        
-        page name: "mSecuritySuite"    
-                    def mSecuritySuite() {
-                        dynamicPage (name: "mSecuritySuite", title: "", install: true, uninstall: false) {
-                            if (childApps?.size()) {  
-                                section("Security Suite",  uninstall: false){
-                                    app(name: "security", appName: "SecuritySuite", namespace: "Echo", title: "Configure Security Suite", multiple: true,  uninstall: false)
-                                }
-                            }
-                            else {
-                                section("Security Suite",  uninstall: false){
-                                    paragraph "NOTE : Looks like you haven't created any Profiles yet.\n \nPlease make sure you have installed the Rooms Smart App Add-on before creating a new Room!"
-                                    app(name: "security", appName: "SecuritySuite", namespace: "Echo", title: "Configure Security Suite", multiple: true,  uninstall: false)
-                                }
-                            }
-                       }
+	page name: "mShortcuts"    
+        def mShortcuts() {
+            dynamicPage(name: "mShortcuts", title:"", install: true, uninstall: false) {
+        		section("Create and View Main Intent Shortcuts") {
+                	paragraph "Main Intent Shortcuts can ONLY be triggered via Switch, use a Native Alexa Routine to Voice Activate"
+            		app(name: "Shortcuts", appName: "Shortcuts Profile", namespace: "Echo", title: "Create a New Main Intent Shortcut", multiple: true)  
                     }
+                }               
+            }            
 	page name: "mProfiles"    
         def mProfiles() {
             dynamicPage(name: "mProfiles", title:"", install: true, uninstall: false) {
@@ -283,26 +270,14 @@ page name: "mIntent"
                 section ("Messaging & Control (${getChildSize("Profiles")})") {
                 	href "mMainProfile", title: "View and Create Messaging & Control Profiles...", description: none
                     }
+                section ("Main Intent Shortcuts") {
+                	href "mShortcuts", title: "View and Create Main Intent Shortcuts...", description: none
+                    }
 				if (notifyOn) {
         			section ("Notifications & Reporting (${getChildSize("NotificationProfile")})") {
   						href "mNotifyProfile", title: "View and Create Notification & Reporting Profiles...", description: none
 					}
                 }               
-                if (thermoOn) {
-                	section ("Climate Control (${getChildSize("ThermoManager")})") {
-                    	href "mThermoManager", title: "View and Create Climate Control Profiles...", description: none
-                    }    
-				}
-				if (remindOn) {
-        			section ("Reminders & Events (${getChildSize("Reminders")})") {
-  						app(name: "reminder", appName: "Reminders", namespace: "Echo", title: "Access Reminders & Events...", multiple: false,  uninstall: false)
-					}
-                }    
-                if (securityOn) {
-                	section ("Security Suite (${getChildSize("SecuritySuite")})") {
-                    	href "mSecuritySuite", title: "View and Configure the Security Suite Profiles...", description: ""
-                    }    
-                }                   
             }            
 		}
         page name: "mMainProfile"    
@@ -321,7 +296,7 @@ page name: "mIntent"
 					}
 				}
             }  
-		page name: "mNotifyProfile"    
+        page name: "mNotifyProfile"    
             def mNotifyProfile() {
                 dynamicPage (name: "mNotifyProfile", title: "", install: true, uninstall: false) {
                     if (childApps?.size()) {  
@@ -337,22 +312,6 @@ page name: "mIntent"
                     }
              	}
 	        }       
-    page name: "mThermoManager"
-    		def mThermoManager() {
-            	dynamicPage (name: "mThermoManager", title: "", install: true, uninstall: false) {
-                	if (childApps?.size()) {
-                    	section("Climate Control", uninstall: false){
-                        	app(name: "ZWave Thermostat Manager", appName: "ThermoManager", namespace: "Echo", title: "View and Create Climate Control Profiles...", multiple: true, uninstall: false)
-                            }
-                        }
-                        else {
-                        	section("Climate Control", uninstall: false){
-                            paragraph "NOTE: Looks like you haven't initialized the Thermostat Manager Add-on yet.\n \nPlease make sure you have installed the Echo : Thermostat Manager Add-on before creating a new Room!"
-                        	app(name: "ZWave Thermostat Manager", appName: "ThermoManager", namespace: "Echo", title: "View and Create Climate Control Profiles...", multiple: true, uninstall: false)
-                        }
-                    }
-             	}
-	        }
         
 page name: "mSettings"  
 	def mSettings(){
@@ -478,9 +437,6 @@ page name: "mSupport"
         	section ("EchoSistant Modules") {
             	paragraph "For the notifications and room feedback to be operational, they must be installed in the ST IDE and the toggles below must be activated"
                 input "notifyOn", "bool", title: "Is the Notifications Module Installed? ", required: true, defaultValue: false
-                input "remindOn", "bool", title: "Is the Reminders Module Installed? ", required: true, defaultValue: false
-                input "securityOn", "bool", title: "Is the Security Suite Module Installed?", required: true, defaultValue: false
-                input "thermoOn", "bool", title: "Is the Climate Control Module Installed?", required: true, defaultValue: false
                 }
                 section ("Amazon AWS Skill Details") {
 					href "mSkill", title: "Tap to view setup data for the AWS Main Intent Skill...", description: ""
@@ -652,12 +608,13 @@ def OAuthToken(){
 mappings {
 	path("/cntrlList") {action: [GET: "controlList"]}	
     path("/devList") {action: [GET: "deviceList"]}
-    path("/b") { action: [GET: "processBegin"] }
+    path("/b") { action: [GET: "processBegin"]}
 	path("/c") { action: [GET: "controlDevices"] }
 	path("/f") { action: [GET: "feedbackHandler"] }
 	path("/r") { action: [GET: "remindersHandler"] }
 	path("/s") { action: [GET: "controlSecurity"] }
 	path("/t") { action: [GET: "processTts"] }
+//    log.info "process begin called ${cDevice}"
 }
 /*************************************************************************************************************
    LIST OF ITEMS FOR LAMBDA
@@ -714,7 +671,7 @@ def initialize() {
         	if (debug) log.error "Access token not defined. Attempting to refresh. Ensure OAuth is enabled in the SmartThings IDE."
                 OAuthToken()
 			}
-        //SHM status change and keypad initialize
+		//SHM status change and keypad initialize
     		subscribe(location, locationHandler)
             subscribe(location, "alarmSystemStatus",alarmStatusHandler) //used for ES speaker feedback
         	subscribe(location, "remindR", runReport) //used for running ES Profiles from RemindR app
@@ -742,10 +699,10 @@ def initialize() {
             state.savedPINdata = null
             state.pinTry = null
         //Other Settings
-            state.scheduledHandler
+//            state.scheduledHandler
 //            state.filterNotif = null
-//            state.lastAction = null
-//			state.lastActivity = null
+            state.lastAction = null
+			state.lastActivity = null
 			state.pendingConfirmation = false
             unschedule("startLoop")
             unschedule("continueLoop")
@@ -782,12 +739,14 @@ def getChildSize(child) {
     return childList.size()
 }
 def remindrHandler(evt) {
+//runProfile()
 	if (!evt) return
     log.warn "received event from RemindR with data: $evt.data"
 	switch (evt.value) {
 		case "refresh":
 		state.esProfiles = evt.jsonData && evt.jsonData?.profiles ? evt.jsonData.profiles : []
-			break
+			
+            break
 	}
 }
 
@@ -968,7 +927,6 @@ def feedbackHandler() {
     def stateDate
     def stateTime
 	def data = [:]
-    	
         
         fDevice = fDevice == "null" ? "undefined" : fDevice
         def nDevice = fDevice == "null" ? "undefined" : fDevice
@@ -1019,9 +977,9 @@ def feedbackHandler() {
          }
          if (fDevice != "undefined" && fQuery != "undefined" && fOperand != "undefined") {
             if (fQuery.contains ("is ") || fQuery.contains ("if ") || fQuery == "is" || fQuery == "if" || fQuery == "is the") {
-                def deviceMatch = cRelay?.find {d -> d.label.toLowerCase() == fDevice?.toLowerCase()}
-                    if(deviceMatch && cContactRelay) {// changed by Jason 2/24/2017
-                        outputTxt =  cContactRelay.latestValue("contact").contains(fOperand) ? "yes, the ${deviceMatch} is ${fOperand}" : "no, the ${deviceMatch} is not ${fOperand}"
+            	def deviceMatch = cRelay?.find {d -> d.label.toLowerCase() == fDevice?.toLowerCase()}
+                    if(deviceMatch) {// changed by Jason 2/24/2017
+                        outputTxt = deviceMatch.latestValue("contact").contains(fOperand) ? "yes, the ${deviceMatch} is ${fOperand}" : "no, the ${deviceMatch} is not ${fOperand}"
                         return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
                     }
                     else {
@@ -1054,9 +1012,9 @@ def feedbackHandler() {
                             }
                         }
 						if (deviceMatch == null && cPresence) {  // changed by Jason 2/24/2017
-                            deviceMatch = cPresence.find {d -> d.label.toLowerCase() == fDevice?.toLowerCase()}  	
+                            deviceMatch = cPresence?.find {d -> d.label == fDevice} 
                                	if(fOperand == "home" || fOperand == "here" || fOperand == "present" || fOperand == "in" || fOperand == "at home") {
-                                	outputTxt = deviceMatch.latestValue("presence")?.contains("not") ? "no, ${deviceMatch} is not ${fOperand}" : "yes, ${deviceMatch} is ${fOperand}"
+                                	outputTxt = deviceMatch?.latestValue("presence")?.contains("not") ? "no, ${fDevice} is not ${fOperand}" : "yes, ${fDevice} is ${fOperand}"
 									}
                                 }    
                         if (deviceMatch == null && cWater) {// changed by Jason 2/24/2017
@@ -1224,7 +1182,7 @@ def feedbackHandler() {
                 } 
             }
 //>>> Temp >>>>>
-            if (fOperand == "temperature inside" || fOperand == "indoor temperature" || fOperand == "temperature is inside"){
+            if (fOperand == "inside temperature" || fOperand == "temperature inside" || fOperand == "indoor temperature" || fOperand == "temperature is inside"){
                 if(cIndoor){
                     def sensors = cIndoor?.size()
                     def tempAVG = cIndoor ? getAverage(cIndoor, "temperature") : "undefined device"          
@@ -1238,7 +1196,7 @@ def feedbackHandler() {
                 }                            
             }
 //>>> Temp >>>>
-            if (fOperand == "temperature outside" || fOperand == "outdoor temperature" || fOperand == "temperature is outside" || fOperand == "hot outside" || fOperand == "cold outside"){
+            if (fOperand == "outside temperature" || fOperand == "temperature outside" || fOperand == "outdoor temperature" || fOperand == "temperature is outside" || fOperand == "hot outside" || fOperand == "cold outside"){
                 if(cOutDoor){
                     def sensors = cOutDoor?.size()
                     def tempAVG = cOutDoor ? getAverage(cOutDoor, "temperature") : "undefined device"          
@@ -1275,7 +1233,7 @@ def feedbackHandler() {
 				outputTxt = mGetWeatherElements(wElement)
 				return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]		
             }
-			if (fOperand == "outside humidity" || fOperand== "humid is outside" || fOperand== "outside humidity" || fOperand== "current conditions"){
+			if (fOperand.contains("humid") || fOperand == "outside humidity" || fOperand== "humid is outside" || fOperand== "outside humidity" || fOperand== "current conditions"){
 				def wElement = fOperand.contains("humid") ? "humid" : fOperand.contains("current ") ? "cond" : null
 				outputTxt = mGetWeatherElements(wElement)
 				return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]		
@@ -1308,7 +1266,7 @@ def feedbackHandler() {
             }
 //>>> Security >>>>
             //TO DO: restrict security based on command
-            if (fOperand == "smart home monitor" || fOperand == "alarm system" ){
+            if (fOperand == "smart home monitor" || fOperand == "alarm system" || fOperand.contains("alarm")){
                     def sSHM = location.currentState("alarmSystemStatus")?.value       
                     sSHM = sSHM == "off" ? "disabled" : sSHM == "away" ? "Armed Away" : sSHM == "stay" ? "Armed Home" : "unknown"
                     outputTxt = "Your Smart Home Monitor Status is " +  sSHM
@@ -1330,7 +1288,7 @@ def feedbackHandler() {
                                     }
                         		}
 							}
-                    if (fQuery == "what's" || fQuery == "what is" || fQuery == "what" || fQuery == "which" || fQuery == "any" || fQuery == "is") { // removed fQuery == "undefined" 2/13
+                    if (fQuery == "are" || fQuery == "are there" || fQuery == "how many" || fQuery == "what's" || fQuery == "what is" || fQuery == "what" || fQuery == "which" || fQuery == "any" || fQuery == "is") { // removed fQuery == "undefined" 2/13
                         if (devList?.size() > 0) {
                             if (devList?.size() == 1) {
                                 outputTxt = "There is one light " + fCommand + " , would you like to know which one? "                           			
@@ -1627,7 +1585,7 @@ def feedbackHandler() {
                 return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
             }
 //>>> Presence >>>>                                    
-            if (fQuery == "who" ) {
+            if (fQuery == "who" || fQuery == "is anyone") {
                 if(cPresence){
                         def devListP = []
                         def devListNP = []
@@ -1711,7 +1669,9 @@ def feedbackHandler() {
    DEVICE CONTROL - from Lambda via page c
 ************************************************************************************************************/
 def controlDevices() {
-		//FROM LAMBDA
+	log.info "control Devices method called - ${params.cDevice}"
+
+	//FROM LAMBDA
         def ctCommand = params.cCommand
         def ctNum = params.cNum
         def ctPIN = params.cPIN
@@ -1730,7 +1690,7 @@ def controlDevices() {
         def delay = false
         def data
         def device
-     
+		     
         ctCommand = ctCommand == "null" ? "undefined" : ctCommand
 		ctNum = ctNum == "null" ? "undefined" : ctNum
         ctPIN = ctPIN == "null" ? "undefined" : ctPIN
@@ -3098,7 +3058,8 @@ def processTts() {
         pContCmdsR = "profile"
 		def tProcess = true
 //try {
-        
+
+
 	if (ptts == "this is a test"){
 		outputTxt = "Congratulations! Your EchoSistant is now setup properly" 
 		return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]       
@@ -3117,8 +3078,8 @@ def processTts() {
         	}        
         }
         else{
-            childApps.each {child ->
-                if (child.label.toLowerCase() == pintentName.toLowerCase()) { 
+             childApps.each {child ->
+             	if (child.label.toLowerCase() == pintentName.toLowerCase()) { 
                     if (debug) log.debug "Found a profile: '${pintentName}'"
                     pintentName = child.label
                     // recording last message
@@ -3128,13 +3089,32 @@ def processTts() {
                     dataSet = [ptts:ptts, pintentName:pintentName] 
 					def childRelease = child.checkRelease()
 					log.warn "childRelease = $childRelease"
-                    def pResponse = child.profileEvaluate(dataSet)
-                    outputTxt = pResponse?.outputTxt
-                    pContCmds = pResponse?.pContCmds
-                    pContCmdsR = pResponse?.pContCmdsR
-                    pTryAgain = pResponse?.pTryAgain
-                }
-            }
+
+					if (ptts.startsWith("tell") || ptts.startsWith("get") || ptts.endsWith("tonight") || ptts.contains("weather") || ptts.contains("temperature") || ptts.contains("forecast") || ptts.contains("humidity") || ptts.contains("rain") || ptts.contains("wind")) {
+                    	def pResponse = child.profileFeedbackEvaluate(dataSet)
+                        outputTxt = pResponse.outputTxt
+                    	pContCmds = pResponse.pContCmds
+                    	pContCmdsR = pResponse.pContCmdsR
+                    	pTryAgain = pResponse.pTryAgain
+                    	}
+					if (ptts.startsWith("for") || ptts.startsWith("is") || ptts.startsWith("has") || ptts.startsWith("give") || ptts.startsWith("how") || ptts.startsWith("what") || ptts.startsWith("when") || ptts.startsWith("which") || ptts.startsWith("are") || ptts.startsWith("check") || ptts.startsWith("who")) {
+                        def pResponse = child.profileFeedbackEvaluate(dataSet)
+                        outputTxt = pResponse.outputTxt
+                    	pContCmds = pResponse.pContCmds
+                    	pContCmdsR = pResponse.pContCmdsR
+                    	pTryAgain = pResponse.pTryAgain
+                    	}
+                    else {  
+                        def pResponse = child.profileEvaluate(dataSet)
+                		outputTxt = pResponse.outputTxt
+                    	pContCmds = pResponse.pContCmds
+                    	pContCmdsR = pResponse.pContCmdsR
+                    	pTryAgain = pResponse.pTryAgain
+                    	log.info "I have received this from the Lambda: ${outputTxt}"
+                    	}
+                	}
+            	}
+
             if (outputTxt?.size()>0){
                 return ["outputTxt":outputTxt, "pContCmds":pContCmds, "pShort":state.pShort, "pContCmdsR":pContCmdsR, "pTryAgain":pTryAgain, "pPIN":pPIN]
             }
@@ -3719,12 +3699,6 @@ def getAverage(device,type){
 /******************************************************************************
 	 FEEDBACK SUPPORT - ADDITIONAL FEEDBACK	
      
-                        data.deviceTypeDoors = "cDoor1"
-                        data.deviceTypeWindows = "cWindow"
-                        data.deviceDoors = devListDoors
-                        data.deviceWindows = devListWindows
-                        state.lastAction = data
-                        state.pContCmdsR = "feedback"
     
 ******************************************************************************/
 def getMoreFeedback(data) {
@@ -3932,7 +3906,7 @@ private deviceMatchHandler(fDevice) {
 			}
         }
         if (cBattery){
-        deviceMatch =cBattery?.find {d -> d.label.toLowerCase() == fDevice?.toLowerCase()}
+        deviceMatch =cBattery?.find {d -> d.label?.toLowerCase() == fDevice?.toLowerCase()}
             if(deviceMatch)	{
                 deviceType = "cBattery"
                 currState = cBattery.currentState("battery").value
@@ -4309,7 +4283,8 @@ private getUnitText (unit, num) {
 ***********************************************************************************************************************/
 private getCommand(command, unit) {
 	def deviceType = " "
-	if (command && unit) {
+
+if (command && unit) {
 	//case "General Commands":
     		deviceType = "general"
         if (unit == "undefined") {
@@ -4460,8 +4435,9 @@ private getCommand(command, unit) {
 	CONTROL SUPPORT - CUSTOM CONTROL COMMANDS
 ************************************************************************************************************/ 
 private getCustomCmd(command, unit, group, num) {
+    def ctIntentName = params.intentName
     def result
-    if (command == "repeat") {
+    if (command == "repeat" && ctIntentName == "main") {
 		result = getLastMessageMain()
 		return result
     }
@@ -4682,7 +4658,7 @@ def runReport(profile) {
 def result
            		childApps.each {child ->
                         def ch = child.label
-                		if (ch == profile) { 
+                		if (ch == "profile") { 
                     		if (debug) log.debug "Found a profile, $profile"
                             result = child.runProfile(ch)
 						}
@@ -5069,14 +5045,14 @@ def private mGetWeatherElements(element){
         	if		(element == "precip" || element == "rain") {result = "The chance of precipitation is " + cWeatherPrecipitation }
         	else if	(element == "wind") {result = "The wind intensity is " + cWeatherWind_m }
         	else if	(element == "uv") {result = "The UV index is " + condTodayUV }
-			else if	(element == "hum") {result = "The relative humidity is " + cWeatherHum }        
+			else if	(element == "humid") {result = "The relative humidity is " + cWeatherHum }        
 			else if	(element == "cond") {result = "The current weather condition is " + cWeatherCondition }
         }
         else{
         	if		(element == "precip" || element == "rain") {result = "The chance of precipitation is " + cWeatherPrecipitation }
         	else if	(element == "wind") {result = "The wind intensity is " + cWeatherWind }
         	else if	(element == "uv") {result = "The UV index is " + condTodayUV }
-			else if	(element == "hum") {result = "The relative humidity is " + cWeatherHum }        
+			else if	(element == "humid") {result = "The relative humidity is " + cWeatherHum }        
 			else if	(element == "cond") {result = "The current weather condition is " + cWeatherCondition }        
 		}        
         return result
