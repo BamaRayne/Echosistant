@@ -1,97 +1,130 @@
 {
-    "intents": [
+  "intents": [
+    {
+      "intent": "AMAZON.NavigateSettingsIntent"
+    },
+    {
+      "intent": "AMAZON.NavigateHomeIntent"
+    },
+    {
+      "intent": "AMAZON.MoreIntent"
+    },
+    {
+      "intent": "AMAZON.PageDownIntent"
+    },
+    {
+      "intent": "AMAZON.PageUpIntent"
+    },
+    {
+      "intent": "AMAZON.ScrollRightIntent"
+    },
+    {
+      "intent": "AMAZON.ScrollDownIntent"
+    },
+    {
+      "intent": "AMAZON.ScrollLeftIntent"
+    },
+    {
+      "intent": "AMAZON.ScrollUpIntent"
+    },
+    {
+      "intent": "AMAZON.HelpIntent"
+    },
+    {
+      "intent": "AMAZON.PreviousIntent"
+    },
+    {
+      "slots": [
         {
-            "intent": "main",
-            "slots": [
-                {
-                    "name": "cDevice",
-                    "type": "LIST_OF_DEVICES"
-                },
-                {
-                    "name": "cGroup",
-                    "type": "LIST_OF_GROUPS"
-                },
-                {
-                    "name": "cNum",
-                    "type": "AMAZON.NUMBER"
-                },
-                {
-                    "name": "cPIN",
-                    "type": "AMAZON.NUMBER"
-                },
-                {
-                    "name": "cUnit",
-                    "type": "LIST_OF_UNITS"
-                },
-                {
-                    "name": "cCommand",
-                    "type": "LIST_OF_COMMANDS"
-                }
-            ]
+          "name": "cDevice",
+          "type": "LIST_OF_DEVICES"
         },
         {
-            "intent": "feedback",
-            "slots": [
-                {
-                    "name": "fOperand",
-                    "type": "LIST_OF_OPERANDS"
-                },
-                {
-                    "name": "fQuery",
-                    "type": "LIST_OF_QUERIES"
-                },
-                {
-                    "name": "cCommand",
-                    "type": "LIST_OF_COMMANDS"
-                },
-                {
-                    "name": "cDevice",
-                    "type": "LIST_OF_DEVICES"
-                }
-            ]
+          "name": "cGroup",
+          "type": "LIST_OF_GROUPS"
         },
         {
-            "intent": "security",
-            "slots": [
-                {
-                    "name": "sControl",
-                    "type": "LIST_OF_SYSTEM_CONTROLS"
-                },
-                {
-                    "name": "cCommand",
-                    "type": "LIST_OF_COMMANDS"
-                },
-                {
-                    "name": "cPIN",
-                    "type": "AMAZON.NUMBER"
-                },
-                {
-                    "name": "cNum",
-                    "type": "AMAZON.NUMBER"
-                },
-                {
-                    "name": "sType",
-                    "type": "LIST_OF_TYPES"
-                }
-            ]
-        },     
-        {
-            "intent": "AMAZON.StopIntent"
+          "name": "cNum",
+          "type": "AMAZON.NUMBER"
         },
         {
-            "intent": "AMAZON.NoIntent"
+          "name": "cPIN",
+          "type": "AMAZON.NUMBER"
         },
         {
-            "intent": "AMAZON.YesIntent"
-        },
-      	{
-            "intent": "AMAZON.PauseIntent"
+          "name": "cUnit",
+          "type": "LIST_OF_UNITS"
         },
         {
-            "intent": "AMAZON.ResumeIntent"
-        },
-        {
-            "intent": "AMAZON.NextIntent"
+          "name": "cCommand",
+          "type": "LIST_OF_COMMANDS"
         }
-    ]
+      ],
+      "intent": "main"
+    },
+    {
+      "slots": [
+        {
+          "name": "fOperand",
+          "type": "LIST_OF_OPERANDS"
+        },
+        {
+          "name": "fQuery",
+          "type": "LIST_OF_QUERIES"
+        },
+        {
+          "name": "cCommand",
+          "type": "LIST_OF_COMMANDS"
+        },
+        {
+          "name": "cDevice",
+          "type": "LIST_OF_DEVICES"
+        }
+      ],
+      "intent": "feedback"
+    },
+    {
+      "slots": [
+        {
+          "name": "sControl",
+          "type": "LIST_OF_SYSTEM_CONTROLS"
+        },
+        {
+          "name": "cCommand",
+          "type": "LIST_OF_COMMANDS"
+        },
+        {
+          "name": "cPIN",
+          "type": "AMAZON.NUMBER"
+        },
+        {
+          "name": "cNum",
+          "type": "AMAZON.NUMBER"
+        },
+        {
+          "name": "sType",
+          "type": "LIST_OF_TYPES"
+        }
+      ],
+      "intent": "security"
+    },
+    {
+      "intent": "AMAZON.StopIntent"
+    },
+    {
+      "intent": "AMAZON.NoIntent"
+    },
+    {
+      "intent": "AMAZON.YesIntent"
+    },
+    {
+      "intent": "AMAZON.PauseIntent"
+    },
+    {
+      "intent": "AMAZON.ResumeIntent"
+    },
+    {
+      "intent": "AMAZON.NextIntent"
+    }
+  ]
 }
