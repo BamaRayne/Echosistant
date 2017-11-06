@@ -1,6 +1,7 @@
 LIST_OF_COMMANDS
 
-activate
+activate 
+afternoon
 all off
 arrived
 arriving
@@ -16,6 +17,7 @@ checked out
 checking in
 checking out
 chilling
+cleaned
 cleaning
 close
 closed
@@ -35,6 +37,7 @@ disable
 down
 enable
 energize
+evening
 feeling lucky
 feeling romantic
 freezing
@@ -47,7 +50,11 @@ left
 lock
 low
 medium
+morning
 mute
+night time
+nighttime
+night
 not bright enough
 not cold enough
 not dark enough
@@ -65,12 +72,19 @@ repeat
 replace
 replaced
 run
+scooped
+shot
+shop
 slow down
 speed up
 start
 stop
 switch
 this is a test
+take
+taken
+has taken
+took
 too bright
 too chilly
 too cold
@@ -88,6 +102,11 @@ unmute
 up
 warmer
 working
+brushed 
+fed
+bathed
+walked
+medicatednone
 
 
 
@@ -109,6 +128,8 @@ vents
 
 LIST_OF_OPERANDS
 
+chore
+chores
 active
 alarm
 alert
@@ -117,11 +138,10 @@ at home
 audio
 batteries
 battery
+cat
 change in weather forecast
 changes to the forecast
 changes to the weather
-cleaned
-close
 closed
 cold outside
 current condition
@@ -129,35 +149,42 @@ current conditions
 current forecast
 current temperature
 current weather
-door
 doors
 doors open
 dry
-fed
 feed
 forecast for today
 forecast for tomorrow
 forecast for tonight
 forecast update
 forecast updates
+gone
 here
 home
 home monitor
 hot outside
 hourly forcast
+house
 humid is outside
 humidity
 humidity outside
 in
 inactive
 indoor temperature
+inside temperature
 is
-light
 lights
+lock
+locks
 locked
+meds
+medicine
 messages
 mode
+motion
 muted
+my home
+my house
 not here
 not home
 not present
@@ -166,6 +193,7 @@ on
 open
 outdoor temperature
 outside humidity
+outside temperature
 precipitation
 precipitation for the next hour
 present
@@ -175,7 +203,6 @@ rainfall
 raining
 report
 running
-security
 settings
 smart home monitor
 switches
@@ -221,6 +248,13 @@ wind intensity
 window
 windows
 windy
+dog
+litter box
+litterbox
+Doug
+Thor
+calliope
+rusty
 
 
 
@@ -233,6 +267,7 @@ did I
 generate
 get
 give
+has
 how
 how many
 if
@@ -250,6 +285,9 @@ when
 where
 which
 who
+was
+check
+check on
 
 
 LIST_OF_TYPES
@@ -265,6 +303,7 @@ LIST_OF_UNITS
 AC
 audio
 blue
+cat
 color
 conversation
 cool white
@@ -274,6 +313,7 @@ dark green
 dark red
 daylight
 degrees
+dog
 feedback
 filters
 flash
@@ -304,3 +344,5 @@ text
 timer
 warm white
 yellow
+litter box
+litterbox
