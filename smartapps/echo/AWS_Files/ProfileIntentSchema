@@ -1,13 +1,214 @@
 {
-  "intents": [
-    {
-      "intent": "assistant",
-      "slots": [
-        {
-          "name": "ttstext",
-          "type": "LITERAL"
-        }
-      ]
-    }
-  ]
+  "languageModel": {
+    "types": [
+      {
+        "name": "CATCH_ALL",
+        "values": [
+          {
+            "id": null,
+            "name": {
+              "value": "turn",
+              "synonyms": []
+            }
+          },
+          {
+            "id": null,
+            "name": {
+              "value": "put to",
+              "synonyms": []
+            }
+          },
+          {
+            "id": null,
+            "name": {
+              "value": "enter the void",
+              "synonyms": []
+            }
+          },
+          {
+            "id": null,
+            "name": {
+              "value": "over around and under",
+              "synonyms": []
+            }
+          },
+          {
+            "id": null,
+            "name": {
+              "value": "light switch fan outlet relay",
+              "synonyms": []
+            }
+          },
+          {
+            "id": null,
+            "name": {
+              "value": "water speaker synth media set above",
+              "synonyms": []
+            }
+          },
+          {
+            "id": null,
+            "name": {
+              "value": "on start enable engage open begin unlock unlocked",
+              "synonyms": []
+            }
+          },
+          {
+            "id": null,
+            "name": {
+              "value": "delay wait until after around within in about for",
+              "synonyms": []
+            }
+          },
+          {
+            "id": null,
+            "name": {
+              "value": "darker too bright dim dimmer decrease lower low softer less",
+              "synonyms": []
+            }
+          },
+          {
+            "id": null,
+            "name": {
+              "value": "give for tell what how is when which are how many check who status",
+              "synonyms": []
+            }
+          },
+          {
+            "id": null,
+            "name": {
+              "value": "increase more too dark not bright enough brighten brighter turn up",
+              "synonyms": []
+            }
+          },
+          {
+            "id": null,
+            "name": {
+              "value": "off stop cancel disable disengage kill close silence lock locked quit end",
+              "synonyms": []
+            }
+          },
+          {
+            "id": null,
+            "name": {
+              "value": "door garage window shade curtain blind thermostat indoor outdoor vent valve",
+              "synonyms": []
+            }
+          }
+        ]
+      }
+    ],
+    "intents": [
+      {
+        "name": "AMAZON.CancelIntent",
+        "samples": []
+      },
+      {
+        "name": "AMAZON.HelpIntent",
+        "samples": []
+      },
+      {
+        "name": "AMAZON.LoopOffIntent",
+        "samples": []
+      },
+      {
+        "name": "AMAZON.LoopOnIntent",
+        "samples": []
+      },
+      {
+        "name": "AMAZON.MoreIntent",
+        "samples": []
+      },
+      {
+        "name": "AMAZON.NavigateHomeIntent",
+        "samples": []
+      },
+      {
+        "name": "AMAZON.NavigateSettingsIntent",
+        "samples": []
+      },
+      {
+        "name": "AMAZON.NextIntent",
+        "samples": []
+      },
+      {
+        "name": "AMAZON.PageDownIntent",
+        "samples": []
+      },
+      {
+        "name": "AMAZON.PageUpIntent",
+        "samples": []
+      },
+      {
+        "name": "AMAZON.PauseIntent",
+        "samples": []
+      },
+      {
+        "name": "AMAZON.PreviousIntent",
+        "samples": []
+      },
+      {
+        "name": "AMAZON.RepeatIntent",
+        "samples": []
+      },
+      {
+        "name": "AMAZON.ResumeIntent",
+        "samples": []
+      },
+      {
+        "name": "AMAZON.ScrollDownIntent",
+        "samples": []
+      },
+      {
+        "name": "AMAZON.ScrollLeftIntent",
+        "samples": []
+      },
+      {
+        "name": "AMAZON.ScrollRightIntent",
+        "samples": []
+      },
+      {
+        "name": "AMAZON.ScrollUpIntent",
+        "samples": []
+      },
+      {
+        "name": "AMAZON.ShuffleOffIntent",
+        "samples": []
+      },
+      {
+        "name": "AMAZON.ShuffleOnIntent",
+        "samples": []
+      },
+      {
+        "name": "AMAZON.StartOverIntent",
+        "samples": []
+      },
+      {
+        "name": "AMAZON.StopIntent",
+        "samples": []
+      },
+      {
+        "name": "Truck",
+        "samples": [
+          "{ttstext}"
+        ],
+        "slots": [
+          {
+            "name": "ttstext",
+            "type": "CATCH_ALL"
+          }
+        ]
+      },
+      {
+        "name": "UpdateSettings",
+        "samples": [
+          "update settings",
+          "update the settings",
+          "update my settings"
+        ],
+        "slots": []
+      }
+    ],
+    "invocationName": "truck"
+  }
 }
