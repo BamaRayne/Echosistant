@@ -188,7 +188,7 @@
         "samples": []
       },
       {
-        "name": "Truck",
+        "name": "Calliope",
         "samples": [
           "{ttstext}"
         ],
@@ -209,6 +209,6 @@
         "slots": []
       }
     ],
-    "invocationName": "truck"
+    "invocationName": "calliope"
   }
 }
