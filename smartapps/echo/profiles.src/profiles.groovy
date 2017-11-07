@@ -1586,36 +1586,58 @@ def advCtrlHandler(data) {
 SPEECH AND TEXT ALEXA RESPONSE
 ******************************************************************************************************/
 def ttsHandler(tts) {
-	def String outputTxt = (String) null 
-    def result = tts
+	def result = tts
+    def outputTxt
     def cm = app.label
-    //Preparing Alexa Response
-    if(parent.debug) log.debug " ttshandler settings: pAlexaCustResp=${pAlexaCustResp},pAlexaRepeat=${pAlexaRepeat},tts=${tts}"
-    if (pAlexaCustResp) {
-        result = settings.pAlexaCustResp
-    	return result
-    }
-//    else {
-        if (pAlexaRepeat) {
-            result = "The following message has been sent to " + cm + " : " + tts
-    //   }
-     	return result   
-    }
-    //SHORTCUTS ACTIONS RUN VERBALLY
-	childApps.each {child ->
+    
+
+	//SHORTCUTS ACTIONS RUN VERBALLY
+	if (childApps) {
+    childApps?.each {child ->
 	if (child.label.toLowerCase() == tts.toLowerCase()) { 
     	child.processActions(skipDevs)
         if (child.scResponse) {
         	outputTxt = child.scResponse
+            return outputTxt
             }
-            else {outputTxt = "I'm executing the shortcut for the room, " + cm}
+            else {
+            	outputTxt = "I'm executing the shortcut for the room, " + cm
+                }
+                return outputTxt
+            }
+	else if (pAlexaCustResp) {
+		outputTxt = settings.pAlexaCustResp
+    	ttsActions(tts)
         return outputTxt
+        }
+	
+    else if (pAlexaRepeat) {
+        outputTxt = "I have delivered the following message to " + cm + " , " + tts
+		ttsActions(tts)
+        return outputTxt
+        }
+            else {    		
+       			ttsActions(tts)
+        		outputTxt = "Your message has been sent to " + cm
+       	return outputTxt
+    	}	
     }
-    else {
-        ttsActions(tts)
-        outputTxt = "Your message has been sent to " + cm
+}
+	else if (pAlexaCustResp) {
+		outputTxt = settings.pAlexaCustResp
+    	ttsActions(tts)
         return outputTxt
-    }}
+        }
+	
+    else if (pAlexaRepeat) {
+        outputTxt = "I have delivered the following message to " + cm + " , " + tts
+		ttsActions(tts)
+        return outputTxt
+        }
+		else { 
+    		ttsActions(tts)
+    		outputTxt = "hey Your message has been sent to " + cm
+    		}
     if(parent.debug) log.debug "running actions, sending result to Parent = ${result}"
     return outputTxt
 }
@@ -1624,9 +1646,11 @@ def ttsHandler(tts) {
 SPEECH AND TEXT ACTION
 ******************************************************************************************************/
 def ttsActions(tts) {
+log.info "ttsactions have been called by $tts"
     tts = tts
     def String ttx = (String) null 	
-    //define audio message
+
+	//define audio message
     if(pRunMsg){
     	tts = settings.pRunMsg
     }
