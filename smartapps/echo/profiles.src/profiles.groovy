@@ -1636,7 +1636,7 @@ def ttsHandler(tts) {
         }
 		else { 
     		ttsActions(tts)
-    		outputTxt = "hey Your message has been sent to " + cm
+    		outputTxt = "Your message has been sent to " + cm
     		}
     if(parent.debug) log.debug "running actions, sending result to Parent = ${result}"
     return outputTxt
@@ -1679,7 +1679,7 @@ log.info "ttsactions have been called by $tts"
                 if (parent.debug) log.debug "Sending message to Synthesis Devices"
             }
             if (tts) {
-                state.sound = textToSpeech(tts instanceof List ? tts[0] : tts)
+                state.sound = textToSpeech(tts instanceof List ? tts[9] : tts)
             }
             else {
                 state.sound = textToSpeech("You selected the custom message option but did not enter a message in the $app.label Smart App")
