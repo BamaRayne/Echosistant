@@ -92,7 +92,8 @@ def mainProfilePage() {
                     }
                 }
             }
-            section("...and SHM Management") {
+
+section("...and SHM Management") {
                 input "shmState", "enum", title: "Smart Home Alarm Mode", options:["stay":"Armed Stay","away":"Armed Away","off":"Disarmed"], multiple: false, required: false,
                         submitOnChange: true, image: getAppImgTony("home_security.png")
                 if (settings?.shmState) {
@@ -305,8 +306,8 @@ def initialize() {
     if(app?.label.toString() != label) { app?.updateLabel(label) }
 //    atomicState?.roomName = parent?.getRoomName() as String
     if(scTrigger) {
-    	subscribe(scTrigger, "switch.on", processVerbal)
-//    	subscribe(scTrigger, "switch.off", processActions)
+    //	subscribe(scTrigger, "switch.on", processVerbal)
+    	subscribe(scTrigger, "switch.on", processActions)
     	}
     // subscribe(location, locationHandler)
 }
@@ -353,9 +354,9 @@ def getAppImgTony(imgName)    { return "https://raw.githubusercontent.com/tonest
 /******************************************************************************
     SHORTCUT HANDLERS
 ******************************************************************************/
-def processVerbal() {
-	processActions()
-    }
+//def processVerbal() {
+//	processActions()
+//    }
 def processActions(skipDevs, testMode=false){
     log.info "the grandchild shortcut - $app.label, has executed"
     def logOut = []

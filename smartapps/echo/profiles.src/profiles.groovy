@@ -1586,6 +1586,7 @@ def advCtrlHandler(data) {
 SPEECH AND TEXT ALEXA RESPONSE
 ******************************************************************************************************/
 def ttsHandler(tts) {
+	log.info "Profile ttsHandler called"
 	def result = tts
     def outputTxt
     def cm = app.label
@@ -1616,6 +1617,7 @@ def ttsHandler(tts) {
 		ttsActions(tts)
         return outputTxt
         }
+        
             else {    		
        			ttsActions(tts)
         		outputTxt = "Your message has been sent to " + cm
