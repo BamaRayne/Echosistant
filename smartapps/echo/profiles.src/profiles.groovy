@@ -74,7 +74,7 @@ page name: "Shortcuts"
 def Shortcuts(){
     dynamicPage(name: "Shortcuts", title: "", uninstall: false){    
         section("Create and View Shortcuts") {
-        	app(name: "Shortcuts", appName: "Shortcuts", namespace: "Echo", title: "Create a New Profile Shortcut", multiple: true)  
+        	app(name: "Shortcuts", appName: "Shortcuts Profile", namespace: "Echo", title: "Create a New Profile Shortcut", multiple: true)  
         	//paragraph "Profile Shortcuts can be triggered via Voice and/or Switch"
         }
     }
