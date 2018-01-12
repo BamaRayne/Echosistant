@@ -1,6 +1,7 @@
 /* 
 * Message and Control Profile - EchoSistant Add-on 
 *
+*		01/11/2018		Version:4.5 R.0.0.3		Fixed what ST broke
 *		11/02/2017		Version:4.5 R.0.0.2		Public Release
 *		6/12/2017		Version:4.5 R.0.0.1		Alpha Release
 *		2/17/2017		Version:4.0 R.0.0.1		Public Release
@@ -48,7 +49,7 @@ preferences {
 // MAIN PROFILE - HOME PAGE
 def mainProfilePage() {	
     dynamicPage(name: "mainProfilePage", title:"", install: true, uninstall: installed) {
-        section ("Name Your Profile (must match the Intent Name)") {
+        section ("Name Your Profile (must match the Intent Name: 'Living Room must be LivingRoom')") {
             label title:"Profile Name", required:true
         } 
         section("Messaging and Intercom") {
@@ -73,7 +74,7 @@ page name: "Shortcuts"
 def Shortcuts(){
     dynamicPage(name: "Shortcuts", title: "", uninstall: false){    
         section("Create and View Shortcuts") {
-        	app(name: "Shortcuts", appName: "Shortcuts Profile", namespace: "Echo", title: "Create a New Profile Shortcut", multiple: true)  
+        	app(name: "Shortcuts", appName: "Shortcuts", namespace: "Echo", title: "Create a New Profile Shortcut", multiple: true)  
         	//paragraph "Profile Shortcuts can be triggered via Voice and/or Switch"
         }
     }
@@ -85,7 +86,7 @@ page name: "messaging"
 def messaging(){
     dynamicPage(name: "messaging", title: "", uninstall: false){    
         section("Audio and Text Message Settings") {
-            href "pSend", title: "Send These Message Types", description: pSendComplete(), state: pSendSettings()   
+            href "pSend", title: "Send These Message Types", description: pMsgComplete(), state: pMsgSettings()   
         }
         section ("Output Settings") {    
             href "pConfig", title: "Message Output Settings", description: pConfigComplete(), state: pConfigSettings()
@@ -100,7 +101,7 @@ def feedback(){
         section("") {
             href "pGroups", title: "Device Control Groups", description: pGroupComplete(), state: pGroupSettings()
             href "fDevices", title: "Device Feedback", description: fDeviceComplete(), state: fDeviceSettings()
-            href "pActions", title: "Location and Profile Actions (to execute when Profile runs)", description: pDevicesComplete(), state: pDevicesSettings()
+            href "pActions", title: "Location and Profile Actions (to execute when Profile runs)", description: pActionsComplete(), state: pActionsSettings()
         }        
     }
 }
@@ -152,7 +153,13 @@ def pTrackers(){
         section ("Task Trackers") {
             input "taskTrackers", "bool", title: "Activate the Trackers for ${app.label}", required: false, default: false, submitOnChange: true
             if (taskTrackers) {
-                paragraph "Your Task Trackers are now active for ${app.label}."
+                paragraph "Your Task Trackers are now active for ${app.label}. \n" +
+                  "To set up a Task Tracker you will use three words from what you want to say to Alexa.  For example, \n" +
+                  "you may want to track your pets medication.  Your pets name is Woofy. Woofy gets a shot once a day. \n" +
+                  "Woofy is a boy.  The Tracker Verb would be 'Got'. The Tracker Connecter would be 'He', and the Tracker \n" +
+                  "Noun would be 'Shot'.  Name your profile 'Woofy' and then you would do this:  \n" +
+                  "When you give Woofy his shot, just say, 'Alexa, tell Woofy he got his shot'  \n" +
+                  "To find out when you gave Woofy his last shot, just say, 'Alexa, ask Woofy, when did he get his shot. "
                 input "trackerOne2", "text", title: "1st Tracker Verb", required: false, default: false, submitOnChange: true
                 if (trackerOne2) {
                     input "trackerOne3", "text", title: "1st Tracker (Connector)", required: false, default: false, submitOnChange: true
@@ -195,10 +202,10 @@ def pTrackers(){
                 if (psendContactText) input "recipients", "contact", title: "Send text notifications to (optional)", multiple: true, required: false
                 input "psendText", "bool", title: "Enable Text Notifications to non-contact book phone(s)", required: false, submitOnChange: true 
                 if (psendText){      
-                    paragraph "You may enter multiple phone numbers separated by comma to deliver the Alexa message as a text and a push notification. E.g. 8045551122,8046663344"
+                    paragraph "You may enter multiple phone numbers separated by comma to deliver the Alexa message as a text and a push notification. E.g. +18045551122,+18046663344"
                     input name: "psms", title: "Send text notification to (optional):", type: "phone", required: false
                 }
-                input "pPush", "bool", title: "Do you want to send a Push message when notes are made?", required: false, defaultValue: false, submitOnChange: true
+                input "pPush", "bool", title: "Do you want to send a Push message when Trackers are updated?", required: false, defaultValue: false, submitOnChange: true
             }
         }    
     }	    
@@ -244,7 +251,7 @@ def pPersonDelete(){
     dynamicPage(name: "pPersonDelete", title: "", uninstall: false) {
         section ("") {
             paragraph "You have deleted a virtual presence sensor device. You will no longer see this device in your " +
-                " SmartThings Mobile App.  "
+                "Hubitat Environment.  "
         }
         removeChildDevices(getAllChildDevices())
     }
@@ -255,8 +262,8 @@ page name: "pPersonCreate"
 def pPersonCreate(){
     dynamicPage(name: "pPersonCreate", title: "", uninstall: false) {
         section ("") {
-            paragraph "You have created a virtual presence sensor device. You will now see this device in your 'Things' list " +
-                " in the SmartThings Mobile App.  You will also see it in the 'MyDevices' tab of the IDE"
+            paragraph "You have created a virtual presence sensor device named ($app.label). !!!DO NOT RENAME THIS DEVICE!!!. " +
+              "You will now see this device in your 'Devices' list in the Hubitat webUI."
         }
         virtualPerson()
     }
@@ -278,7 +285,7 @@ def pSend(){
             if (sendContactText) input "recipients", "contact", title: "Send text notifications to (optional)", multiple: true, required: false
             input "sendText", "bool", title: "Enable Text Notifications to non-contact book phone(s)", required: false, submitOnChange: true     
             if (sendText){      
-                paragraph "You may enter multiple phone numbers separated by comma to deliver the Alexa message as a text and a push notification. E.g. 8045551122,8046663344"
+                paragraph "You may enter multiple phone numbers separated by comma to deliver the Alexa message as a text and a push notification. E.g. +18045551122,+18046663344"
                 input name: "sms", title: "Send text notification to (optional):", type: "phone", required: false
             }
         }    
@@ -322,23 +329,23 @@ def pConfig(){
 page name: "pActions"
 def pActions() {
     dynamicPage(name: "pActions", uninstall: false) {
-        def routines = location.helloHome?.getPhrases()*.label 
-        if (routines) {routines.sort()}
-        section ("Trigger these lights and/or execute these routines when the Profile runs...") {
+//        def routines = location.helloHome?.getPhrases()*.label 
+//        if (routines) {routines.sort()}
+        section ("Trigger these lights and actions when the Profile runs...") {
             href "pDeviceControl", title: "Select Devices...", description: pDevicesComplete() , state: pDevicesSettings()
             input "pMode", "enum", title: "Choose Mode to change to...", options: location.modes.name.sort(), multiple: false, required: false 
-            def actions = location.helloHome?.getPhrases()*.label 
-            if (actions) {
-                actions.sort()
-                input "pRoutine", "enum", title: "Select a Routine to execute", required: false, options: actions, multiple: false, submitOnChange: true
-                if (pRoutine) {
-                    input "pRoutine2", "enum", title: "Select a Second Routine to execute", required: false, options: actions, multiple: false
-                }
-            }
-            input "shmState", "enum", title: "Set Smart Home Monitor to...", options:["stay":"Armed Stay","away":"Armed Away","off":"Disarmed"], multiple: false, required: false, submitOnChange: true
-            if (shmState) {
-                input "shmStateKeypads", "capability.lockCodes",  title: "Send status change to these keypads...", multiple: true, required: false, submitOnChange: true
-            }
+//            def actions = location.helloHome?.getPhrases()*.label 
+//            if (actions) {
+//                actions.sort()
+//                input "pRoutine", "enum", title: "Select a Routine to execute", required: false, options: actions, multiple: false, submitOnChange: true
+ //               if (pRoutine) {
+//                    input "pRoutine2", "enum", title: "Select a Second Routine to execute", required: false, options: actions, multiple: false
+//                }
+//            }
+//            input "shmState", "enum", title: "Set Smart Home Monitor to...", options:["stay":"Armed Stay","away":"Armed Away","off":"Disarmed"], multiple: false, required: false, submitOnChange: true
+//            if (shmState) {
+//                input "shmStateKeypads", "capability.lockCodes",  title: "Send status change to these keypads...", multiple: true, required: false, submitOnChange: true
+//            }
             input "pVirPer", "bool", title: "Toggle the Virtual Person State Automatically when this Profile Runs", default: false, submitOnChange: true, required: false
         		if (pVirPer) {
                 	href "pPerson", title: "Configure the Virtual Person for ${app.label}", description: VPCreateComplete(), state: VPCreateSettings()
@@ -539,7 +546,7 @@ def pRestrict(){
                 "enum", options: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
         }
         section ("Time - Audio only during these times"){
-            href "certainTime", title: "Only during a certain time", description: timeIntervalLabel ?: "Tap to set", state: timeIntervalLabel ? "complete" : null
+            href "certainTime", title: "Only during a certain time", description: pTimeComplete(), state: pTimeSettings()
         }   
     }
 }
@@ -587,7 +594,7 @@ def virtualPerson() {
 
 // VIRTUAL PERSON DELETE HANDLER
 private removeChildDevices(delete) {
-    log.debug "The Virtual Person Device '${app.label}' has been deleted from your SmartThings environment"
+    log.debug "The Virtual Person Device '${app.label}' has been deleted from your Hubitat environment"
     delete.each {
         deleteChildDevice(it.deviceNetworkId)
     }
@@ -648,7 +655,7 @@ private sendSHMEvent1(String shmState) {
         displayed: true,
         description: "System Status is ${shmState}"
     ]
-    sendLocationEvent(event)
+//    sendLocationEvent(event)
 }
 
 
@@ -687,7 +694,7 @@ def initialize() {
         subscribe(sLocksVP, "codeEntered", codeEntryHandler)
     }
     //SHM status change and keypad initialize
-    subscribe(location, locationHandler)
+//    subscribe(location, locationHandler)
     state.responseTxt = null
     state.lambdaReleaseTxt = "Not Set"
     state.lambdaReleaseDt = "Not Set" 
@@ -765,8 +772,6 @@ def profileFeedbackEvaluate(params) {
     if (tts != null) {
         tts = tts.replaceAll("[^a-zA-Z0-9 ]", "") }
     if (debug) log.debug "Messaging Profile Data: (ptts) = '${ptts}', (pintentName) = '${pintentName}'"   
-    //Sending event to WebCoRE
-    sendLocationEvent(name: "echoSistantProfile", value: app.label, data: data, displayed: true, isStateChange: true, descriptionText: "EchoSistant activated '${app.label}' profile.")
 
 
     if (command == "undefined") {
@@ -776,7 +781,6 @@ def profileFeedbackEvaluate(params) {
         state.lastAction = null
         return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
     }    
-    if (parent.debug) log.debug "sendNotificationEvent sent to CoRE from ${app.label}"
 	    if (intent == childName){
             if (test){
                 outputTxt = "Congratulations! Your EchoSistant is now setup properly, good job" 
@@ -805,7 +809,7 @@ def profileFeedbackEvaluate(params) {
                 outputTxt = "There are no sensors selected for me to determine if there is motion in the ${app.label}"
                 return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
             }
-            if(tts.contains("motion") || tts=="is there" || tts=="is anyone" || tts=="is something moving" || tts.contains("is someone")) { 
+            if(tts.contains("motion") || tts=="is there" || tts=="is anyone" || tts=="is there anyone" || tts=="is something moving" || tts == "is someone" || tts == "is there someone") { 
             	if(fMotion != null) {
                 def devListMotion = []
                 if (fMotion.latestValue("motion").contains("active")) {
@@ -985,14 +989,14 @@ def profileFeedbackEvaluate(params) {
                         }
                     }            
                     if (devListDoor.size() > 0 || devListWindow.size() > 0 || devListLock.size() > 0 || devListNP.size() > 0) {
-                        def sSHM = location.currentState("alarmSystemStatus").value      
-                        sSHM = sSHM == "off" ? "Disarmed" : sSHM == "away" ? "Armed Away" : sSHM == "stay" ? "Armed Home" : "unknown"
-                        outputTxt = "The home has " + devListDoor.size() + " doors open, " + devListWindow.size() + " windows open, " + devListLock.size + " locks unlocked, and " + devListNP.size() + " family members are not home, "
-                        outputTxt = outputTxt + " as well as the security system is set to: ${sSHM}"
+                     //   def sSHM = location.currentState("alarmSystemStatus").value      
+                     //   sSHM = sSHM == "off" ? "Disarmed" : sSHM == "away" ? "Armed Away" : sSHM == "stay" ? "Armed Home" : "unknown"
+                     //   outputTxt = "The home has " + devListDoor.size() + " doors open, " + devListWindow.size() + " windows open, " + devListLock.size + " locks unlocked, and " + devListNP.size() + " family members are not home, "
+                    //   outputTxt = outputTxt + " as well as the security system is set to: ${sSHM}"
                     }
                     else if (devListDoor.size() == 0 && devListWindow.size() == 0 && devListLock.size() == 0 && devListNP.size() == 0) {
-                        def sSHM = location.currentState("alarmSystemStatus").value      
-                        sSHM = sSHM == "off" ? "Disarmed" : sSHM == "away" ? "Armed Away" : sSHM == "stay" ? "Armed Home" : "unknown"
+                    //    def sSHM = location.currentState("alarmSystemStatus").value      
+                    //    sSHM = sSHM == "off" ? "Disarmed" : sSHM == "away" ? "Armed Away" : sSHM == "stay" ? "Armed Home" : "unknown"
                         outputTxt = "All of the doors and windows are closed, the locks are locked, everyone is home, " +
                             " and the security system is set to: ${sSHM}"
                     }
@@ -1071,7 +1075,6 @@ def profileFeedbackEvaluate(params) {
 SPEECH AND TEXT PROCESSING INTERNAL - CONTROL & MESSAGING
 ******************************************************************************************************/
 def profileEvaluate(params) {
-    log.info "profile control & messaging Evaluate has been activated"
     def tts = params.ptts
     def intent = params.pintentName        
     def childName = app.label 
@@ -1104,8 +1107,6 @@ def profileEvaluate(params) {
     muteAlexa = tts.contains("enable Alexa") ? "unmute" : tts.contains("start Alexa") ? "unmute" : tts.contains("unmute Alexa") ? "unmute" : muteAll
     def test = tts.contains("this is a test") ? true : tts.contains("a test") ? true : false
     if (parent.debug) log.debug "Message received from Parent with: (tts) = '${tts}', (intent) = '${intent}', (childName) = '${childName}', current app version: ${release()}"  
-    //Sending event to WebCoRE
-    sendLocationEvent(name: "echoSistantProfile", value: app.label, data: data, displayed: true, isStateChange: true, descriptionText: "EchoSistant activated '${app.label}' profile.")
 //def result
     if (command == "undefined") {
         outputTxt = "Sorry, I didn't get that, "
@@ -1115,8 +1116,6 @@ def profileEvaluate(params) {
         return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
     }    
 
-    if (parent.debug) log.debug "sendNotificationEvent sent to CoRE from ${app.label}"
-             		
         if (test){
             outputTxt = "Congratulations! Your EchoSistant is now setup properly" 
             return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]       
@@ -1322,20 +1321,20 @@ FREE TEXT CONTROL ENGINE
                             def timeDate = new Date().format("hh:mm aa", location.timeZone)
                             def dateDate = new Date().format("EEEE, MMMM d", location.timeZone)
                             if (tts.contains("${trackerOne1}".toLowerCase())) {
-                                outputTxt = "Ok, recording that ${app.label} last " + " ${trackerOne2}".toLowerCase() + " ${trackerOne3}".toLowerCase() +  " ${trackerOne1}".toLowerCase() + " on " + dateDate + " at " + timeDate  
-                                if(command == "${trackerOne1}".toLowerCase()) {state.trackerOne = "${app.label} last " + " ${trackerOne2} " + " ${trackerOne3} " + " ${trackerOne1} on " + dateDate + " at " + timeDate }
+                                outputTxt = "Ok, recording that ${app.label} last "+ " ${trackerOne2}".toLowerCase() + " ${trackerOne3}".toLowerCase() + " ${trackerOne1}".toLowerCase() + " on " + dateDate + " at " + timeDate  
+                                if(command == "${trackerOne1}".toLowerCase()) {state.trackerOne = "${app.label} last " + "${trackerOne2} " + "${trackerOne3} " + "${trackerOne1} on " + dateDate + " at " + timeDate }
                                 }
                             else if (tts.contains("${trackerTwo1}".toLowerCase())) {
                                 outputTxt = "Ok, recording that ${app.label} last " + " ${trackerTwo2}".toLowerCase() + " ${trackerTwo3}".toLowerCase() + " ${trackerTwo1}".toLowerCase() + " on " + dateDate + " at " + timeDate
-                                if(command == "${trackerTwo1}".toLowerCase()) {state.trackerTwo = "${app.label} last " + " ${trackerTwo2} " + " ${trackerTwo3} " + " ${trackerTwo1} on " + dateDate + " at " + timeDate }
+                                if(command == "${trackerTwo1}".toLowerCase()) {state.trackerTwo = "${app.label} last " + "${trackerTwo2} " + "${trackerTwo3} " + "${trackerTwo1} on " + dateDate + " at " + timeDate }
                                 }
                             else if (tts.contains("${trackerThree1}".toLowerCase())) {
                                 outputTxt = "Ok, recording that ${app.label} last " + " ${trackerThree2}".toLowerCase() + " ${trackerThree3}".toLowerCase() + "${trackerThree1}".toLowerCase() + " on " + dateDate + " at " + timeDate
-                                if(command == "${trackerThree1}".toLowerCase()) {state.trackerThree = "${app.label} last " + " ${trackerThree2} " + " ${trackerThree3} " + "${trackerThree1} on " + dateDate + " at " + timeDate }
+                                if(command == "${trackerThree1}".toLowerCase()) {state.trackerThree = "${app.label} last " + "${trackerThree2} " + "${trackerThree3} " + "${trackerThree1} on " + dateDate + " at " + timeDate }
                                 }
                             else if (tts.contains("${trackerFour1}".toLowerCase())) {
                                 outputTxt = "Ok, recording that ${app.label} last " + " ${trackerFour2}".toLowerCase() + " ${trackerFour3}".toLowerCase() + "${trackerFour1}".toLowerCase() + " on " + dateDate + " at " + timeDate
-                                if(command == "${trackerFour1}".toLowerCase()) {state.trackerFour = "${app.label} last " + " ${trackerFour2} " + " ${trackerFour3} " + "${trackerFour1} on " + dateDate + " at " + timeDate }
+                                if(command == "${trackerFour1}".toLowerCase()) {state.trackerFour = "${app.label} last " + "${trackerFour2} " + "${trackerFour3} " + "${trackerFour1} on " + dateDate + " at " + timeDate }
                                 }
                                 if(psendText) { sendtxt(outputTxt) }
                                 if(pPush) { sendPush outputTxt }
@@ -1460,7 +1459,7 @@ FREE TEXT CONTROL ENGINE
                     }
                 
                 if (parent.debug) {log.debug "end of control engine, command=${command}, ${deviceType}"}
-                if (sonosDevice || synthDevice || recipients || sms) { //added 2/19/17 Bobby  
+                if (!sonosDevice && !synthDevice) { //added 2/19/17 Bobby  
                     state.lastMessage = tts
                     state.lastTime = new Date(now()).format("h:mm aa, dd-MMMM-yyyy", location.timeZone)
                     outputTxt = ttsHandler(tts)
@@ -1590,56 +1589,37 @@ def ttsHandler(tts) {
 	def result = tts
     def outputTxt
     def cm = app.label
-    
+
+	if (pAlexaCustResp != null) {
+		outputTxt = settings.pAlexaCustResp
+    	ttsActions(tts)
+        return outputTxt
+        }
+    if (pAlexaRepeat != null) {
+        outputTxt = "I have delivered the following message to " + cm + " , " + tts
+		ttsActions(tts)
+        return outputTxt
+        }
+            else {    		
+       			ttsActions(tts)
+        		outputTxt = "Ok, Your message has been sent to " + cm
+			    }
 
 	//SHORTCUTS ACTIONS RUN VERBALLY
-	if (childApps) {
+
     childApps?.each {child ->
 	if (child.label.toLowerCase() == tts.toLowerCase()) { 
-    	child.processActions(skipDevs)
-        if (child.scResponse) {
+        if (child.scResponse != null) {
         	outputTxt = child.scResponse
-            return outputTxt
+          	child.processActions(skipDevs)
             }
             else {
             	outputTxt = "I'm executing the shortcut for the room, " + cm
+                child.processActions(skipDevs)
                 }
-                return outputTxt
-            }
-	else if (pAlexaCustResp) {
-		outputTxt = settings.pAlexaCustResp
-    	ttsActions(tts)
-        return outputTxt
-        }
-	
-    else if (pAlexaRepeat) {
-        outputTxt = "I have delivered the following message to " + cm + " , " + tts
-		ttsActions(tts)
-        return outputTxt
-        }
-        
-            else {    		
-       			ttsActions(tts)
-        		outputTxt = "Your message has been sent to " + cm
-       	return outputTxt
-    	}	
-    }
-}
-	else if (pAlexaCustResp) {
-		outputTxt = settings.pAlexaCustResp
-    	ttsActions(tts)
-        return outputTxt
-        }
-	
-    else if (pAlexaRepeat) {
-        outputTxt = "I have delivered the following message to " + cm + " , " + tts
-		ttsActions(tts)
-        return outputTxt
-        }
-		else { 
-    		ttsActions(tts)
-    		outputTxt = "Your message has been sent to " + cm
     		}
+        return outputTxt
+        }
     if(parent.debug) log.debug "running actions, sending result to Parent = ${result}"
     return outputTxt
 }
@@ -1681,12 +1661,12 @@ log.info "ttsactions have been called by $tts"
                 if (parent.debug) log.debug "Sending message to Synthesis Devices"
             }
             if (tts) {
-                state.sound = textToSpeech(tts instanceof List ? tts[9] : tts)
+        //        state.sound = textToSpeech(tts instanceof List ? tts[9] : tts)
             }
-            else {
-                state.sound = textToSpeech("You selected the custom message option but did not enter a message in the $app.label Smart App")
-                if (parent.debug) log.debug "You selected the custom message option but did not enter a message"
-            }
+        //    else {
+        //        state.sound = textToSpeech("You selected the custom message option but did not enter a message in the $app.label Smart App")
+        //        if (parent.debug) log.debug "You selected the custom message option but did not enter a message"
+        //    }
             if (sonosDevice){ // 2/22/2017 updated Sono handling when speaker is muted
                 def currVolLevel = sonosDevice.latestValue("level")
                 def currMuteOn = sonosDevice.latestValue("mute").contains("muted")
@@ -1964,23 +1944,27 @@ def profileDeviceControl() {
 
 // SWITCHES TOGGLE HANDLER
 private toggle() {
-    if (sSwitches) {
-        if (sSwitches?.currentValue('switch').contains('on')) {
-            sSwitches?.off()
-        }
-        else if (sSwitches?.currentValue('switch').contains('off')) {
-            sSwitches?.on()
-        }
+  sSwitches.each { deviceName ->
+    def switchattr = deviceName.currentSwitch
+    if (switchattr.contains('on')) {
+      deviceName.off()
     }
-    if (sOtherSwitch) {
-        if (sOtherSwitch?.currentValue('switch').contains('on')) {
-            sOtherSwitch?.off()
-        }
-        else if (sOtherSwitch?.currentValue('switch').contains('off')) {
-            sOtherSwitch?.on()
-        }
+    else {
+      deviceName.on()
     }
+  }
+  sOtherSwitch.each { deviceName ->
+    def switchattr = deviceName.currentSwitch
+    if (switchattr.contains('on')) {
+      deviceName.off()
+    }
+    else {
+      deviceName.on()
+    }
+  }		
+  
 }
+
 
 /************************************************************************************************************
 Flashing Lights Handler
@@ -2721,11 +2705,20 @@ Page status and descriptions
 ************************************************************************************************************/       
 
 def pSendSettings() {def result = ""
-                     if (synthDevice || sonosDevice || sendContactText || sendText || push) {
+                     if (synthDevice || sonosDevice || sendContactText || sendText || push || sms || pAlexaCustResp || pAlexaRepeat || pContCmdsProfile || pRunMsg || pPreMsg || pDisableAlexaProfile || pDisableALLProfile || pRunTextMsg || pPreTextMsg) {
                          result = "complete"}
                      result}
 def pSendComplete() {def text = "Tap here to Configure" 
-                     if (synthDevice || sonosDevice || sendContactText || sendText || push) {
+                     if (synthDevice || sonosDevice || sendContactText || sendText || push || sms || pAlexaCustResp || pAlexaRepeat || pContCmdsProfile || pRunMsg || pPreMsg || pDisableAlexaProfile || pDisableALLProfile || pRunTextMsg || pPreTextMsg) {
+                         text = "Configured"}
+                     else text = "Tap here to Configure"
+                     text}
+def pMsgSettings() {def result = ""
+                     if (synthDevice || sonosDevice || sendContactText || sendText || push || sms) {
+                         result = "complete"}
+                     result}
+def pMsgComplete() {def text = "Tap here to Configure" 
+                     if (synthDevice || sonosDevice || sendContactText || sendText || push || sms) {
                          text = "Configured"}
                      else text = "Tap here to Configure"
                      text}
@@ -2739,25 +2732,34 @@ def pConfigComplete() {def text = "Tap here to Configure"
                        else text = "Tap here to Configure"
                        text}
 
-/*def pActionsSettings(){def result = ""
+def pActionsSettings(){def result = ""
                        def pDevicesProc = ""
-                       if (sSwitches || sDimmers || sHues || sFlash || shmState) {
+                       if (sSwitches || sDimmers || sHues || sFlash || pMode || pVirPer) {
                            result = "complete"
                            pDevicesProc = complete}
                        result}
 def pActionsComplete() {def text = "Tap here to configure" 
                         def pDevicesComplete = pDevicesComplete()
-                        if (pDevicesProc=="complete" || pMode || pRoutine || shmState) {
+                        if (pDevicesProc=="complete" || pMode || pVirPer) {
                             text = "Configured"}
                         else text = "Tap Here to configure"
-                        text}   */     
+                        text}        
 // PROFILE RESTRICTIONS
 def pRestrictSettings(){ def result = "" 
-                        if (modes || runDay || hues || startingX || endingX) { 
+                        if (modes || days || startingX || endingX) { 
                             result = "complete"}
                         result}
 def pRestrictComplete() {def text = "Tap here to configure" 
-                         if (modes || runDay || hues || startingX || endingX) {
+                         if (modes || days || startingX || endingX) {
+                             text = "Configured"}
+                         else text = "Tap here to Configure"
+                         text}
+def pTimeSettings(){ def result = "" 
+                        if (startingX || endingX) { 
+                            result = "complete"}
+                        result}
+def pTimeComplete() {def text = "Tap here to configure" 
+                         if (startingX || endingX) {
                              text = "Configured"}
                          else text = "Tap here to Configure"
                          text}
@@ -2838,7 +2840,7 @@ def VPCreateComplete() {def text = "Tap here to Configure"
                      def deviceId = "${app.label}"
                      def d = getChildDevice("${app.label}")
                      if ("${d}"== ("${app.label}")) {
-                         text = "Virtual Person Created"}
+                         text = "Virtual Person Created - '$app.label'"}
                      else text = "Tap here to Configure"
                      text}
 
