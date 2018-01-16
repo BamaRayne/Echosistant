@@ -1,0 +1,50 @@
+{
+    "namespace": "tonesto7",
+    "repoName": "echosistant-dev",
+    "name": "EchoSistant Evolution",
+    "author": "Anthony S.",
+    "description": "The Ultimate Voice Controlled Assistant Using Alexa Enabled Devices.",
+    "category": "My Apps",
+    "videoUrl": "http://f.cl.ly/items/3O2L03471l2K3E3l3K1r/Zombie%20Kid%20Likes%20Turtles.mp4",
+    "photoUrl": "https://echosistant.com/es5_content/images/Echosistant_V5.png",
+    "bannerUrl": "https://echosistant.com/es5_content/images/es5_banner.png",
+    "smartApps": {
+        "parent": {
+            "name": "EchoSistant5",
+            "iconUrl": "https://echosistant.com/es5_content/images/Echosistant_V5.png",
+            "published": true,
+            "oAuth": true,
+            "version": "5.0.0113",
+            "appUrl": "smartapps/Echo/echosistant5.src/echosistant5.groovy"
+        },
+        "children": [{
+                "name": "ES-Profiles",
+                "iconUrl": "https://echosistant.com/es5_content/images/es5_rooms.png",
+                "published": true,
+                "oAuth": false,
+                "appUrl": "smartapps/Echo/es-profiles.src/es-profiles.groovy",
+                "version": "5.0.0113",
+                "optional": false
+            },
+            {
+                "name": "ES-Storage",
+                "iconUrl": "https://echosistant.com/es5_content/images/es5_storage.png",
+                "published": true,
+                "oAuth": false,
+                "appUrl": "smartapps/Echo/es-storage.src/es-storage.groovy",
+                "version": "5.0.0113",
+                "optional": false
+            },
+            {
+                "name": "ES-Shortcuts",
+                "iconUrl": "https://echosistant.com/es5_content/images/es5_shortcuts.png",
+                "published": true,
+                "oAuth": false,
+                "appUrl": "smartapps/Echo/es-shortcuts.src/es-shortcuts.groovy",
+                "version": "5.0.0113",
+                "optional": false
+            }
+        ]
+    },
+    "deviceHandlers": []
+}
