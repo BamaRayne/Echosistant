@@ -7,6 +7,7 @@
  								DON'T FORGET TO UPDATE RELEASE NUMBER!!!!!
  
  ************************************ FOR INTERNAL USE ONLY ******************************************************
+ *		1/19/2018		Version:4.0 R.0.3.5	Bug fix: outputTxt for arm sec with delay
  *		7/14/2017		Version:4.0 R.0.3.4 	Bug fix for UK		
  *		4/05/2017		Version:4.0 R.0.3.3e	Minor UI changes & added "cut on/cut off" commands
  *		4/03/2017		Version:4.0 R.0.3.3c 	Bug Fixes and various other things
@@ -2903,7 +2904,7 @@ def controlSecurity(param) {
                     delay = true
                     data = [command: secCommand, delay: delay]
                     runIn(num*60, securityHandler, [data: data])
-                    outputTxt = "Ok, changing the Smart Home Monitor to armed stay in " + numText.text
+                    outputTxt = "Ok, changing the Smart Home Monitor to armed $secCommand in " + numText.text
                     state.pContCmdsR = "undefined"
                     state.pTryAgain = false
                     return ["outputTxt":outputTxt, "pContCmds":state.pContCmds, "pShort":state.pShort, "pContCmdsR":state.pContCmdsR, "pTryAgain":state.pTryAgain, "pPIN":pPIN]
