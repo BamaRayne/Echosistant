@@ -25,6 +25,7 @@
                 "published": true,
                 "oAuth": false,
                 "appUrl": "smartapps/echo/es-profiles.src/es-profiles.groovy",
+                "appSettings": {},
                 "version": "5.0.0113",
                 "optional": false
             },
@@ -34,6 +35,7 @@
                 "published": true,
                 "oAuth": false,
                 "appUrl": "smartapps/echo/es-storage.src/es-storage.groovy",
+                "appSettings": {},
                 "version": "5.0.0113",
                 "optional": false
             },
@@ -43,6 +45,7 @@
                 "published": true,
                 "oAuth": false,
                 "appUrl": "smartapps/echo/es-shortcuts.src/es-shortcuts.groovy",
+                "appSettings": {},
                 "version": "5.0.0113",
                 "optional": false
             }
