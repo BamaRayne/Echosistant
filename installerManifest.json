@@ -1,6 +1,7 @@
 {
     "namespace": "tonesto7",
     "repoName": "echosistant-dev",
+    "repoBranch": "master",
     "name": "EchoSistant Evolution",
     "author": "Anthony S.",
     "description": "The Ultimate Voice Controlled Assistant Using Alexa Enabled Devices.",
