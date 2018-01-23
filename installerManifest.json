@@ -1,5 +1,6 @@
 {
     "namespace": "Echo",
+    "repoOwner": "tonesto7",
     "repoName": "echosistant-dev",
     "repoBranch": "master",
     "name": "EchoSistant Evolution",
