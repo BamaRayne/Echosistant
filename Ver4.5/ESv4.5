@@ -174,13 +174,13 @@ def mProfiles() {
     dynamicPage (name: "mProfiles", title: "Create and Manage Rooms", install: true, uninstall: false) {
         if (childApps?.size()>0) {  
             section("",  uninstall: false){
-                app(name: "EchoSistant Rooms", appName: "EchoSistant Rooms", namespace: "Echo", title: "Create a New Room", displayChildApps: false, multiple: true,  uninstall: false)
+                app(name: "EchoSistant Rooms v4.5", appName: "EchoSistant Rooms v4.5", namespace: "Echo", title: "Create a New Room", displayChildApps: false, multiple: true,  uninstall: false)
             }
         }
         else {
             section("",  uninstall: false){
                 paragraph "NOTE: Looks like you haven't created any Rooms yet.\n \nPlease make sure you have installed the EchoSistant Rooms Add-on before creating a new Profile!"
-                app(name: "EchoSistant Rooms", appName: "EchoSistant Rooms", namespace: "Echo", title: "Create a New Room", multiple: true,  uninstall: false)
+                app(name: "EchoSistant Rooms v4.5", appName: "EchoSistant Rooms v4.5", namespace: "Echo", title: "Create a New Room", multiple: true,  uninstall: false)
             }
         }
     }
