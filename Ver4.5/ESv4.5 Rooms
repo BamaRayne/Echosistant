@@ -28,7 +28,7 @@ include 'asynchttp_v1'
 
 
 definition(
-	name			: "EchoSistant Rooms",
+	name			: "EchoSistant Rooms v4.5",
     namespace		: "Echo",
     author			: "JH/BD",
 	description		: "EchoSistant Rooms - Custom rooms and Custom Control",
@@ -99,7 +99,7 @@ def Shortcuts(){
 	dynamicPage(name: "Shortcuts", title: "Create shortcut phrases and custom Alexa responses", uninstall: false){
 		if (childApps?.size()>0) {
 			section("",  uninstall: false){
-            app(name: "EchoSistant Rooms Shortcuts", appName: "EchoSistant Rooms Shortcuts", namespace: "Echo", title: "Create a New ShortCut", displayChildApps: false, multiple: true,  uninstall: false)
+            app(name: "EchoSistant Rooms Shortcuts v4.5", appName: "EchoSistant Rooms Shortcuts v4.5", namespace: "Echo", title: "Create a New ShortCut", displayChildApps: false, multiple: true,  uninstall: false)
             }
         }
         else {
