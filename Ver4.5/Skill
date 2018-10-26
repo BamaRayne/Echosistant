@@ -1,0 +1,184 @@
+{
+    "interactionModel": {
+        "languageModel": {
+            "invocationName": "house",
+            "intents": [
+                {
+                    "name": "AMAZON.HelpIntent",
+                    "samples": [
+                        "what can i do",
+                        "i need help",
+                        "i need ideas",
+                        "what can i say",
+                        "what is this",
+                        "give me an idea",
+                        "i'm lost"
+                    ]
+                },
+                {
+                    "name": "AMAZON.MoreIntent",
+                    "samples": []
+                },
+                {
+                    "name": "AMAZON.NavigateHomeIntent",
+                    "samples": []
+                },
+                {
+                    "name": "AMAZON.NavigateSettingsIntent",
+                    "samples": []
+                },
+                {
+                    "name": "AMAZON.NextIntent",
+                    "samples": []
+                },
+                {
+                    "name": "AMAZON.NoIntent",
+                    "samples": []
+                },
+                {
+                    "name": "AMAZON.PageDownIntent",
+                    "samples": []
+                },
+                {
+                    "name": "AMAZON.PageUpIntent",
+                    "samples": []
+                },
+                {
+                    "name": "AMAZON.PreviousIntent",
+                    "samples": []
+                },
+                {
+                    "name": "AMAZON.ScrollDownIntent",
+                    "samples": []
+                },
+                {
+                    "name": "AMAZON.ScrollLeftIntent",
+                    "samples": []
+                },
+                {
+                    "name": "AMAZON.ScrollRightIntent",
+                    "samples": []
+                },
+                {
+                    "name": "AMAZON.ScrollUpIntent",
+                    "samples": []
+                },
+                {
+                    "name": "AMAZON.CancelIntent",
+                    "samples": []
+                },
+                {
+                    "name": "AMAZON.StopIntent",
+                    "samples": []
+                },
+                {
+                    "name": "AMAZON.YesIntent",
+                    "samples": []
+                },
+                {
+                    "name": "House",
+                    "slots": [
+                        {
+                            "name": "ttstext",
+                            "type": "CATCH_ALL"
+                        }
+                    ],
+                    "samples": [
+                        "{ttstext}"
+                    ]
+                },
+                {
+                    "name": "UpdateSettings",
+                    "slots": [],
+                    "samples": [
+                        "update settings",
+                        "update configuration"
+                    ]
+                },
+                {
+                    "name": "AppStatus",
+                    "slots": [],
+                    "samples": [
+                        "version info",
+                        "app status",
+                        "app details",
+                        "instance status",
+                        "app info"
+                    ]
+                }
+            ],
+            "types": [
+                {
+                    "name": "CATCH_ALL",
+                    "values": [
+                        {
+                            "name": {
+                                "value": "turn"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "put to"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "enter are void"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "over around and under"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "light switch fan outlet relay"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "water speaker list media set above"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "on start enable engage open begin unlock unlocked"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "delay wait until after around within in about for"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "darker too bright dim dimmer decrease lower low softer less"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "give is tell what how is when which are how many check who status"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "increase more too dark not bright enough brighten brighter turn up"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "off stop cancel disable disengage kill close silence lock locked quit end"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "door garage window shade curtain blind thermostat indoor outdoor vent valve"
+                            }
+                        }
+                    ]
+                }
+            ]
+        }
+    }
+}
