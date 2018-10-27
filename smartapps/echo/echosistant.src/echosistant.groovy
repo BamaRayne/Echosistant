@@ -2342,7 +2342,7 @@ def controlDevices() {
 /************************************************************************************************************
    DEVICE CONTROL HANDLER
 ************************************************************************************************************/      
-def controlHandler(data) {   
+/*def controlHandler(data) {   
     def deviceType = data.type
     def deviceCommand = data.command
    	def deviceD = data.device
@@ -2788,7 +2788,7 @@ def controlHandler(data) {
             }
        }
     }
-}
+}*/
 /************************************************************************************************************
    SECURITY CONTROL - from Lambda via page s
 ************************************************************************************************************/
@@ -3121,7 +3121,7 @@ def processTts() {
             }
             else {
                 if (state.pShort != true){
-                	outputTxt = "I wish I could help, but EchoSistant couldn't find a Profile named " + pintentName + " or the command may not be supported"
+                	outputTxt = "Hey, I wish I could help, but EchoSistant couldn't find a Profile named " + pintentName + " or the command may not be supported"
                 }
                 else {outputTxt = "I've heard " + pintentName + " , but I wasn't able to take any actions "} 
                 pTryAgain = true
